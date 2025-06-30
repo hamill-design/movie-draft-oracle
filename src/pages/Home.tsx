@@ -1,16 +1,24 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Film, Users, Search, Calendar, User, Pen, Camera } from 'lucide-react';
+import { Film, Users, Search, Calendar, User, Pen, Camera, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [draftSize, setDraftSize] = useState(4);
   const navigate = useNavigate();
+  const { user, loading, signOut } = useAuth();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
 
   const categories = [
     { 
@@ -47,19 +55,49 @@ const Home = () => {
   );
 
   const handleStartDraft = () => {
-    // You can pass the draft size as state or query params if needed
     navigate('/draft');
   };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+        <div className="text-white text-lg">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null; // Will redirect to auth page
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Film className="text-yellow-400" size={40} />
-            <h1 className="text-4xl font-bold text-white">Movie Draft League</h1>
-            <Film className="text-yellow-400" size={40} />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Film className="text-yellow-400" size={40} />
+              <h1 className="text-4xl font-bold text-white">Movie Draft League</h1>
+              <Film className="text-yellow-400" size={40} />
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-gray-300">Welcome, {user.email}</span>
+              <Button
+                onClick={handleSignOut}
+                variant="outline"
+                size="sm"
+                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+              >
+                <LogOut size={16} className="mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </div>
           <p className="text-gray-300 text-lg">
             Create your perfect movie draft and compete with friends
