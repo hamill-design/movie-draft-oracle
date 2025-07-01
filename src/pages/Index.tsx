@@ -8,6 +8,7 @@ import MovieSearch from '@/components/MovieSearch';
 import CategorySelection from '@/components/CategorySelection';
 import PickConfirmation from '@/components/PickConfirmation';
 import DraftComplete from '@/components/DraftComplete';
+import SaveDraftButton from '@/components/SaveDraftButton';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface DraftState {
@@ -176,6 +177,20 @@ const Index = () => {
           currentPlayer={currentPlayer}
           isComplete={isComplete}
         />
+
+        {/* Save Draft Button */}
+        <div className="flex justify-end mb-6">
+          <SaveDraftButton
+            draftData={{
+              theme: draftState.theme,
+              option: draftState.option,
+              participants: draftState.participants,
+              categories: draftState.categories,
+              picks: picks,
+              isComplete: isComplete
+            }}
+          />
+        </div>
 
         <DraftBoard
           players={randomizedPlayers}

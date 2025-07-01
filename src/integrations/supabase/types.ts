@@ -9,6 +9,95 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      draft_picks: {
+        Row: {
+          category: string
+          created_at: string | null
+          draft_id: string
+          id: string
+          movie_genre: string | null
+          movie_id: number
+          movie_title: string
+          movie_year: number | null
+          pick_order: number
+          player_id: number
+          player_name: string
+        }
+        Insert: {
+          category: string
+          created_at?: string | null
+          draft_id: string
+          id?: string
+          movie_genre?: string | null
+          movie_id: number
+          movie_title: string
+          movie_year?: number | null
+          pick_order: number
+          player_id: number
+          player_name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          draft_id?: string
+          id?: string
+          movie_genre?: string | null
+          movie_id?: number
+          movie_title?: string
+          movie_year?: number | null
+          pick_order?: number
+          player_id?: number
+          player_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_picks_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drafts: {
+        Row: {
+          categories: string[]
+          created_at: string | null
+          id: string
+          is_complete: boolean | null
+          option: string
+          participants: string[]
+          theme: string
+          title: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          categories: string[]
+          created_at?: string | null
+          id?: string
+          is_complete?: boolean | null
+          option: string
+          participants: string[]
+          theme: string
+          title: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          categories?: string[]
+          created_at?: string | null
+          id?: string
+          is_complete?: boolean | null
+          option?: string
+          participants?: string[]
+          theme?: string
+          title?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

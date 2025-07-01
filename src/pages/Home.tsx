@@ -100,24 +100,26 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       <div className="container mx-auto px-4 py-8">
-        {/* Header with logout */}
+        {/* Header with Profile Link */}
         <div className="flex justify-between items-center mb-8">
-          <div className="text-center flex-1">
-            <h1 className="text-5xl font-bold text-white mb-4">
-              🎬 Movie Draft Generator
-            </h1>
-            <p className="text-xl text-gray-300">
-              Create epic movie drafts with your friends
-            </p>
-          </div>
-          <Button
-            onClick={handleSignOut}
-            variant="outline"
-            className="border-gray-600 text-gray-300 hover:bg-gray-700"
-          >
-            <LogOut size={16} className="mr-2" />
-            Logout
-          </Button>
+          <h1 className="text-4xl font-bold text-white mb-2">Movie Draft</h1>
+          {user ? (
+            <Button
+              onClick={() => navigate('/profile')}
+              variant="outline"
+              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+            >
+              My Profile
+            </Button>
+          ) : (
+            <Button
+              onClick={() => navigate('/auth')}
+              variant="outline"
+              className="border-gray-600 text-gray-300 hover:bg-gray-700"
+            >
+              Sign In
+            </Button>
+          )}
         </div>
 
         <div className="max-w-4xl mx-auto space-y-8">
