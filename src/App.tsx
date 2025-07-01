@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import DraftSetup from "./pages/DraftSetup";
 import Profile from "./pages/Profile";
+import DraftResults from "./pages/DraftResults";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/draft-setup" element={<DraftSetup />} />
             <Route path="/draft" element={<Index />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/draft-results" element={<DraftResults />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
