@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Film, Users, Search, Calendar, User, Camera, LogOut, ArrowLeft } from 'lucide-react';
+import { Film, Users, Search, Calendar, User, LogOut, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMovies } from '@/hooks/useMovies';
@@ -17,9 +17,9 @@ const Home = () => {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
 
-  // Use the movies hook for fetching actors/directors when needed
+  // Use the movies hook for fetching people when needed
   const { movies: searchResults, loading: searchLoading } = useMovies(
-    selectedTheme === 'actor' ? 'person' : selectedTheme === 'director' ? 'person' : undefined,
+    selectedTheme === 'people' ? 'person' : undefined,
     searchTerm
   );
 
@@ -37,16 +37,10 @@ const Home = () => {
       key: 'year'
     },
     { 
-      name: 'Actor', 
+      name: 'People', 
       icon: User, 
-      description: 'Movies featuring specific actors',
-      key: 'actor'
-    },
-    { 
-      name: 'Director', 
-      icon: Camera, 
-      description: 'Movies by renowned directors',
-      key: 'director'
+      description: 'Movies featuring specific actors or directors',
+      key: 'people'
     }
   ];
 
@@ -168,7 +162,7 @@ const Home = () => {
           {!selectedTheme ? (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-white">Select A Theme</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {themes.map((theme) => (
                   <Card 
                     key={theme.key} 
@@ -206,20 +200,20 @@ const Home = () => {
                 </h2>
               </div>
 
-              {/* Search for Actor/Director */}
-              {(selectedTheme === 'actor' || selectedTheme === 'director') && (
+              {/* Search for People */}
+              {selectedTheme === 'people' && (
                 <Card className="bg-gray-800 border-gray-600">
                   <CardHeader>
                     <CardTitle className="text-white flex items-center gap-2">
                       <Search className="text-yellow-400" size={24} />
-                      Search {selectedTheme === 'actor' ? 'Actors' : 'Directors'}
+                      Search People
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="relative">
                       <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                       <Input
-                        placeholder={`Search for ${selectedTheme === 'actor' ? 'actors' : 'directors'}...`}
+                        placeholder="Search for actors or directors..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
@@ -234,8 +228,7 @@ const Home = () => {
                 <CardHeader>
                   <CardTitle className="text-white">
                     {selectedTheme === 'year' && 'Select Year'}
-                    {selectedTheme === 'actor' && (searchTerm ? 'Search Results' : 'Popular Actors')}
-                    {selectedTheme === 'director' && (searchTerm ? 'Search Results' : 'Popular Directors')}
+                    {selectedTheme === 'people' && (searchTerm ? 'Search Results' : 'Popular People')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -279,11 +272,11 @@ const Home = () => {
                         </div>
                       ) : searchTerm ? (
                         <div className="text-center text-gray-400">
-                          No {selectedTheme}s found for "{searchTerm}"
+                          No people found for "{searchTerm}"
                         </div>
                       ) : (
                         <div className="text-center text-gray-400">
-                          Start typing to search for {selectedTheme}s
+                          Start typing to search for actors or directors
                         </div>
                       )}
                     </div>

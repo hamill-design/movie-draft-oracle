@@ -35,20 +35,38 @@ serve(async (req) => {
         url = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${searchQuery}&page=${page}`;
         break;
       case 'person':
-        // First search for person, then get their movies
-        const personUrl = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`;
-        const personResponse = await fetch(personUrl);
+        // Search for person directly and return person results
+        url = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}&page=${page}`;
+        
+        const personResponse = await fetch(url);
         const personData = await personResponse.json();
         
-        if (personData.results && personData.results.length > 0) {
-          const personId = personData.results[0].id;
-          url = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&with_people=${personId}&page=${page}`;
-        } else {
-          return new Response(JSON.stringify({ results: [], total_pages: 0 }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-        break;
+        // Transform person data to match our Movie interface (reusing for person data)
+        const transformedPeople = personData.results?.map((person: any) => ({
+          id: person.id,
+          title: person.name, // Use person name as title
+          year: 0, // Not applicable for people
+          genre: person.known_for_department || 'Unknown',
+          director: 'Person', // Mark as person type
+          runtime: 0,
+          poster: getPersonEmoji(person.known_for_department),
+          description: `Known for: ${person.known_for?.map((item: any) => item.title || item.name).slice(0, 3).join(', ') || 'Various works'}`,
+          isDrafted: false,
+          tmdbId: person.id,
+          posterPath: person.profile_path,
+          backdropPath: null,
+          voteAverage: person.popularity,
+          releaseDate: null
+        })) || [];
+
+        return new Response(JSON.stringify({
+          results: transformedPeople,
+          total_pages: personData.total_pages,
+          total_results: personData.total_results,
+          page: personData.page
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       default:
         url = `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}&page=${page}`;
     }
@@ -141,4 +159,21 @@ function getMovieEmoji(genreId: number): string {
     37: '🤠'  // Western
   };
   return emojiMap[genreId] || '🎬';
+}
+
+// Helper function to get person emoji based on department
+function getPersonEmoji(department: string): string {
+  const emojiMap: { [key: string]: string } = {
+    'Acting': '🎭',
+    'Directing': '🎬',
+    'Writing': '✍️',
+    'Production': '🎞️',
+    'Camera': '📷',
+    'Editing': '✂️',
+    'Sound': '🔊',
+    'Art': '🎨',
+    'Costume & Make-Up': '👗',
+    'Visual Effects': '✨'
+  };
+  return emojiMap[department] || '👤';
 }
