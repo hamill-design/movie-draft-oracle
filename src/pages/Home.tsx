@@ -22,6 +22,17 @@ const Home = () => {
     theme === 'people' ? searchQuery : ''
   );
 
+  // Generate years from 1970 to 2024
+  const generateYears = () => {
+    const years = [];
+    for (let year = 2024; year >= 1970; year--) {
+      years.push(year.toString());
+    }
+    return years;
+  };
+
+  const years = generateYears();
+
   const handleAddParticipant = () => {
     if (newParticipant.trim() && !participants.includes(newParticipant.trim())) {
       setParticipants([...participants, newParticipant.trim()]);
@@ -51,13 +62,8 @@ const Home = () => {
     setSearchQuery('');
   };
 
-  // For year theme, allow direct input
-  const handleYearInput = (value: string) => {
-    setSearchQuery(value);
-    // Auto-select year if it's a valid 4-digit year
-    if (/^\d{4}$/.test(value)) {
-      setSelectedOption(value);
-    }
+  const handleYearSelect = (year: string) => {
+    setSelectedOption(year);
   };
 
   const shouldShowResults = theme === 'people' && searchQuery.trim().length > 0;
@@ -125,58 +131,82 @@ const Home = () => {
               <CardContent className="pt-6">
                 <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                   <Search className="text-yellow-400" />
-                  {theme === 'people' ? 'Search for a Person' : 'Enter a Year'}
+                  {theme === 'people' ? 'Search for a Person' : 'Select a Year'}
                 </h3>
-                <Input
-                  placeholder={
-                    theme === 'people'
-                      ? 'Search for actors, directors...'
-                      : 'Enter a year (e.g., 2020)...'
-                  }
-                  value={searchQuery}
-                  onChange={(e) => {
-                    if (theme === 'year') {
-                      handleYearInput(e.target.value);
-                    } else {
-                      setSearchQuery(e.target.value);
-                    }
-                  }}
-                  className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 mb-4"
-                />
                 
-                {selectedOption && (
-                  <div className="mb-4">
-                    <Badge variant="secondary" className="bg-yellow-400 text-black">
-                      Selected: {selectedOption}
-                    </Badge>
-                  </div>
-                )}
-
-                {shouldShowResults && (
-                  <div className="max-h-60 overflow-y-auto space-y-2">
-                    {loading ? (
-                      <div className="text-gray-400">Searching...</div>
-                    ) : movies.length === 0 ? (
-                      <div className="text-gray-400">No people found</div>
-                    ) : (
-                      movies.slice(0, 10).map((item) => (
-                        <div
-                          key={item.id}
-                          onClick={() => handleOptionSelect(item.title)}
-                          className={`p-3 rounded cursor-pointer transition-colors ${
-                            selectedOption === item.title
-                              ? 'bg-yellow-400 text-black'
-                              : 'bg-gray-700 hover:bg-gray-600 text-white'
-                          }`}
-                        >
-                          <div className="font-medium">{item.title}</div>
-                          <div className="text-sm opacity-75">
-                            {item.genre} • {item.description}
-                          </div>
-                        </div>
-                      ))
+                {theme === 'people' ? (
+                  <>
+                    <Input
+                      placeholder="Search for actors, directors..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 mb-4"
+                    />
+                    
+                    {selectedOption && (
+                      <div className="mb-4">
+                        <Badge variant="secondary" className="bg-yellow-400 text-black">
+                          Selected: {selectedOption}
+                        </Badge>
+                      </div>
                     )}
-                  </div>
+
+                    {shouldShowResults && (
+                      <div className="max-h-60 overflow-y-auto space-y-2">
+                        {loading ? (
+                          <div className="text-gray-400">Searching...</div>
+                        ) : movies.length === 0 ? (
+                          <div className="text-gray-400">No people found</div>
+                        ) : (
+                          movies.slice(0, 10).map((item) => (
+                            <div
+                              key={item.id}
+                              onClick={() => handleOptionSelect(item.title)}
+                              className={`p-3 rounded cursor-pointer transition-colors ${
+                                selectedOption === item.title
+                                  ? 'bg-yellow-400 text-black'
+                                  : 'bg-gray-700 hover:bg-gray-600 text-white'
+                              }`}
+                            >
+                              <div className="font-medium">{item.title}</div>
+                              <div className="text-sm opacity-75">
+                                {item.genre} • {item.description}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {selectedOption && (
+                      <div className="mb-4">
+                        <Badge variant="secondary" className="bg-yellow-400 text-black">
+                          Selected: {selectedOption}
+                        </Badge>
+                      </div>
+                    )}
+                    
+                    <div className="max-h-60 overflow-y-auto">
+                      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                        {years.map((year) => (
+                          <Button
+                            key={year}
+                            onClick={() => handleYearSelect(year)}
+                            variant={selectedOption === year ? 'default' : 'outline'}
+                            className={`h-12 text-sm ${
+                              selectedOption === year
+                                ? 'bg-yellow-400 text-black hover:bg-yellow-500'
+                                : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                            }`}
+                          >
+                            {year}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
