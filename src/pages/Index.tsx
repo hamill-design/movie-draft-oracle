@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useMovies } from '@/hooks/useMovies';
@@ -17,6 +16,7 @@ interface DraftState {
   option: string;
   participants: string[];
   categories: string[];
+  existingDraftId?: string;
 }
 
 interface Pick {
@@ -30,7 +30,7 @@ const Index = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const { autoSaveDraft } = useDrafts();
+  const { autoSaveDraft, getDraftWithPicks } = useDrafts();
   const { toast } = useToast();
   const draftState = location.state as DraftState;
   
@@ -39,7 +39,8 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [picks, setPicks] = useState<Pick[]>([]);
   const [currentPickIndex, setCurrentPickIndex] = useState(0);
-  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(draftState?.existingDraftId || null);
+  const [loadingExistingDraft, setLoadingExistingDraft] = useState(false);
   
   // Check authentication
   useEffect(() => {
@@ -53,6 +54,47 @@ const Index = () => {
       navigate('/');
     }
   }, [draftState, navigate]);
+
+  // Load existing draft data if editing an existing draft
+  useEffect(() => {
+    const loadExistingDraft = async () => {
+      if (!draftState?.existingDraftId || !user) return;
+
+      setLoadingExistingDraft(true);
+      try {
+        const { draft, picks: existingPicks } = await getDraftWithPicks(draftState.existingDraftId);
+        
+        if (existingPicks && existingPicks.length > 0) {
+          // Convert database picks to our Pick format
+          const convertedPicks: Pick[] = existingPicks.map((pick) => ({
+            playerId: pick.player_id,
+            playerName: pick.player_name,
+            movie: {
+              id: pick.movie_id,
+              title: pick.movie_title,
+              year: pick.movie_year,
+              genre: pick.movie_genre
+            },
+            category: pick.category
+          }));
+          
+          setPicks(convertedPicks);
+          setCurrentPickIndex(convertedPicks.length);
+        }
+      } catch (error) {
+        console.error('Error loading existing draft:', error);
+        toast({
+          title: "Error loading draft",
+          description: "Could not load the existing draft data.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoadingExistingDraft(false);
+      }
+    };
+
+    loadExistingDraft();
+  }, [draftState?.existingDraftId, user, getDraftWithPicks, toast]);
 
   // Randomize player order and create snake draft order
   const randomizedPlayers = useMemo(() => {
@@ -202,11 +244,13 @@ const Index = () => {
 
   const isComplete = currentPickIndex >= draftOrder.length;
 
-  // Show loading state while checking auth
-  if (loading) {
+  // Show loading state while checking auth or loading existing draft
+  if (loading || loadingExistingDraft) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl">
+          {loadingExistingDraft ? 'Loading draft...' : 'Loading...'}
+        </div>
       </div>
     );
   }

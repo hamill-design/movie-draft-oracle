@@ -23,6 +23,18 @@ const Profile = () => {
     navigate('/');
   };
 
+  const handleViewDraft = async (draft: any) => {
+    navigate('/draft', {
+      state: {
+        theme: draft.theme,
+        option: draft.option,
+        participants: draft.participants,
+        categories: draft.categories,
+        existingDraftId: draft.id
+      }
+    });
+  };
+
   if (loading || draftsLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
@@ -122,10 +134,10 @@ const Profile = () => {
                           </div>
                         </div>
                         <Button
-                          onClick={() => navigate('/draft-results', { state: { draftId: draft.id } })}
+                          onClick={() => handleViewDraft(draft)}
                           className="bg-yellow-400 text-black hover:bg-yellow-500"
                         >
-                          View Results
+                          {draft.is_complete ? 'View Draft' : 'Continue Draft'}
                         </Button>
                       </div>
                     </CardContent>
