@@ -16,7 +16,7 @@ const Home = () => {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
 
-  // Use the movies hook for fetching people when "people" theme is selected
+  // Use the movies hook for searching people on Home page (when people theme is selected)
   const { movies: searchResults, loading: searchLoading } = useMovies(
     selectedTheme === 'people' && searchTerm.trim().length > 0 ? 'person' : undefined,
     searchTerm
@@ -269,7 +269,10 @@ const Home = () => {
                               } transition-colors`}
                               onClick={() => handleOptionSelect(person.title)}
                             >
-                              {person.title}
+                              <div className="flex flex-col">
+                                <span className="font-medium">{person.title}</span>
+                                <span className="text-xs opacity-75">{person.genre}</span>
+                              </div>
                             </Badge>
                           ))}
                         </div>
