@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useMovies } from '@/hooks/useMovies';
@@ -67,21 +68,25 @@ const Index = () => {
 
   const currentPlayer = draftOrder[currentPickIndex];
   
-  // For the draft page, we always search for movies filtered by the theme
+  // Get search parameters based on theme and search query
   const getSearchParams = () => {
+    // Don't search if no user input
     if (!searchQuery.trim()) {
-      return { category: '', query: '' }; // Don't search if no user input
+      return { category: '', query: '' };
     }
 
+    // For draft page, we want to search for movies filtered by the theme
     if (draftState?.theme === 'year') {
+      // Search for movies from the specific year, with additional filtering by search query
       return {
         category: 'year',
-        query: draftState.option // Filter movies by the selected year
+        query: draftState.option // Use the selected year as the primary filter
       };
     } else if (draftState?.theme === 'people') {
+      // Search for movies featuring the specific person, with additional filtering by search query
       return {
         category: 'person',
-        query: draftState.option // Filter movies by the selected person
+        query: draftState.option // Use the selected person as the primary filter
       };
     }
     
@@ -89,7 +94,22 @@ const Index = () => {
   };
 
   const searchParams = getSearchParams();
-  const { movies, loading } = useMovies(searchParams.category, searchParams.query);
+  console.log('Draft search params:', searchParams, 'for query:', searchQuery);
+  
+  // Only search when we have valid search parameters
+  const { movies, loading } = useMovies(
+    searchParams.category, 
+    searchParams.query
+  );
+
+  // Filter movies based on the search query if we have results
+  const filteredMovies = useMemo(() => {
+    if (!searchQuery.trim() || !movies.length) return movies;
+    
+    return movies.filter(movie => 
+      movie.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [movies, searchQuery]);
 
   useEffect(() => {
     if (!draftState) {
@@ -150,7 +170,7 @@ const Index = () => {
               option={draftState.option}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
-              movies={movies}
+              movies={filteredMovies}
               loading={loading}
               selectedMovie={selectedMovie}
               onMovieSelect={handleMovieSelect}

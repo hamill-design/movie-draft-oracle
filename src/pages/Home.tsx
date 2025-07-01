@@ -1,316 +1,243 @@
+
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Film, Users, Search, Calendar, User, LogOut, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { Trash2, Users, Calendar, Film, Search } from 'lucide-react';
 import { useMovies } from '@/hooks/useMovies';
 
 const Home = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [draftSize, setDraftSize] = useState(4);
-  const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { user, loading, signOut } = useAuth();
+  const [theme, setTheme] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedOption, setSelectedOption] = useState('');
+  const [participants, setParticipants] = useState<string[]>([]);
+  const [newParticipant, setNewParticipant] = useState('');
 
-  // Use the movies hook for searching people on Home page (when people theme is selected)
-  const { movies: searchResults, loading: searchLoading } = useMovies(
-    selectedTheme === 'people' && searchTerm.trim().length > 0 ? 'person' : undefined,
-    searchTerm
-  );
-
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
-
-  const themes = [
-    { 
-      name: 'Year', 
-      icon: Calendar, 
-      description: 'Movies from specific decades or years',
-      key: 'year'
-    },
-    { 
-      name: 'People', 
-      icon: User, 
-      description: 'Movies featuring specific actors or directors',
-      key: 'people'
-    }
-  ];
-
-  // Generate year options (current year back to 1950)
-  const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: currentYear - 1949 }, (_, i) => currentYear - i);
-
-  const handleThemeSelect = (themeKey: string) => {
-    setSelectedTheme(themeKey);
-    setSearchTerm('');
-    setSelectedOption(null);
+  // Determine search category based on theme
+  const getSearchCategory = () => {
+    if (theme === 'people') return 'person_search';
+    if (theme === 'year') return 'search';
+    return '';
   };
 
-  const handleOptionSelect = (option: string) => {
-    setSelectedOption(option);
+  const { movies, loading } = useMovies(getSearchCategory(), searchQuery);
+
+  const handleAddParticipant = () => {
+    if (newParticipant.trim() && !participants.includes(newParticipant.trim())) {
+      setParticipants([...participants, newParticipant.trim()]);
+      setNewParticipant('');
+    }
+  };
+
+  const handleRemoveParticipant = (participant: string) => {
+    setParticipants(participants.filter(p => p !== participant));
   };
 
   const handleStartDraft = () => {
-    if (selectedTheme && selectedOption) {
-      navigate(`/draft-setup?theme=${selectedTheme}&option=${encodeURIComponent(selectedOption)}&draftSize=${draftSize}`);
-    } else {
-      navigate('/draft');
-    }
+    if (!selectedOption || participants.length === 0) return;
+
+    navigate('/draft-setup', {
+      state: {
+        theme,
+        option: selectedOption,
+        participants
+      }
+    });
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/auth');
+  const handleOptionSelect = (option: string | { title: string }) => {
+    const optionValue = typeof option === 'string' ? option : option.title;
+    setSelectedOption(optionValue);
+    setSearchQuery('');
   };
 
-  const handleBack = () => {
-    setSelectedTheme(null);
-    setSelectedOption(null);
-    setSearchTerm('');
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
-        <div className="text-white text-lg">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null; // Will redirect to auth page
-  }
+  const shouldShowResults = searchQuery.trim().length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <Film className="text-yellow-400" size={40} />
-              <h1 className="text-4xl font-bold text-white">Movie Draft League</h1>
-              <Film className="text-yellow-400" size={40} />
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-gray-300">Welcome, {user.email}</span>
-              <Button
-                onClick={handleSignOut}
-                variant="outline"
-                size="sm"
-                className="border-gray-600 text-gray-300 hover:bg-gray-700"
-              >
-                <LogOut size={16} className="mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
-          <p className="text-gray-300 text-lg">
-            Create your perfect movie draft and compete with friends
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold text-white mb-4">
+            🎬 Movie Draft Generator
+          </h1>
+          <p className="text-xl text-gray-300">
+            Create epic movie drafts with your friends
           </p>
         </div>
 
-        {/* Main Content */}
         <div className="max-w-4xl mx-auto space-y-8">
-          
-          {/* Draft Settings */}
+          {/* Theme Selection */}
           <Card className="bg-gray-800 border-gray-600">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Users className="text-yellow-400" size={24} />
-                Draft Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-4">
-                <label className="text-gray-300 font-medium">Number of People:</label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDraftSize(Math.max(2, draftSize - 1))}
-                    className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                  >
-                    -
-                  </Button>
-                  <span className="text-white font-bold text-lg px-4">{draftSize}</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setDraftSize(Math.min(8, draftSize + 1))}
-                    className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                  >
-                    +
-                  </Button>
-                </div>
+            <CardContent className="pt-6">
+              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                <Film className="text-yellow-400" />
+                Choose Your Draft Theme
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Button
+                  onClick={() => {
+                    setTheme('people');
+                    setSelectedOption('');
+                    setSearchQuery('');
+                  }}
+                  variant={theme === 'people' ? 'default' : 'outline'}
+                  className={`h-20 text-lg ${
+                    theme === 'people'
+                      ? 'bg-yellow-400 text-black hover:bg-yellow-500'
+                      : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  <Users className="mr-3" size={24} />
+                  Draft by Person
+                </Button>
+                <Button
+                  onClick={() => {
+                    setTheme('year');
+                    setSelectedOption('');
+                    setSearchQuery('');
+                  }}
+                  variant={theme === 'year' ? 'default' : 'outline'}
+                  className={`h-20 text-lg ${
+                    theme === 'year'
+                      ? 'bg-yellow-400 text-black hover:bg-yellow-500'
+                      : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  <Calendar className="mr-3" size={24} />
+                  Draft by Year
+                </Button>
               </div>
-              <Button 
-                onClick={handleStartDraft}
-                className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-semibold"
-                size="lg"
-              >
-                Start New Draft
-              </Button>
             </CardContent>
           </Card>
 
-          {/* Theme Selection */}
-          {!selectedTheme ? (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold text-white">Select A Theme</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {themes.map((theme) => (
-                  <Card 
-                    key={theme.key} 
-                    className="bg-gray-800 border-gray-600 hover:border-yellow-400 transition-colors cursor-pointer"
-                    onClick={() => handleThemeSelect(theme.key)}
-                  >
-                    <CardHeader>
-                      <CardTitle className="text-white flex items-center gap-2">
-                        <theme.icon className="text-yellow-400" size={24} />
-                        {theme.name}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-300 text-sm">{theme.description}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          ) : (
-            /* Theme Options Display */
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <Button
-                  onClick={handleBack}
-                  variant="outline"
-                  size="sm"
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700"
-                >
-                  <ArrowLeft size={16} className="mr-2" />
-                  Back
-                </Button>
-                <h2 className="text-2xl font-bold text-white">
-                  Select {themes.find(t => t.key === selectedTheme)?.name}
-                </h2>
-              </div>
+          {/* Option Selection */}
+          {theme && (
+            <Card className="bg-gray-800 border-gray-600">
+              <CardContent className="pt-6">
+                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                  <Search className="text-yellow-400" />
+                  {theme === 'people' ? 'Search for a Person' : 'Search for Movies by Year'}
+                </h3>
+                <Input
+                  placeholder={
+                    theme === 'people'
+                      ? 'Search for actors, directors...'
+                      : 'Enter a year (e.g., 2020)...'
+                  }
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 mb-4"
+                />
+                
+                {selectedOption && (
+                  <div className="mb-4">
+                    <Badge variant="secondary" className="bg-yellow-400 text-black">
+                      Selected: {selectedOption}
+                    </Badge>
+                  </div>
+                )}
 
-              {/* Search for People */}
-              {selectedTheme === 'people' && (
-                <Card className="bg-gray-800 border-gray-600">
-                  <CardHeader>
-                    <CardTitle className="text-white flex items-center gap-2">
-                      <Search className="text-yellow-400" size={24} />
-                      Search People
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="Search for actors or directors..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Options Display */}
-              <Card className="bg-gray-800 border-gray-600">
-                <CardHeader>
-                  <CardTitle className="text-white">
-                    {selectedTheme === 'year' && 'Select Year'}
-                    {selectedTheme === 'people' && (searchTerm ? 'Search Results' : 'Popular People')}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {selectedTheme === 'year' ? (
-                    <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 max-h-96 overflow-y-auto">
-                      {years.map((year) => (
-                        <Badge
-                          key={year}
-                          variant={selectedOption === year.toString() ? "default" : "secondary"}
-                          className={`cursor-pointer text-center justify-center py-2 ${
-                            selectedOption === year.toString()
+                {shouldShowResults && (
+                  <div className="max-h-60 overflow-y-auto space-y-2">
+                    {loading ? (
+                      <div className="text-gray-400">Searching...</div>
+                    ) : movies.length === 0 ? (
+                      <div className="text-gray-400">
+                        No {theme === 'people' ? 'people' : 'results'} found
+                      </div>
+                    ) : (
+                      movies.slice(0, 10).map((item) => (
+                        <div
+                          key={item.id}
+                          onClick={() => handleOptionSelect(item.title)}
+                          className={`p-3 rounded cursor-pointer transition-colors ${
+                            selectedOption === item.title
                               ? 'bg-yellow-400 text-black'
-                              : 'bg-gray-700 text-gray-300 hover:bg-yellow-400 hover:text-black'
-                          } transition-colors`}
-                          onClick={() => handleOptionSelect(year.toString())}
+                              : 'bg-gray-700 hover:bg-gray-600 text-white'
+                          }`}
                         >
-                          {year}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {searchLoading ? (
-                        <div className="text-center text-gray-400">Loading...</div>
-                      ) : searchResults && searchResults.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-                          {searchResults.map((person) => (
-                            <Badge
-                              key={person.id}
-                              variant={selectedOption === person.title ? "default" : "secondary"}
-                              className={`cursor-pointer text-left justify-start py-3 px-4 ${
-                                selectedOption === person.title
-                                  ? 'bg-yellow-400 text-black'
-                                  : 'bg-gray-700 text-gray-300 hover:bg-yellow-400 hover:text-black'
-                              } transition-colors`}
-                              onClick={() => handleOptionSelect(person.title)}
-                            >
-                              <div className="flex flex-col">
-                                <span className="font-medium">{person.title}</span>
-                                <span className="text-xs opacity-75">{person.genre}</span>
-                              </div>
-                            </Badge>
-                          ))}
+                          <div className="font-medium">{item.title}</div>
+                          {theme === 'people' && (
+                            <div className="text-sm opacity-75">
+                              {item.genre} • {item.description}
+                            </div>
+                          )}
+                          {theme === 'year' && (
+                            <div className="text-sm opacity-75">
+                              {item.year} • {item.genre}
+                            </div>
+                          )}
                         </div>
-                      ) : searchTerm ? (
-                        <div className="text-center text-gray-400">
-                          No people found for "{searchTerm}"
-                        </div>
-                      ) : (
-                        <div className="text-center text-gray-400">
-                          Start typing to search for actors or directors
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Selection Confirmation */}
-              {selectedOption && (
-                <Card className="bg-gray-800 border-yellow-400">
-                  <CardContent className="pt-6">
-                    <div className="text-center space-y-4">
-                      <p className="text-white">
-                        You've selected: <span className="text-yellow-400 font-bold">{selectedOption}</span>
-                      </p>
-                      <Button 
-                        onClick={handleStartDraft}
-                        className="bg-yellow-400 text-black hover:bg-yellow-500 font-semibold"
-                        size="lg"
-                      >
-                        Start Draft with {selectedOption}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
+
+          {/* Participants */}
+          <Card className="bg-gray-800 border-gray-600">
+            <CardContent className="pt-6">
+              <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+                <Users className="text-yellow-400" />
+                Add Participants
+              </h3>
+              
+              <div className="flex gap-2 mb-4">
+                <Input
+                  placeholder="Enter participant name..."
+                  value={newParticipant}
+                  onChange={(e) => setNewParticipant(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddParticipant()}
+                  className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                />
+                <Button onClick={handleAddParticipant} className="bg-yellow-400 hover:bg-yellow-500 text-black">
+                  Add
+                </Button>
+              </div>
+
+              {participants.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-white font-medium">Participants ({participants.length}):</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {participants.map((participant) => (
+                      <Badge
+                        key={participant}
+                        variant="secondary"
+                        className="bg-gray-700 text-white pr-1 flex items-center gap-1"
+                      >
+                        {participant}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveParticipant(participant)}
+                          className="h-4 w-4 p-0 hover:bg-red-600"
+                        >
+                          <Trash2 size={12} />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Start Draft Button */}
+          <div className="text-center">
+            <Button
+              onClick={handleStartDraft}
+              disabled={!selectedOption || participants.length === 0}
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              size="lg"
+            >
+              Start Draft Setup
+            </Button>
+          </div>
         </div>
       </div>
     </div>

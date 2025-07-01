@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -35,56 +34,22 @@ serve(async (req) => {
         url = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${searchQuery}&page=${page}`;
         break;
       case 'person':
-        // Check if we're searching for people (Home page) or movies by person (Draft page)
-        // If searchQuery matches a person name exactly, we're looking for movies by that person
-        // If searchQuery is a partial search term, we're looking for people
-        
-        // First, try to search for people by name
-        const personSearchUrl = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}&page=${page}`;
+        // First, search for the person to get their ID
+        const personSearchUrl = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`;
         const personResponse = await fetch(personSearchUrl);
         const personData = await personResponse.json();
         
-        // If we have exact matches and the search looks like a person selection (not a search)
         if (personData.results && personData.results.length > 0) {
-          // Check if this is a person search (Home page) or movie search by person (Draft page)
+          // Find exact match or use the first result
           const exactMatch = personData.results.find((person: any) => 
             person.name.toLowerCase() === searchQuery.toLowerCase()
           );
+          const selectedPerson = exactMatch || personData.results[0];
           
-          if (exactMatch) {
-            // This is likely a movie search by person (Draft page)
-            url = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&with_people=${exactMatch.id}&page=${page}`;
-          } else {
-            // This is a person search (Home page) - return people data
-            const transformedPeople = personData.results.map((person: any) => ({
-              id: person.id,
-              title: person.name, // Use name as title for consistency
-              year: 0, // Not applicable for people
-              genre: person.known_for_department || 'Unknown',
-              director: 'N/A',
-              runtime: 0,
-              poster: getPersonEmoji(person.known_for_department),
-              description: `Known for: ${person.known_for?.map((item: any) => item.title || item.name).join(', ') || 'Various works'}`,
-              isDrafted: false,
-              tmdbId: person.id,
-              posterPath: person.profile_path,
-              backdropPath: null,
-              voteAverage: person.popularity,
-              releaseDate: null,
-              knownForDepartment: person.known_for_department
-            }));
-
-            return new Response(JSON.stringify({
-              results: transformedPeople,
-              total_pages: personData.total_pages,
-              total_results: personData.total_results,
-              page: personData.page
-            }), {
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            });
-          }
+          // Search for movies featuring this person
+          url = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&with_people=${selectedPerson.id}&page=${page}&sort_by=popularity.desc`;
         } else {
-          // No people found
+          // No person found, return empty results
           return new Response(JSON.stringify({
             results: [],
             total_pages: 0,
@@ -95,6 +60,39 @@ serve(async (req) => {
           });
         }
         break;
+      case 'person_search':
+        // This is for searching people (Home page)
+        const personListUrl = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}&page=${page}`;
+        const personListResponse = await fetch(personListUrl);
+        const personListData = await personListResponse.json();
+        
+        // Transform people data to match our Movie interface for consistency
+        const transformedPeople = personListData.results?.map((person: any) => ({
+          id: person.id,
+          title: person.name, // Use name as title for consistency
+          year: 0, // Not applicable for people
+          genre: person.known_for_department || 'Unknown',
+          director: 'N/A',
+          runtime: 0,
+          poster: getPersonEmoji(person.known_for_department),
+          description: `Known for: ${person.known_for?.map((item: any) => item.title || item.name).join(', ') || 'Various works'}`,
+          isDrafted: false,
+          tmdbId: person.id,
+          posterPath: person.profile_path,
+          backdropPath: null,
+          voteAverage: person.popularity,
+          releaseDate: null,
+          knownForDepartment: person.known_for_department
+        })) || [];
+
+        return new Response(JSON.stringify({
+          results: transformedPeople,
+          total_pages: personListData.total_pages,
+          total_results: personListData.total_results,
+          page: personListData.page
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       default:
         url = `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}&page=${page}`;
     }
