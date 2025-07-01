@@ -68,10 +68,11 @@ const Index = () => {
 
   const currentPlayer = draftOrder[currentPickIndex];
   
-  const { movies, loading } = useMovies(
-    draftState?.theme === 'year' ? 'year' : 'person',
-    searchQuery || (draftState?.theme === 'year' ? draftState.option : draftState.option)
-  );
+  // Use the correct search category based on theme
+  const searchCategory = draftState?.theme === 'year' ? 'year' : 'person';
+  const searchTerm = searchQuery || draftState?.option;
+  
+  const { movies, loading } = useMovies(searchCategory, searchTerm);
 
   useEffect(() => {
     if (!draftState) {
@@ -131,8 +132,7 @@ const Index = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-center gap-6 text-center">
               <div>
-                <p className="text-gray-300">Theme: <span className="text-yellow-400 font-bold capitalize">{draftState.theme}</span></p>
-                <p className="text-gray-300">Selection: <span className="text-yellow-400 font-bold">{draftState.option}</span></p>
+                <p className="text-gray-300">Theme: <span className="text-yellow-400 font-bold">{draftState.option}</span></p>
               </div>
               {!isComplete && currentPlayer && (
                 <div className="flex items-center gap-2">
@@ -181,7 +181,7 @@ const Index = () => {
                               <div className="text-xs">
                                 <div className="text-white font-medium truncate">{pick.movie.title}</div>
                                 <div className="text-gray-400">
-                                  {draftState.theme === 'year' ? pick.movie.year : pick.movie.title}
+                                  {draftState.theme === 'year' ? pick.movie.year : pick.movie.genre}
                                 </div>
                               </div>
                             ) : (
@@ -206,18 +206,18 @@ const Index = () => {
               <CardHeader>
                 <CardTitle className="text-white flex items-center gap-2">
                   <Search className="text-yellow-400" size={24} />
-                  Search {draftState.theme === 'year' ? 'Movies' : 'People'}
+                  Search {draftState.theme === 'year' ? 'Movies' : 'Movies/Shows'}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <Input
-                  placeholder={`Search for ${draftState.theme === 'year' ? 'movies' : 'people'}...`}
+                  placeholder={`Search for ${draftState.theme === 'year' ? 'movies from ' + draftState.option : 'movies with ' + draftState.option}...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                 />
                 
-                {searchQuery && (
+                {searchTerm && (
                   <div className="mt-4 max-h-60 overflow-y-auto space-y-2">
                     {loading ? (
                       <div className="text-gray-400">Searching...</div>
