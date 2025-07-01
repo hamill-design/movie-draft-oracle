@@ -1,11 +1,11 @@
-
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Calendar, Users, Trophy } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDrafts, DraftPick } from '@/hooks/useDrafts';
+import { useDraftOperations } from '@/hooks/useDraftOperations';
+import { DraftPick } from '@/hooks/useDrafts';
 
 interface LocationState {
   draftId: string;
@@ -15,7 +15,7 @@ const DraftResults = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const { getDraftWithPicks } = useDrafts();
+  const { getDraftWithPicks } = useDraftOperations();
   const [draft, setDraft] = useState<any>(null);
   const [picks, setPicks] = useState<DraftPick[]>([]);
   const [loadingData, setLoadingData] = useState(true);

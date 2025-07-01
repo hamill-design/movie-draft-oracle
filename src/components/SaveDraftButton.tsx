@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Save } from 'lucide-react';
-import { useDrafts } from '@/hooks/useDrafts';
+import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { useToast } from '@/hooks/use-toast';
 
 interface SaveDraftButtonProps {
@@ -22,7 +22,7 @@ const SaveDraftButton = ({ draftData }: SaveDraftButtonProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [saving, setSaving] = useState(false);
-  const { saveDraft } = useDrafts();
+  const { saveDraft } = useDraftOperations();
   const { toast } = useToast();
 
   const handleSave = async () => {
