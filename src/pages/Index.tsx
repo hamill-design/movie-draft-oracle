@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useMovies } from '@/hooks/useMovies';
@@ -68,11 +67,26 @@ const Index = () => {
 
   const currentPlayer = draftOrder[currentPickIndex];
   
-  // Use the correct search category based on theme
-  const searchCategory = draftState?.theme === 'year' ? 'year' : 'person';
-  const searchTerm = searchQuery || draftState?.option;
+  // Determine search category and query based on theme
+  const getSearchParams = () => {
+    if (draftState?.theme === 'year') {
+      return {
+        category: 'year',
+        query: draftState.option
+      };
+    } else {
+      // For person theme (actor/director)
+      return {
+        category: 'person',
+        query: draftState.option
+      };
+    }
+  };
+
+  const searchParams = getSearchParams();
+  const finalSearchQuery = searchQuery || searchParams.query;
   
-  const { movies, loading } = useMovies(searchCategory, searchTerm);
+  const { movies, loading } = useMovies(searchParams.category, finalSearchQuery);
 
   useEffect(() => {
     if (!draftState) {

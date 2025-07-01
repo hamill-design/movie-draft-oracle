@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -35,38 +34,28 @@ serve(async (req) => {
         url = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${searchQuery}&page=${page}`;
         break;
       case 'person':
-        // Search for person directly and return person results
-        url = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}&page=${page}`;
-        
-        const personResponse = await fetch(url);
+        // First search for the person to get their ID
+        const personSearchUrl = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`;
+        const personResponse = await fetch(personSearchUrl);
         const personData = await personResponse.json();
         
-        // Transform person data to match our Movie interface (reusing for person data)
-        const transformedPeople = personData.results?.map((person: any) => ({
-          id: person.id,
-          title: person.name, // Use person name as title
-          year: 0, // Not applicable for people
-          genre: person.known_for_department || 'Unknown',
-          director: 'Person', // Mark as person type
-          runtime: 0,
-          poster: getPersonEmoji(person.known_for_department),
-          description: `Known for: ${person.known_for?.map((item: any) => item.title || item.name).slice(0, 3).join(', ') || 'Various works'}`,
-          isDrafted: false,
-          tmdbId: person.id,
-          posterPath: person.profile_path,
-          backdropPath: null,
-          voteAverage: person.popularity,
-          releaseDate: null
-        })) || [];
-
-        return new Response(JSON.stringify({
-          results: transformedPeople,
-          total_pages: personData.total_pages,
-          total_results: personData.total_results,
-          page: personData.page
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+        if (!personData.results || personData.results.length === 0) {
+          return new Response(JSON.stringify({
+            results: [],
+            total_pages: 0,
+            total_results: 0,
+            page: 1
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        // Get the first person's ID
+        const personId = personData.results[0].id;
+        
+        // Now search for movies featuring this person
+        url = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&with_people=${personId}&page=${page}`;
+        break;
       default:
         url = `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}&page=${page}`;
     }
