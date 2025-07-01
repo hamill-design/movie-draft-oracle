@@ -18,6 +18,7 @@ export const useDraftCategories = (theme: string | null) => {
     'Drama/Romance',
     'Sci-Fi/Fantasy',
     'Horror/Thriller',
+    "70's",
     "80's",
     "90's",
     "2000's",
