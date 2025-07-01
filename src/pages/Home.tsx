@@ -153,7 +153,7 @@ const Home = () => {
             <CardHeader>
               <CardTitle className="text-white flex items-center gap-2">
                 <Search className="text-yellow-400" size={24} />
-                Search Categories
+                Select A Theme
               </CardTitle>
             </CardHeader>
             <CardContent>
