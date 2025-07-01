@@ -146,6 +146,10 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     }
   };
 
+  // Debug logging
+  console.log('Current player from useDraftGame:', currentPlayer);
+  console.log('Randomized players:', randomizedPlayers);
+
   return (
     <div className="space-y-6">
       <DraftBoard

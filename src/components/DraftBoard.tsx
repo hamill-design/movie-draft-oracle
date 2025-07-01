@@ -28,6 +28,10 @@ interface DraftBoardProps {
 }
 
 const DraftBoard = ({ players, categories, picks, theme, currentPlayer }: DraftBoardProps) => {
+  // Debug logging
+  console.log('DraftBoard - Current player:', currentPlayer);
+  console.log('DraftBoard - Players:', players);
+
   return (
     <Card className="bg-gray-800 border-gray-600 mb-6">
       <CardHeader>
@@ -49,6 +53,8 @@ const DraftBoard = ({ players, categories, picks, theme, currentPlayer }: DraftB
             <TableBody>
               {players.map((player) => {
                 const isCurrentPlayer = currentPlayer && currentPlayer.id === player.id;
+                console.log(`Player ${player.name} (ID: ${player.id}) - Is current: ${isCurrentPlayer}`);
+                
                 return (
                   <TableRow 
                     key={player.id}
