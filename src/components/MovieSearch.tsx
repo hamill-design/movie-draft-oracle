@@ -43,6 +43,11 @@ const MovieSearch = ({
           <Search className="text-yellow-400" size={24} />
           Search Movies
           {theme === 'year' ? ` from ${option}` : ` featuring ${option}`}
+          {!loading && movies.length > 0 && (
+            <span className="text-sm text-gray-400 ml-2">
+              ({movies.length} movies found)
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -56,13 +61,13 @@ const MovieSearch = ({
         {shouldShowResults && (
           <div className="mt-4 max-h-60 overflow-y-auto space-y-2">
             {loading ? (
-              <div className="text-gray-400">Searching...</div>
+              <div className="text-gray-400">Searching all available movies...</div>
             ) : movies.length === 0 ? (
               <div className="text-gray-400">
                 No movies found {theme === 'year' ? `from ${option}` : `featuring ${option}`}
               </div>
             ) : (
-              movies.slice(0, 10).map((movie) => (
+              movies.slice(0, 50).map((movie) => (
                 <div
                   key={movie.id}
                   onClick={() => onMovieSelect(movie)}
@@ -78,6 +83,11 @@ const MovieSearch = ({
                   </div>
                 </div>
               ))
+            )}
+            {movies.length > 50 && (
+              <div className="text-gray-400 text-sm text-center py-2">
+                Showing first 50 results of {movies.length} movies. Use search to narrow down.
+              </div>
             )}
           </div>
         )}

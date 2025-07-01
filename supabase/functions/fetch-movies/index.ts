@@ -13,25 +13,62 @@ serve(async (req) => {
   }
 
   try {
-    const { searchQuery, category, page = 1 } = await req.json();
+    const { searchQuery, category, page = 1, fetchAll = false } = await req.json();
     const tmdbApiKey = Deno.env.get('TMDB');
 
     if (!tmdbApiKey) {
       throw new Error('TMDB API key not configured');
     }
 
+    // Helper function to fetch all pages
+    const fetchAllPages = async (baseUrl: string) => {
+      let allResults: any[] = [];
+      let currentPage = 1;
+      let totalPages = 1;
+
+      do {
+        const url = `${baseUrl}&page=${currentPage}`;
+        console.log(`Fetching page ${currentPage} of ${totalPages}`);
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.results) {
+          allResults = [...allResults, ...data.results];
+        }
+        
+        totalPages = data.total_pages || 1;
+        currentPage++;
+        
+        // Limit to prevent excessive API calls (max 500 pages)
+        if (currentPage > 500) break;
+        
+      } while (currentPage <= totalPages);
+
+      return {
+        results: allResults,
+        total_pages: totalPages,
+        total_results: allResults.length,
+        page: 1
+      };
+    };
+
     let url = '';
+    let baseUrl = '';
     
     // Build different API endpoints based on category
     switch (category) {
       case 'popular':
-        url = `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}&page=${page}`;
+        baseUrl = `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`;
+        url = `${baseUrl}&page=${page}`;
         break;
       case 'search':
-        url = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}&page=${page}`;
+        baseUrl = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`;
+        url = `${baseUrl}&page=${page}`;
         break;
       case 'year':
-        url = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${searchQuery}&page=${page}`;
+        baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${searchQuery}`;
+        url = `${baseUrl}&page=${page}`;
         break;
       case 'person':
         // First, search for the person to get their ID
@@ -47,7 +84,8 @@ serve(async (req) => {
           const selectedPerson = exactMatch || personData.results[0];
           
           // Search for movies featuring this person
-          url = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&with_people=${selectedPerson.id}&page=${page}&sort_by=popularity.desc`;
+          baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&with_people=${selectedPerson.id}&sort_by=popularity.desc`;
+          url = `${baseUrl}&page=${page}`;
         } else {
           // No person found, return empty results
           return new Response(JSON.stringify({
@@ -62,43 +100,54 @@ serve(async (req) => {
         break;
       case 'person_search':
         // This is for searching people (Home page)
-        const personListUrl = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}&page=${page}`;
-        const personListResponse = await fetch(personListUrl);
-        const personListData = await personListResponse.json();
+        baseUrl = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`;
         
-        // Transform people data to match our Movie interface for consistency
-        const transformedPeople = personListData.results?.map((person: any) => ({
-          id: person.id,
-          title: person.name, // Use name as title for consistency
-          year: 0, // Not applicable for people
-          genre: person.known_for_department || 'Unknown',
-          director: 'N/A',
-          runtime: 0,
-          poster: getPersonEmoji(person.known_for_department),
-          description: `Known for: ${person.known_for?.map((item: any) => item.title || item.name).join(', ') || 'Various works'}`,
-          isDrafted: false,
-          tmdbId: person.id,
-          posterPath: person.profile_path,
-          backdropPath: null,
-          voteAverage: person.popularity,
-          releaseDate: null,
-          knownForDepartment: person.known_for_department
-        })) || [];
+        if (fetchAll) {
+          const allData = await fetchAllPages(baseUrl);
+          const transformedPeople = allData.results?.map((person: any) => ({
+            id: person.id,
+            title: person.name,
+            year: 0,
+            genre: person.known_for_department || 'Unknown',
+            director: 'N/A',
+            runtime: 0,
+            poster: getPersonEmoji(person.known_for_department),
+            description: `Known for: ${person.known_for?.map((item: any) => item.title || item.name).join(', ') || 'Various works'}`,
+            isDrafted: false,
+            tmdbId: person.id,
+            posterPath: person.profile_path,
+            backdropPath: null,
+            voteAverage: person.popularity,
+            releaseDate: null,
+            knownForDepartment: person.known_for_department
+          })) || [];
 
-        return new Response(JSON.stringify({
-          results: transformedPeople,
-          total_pages: personListData.total_pages,
-          total_results: personListData.total_results,
-          page: personListData.page
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
+          return new Response(JSON.stringify({
+            results: transformedPeople,
+            total_pages: allData.total_pages,
+            total_results: allData.total_results,
+            page: allData.page
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        url = `${baseUrl}&page=${page}`;
+        break;
       default:
-        url = `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}&page=${page}`;
+        baseUrl = `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`;
+        url = `${baseUrl}&page=${page}`;
     }
 
-    const response = await fetch(url);
-    const data = await response.json();
+    let data;
+    
+    if (fetchAll && baseUrl) {
+      console.log('Fetching all pages for:', category);
+      data = await fetchAllPages(baseUrl);
+    } else {
+      const response = await fetch(url);
+      data = await response.json();
+    }
 
     // Transform TMDB data to match our Movie interface
     const transformedMovies = data.results?.map((movie: any) => ({
@@ -106,7 +155,7 @@ serve(async (req) => {
       title: movie.title,
       year: new Date(movie.release_date).getFullYear() || 0,
       genre: movie.genre_ids?.[0] ? getGenreName(movie.genre_ids[0]) : 'Unknown',
-      director: 'Unknown', // We'd need additional API call to get director
+      director: 'Unknown',
       runtime: movie.runtime || 120,
       poster: getMovieEmoji(movie.genre_ids?.[0]),
       description: movie.overview || 'No description available',
@@ -117,6 +166,8 @@ serve(async (req) => {
       voteAverage: movie.vote_average,
       releaseDate: movie.release_date
     })) || [];
+
+    console.log(`Returning ${transformedMovies.length} movies`);
 
     return new Response(JSON.stringify({
       results: transformedMovies,

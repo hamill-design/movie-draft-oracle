@@ -7,35 +7,29 @@ export const useMovies = (category?: string, searchQuery?: string) => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
 
-  const fetchMovies = async (reset: boolean = false) => {
+  const fetchAllMovies = async () => {
     if (!category) return;
     
     setLoading(true);
     setError(null);
     
     try {
-      const currentPage = reset ? 1 : page;
+      console.log('Fetching all movies for category:', category, 'query:', searchQuery);
+      
       const { data, error } = await supabase.functions.invoke('fetch-movies', {
         body: { 
           category, 
-          searchQuery, 
-          page: currentPage 
+          searchQuery,
+          fetchAll: true // New flag to fetch all pages
         }
       });
 
       if (error) throw error;
 
-      if (reset) {
-        setMovies(data.results || []);
-        setPage(1);
-      } else {
-        setMovies(prev => [...prev, ...(data.results || [])]);
-      }
+      console.log('Received movies:', data.results?.length || 0);
+      setMovies(data.results || []);
       
-      setTotalPages(data.total_pages || 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch movies');
       console.error('Error fetching movies:', err);
@@ -44,30 +38,16 @@ export const useMovies = (category?: string, searchQuery?: string) => {
     }
   };
 
-  const loadMore = () => {
-    if (page < totalPages && !loading) {
-      setPage(prev => prev + 1);
-    }
-  };
-
   useEffect(() => {
     if (category) {
-      fetchMovies(true);
+      fetchAllMovies();
     }
   }, [category, searchQuery]);
-
-  useEffect(() => {
-    if (page > 1) {
-      fetchMovies(false);
-    }
-  }, [page]);
 
   return {
     movies,
     loading,
     error,
-    loadMore,
-    hasMore: page < totalPages,
-    refetch: () => fetchMovies(true)
+    refetch: fetchAllMovies
   };
 };
