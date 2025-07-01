@@ -3,13 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
-
-interface Movie {
-  id: string;
-  title: string;
-  year: string;
-  genre: string;
-}
+import { Movie } from '@/data/movies';
 
 interface MovieSearchProps {
   theme: string;
