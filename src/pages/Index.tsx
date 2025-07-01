@@ -8,8 +8,9 @@ import MovieSearch from '@/components/MovieSearch';
 import CategorySelection from '@/components/CategorySelection';
 import PickConfirmation from '@/components/PickConfirmation';
 import DraftComplete from '@/components/DraftComplete';
-import SaveDraftButton from '@/components/SaveDraftButton';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDrafts } from '@/hooks/useDrafts';
+import { useToast } from '@/hooks/use-toast';
 
 interface DraftState {
   theme: string;
@@ -29,6 +30,8 @@ const Index = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const { autoSaveDraft } = useDrafts();
+  const { toast } = useToast();
   const draftState = location.state as DraftState;
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,6 +39,7 @@ const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [picks, setPicks] = useState<Pick[]>([]);
   const [currentPickIndex, setCurrentPickIndex] = useState(0);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   
   // Check authentication
   useEffect(() => {
@@ -127,6 +131,35 @@ const Index = () => {
     );
   }, [movies, searchQuery]);
 
+  // Auto-save function
+  const performAutoSave = async (updatedPicks: Pick[], isComplete: boolean) => {
+    if (!user || !draftState) return;
+
+    try {
+      const draftId = await autoSaveDraft({
+        theme: draftState.theme,
+        option: draftState.option,
+        participants: draftState.participants,
+        categories: draftState.categories,
+        picks: updatedPicks,
+        isComplete
+      }, currentDraftId || undefined);
+
+      if (!currentDraftId) {
+        setCurrentDraftId(draftId);
+      }
+
+      console.log('Draft auto-saved successfully');
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+      toast({
+        title: "Auto-save failed",
+        description: "Your draft couldn't be saved automatically. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const handleMovieSelect = (movie: any) => {
     setSelectedMovie(movie);
     setSelectedCategory('');
@@ -136,7 +169,7 @@ const Index = () => {
     setSelectedCategory(category);
   };
 
-  const confirmPick = () => {
+  const confirmPick = async () => {
     if (!selectedMovie || !selectedCategory || !currentPlayer) return;
 
     const newPick: Pick = {
@@ -146,11 +179,25 @@ const Index = () => {
       category: selectedCategory
     };
 
-    setPicks(prev => [...prev, newPick]);
-    setCurrentPickIndex(prev => prev + 1);
+    const updatedPicks = [...picks, newPick];
+    const newPickIndex = currentPickIndex + 1;
+    const isComplete = newPickIndex >= draftOrder.length;
+
+    setPicks(updatedPicks);
+    setCurrentPickIndex(newPickIndex);
     setSelectedMovie(null);
     setSelectedCategory('');
     setSearchQuery('');
+
+    // Auto-save after each pick
+    await performAutoSave(updatedPicks, isComplete);
+
+    if (isComplete) {
+      toast({
+        title: "Draft Complete!",
+        description: "Your draft has been automatically saved.",
+      });
+    }
   };
 
   const isComplete = currentPickIndex >= draftOrder.length;
@@ -177,20 +224,6 @@ const Index = () => {
           currentPlayer={currentPlayer}
           isComplete={isComplete}
         />
-
-        {/* Save Draft Button */}
-        <div className="flex justify-end mb-6">
-          <SaveDraftButton
-            draftData={{
-              theme: draftState.theme,
-              option: draftState.option,
-              participants: draftState.participants,
-              categories: draftState.categories,
-              picks: picks,
-              isComplete: isComplete
-            }}
-          />
-        </div>
 
         <DraftBoard
           players={randomizedPlayers}

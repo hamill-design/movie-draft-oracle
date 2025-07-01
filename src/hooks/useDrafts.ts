@@ -55,6 +55,101 @@ export const useDrafts = () => {
     }
   };
 
+  const autoSaveDraft = async (draftData: {
+    theme: string;
+    option: string;
+    participants: string[];
+    categories: string[];
+    picks: any[];
+    isComplete: boolean;
+  }, existingDraftId?: string) => {
+    if (!user) throw new Error('User not authenticated');
+
+    // Generate a title based on theme and option
+    const title = `${draftData.theme === 'year' ? 'Year' : 'Person'}: ${draftData.option}`;
+
+    if (existingDraftId) {
+      // Update existing draft
+      const { error: draftError } = await supabase
+        .from('drafts')
+        .update({
+          is_complete: draftData.isComplete,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingDraftId);
+
+      if (draftError) throw draftError;
+
+      // Delete existing picks and re-insert them
+      await supabase
+        .from('draft_picks')
+        .delete()
+        .eq('draft_id', existingDraftId);
+
+      if (draftData.picks.length > 0) {
+        const picks = draftData.picks.map((pick, index) => ({
+          draft_id: existingDraftId,
+          player_id: pick.playerId,
+          player_name: pick.playerName,
+          movie_id: pick.movie.id,
+          movie_title: pick.movie.title,
+          movie_year: pick.movie.year,
+          movie_genre: pick.movie.genre,
+          category: pick.category,
+          pick_order: index + 1
+        }));
+
+        const { error: picksError } = await supabase
+          .from('draft_picks')
+          .insert(picks);
+
+        if (picksError) throw picksError;
+      }
+
+      return existingDraftId;
+    } else {
+      // Create new draft
+      const { data: draft, error: draftError } = await supabase
+        .from('drafts')
+        .insert({
+          title,
+          theme: draftData.theme,
+          option: draftData.option,
+          participants: draftData.participants,
+          categories: draftData.categories,
+          is_complete: draftData.isComplete,
+          user_id: user.id
+        })
+        .select()
+        .single();
+
+      if (draftError) throw draftError;
+
+      // Save picks if any exist
+      if (draftData.picks.length > 0) {
+        const picks = draftData.picks.map((pick, index) => ({
+          draft_id: draft.id,
+          player_id: pick.playerId,
+          player_name: pick.playerName,
+          movie_id: pick.movie.id,
+          movie_title: pick.movie.title,
+          movie_year: pick.movie.year,
+          movie_genre: pick.movie.genre,
+          category: pick.category,
+          pick_order: index + 1
+        }));
+
+        const { error: picksError } = await supabase
+          .from('draft_picks')
+          .insert(picks);
+
+        if (picksError) throw picksError;
+      }
+
+      return draft.id;
+    }
+  };
+
   const saveDraft = async (draftData: {
     title: string;
     theme: string;
@@ -135,6 +230,7 @@ export const useDrafts = () => {
     loading,
     error,
     saveDraft,
+    autoSaveDraft,
     getDraftWithPicks,
     refetch: fetchDrafts
   };
