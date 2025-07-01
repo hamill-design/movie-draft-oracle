@@ -16,14 +16,11 @@ const Home = () => {
   const [participants, setParticipants] = useState<string[]>([]);
   const [newParticipant, setNewParticipant] = useState('');
 
-  // Determine search category based on theme
-  const getSearchCategory = () => {
-    if (theme === 'people') return 'person_search';
-    if (theme === 'year') return 'search';
-    return '';
-  };
-
-  const { movies, loading } = useMovies(getSearchCategory(), searchQuery);
+  // Only search for people when theme is 'people'
+  const { movies, loading } = useMovies(
+    theme === 'people' ? 'person_search' : '', 
+    theme === 'people' ? searchQuery : ''
+  );
 
   const handleAddParticipant = () => {
     if (newParticipant.trim() && !participants.includes(newParticipant.trim())) {
@@ -54,7 +51,16 @@ const Home = () => {
     setSearchQuery('');
   };
 
-  const shouldShowResults = searchQuery.trim().length > 0;
+  // For year theme, allow direct input
+  const handleYearInput = (value: string) => {
+    setSearchQuery(value);
+    // Auto-select year if it's a valid 4-digit year
+    if (/^\d{4}$/.test(value)) {
+      setSelectedOption(value);
+    }
+  };
+
+  const shouldShowResults = theme === 'people' && searchQuery.trim().length > 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
@@ -119,7 +125,7 @@ const Home = () => {
               <CardContent className="pt-6">
                 <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                   <Search className="text-yellow-400" />
-                  {theme === 'people' ? 'Search for a Person' : 'Search for Movies by Year'}
+                  {theme === 'people' ? 'Search for a Person' : 'Enter a Year'}
                 </h3>
                 <Input
                   placeholder={
@@ -128,7 +134,13 @@ const Home = () => {
                       : 'Enter a year (e.g., 2020)...'
                   }
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    if (theme === 'year') {
+                      handleYearInput(e.target.value);
+                    } else {
+                      setSearchQuery(e.target.value);
+                    }
+                  }}
                   className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 mb-4"
                 />
                 
@@ -145,9 +157,7 @@ const Home = () => {
                     {loading ? (
                       <div className="text-gray-400">Searching...</div>
                     ) : movies.length === 0 ? (
-                      <div className="text-gray-400">
-                        No {theme === 'people' ? 'people' : 'results'} found
-                      </div>
+                      <div className="text-gray-400">No people found</div>
                     ) : (
                       movies.slice(0, 10).map((item) => (
                         <div
@@ -160,16 +170,9 @@ const Home = () => {
                           }`}
                         >
                           <div className="font-medium">{item.title}</div>
-                          {theme === 'people' && (
-                            <div className="text-sm opacity-75">
-                              {item.genre} • {item.description}
-                            </div>
-                          )}
-                          {theme === 'year' && (
-                            <div className="text-sm opacity-75">
-                              {item.year} • {item.genre}
-                            </div>
-                          )}
+                          <div className="text-sm opacity-75">
+                            {item.genre} • {item.description}
+                          </div>
                         </div>
                       ))
                     )}
