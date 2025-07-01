@@ -62,7 +62,11 @@ const Index = () => {
 
       setLoadingExistingDraft(true);
       try {
+        console.log('Loading existing draft:', draftState.existingDraftId);
         const { draft, picks: existingPicks } = await getDraftWithPicks(draftState.existingDraftId);
+        
+        console.log('Draft loaded:', draft);
+        console.log('Picks loaded:', existingPicks);
         
         if (existingPicks && existingPicks.length > 0) {
           // Convert database picks to our Pick format
@@ -78,23 +82,24 @@ const Index = () => {
             category: pick.category
           }));
           
+          console.log('Converted picks:', convertedPicks);
           setPicks(convertedPicks);
           setCurrentPickIndex(convertedPicks.length);
         }
       } catch (error) {
         console.error('Error loading existing draft:', error);
-        toast({
-          title: "Error loading draft",
-          description: "Could not load the existing draft data.",
-          variant: "destructive"
-        });
+        // Don't show error toast for network issues, just log and continue
+        // The user can still use the draft interface normally
+        console.log('Continuing with new draft due to loading error');
       } finally {
         setLoadingExistingDraft(false);
       }
     };
 
-    loadExistingDraft();
-  }, [draftState?.existingDraftId, user, getDraftWithPicks, toast]);
+    if (draftState?.existingDraftId) {
+      loadExistingDraft();
+    }
+  }, [draftState?.existingDraftId, user, getDraftWithPicks]);
 
   // Randomize player order and create snake draft order
   const randomizedPlayers = useMemo(() => {

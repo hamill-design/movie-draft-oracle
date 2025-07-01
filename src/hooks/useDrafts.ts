@@ -202,23 +202,40 @@ export const useDrafts = () => {
   };
 
   const getDraftWithPicks = async (draftId: string) => {
-    const { data: draft, error: draftError } = await supabase
-      .from('drafts')
-      .select('*')
-      .eq('id', draftId)
-      .single();
+    try {
+      console.log('Fetching draft with ID:', draftId);
+      
+      const { data: draft, error: draftError } = await supabase
+        .from('drafts')
+        .select('*')
+        .eq('id', draftId)
+        .single();
 
-    if (draftError) throw draftError;
+      if (draftError) {
+        console.error('Draft fetch error:', draftError);
+        throw draftError;
+      }
 
-    const { data: picks, error: picksError } = await supabase
-      .from('draft_picks')
-      .select('*')
-      .eq('draft_id', draftId)
-      .order('pick_order');
+      console.log('Draft fetched successfully:', draft);
 
-    if (picksError) throw picksError;
+      const { data: picks, error: picksError } = await supabase
+        .from('draft_picks')
+        .select('*')
+        .eq('draft_id', draftId)
+        .order('pick_order');
 
-    return { draft, picks };
+      if (picksError) {
+        console.error('Picks fetch error:', picksError);
+        throw picksError;
+      }
+
+      console.log('Picks fetched successfully:', picks);
+
+      return { draft, picks };
+    } catch (error) {
+      console.error('Error in getDraftWithPicks:', error);
+      throw error;
+    }
   };
 
   useEffect(() => {
