@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Calendar, Users, Trophy } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useDrafts } from '@/hooks/useDrafts';
+import { useDrafts, DraftPick } from '@/hooks/useDrafts';
 
 interface LocationState {
   draftId: string;
@@ -17,7 +17,7 @@ const DraftResults = () => {
   const { user, loading } = useAuth();
   const { getDraftWithPicks } = useDrafts();
   const [draft, setDraft] = useState<any>(null);
-  const [picks, setPicks] = useState<any[]>([]);
+  const [picks, setPicks] = useState<DraftPick[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   const state = location.state as LocationState;
@@ -70,7 +70,7 @@ const DraftResults = () => {
     }
     acc[pick.player_name].push(pick);
     return acc;
-  }, {} as Record<string, any[]>);
+  }, {} as Record<string, DraftPick[]>);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
