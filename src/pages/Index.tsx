@@ -67,15 +67,19 @@ const Index = () => {
 
   const currentPlayer = draftOrder[currentPickIndex];
   
-  // Determine search category and query based on theme
+  // Determine search category and actual query based on theme and user input
   const getSearchParams = () => {
+    if (!searchQuery.trim()) {
+      return { category: '', query: '' }; // Don't search if no user input
+    }
+
     if (draftState?.theme === 'year') {
       return {
         category: 'year',
-        query: draftState.option
+        query: draftState.option // Use the year from draft setup
       };
     } else {
-      // For person theme (actor/director)
+      // For person theme (actor/director), use the person name from draft setup
       return {
         category: 'person',
         query: draftState.option
@@ -84,9 +88,7 @@ const Index = () => {
   };
 
   const searchParams = getSearchParams();
-  const finalSearchQuery = searchQuery || searchParams.query;
-  
-  const { movies, loading } = useMovies(searchParams.category, finalSearchQuery);
+  const { movies, loading } = useMovies(searchParams.category, searchParams.query);
 
   useEffect(() => {
     if (!draftState) {

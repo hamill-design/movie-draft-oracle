@@ -26,30 +26,41 @@ const MovieSearch = ({
   selectedMovie,
   onMovieSelect
 }: MovieSearchProps) => {
-  const searchTerm = searchQuery || option;
+  const getPlaceholderText = () => {
+    if (theme === 'year') {
+      return `Search for movies from ${option}...`;
+    } else {
+      return `Search for movies with ${option}...`;
+    }
+  };
+
+  const shouldShowResults = searchQuery.trim().length > 0;
 
   return (
     <Card className="bg-gray-800 border-gray-600">
       <CardHeader>
         <CardTitle className="text-white flex items-center gap-2">
           <Search className="text-yellow-400" size={24} />
-          Search {theme === 'year' ? 'Movies' : 'Movies/Shows'}
+          Search Movies
+          {theme === 'year' ? ` from ${option}` : ` featuring ${option}`}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Input
-          placeholder={`Search for ${theme === 'year' ? 'movies from ' + option : 'movies with ' + option}...`}
+          placeholder={getPlaceholderText()}
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
           className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
         />
         
-        {searchTerm && (
+        {shouldShowResults && (
           <div className="mt-4 max-h-60 overflow-y-auto space-y-2">
             {loading ? (
               <div className="text-gray-400">Searching...</div>
             ) : movies.length === 0 ? (
-              <div className="text-gray-400">No results found</div>
+              <div className="text-gray-400">
+                No movies found {theme === 'year' ? `from ${option}` : `featuring ${option}`}
+              </div>
             ) : (
               movies.slice(0, 10).map((movie) => (
                 <div
@@ -63,7 +74,7 @@ const MovieSearch = ({
                 >
                   <div className="font-medium">{movie.title}</div>
                   <div className="text-sm opacity-75">
-                    {theme === 'year' ? `${movie.year} • ${movie.genre}` : movie.genre}
+                    {movie.year} • {movie.genre}
                   </div>
                 </div>
               ))
