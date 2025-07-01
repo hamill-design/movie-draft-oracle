@@ -1,4 +1,3 @@
-
 export interface Movie {
   id: number;
   title: string;
@@ -16,8 +15,15 @@ export interface Movie {
     direction: number;
     overall: number;
   };
+  // Additional TMDB fields
+  tmdbId?: number;
+  posterPath?: string;
+  backdropPath?: string;
+  voteAverage?: number;
+  releaseDate?: string;
 }
 
+// Keep the original movies as fallback/demo data
 export const moviesDatabase: Movie[] = [
   {
     id: 1,
@@ -86,3 +92,22 @@ export const moviesDatabase: Movie[] = [
     isDrafted: false
   }
 ];
+
+// Hook to fetch movies from TMDB
+export const useMovieSearch = () => {
+  const fetchMovies = async (category: string, searchQuery?: string, page: number = 1) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('fetch-movies', {
+        body: { category, searchQuery, page }
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching movies:', error);
+      throw error;
+    }
+  };
+
+  return { fetchMovies };
+};
