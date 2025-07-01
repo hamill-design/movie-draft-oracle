@@ -8,6 +8,7 @@ import MovieSearch from '@/components/MovieSearch';
 import CategorySelection from '@/components/CategorySelection';
 import PickConfirmation from '@/components/PickConfirmation';
 import DraftComplete from '@/components/DraftComplete';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DraftState {
   theme: string;
@@ -26,6 +27,7 @@ interface Pick {
 const Index = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const draftState = location.state as DraftState;
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,6 +36,19 @@ const Index = () => {
   const [picks, setPicks] = useState<Pick[]>([]);
   const [currentPickIndex, setCurrentPickIndex] = useState(0);
   
+  // Check authentication
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!draftState) {
+      navigate('/');
+    }
+  }, [draftState, navigate]);
+
   // Randomize player order and create snake draft order
   const randomizedPlayers = useMemo(() => {
     if (!draftState?.participants) return [];
@@ -97,7 +112,7 @@ const Index = () => {
   console.log('Draft search params:', searchParams, 'for query:', searchQuery);
   
   // Only search when we have valid search parameters
-  const { movies, loading } = useMovies(
+  const { movies, loading: moviesLoading } = useMovies(
     searchParams.category, 
     searchParams.query
   );
@@ -110,14 +125,6 @@ const Index = () => {
       movie.title.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [movies, searchQuery]);
-
-  useEffect(() => {
-    if (!draftState) {
-      navigate('/');
-    }
-  }, [draftState, navigate]);
-
-  if (!draftState) return null;
 
   const handleMovieSelect = (movie: any) => {
     setSelectedMovie(movie);
@@ -147,6 +154,20 @@ const Index = () => {
 
   const isComplete = currentPickIndex >= draftOrder.length;
 
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (redirect will happen)
+  if (!user || !draftState) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       <div className="container mx-auto px-4 py-8">
@@ -171,7 +192,7 @@ const Index = () => {
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               movies={filteredMovies}
-              loading={loading}
+              loading={moviesLoading}
               selectedMovie={selectedMovie}
               onMovieSelect={handleMovieSelect}
             />

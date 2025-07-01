@@ -5,19 +5,28 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Users, Calendar, Film, Search } from 'lucide-react';
+import { Trash2, Users, Calendar, Film, Search, LogOut } from 'lucide-react';
 import { useMovies } from '@/hooks/useMovies';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Home = () => {
   const navigate = useNavigate();
+  const { user, loading, signOut } = useAuth();
   const [theme, setTheme] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOption, setSelectedOption] = useState('');
   const [participants, setParticipants] = useState<string[]>([]);
   const [newParticipant, setNewParticipant] = useState('');
 
+  // Redirect to auth if not logged in
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
+
   // Only search for people when theme is 'people'
-  const { movies, loading } = useMovies(
+  const { movies, loading: moviesLoading } = useMovies(
     theme === 'people' ? 'person_search' : '', 
     theme === 'people' ? searchQuery : ''
   );
@@ -67,18 +76,48 @@ const Home = () => {
     setSelectedOption(year);
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
   const shouldShowResults = theme === 'people' && searchQuery.trim().length > 0;
+
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (redirect will happen)
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
       <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-white mb-4">
-            🎬 Movie Draft Generator
-          </h1>
-          <p className="text-xl text-gray-300">
-            Create epic movie drafts with your friends
-          </p>
+        {/* Header with logout */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="text-center flex-1">
+            <h1 className="text-5xl font-bold text-white mb-4">
+              🎬 Movie Draft Generator
+            </h1>
+            <p className="text-xl text-gray-300">
+              Create epic movie drafts with your friends
+            </p>
+          </div>
+          <Button
+            onClick={handleSignOut}
+            variant="outline"
+            className="border-gray-600 text-gray-300 hover:bg-gray-700"
+          >
+            <LogOut size={16} className="mr-2" />
+            Logout
+          </Button>
         </div>
 
         <div className="max-w-4xl mx-auto space-y-8">
@@ -154,7 +193,7 @@ const Home = () => {
 
                     {shouldShowResults && (
                       <div className="max-h-60 overflow-y-auto space-y-2">
-                        {loading ? (
+                        {moviesLoading ? (
                           <div className="text-gray-400">Searching...</div>
                         ) : movies.length === 0 ? (
                           <div className="text-gray-400">No people found</div>

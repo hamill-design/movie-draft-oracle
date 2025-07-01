@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
@@ -9,6 +9,7 @@ import DraftInfo from '@/components/DraftInfo';
 import ParticipantsForm from '@/components/ParticipantsForm';
 import CategoriesForm from '@/components/CategoriesForm';
 import { useDraftCategories } from '@/hooks/useDraftCategories';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DraftSetupForm {
   participants: string[];
@@ -25,7 +26,15 @@ interface DraftState {
 const DraftSetup = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
   const draftState = location.state as DraftState;
+  
+  // Check authentication
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [user, loading, navigate]);
   
   // If no draft state, redirect to home
   if (!draftState) {
@@ -59,6 +68,20 @@ const DraftSetup = () => {
       } 
     });
   };
+
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (redirect will happen)
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
