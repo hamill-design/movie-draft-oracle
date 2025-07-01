@@ -21,9 +21,13 @@ interface DraftBoardProps {
   categories: string[];
   picks: Pick[];
   theme: string;
+  currentPlayer?: {
+    id: number;
+    name: string;
+  };
 }
 
-const DraftBoard = ({ players, categories, picks, theme }: DraftBoardProps) => {
+const DraftBoard = ({ players, categories, picks, theme, currentPlayer }: DraftBoardProps) => {
   return (
     <Card className="bg-gray-800 border-gray-600 mb-6">
       <CardHeader>
@@ -43,33 +47,42 @@ const DraftBoard = ({ players, categories, picks, theme }: DraftBoardProps) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {players.map((player) => (
-                <TableRow key={player.id}>
-                  <TableCell className="text-white font-medium">
-                    <div className="flex items-center gap-2">
-                      <User size={16} />
-                      {player.name}
-                    </div>
-                  </TableCell>
-                  {categories.map((category) => {
-                    const pick = picks.find(p => p.playerId === player.id && p.category === category);
-                    return (
-                      <TableCell key={category} className="text-center">
-                        {pick ? (
-                          <div className="text-xs">
-                            <div className="text-white font-medium truncate">{pick.movie.title}</div>
-                            <div className="text-gray-400">
-                              {theme === 'year' ? pick.movie.year : pick.movie.genre}
+              {players.map((player) => {
+                const isCurrentPlayer = currentPlayer && currentPlayer.id === player.id;
+                return (
+                  <TableRow 
+                    key={player.id}
+                    className={isCurrentPlayer ? "bg-yellow-400/20 border-yellow-400/50" : ""}
+                  >
+                    <TableCell className={`font-medium ${isCurrentPlayer ? 'text-yellow-400 font-bold' : 'text-white'}`}>
+                      <div className="flex items-center gap-2">
+                        <User 
+                          size={16} 
+                          className={isCurrentPlayer ? 'text-yellow-400' : ''} 
+                        />
+                        {player.name}
+                      </div>
+                    </TableCell>
+                    {categories.map((category) => {
+                      const pick = picks.find(p => p.playerId === player.id && p.category === category);
+                      return (
+                        <TableCell key={category} className="text-center">
+                          {pick ? (
+                            <div className="text-xs">
+                              <div className="text-white font-medium truncate">{pick.movie.title}</div>
+                              <div className="text-gray-400">
+                                {theme === 'year' ? pick.movie.year : pick.movie.genre}
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          <div className="text-gray-600">-</div>
-                        )}
-                      </TableCell>
-                    );
-                  })}
-                </TableRow>
-              ))}
+                          ) : (
+                            <div className="text-gray-600">-</div>
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>
