@@ -51,7 +51,8 @@ const Home = () => {
       state: {
         theme,
         option: selectedOption,
-        participants
+        participants,
+        draftSize: participants.length
       }
     });
   };

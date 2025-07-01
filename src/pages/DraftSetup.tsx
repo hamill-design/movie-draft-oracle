@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import { ArrowLeft } from 'lucide-react';
@@ -15,17 +15,29 @@ interface DraftSetupForm {
   categories: string[];
 }
 
+interface DraftState {
+  theme: string;
+  option: string;
+  participants: string[];
+  draftSize: number;
+}
+
 const DraftSetup = () => {
-  const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
+  const draftState = location.state as DraftState;
   
-  const theme = searchParams.get('theme');
-  const option = searchParams.get('option');
-  const draftSize = parseInt(searchParams.get('draftSize') || '4');
+  // If no draft state, redirect to home
+  if (!draftState) {
+    navigate('/');
+    return null;
+  }
+
+  const { theme, option, participants, draftSize } = draftState;
 
   const form = useForm<DraftSetupForm>({
     defaultValues: {
-      participants: Array(draftSize).fill(''),
+      participants: participants || Array(draftSize).fill(''),
       categories: []
     }
   });
@@ -47,11 +59,6 @@ const DraftSetup = () => {
       } 
     });
   };
-
-  if (!theme || !option) {
-    navigate('/');
-    return null;
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
