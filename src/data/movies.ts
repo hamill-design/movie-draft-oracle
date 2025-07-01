@@ -1,3 +1,6 @@
+
+import { supabase } from '@/integrations/supabase/client';
+
 export interface Movie {
   id: number;
   title: string;
