@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -201,7 +200,7 @@ export const useDrafts = () => {
     return draft;
   };
 
-  const getDraftWithPicks = async (draftId: string) => {
+  const getDraftWithPicks = useCallback(async (draftId: string) => {
     try {
       console.log('Fetching draft with ID:', draftId);
       
@@ -236,7 +235,7 @@ export const useDrafts = () => {
       console.error('Error in getDraftWithPicks:', error);
       throw error;
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchDrafts();

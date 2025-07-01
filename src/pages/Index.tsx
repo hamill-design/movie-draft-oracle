@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
+
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useMovies } from '@/hooks/useMovies';
 import DraftHeader from '@/components/DraftHeader';
@@ -33,6 +34,7 @@ const Index = () => {
   const { autoSaveDraft, getDraftWithPicks } = useDrafts();
   const { toast } = useToast();
   const draftState = location.state as DraftState;
+  const hasLoadedDraft = useRef(false);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
@@ -58,9 +60,11 @@ const Index = () => {
   // Load existing draft data if editing an existing draft
   useEffect(() => {
     const loadExistingDraft = async () => {
-      if (!draftState?.existingDraftId || !user) return;
+      if (!draftState?.existingDraftId || !user || hasLoadedDraft.current) return;
 
+      hasLoadedDraft.current = true;
       setLoadingExistingDraft(true);
+      
       try {
         console.log('Loading existing draft:', draftState.existingDraftId);
         const { draft, picks: existingPicks } = await getDraftWithPicks(draftState.existingDraftId);
@@ -96,7 +100,7 @@ const Index = () => {
       }
     };
 
-    if (draftState?.existingDraftId) {
+    if (draftState?.existingDraftId && user && !hasLoadedDraft.current) {
       loadExistingDraft();
     }
   }, [draftState?.existingDraftId, user, getDraftWithPicks]);
