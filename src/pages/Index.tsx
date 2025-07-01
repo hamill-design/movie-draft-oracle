@@ -67,7 +67,7 @@ const Index = () => {
 
   const currentPlayer = draftOrder[currentPickIndex];
   
-  // Determine search category and actual query based on theme and user input
+  // For the draft page, we always search for movies filtered by the theme
   const getSearchParams = () => {
     if (!searchQuery.trim()) {
       return { category: '', query: '' }; // Don't search if no user input
@@ -76,15 +76,16 @@ const Index = () => {
     if (draftState?.theme === 'year') {
       return {
         category: 'year',
-        query: draftState.option // Use the year from draft setup
+        query: draftState.option // Filter movies by the selected year
       };
-    } else {
-      // For person theme (actor/director), use the person name from draft setup
+    } else if (draftState?.theme === 'people') {
       return {
         category: 'person',
-        query: draftState.option
+        query: draftState.option // Filter movies by the selected person
       };
     }
+    
+    return { category: '', query: '' };
   };
 
   const searchParams = getSearchParams();

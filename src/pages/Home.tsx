@@ -16,9 +16,9 @@ const Home = () => {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
 
-  // Use the movies hook for fetching people when needed
+  // Use the movies hook for fetching people when "people" theme is selected
   const { movies: searchResults, loading: searchLoading } = useMovies(
-    selectedTheme === 'people' ? 'person' : undefined,
+    selectedTheme === 'people' && searchTerm.trim().length > 0 ? 'person' : undefined,
     searchTerm
   );
 
