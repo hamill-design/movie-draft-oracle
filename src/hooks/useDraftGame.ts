@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 
 interface Player {
   id: number;
@@ -16,13 +16,23 @@ interface Pick {
 export const useDraftGame = (participants: string[], categories: string[]) => {
   const [picks, setPicks] = useState<Pick[]>([]);
   const [currentPickIndex, setCurrentPickIndex] = useState(0);
+  const [initialPlayerOrder, setInitialPlayerOrder] = useState<Player[]>([]);
 
-  // Randomize player order and create snake draft order
+  // Create stable randomized players - only randomize once or use existing order
   const randomizedPlayers = useMemo(() => {
+    if (initialPlayerOrder.length > 0) {
+      // Use existing order if we have one
+      return initialPlayerOrder;
+    }
+    
     if (!participants) return [];
+    
+    // Create new randomized order
     const shuffled = [...participants].sort(() => Math.random() - 0.5);
-    return shuffled.map((name, index) => ({ id: index, name }));
-  }, [participants]);
+    const newOrder = shuffled.map((name, index) => ({ id: index, name }));
+    setInitialPlayerOrder(newOrder);
+    return newOrder;
+  }, [participants, initialPlayerOrder]);
 
   // Create snake draft order (1,2,3,4,4,3,2,1,1,2,3,4...)
   const draftOrder = useMemo(() => {
@@ -59,10 +69,22 @@ export const useDraftGame = (participants: string[], categories: string[]) => {
     return updatedPicks;
   };
 
-  const loadExistingPicks = (existingPicks: any[]) => {
+  const loadExistingPicks = useCallback((existingPicks: any[]) => {
     if (existingPicks && existingPicks.length > 0) {
+      // Extract player order from existing picks to maintain consistency
+      const playerNames = new Set<string>();
+      existingPicks.forEach(pick => playerNames.add(pick.player_name));
+      
+      // Create player order based on the saved picks
+      const savedPlayerOrder = Array.from(playerNames).map((name, index) => ({
+        id: index,
+        name
+      }));
+      
+      setInitialPlayerOrder(savedPlayerOrder);
+      
       const convertedPicks: Pick[] = existingPicks.map((pick) => ({
-        playerId: pick.player_id,
+        playerId: savedPlayerOrder.find(p => p.name === pick.player_name)?.id || 0,
         playerName: pick.player_name,
         movie: {
           id: pick.movie_id,
@@ -76,7 +98,7 @@ export const useDraftGame = (participants: string[], categories: string[]) => {
       setPicks(convertedPicks);
       setCurrentPickIndex(convertedPicks.length);
     }
-  };
+  }, []);
 
   return {
     picks,
