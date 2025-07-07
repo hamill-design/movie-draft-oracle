@@ -8,6 +8,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import Home from "./pages/Home";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import DraftSetup from "./pages/DraftSetup";
 import Profile from "./pages/Profile";
 import DraftResults from "./pages/DraftResults";
@@ -25,6 +26,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/draft-setup" element={<DraftSetup />} />
             <Route path="/draft" element={<Index />} />
             <Route path="/profile" element={<Profile />} />
