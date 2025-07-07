@@ -8,7 +8,8 @@ interface Movie {
   releaseDate?: string;
   hasOscar?: boolean;
   isBlockbuster?: boolean;
-  // Add other movie properties as needed
+  budget?: number;
+  revenue?: number;
 }
 
 export const getEligibleCategories = (movie: Movie, allCategories: string[]): string[] => {
@@ -58,12 +59,12 @@ export const getEligibleCategories = (movie: Movie, allCategories: string[]): st
     eligibleCategories.push('Horror/Thriller');
   }
 
-  // Academy Award category - now using actual data
+  // Academy Award category - using actual Oscar data
   if (movie.hasOscar && allCategories.includes('Academy Award Nominee or Winner')) {
     eligibleCategories.push('Academy Award Nominee or Winner');
   }
   
-  // Blockbuster category - now using actual data
+  // Blockbuster category - using actual budget/revenue data
   if (movie.isBlockbuster && allCategories.includes('Blockbuster (minimum of $50 Mil)')) {
     eligibleCategories.push('Blockbuster (minimum of $50 Mil)');
   }

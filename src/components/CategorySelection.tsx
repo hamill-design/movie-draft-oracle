@@ -33,6 +33,18 @@ const CategorySelection = ({
   // Get eligible categories for the selected movie
   const eligibleCategories = getEligibleCategories(selectedMovie, categories);
 
+  const getCategoryTooltip = (category: string) => {
+    if (category === 'Academy Award Nominee or Winner' && selectedMovie.hasOscar) {
+      return `This movie is eligible based on high ratings (${selectedMovie.voteAverage?.toFixed(1)}/10) and prestigious genre`;
+    }
+    if (category === 'Blockbuster (minimum of $50 Mil)' && selectedMovie.isBlockbuster) {
+      const budget = selectedMovie.budget ? `$${(selectedMovie.budget / 1000000).toFixed(0)}M budget` : '';
+      const revenue = selectedMovie.revenue ? `$${(selectedMovie.revenue / 1000000).toFixed(0)}M revenue` : '';
+      return `This movie is eligible: ${budget}${budget && revenue ? ', ' : ''}${revenue}`;
+    }
+    return '';
+  };
+
   return (
     <Card className="bg-gray-800 border-gray-600">
       <CardHeader>
@@ -40,9 +52,18 @@ const CategorySelection = ({
           Select Category for "{selectedMovie.title}"
         </CardTitle>
         {eligibleCategories.length > 0 && (
-          <p className="text-gray-400 text-sm">
-            Based on this movie's properties, you can select from {eligibleCategories.length} eligible categories.
-          </p>
+          <div className="text-gray-400 text-sm space-y-1">
+            <p>Based on this movie's properties, you can select from {eligibleCategories.length} eligible categories.</p>
+            {selectedMovie.hasOscar && (
+              <p className="text-green-400">🏆 Eligible for Academy Award category (Rating: {selectedMovie.voteAverage?.toFixed(1)}/10)</p>
+            )}
+            {selectedMovie.isBlockbuster && (
+              <p className="text-yellow-400">💰 Eligible for Blockbuster category 
+                {selectedMovie.budget > 0 && ` (Budget: $${(selectedMovie.budget / 1000000).toFixed(0)}M)`}
+                {selectedMovie.revenue > 0 && ` (Revenue: $${(selectedMovie.revenue / 1000000).toFixed(0)}M)`}
+              </p>
+            )}
+          </div>
         )}
       </CardHeader>
       <CardContent>
@@ -58,7 +79,7 @@ const CategorySelection = ({
                 onClick={() => onCategorySelect(category)}
                 disabled={isDisabled}
                 variant={selectedCategory === category ? "default" : "outline"}
-                className={`h-auto p-3 text-sm ${
+                className={`h-auto p-3 text-sm relative ${
                   selectedCategory === category
                     ? "bg-yellow-400 text-black hover:bg-yellow-500"
                     : isDisabled
@@ -67,10 +88,17 @@ const CategorySelection = ({
                     ? "border-gray-600 text-gray-300 hover:bg-gray-700"
                     : "border-red-600 text-red-400 opacity-50 cursor-not-allowed"
                 }`}
+                title={getCategoryTooltip(category)}
               >
                 {category}
                 {isAlreadyPicked && <span className="ml-2">✓</span>}
                 {!isEligible && !isAlreadyPicked && <span className="ml-2">✗</span>}
+                {category === 'Academy Award Nominee or Winner' && selectedMovie.hasOscar && (
+                  <span className="absolute -top-1 -right-1 text-xs">🏆</span>
+                )}
+                {category === 'Blockbuster (minimum of $50 Mil)' && selectedMovie.isBlockbuster && (
+                  <span className="absolute -top-1 -right-1 text-xs">💰</span>
+                )}
               </Button>
             );
           })}

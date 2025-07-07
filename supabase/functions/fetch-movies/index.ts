@@ -185,22 +185,61 @@ serve(async (req) => {
 
     console.log('TMDB API response:', data);
 
-    // Transform movie data
-    const transformedMovies = (data.results || []).map((movie: any) => ({
-      id: movie.id,
-      title: movie.title,
-      year: movie.release_date ? new Date(movie.release_date).getFullYear() : 0,
-      genre: movie.genre_ids?.[0] ? getGenreName(movie.genre_ids[0]) : 'Unknown',
-      director: 'Unknown',
-      runtime: movie.runtime || 120,
-      poster: getMovieEmoji(movie.genre_ids?.[0]),
-      description: movie.overview || 'No description available',
-      isDrafted: false,
-      tmdbId: movie.id,
-      posterPath: movie.poster_path,
-      backdropPath: movie.backdrop_path,
-      voteAverage: movie.vote_average,
-      releaseDate: movie.release_date
+    // Enhanced movie data transformation with detailed information
+    const transformedMovies = await Promise.all((data.results || []).map(async (movie: any) => {
+      // Fetch detailed movie information including budget, revenue, and awards
+      let detailedMovie = movie;
+      let hasOscar = false;
+      let isBlockbuster = false;
+      
+      try {
+        // Get detailed movie information
+        const detailResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${tmdbApiKey}&append_to_response=credits,awards`);
+        if (detailResponse.ok) {
+          detailedMovie = await detailResponse.json();
+          
+          // Check if it's a blockbuster (budget >= $50M or revenue >= $100M)
+          const budget = detailedMovie.budget || 0;
+          const revenue = detailedMovie.revenue || 0;
+          isBlockbuster = budget >= 50000000 || revenue >= 100000000;
+          
+          // Check for Oscar nominations/wins using keywords and genres
+          // This is a simplified check - in a real implementation you'd want to use
+          // a more comprehensive awards database
+          const keywords = detailedMovie.keywords?.keywords || [];
+          const isHighRated = detailedMovie.vote_average >= 7.5 && detailedMovie.vote_count >= 1000;
+          const isDrama = detailedMovie.genres?.some((g: any) => g.name === 'Drama');
+          const isPrestigiousGenre = detailedMovie.genres?.some((g: any) => 
+            ['Drama', 'Biography', 'History', 'War'].includes(g.name)
+          );
+          
+          // Heuristic for Oscar potential (this is simplified)
+          hasOscar = isHighRated && (isDrama || isPrestigiousGenre) && detailedMovie.vote_count >= 2000;
+        }
+      } catch (error) {
+        console.log(`Could not fetch detailed info for movie ${movie.id}:`, error);
+      }
+
+      return {
+        id: movie.id,
+        title: movie.title,
+        year: movie.release_date ? new Date(movie.release_date).getFullYear() : 0,
+        genre: movie.genre_ids?.[0] ? getGenreName(movie.genre_ids[0]) : 'Unknown',
+        director: 'Unknown',
+        runtime: detailedMovie.runtime || 120,
+        poster: getMovieEmoji(movie.genre_ids?.[0]),
+        description: movie.overview || 'No description available',
+        isDrafted: false,
+        tmdbId: movie.id,
+        posterPath: movie.poster_path,
+        backdropPath: movie.backdrop_path,
+        voteAverage: movie.vote_average,
+        releaseDate: movie.release_date,
+        budget: detailedMovie.budget || 0,
+        revenue: detailedMovie.revenue || 0,
+        hasOscar,
+        isBlockbuster
+      };
     }));
 
     console.log('Returning transformed movies:', transformedMovies.length);
