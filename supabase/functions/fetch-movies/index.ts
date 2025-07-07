@@ -61,10 +61,6 @@ serve(async (req) => {
           });
         }
         break;
-      case 'person_search':
-        baseUrl = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`;
-        url = `${baseUrl}&page=${page}`;
-        break;
       default:
         baseUrl = `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`;
         url = `${baseUrl}&page=${page}`;
@@ -74,11 +70,11 @@ serve(async (req) => {
 
     let data;
     
-    if (fetchAll && category !== 'person_search') {
-      // Fetch multiple pages for better results
+    if (fetchAll) {
+      // Fetch multiple pages for better results - increased from 3 to 10 pages
       const allResults = [];
       let currentPage = 1;
-      const maxPages = 3; // Limit to prevent timeout
+      const maxPages = 10; // Increased to get more comprehensive results
       
       while (currentPage <= maxPages) {
         const pageUrl = `${baseUrl}&page=${currentPage}`;
@@ -91,7 +87,8 @@ serve(async (req) => {
           allResults.push(...pageData.results);
         }
         
-        if (currentPage >= (pageData.total_pages || 1) || allResults.length >= 100) {
+        // Stop if we've reached the last page or hit our result limit
+        if (currentPage >= (pageData.total_pages || 1) || allResults.length >= 200) {
           break;
         }
         
@@ -110,36 +107,6 @@ serve(async (req) => {
     }
 
     console.log('TMDB API response:', data);
-
-    // Handle person search separately
-    if (category === 'person_search') {
-      const transformedPeople = data.results?.map((person: any) => ({
-        id: person.id,
-        title: person.name,
-        year: 0,
-        genre: person.known_for_department || 'Unknown',
-        director: 'N/A',
-        runtime: 0,
-        poster: getPersonEmoji(person.known_for_department),
-        description: `Known for: ${person.known_for?.map((item: any) => item.title || item.name).join(', ') || 'Various works'}`,
-        isDrafted: false,
-        tmdbId: person.id,
-        posterPath: person.profile_path,
-        backdropPath: null,
-        voteAverage: person.popularity,
-        releaseDate: null,
-        knownForDepartment: person.known_for_department
-      })) || [];
-
-      return new Response(JSON.stringify({
-        results: transformedPeople,
-        total_pages: data.total_pages,
-        total_results: data.total_results,
-        page: data.page
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
 
     // Transform movie data
     const transformedMovies = (data.results || []).map((movie: any) => ({
@@ -228,21 +195,4 @@ function getMovieEmoji(genreId: number): string {
     37: '🤠'  // Western
   };
   return emojiMap[genreId] || '🎬';
-}
-
-// Helper function to get person emoji based on department
-function getPersonEmoji(department: string): string {
-  const emojiMap: { [key: string]: string } = {
-    'Acting': '🎭',
-    'Directing': '🎬',
-    'Writing': '✍️',
-    'Production': '🎞️',
-    'Camera': '📷',
-    'Editing': '✂️',
-    'Sound': '🔊',
-    'Art': '🎨',
-    'Costume & Make-Up': '👗',
-    'Visual Effects': '✨'
-  };
-  return emojiMap[department] || '👤';
 }
