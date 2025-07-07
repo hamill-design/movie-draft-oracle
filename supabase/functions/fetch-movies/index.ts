@@ -76,10 +76,10 @@ serve(async (req) => {
     let data;
     
     if (fetchAll) {
-      // Fetch multiple pages for comprehensive results
+      // Fetch ALL pages for comprehensive results
       const allResults = [];
       let currentPage = 1;
-      const maxPages = category === 'all' ? 20 : 10; // More pages for "all" category
+      let totalPages = 1;
       
       // For "all" category, fetch from multiple sources
       if (category === 'all') {
@@ -93,11 +93,16 @@ serve(async (req) => {
         
         for (const sourceUrl of sources) {
           let sourcePage = 1;
-          const maxSourcePages = 4; // 4 pages per source
+          let sourceMaxPages = 1;
           
-          while (sourcePage <= maxSourcePages && allResults.length < 400) {
+          // Get first page to determine total pages for this source
+          const initialResponse = await fetch(`${sourceUrl}&page=1`);
+          const initialData = await initialResponse.json();
+          sourceMaxPages = Math.min(initialData.total_pages || 1, 50); // Cap at 50 pages per source
+          
+          while (sourcePage <= sourceMaxPages && allResults.length < 2000) { // Cap at 2000 total results
             const pageUrl = `${sourceUrl}&page=${sourcePage}`;
-            console.log(`Fetching from source page ${sourcePage}:`, pageUrl);
+            console.log(`Fetching from source page ${sourcePage}/${sourceMaxPages}:`, pageUrl);
             
             try {
               const response = await fetch(pageUrl);
@@ -111,7 +116,7 @@ serve(async (req) => {
                 allResults.push(...newMovies);
               }
               
-              if (sourcePage >= (pageData.total_pages || 1)) {
+              if (pageData.results?.length === 0) {
                 break;
               }
             } catch (error) {
@@ -122,26 +127,50 @@ serve(async (req) => {
           }
         }
       } else {
-        // Original logic for specific categories
-        while (currentPage <= maxPages) {
+        // For specific categories (like year), fetch ALL available pages
+        console.log('Fetching all pages for category:', category);
+        
+        // First, get the first page to determine total pages
+        const initialResponse = await fetch(`${baseUrl}&page=1`);
+        const initialData = await initialResponse.json();
+        totalPages = initialData.total_pages || 1;
+        
+        console.log(`Total pages available: ${totalPages}`);
+        
+        // Fetch all pages (with reasonable limit to prevent timeout)
+        const maxPagesToFetch = Math.min(totalPages, 500); // Cap at 500 pages to prevent timeout
+        
+        while (currentPage <= maxPagesToFetch) {
           const pageUrl = `${baseUrl}&page=${currentPage}`;
-          console.log(`Fetching page ${currentPage}:`, pageUrl);
+          console.log(`Fetching page ${currentPage}/${maxPagesToFetch}:`, pageUrl);
           
-          const response = await fetch(pageUrl);
-          const pageData = await response.json();
-          
-          if (pageData.results && pageData.results.length > 0) {
-            allResults.push(...pageData.results);
-          }
-          
-          // Stop if we've reached the last page or hit our result limit
-          if (currentPage >= (pageData.total_pages || 1) || allResults.length >= 200) {
-            break;
+          try {
+            const response = await fetch(pageUrl);
+            const pageData = await response.json();
+            
+            if (pageData.results && pageData.results.length > 0) {
+              allResults.push(...pageData.results);
+              console.log(`Page ${currentPage}: Added ${pageData.results.length} movies. Total: ${allResults.length}`);
+            } else {
+              console.log(`Page ${currentPage}: No results, stopping fetch`);
+              break;
+            }
+            
+            // Stop if we've reached the actual last page
+            if (currentPage >= (pageData.total_pages || 1)) {
+              console.log(`Reached last page: ${currentPage}`);
+              break;
+            }
+          } catch (error) {
+            console.error(`Error fetching page ${currentPage}:`, error);
+            // Continue to next page on error
           }
           
           currentPage++;
         }
       }
+      
+      console.log(`Fetching complete. Total movies found: ${allResults.length}`);
       
       data = {
         results: allResults,
