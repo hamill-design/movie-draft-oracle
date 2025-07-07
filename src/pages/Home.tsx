@@ -34,7 +34,7 @@ const Home = () => {
   // Generate years from 1970 to 2024
   const generateYears = () => {
     const years = [];
-    for (let year = 2024; year >= 1970; year--) {
+    for (let year = 2024; year >= 1939; year--) {
       years.push(year.toString());
     }
     return years;
