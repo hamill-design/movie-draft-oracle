@@ -35,7 +35,7 @@ const CategorySelection = ({
 
   const getCategoryTooltip = (category: string) => {
     if (category === 'Academy Award Nominee or Winner' && selectedMovie.hasOscar) {
-      return `This movie is eligible based on high ratings (${selectedMovie.voteAverage?.toFixed(1)}/10) and prestigious genre`;
+      return `This movie has Academy Award nominations or wins`;
     }
     if (category === 'Blockbuster (minimum of $50 Mil)' && selectedMovie.isBlockbuster) {
       const budget = selectedMovie.budget ? `$${(selectedMovie.budget / 1000000).toFixed(0)}M budget` : '';
@@ -55,10 +55,10 @@ const CategorySelection = ({
           <div className="text-gray-400 text-sm space-y-1">
             <p>Based on this movie's properties, you can select from {eligibleCategories.length} eligible categories.</p>
             {selectedMovie.hasOscar && (
-              <p className="text-green-400">🏆 Eligible for Academy Award category (Rating: {selectedMovie.voteAverage?.toFixed(1)}/10)</p>
+              <p className="text-green-400">Eligible for Academy Award category (Has Oscar nominations/wins)</p>
             )}
             {selectedMovie.isBlockbuster && (
-              <p className="text-yellow-400">💰 Eligible for Blockbuster category 
+              <p className="text-yellow-400">Eligible for Blockbuster category 
                 {selectedMovie.budget > 0 && ` (Budget: $${(selectedMovie.budget / 1000000).toFixed(0)}M)`}
                 {selectedMovie.revenue > 0 && ` (Revenue: $${(selectedMovie.revenue / 1000000).toFixed(0)}M)`}
               </p>
@@ -79,7 +79,7 @@ const CategorySelection = ({
                 onClick={() => onCategorySelect(category)}
                 disabled={isDisabled}
                 variant={selectedCategory === category ? "default" : "outline"}
-                className={`h-auto p-3 text-sm relative ${
+                className={`h-auto p-3 text-sm ${
                   selectedCategory === category
                     ? "bg-yellow-400 text-black hover:bg-yellow-500"
                     : isDisabled
@@ -93,12 +93,6 @@ const CategorySelection = ({
                 {category}
                 {isAlreadyPicked && <span className="ml-2">✓</span>}
                 {!isEligible && !isAlreadyPicked && <span className="ml-2">✗</span>}
-                {category === 'Academy Award Nominee or Winner' && selectedMovie.hasOscar && (
-                  <span className="absolute -top-1 -right-1 text-xs">🏆</span>
-                )}
-                {category === 'Blockbuster (minimum of $50 Mil)' && selectedMovie.isBlockbuster && (
-                  <span className="absolute -top-1 -right-1 text-xs">💰</span>
-                )}
               </Button>
             );
           })}

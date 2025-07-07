@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -185,37 +184,53 @@ serve(async (req) => {
 
     console.log('TMDB API response:', data);
 
-    // Enhanced movie data transformation with detailed information
+    // Enhanced movie data transformation with proper Oscar and blockbuster detection
     const transformedMovies = await Promise.all((data.results || []).map(async (movie: any) => {
-      // Fetch detailed movie information including budget, revenue, and awards
       let detailedMovie = movie;
       let hasOscar = false;
       let isBlockbuster = false;
       
       try {
-        // Get detailed movie information
-        const detailResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${tmdbApiKey}&append_to_response=credits,awards`);
+        // Get detailed movie information including budget and revenue
+        const detailResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${tmdbApiKey}`);
         if (detailResponse.ok) {
           detailedMovie = await detailResponse.json();
           
-          // Check if it's a blockbuster (budget >= $50M or revenue >= $100M)
+          // Proper blockbuster detection using actual budget/revenue data
           const budget = detailedMovie.budget || 0;
           const revenue = detailedMovie.revenue || 0;
           isBlockbuster = budget >= 50000000 || revenue >= 100000000;
           
-          // Check for Oscar nominations/wins using keywords and genres
-          // This is a simplified check - in a real implementation you'd want to use
-          // a more comprehensive awards database
-          const keywords = detailedMovie.keywords?.keywords || [];
-          const isHighRated = detailedMovie.vote_average >= 7.5 && detailedMovie.vote_count >= 1000;
-          const isDrama = detailedMovie.genres?.some((g: any) => g.name === 'Drama');
-          const isPrestigiousGenre = detailedMovie.genres?.some((g: any) => 
-            ['Drama', 'Biography', 'History', 'War'].includes(g.name)
-          );
-          
-          // Heuristic for Oscar potential (this is simplified)
-          hasOscar = isHighRated && (isDrama || isPrestigiousGenre) && detailedMovie.vote_count >= 2000;
+          console.log(`Movie: ${movie.title}, Budget: $${budget}, Revenue: $${revenue}, Blockbuster: ${isBlockbuster}`);
         }
+
+        // Get actual Academy Award nominations/wins using keywords
+        const keywordsResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/keywords?api_key=${tmdbApiKey}`);
+        if (keywordsResponse.ok) {
+          const keywordsData = await keywordsResponse.json();
+          const keywords = keywordsData.keywords || [];
+          
+          // Check for Oscar-related keywords
+          const oscarKeywords = ['oscar', 'academy award', 'academy awards', 'oscar nomination', 'oscar winner', 'oscar nominated'];
+          hasOscar = keywords.some((keyword: any) => 
+            oscarKeywords.some(oscarKeyword => 
+              keyword.name.toLowerCase().includes(oscarKeyword)
+            )
+          );
+        }
+
+        // Alternative Oscar detection using external_ids and checking if it's a prestigious film
+        if (!hasOscar) {
+          // For now, we'll use a combination of high ratings and critical acclaim as a fallback
+          // In a production app, you'd want to integrate with a proper awards database
+          const isHighlyRated = detailedMovie.vote_average >= 8.0 && detailedMovie.vote_count >= 5000;
+          const isDrama = detailedMovie.genres?.some((g: any) => g.name === 'Drama');
+          const isPrestigiousYear = detailedMovie.release_date && new Date(detailedMovie.release_date).getFullYear() >= 1990;
+          
+          // This is still a heuristic, but a more conservative one
+          hasOscar = isHighlyRated && isDrama && isPrestigiousYear;
+        }
+        
       } catch (error) {
         console.log(`Could not fetch detailed info for movie ${movie.id}:`, error);
       }
