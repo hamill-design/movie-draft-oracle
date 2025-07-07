@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 import { getEligibleCategories } from '@/utils/movieCategoryUtils';
 
 interface Pick {
@@ -18,6 +19,7 @@ interface CategorySelectionProps {
   onCategorySelect: (category: string) => void;
   picks: Pick[];
   currentPlayerId: number;
+  onCancel: () => void;
 }
 
 const CategorySelection = ({
@@ -26,7 +28,8 @@ const CategorySelection = ({
   selectedCategory,
   onCategorySelect,
   picks,
-  currentPlayerId
+  currentPlayerId,
+  onCancel
 }: CategorySelectionProps) => {
   if (!selectedMovie) return null;
 
@@ -35,10 +38,18 @@ const CategorySelection = ({
 
   return (
     <Card className="bg-gray-800 border-gray-600">
-      <CardHeader>
+      <CardHeader className="relative">
         <CardTitle className="text-white">
           Select Category for "{selectedMovie.title}"
         </CardTitle>
+        <Button
+          onClick={onCancel}
+          variant="ghost"
+          size="sm"
+          className="absolute top-4 right-4 text-gray-400 hover:text-white hover:bg-gray-700"
+        >
+          <X size={20} />
+        </Button>
         {eligibleCategories.length > 0 && (
           <p className="text-gray-400 text-sm">
             Based on this movie's properties, you can select from {eligibleCategories.length} eligible categories.

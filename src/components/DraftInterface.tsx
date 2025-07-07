@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDraftGame } from '@/hooks/useDraftGame';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
@@ -45,6 +44,14 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
       loadExistingPicks(existingPicks);
     }
   }, [existingPicks]);
+
+  // Clear selection when search query changes (user is searching again)
+  useEffect(() => {
+    if (searchQuery.trim() && selectedMovie) {
+      setSelectedMovie(null);
+      setSelectedCategory('');
+    }
+  }, [searchQuery, selectedMovie]);
 
   // Get search parameters based on theme and search query
   const getSearchParams = () => {
@@ -118,6 +125,11 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     setSelectedCategory(category);
   };
 
+  const handleCancelSelection = () => {
+    setSelectedMovie(null);
+    setSelectedCategory('');
+  };
+
   const confirmPick = async () => {
     if (!selectedMovie || !selectedCategory || !currentPlayer) return;
 
@@ -180,6 +192,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
             onCategorySelect={handleCategorySelect}
             picks={picks}
             currentPlayerId={currentPlayer.id}
+            onCancel={handleCancelSelection}
           />
 
           <PickConfirmation
