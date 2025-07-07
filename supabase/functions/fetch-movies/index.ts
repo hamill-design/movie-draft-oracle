@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -20,54 +21,47 @@ serve(async (req) => {
       throw new Error('TMDB API key not configured');
     }
 
-    // Helper function to check if a movie has Oscar nominations/wins
-    const getOscarStatus = async (movieId: number) => {
+    // Helper function to get enhanced movie data (optimized for fewer calls)
+    const getEnhancedMovieData = async (movie: any) => {
       try {
-        const keywordsUrl = `https://api.themoviedb.org/3/movie/${movieId}/keywords?api_key=${tmdbApiKey}`;
-        const keywordsResponse = await fetch(keywordsUrl);
-        const keywordsData = await keywordsResponse.json();
+        // Use the movie details endpoint which includes budget/revenue
+        const detailsUrl = `https://api.themoviedb.org/3/movie/${movie.id}?api_key=${tmdbApiKey}&append_to_response=keywords`;
+        const detailsResponse = await fetch(detailsUrl);
+        const detailsData = await detailsResponse.json();
         
-        const oscarKeywords = keywordsData.keywords?.filter((keyword: any) => 
+        // Check for Oscar keywords
+        const oscarKeywords = detailsData.keywords?.keywords?.filter((keyword: any) => 
           keyword.name.toLowerCase().includes('oscar') ||
           keyword.name.toLowerCase().includes('academy award') ||
           keyword.name.toLowerCase().includes('academy-award')
         ) || [];
         
-        return oscarKeywords.length > 0;
-      } catch (error) {
-        console.error(`Error fetching Oscar data for movie ${movieId}:`, error);
-        return false;
-      }
-    };
-
-    // Helper function to get box office data
-    const getBoxOfficeData = async (movieId: number) => {
-      try {
-        const detailsUrl = `https://api.themoviedb.org/3/movie/${movieId}?api_key=${tmdbApiKey}`;
-        const detailsResponse = await fetch(detailsUrl);
-        const detailsData = await detailsResponse.json();
+        const hasOscar = oscarKeywords.length > 0;
         
-        // TMDB doesn't always have box office data, but we can use budget as a proxy
+        // Check for blockbuster status using budget/revenue
         const budget = detailsData.budget || 0;
         const revenue = detailsData.revenue || 0;
+        const isBlockbuster = revenue > 50000000 || budget > 30000000;
         
-        // Consider it a blockbuster if revenue > $50M or budget > $30M (indicating a big production)
-        return revenue > 50000000 || budget > 30000000;
+        return { hasOscar, isBlockbuster };
       } catch (error) {
-        console.error(`Error fetching box office data for movie ${movieId}:`, error);
-        return false;
+        console.error(`Error fetching enhanced data for movie ${movie.id}:`, error);
+        return { hasOscar: false, isBlockbuster: false };
       }
     };
 
-    // Helper function to fetch all pages
-    const fetchAllPages = async (baseUrl: string) => {
+    // Helper function to fetch pages with smart batching
+    const fetchWithBatching = async (baseUrl: string, maxMovies = 100) => {
       let allResults: any[] = [];
       let currentPage = 1;
       let totalPages = 1;
 
+      // First, get a reasonable number of pages (limit to prevent timeout)
+      const maxPages = Math.min(5, totalPages); // Limit to 5 pages max initially
+
       do {
         const url = `${baseUrl}&page=${currentPage}`;
-        console.log(`Fetching page ${currentPage} of ${totalPages}`);
+        console.log(`Fetching page ${currentPage} of ${Math.min(maxPages, totalPages)}`);
         
         const response = await fetch(url);
         const data = await response.json();
@@ -79,13 +73,13 @@ serve(async (req) => {
         totalPages = data.total_pages || 1;
         currentPage++;
         
-        // Limit to prevent excessive API calls (max 500 pages)
-        if (currentPage > 500) break;
+        // Break if we've reached our limit or max movies
+        if (currentPage > maxPages || allResults.length >= maxMovies) break;
         
       } while (currentPage <= totalPages);
 
       return {
-        results: allResults,
+        results: allResults.slice(0, maxMovies), // Ensure we don't exceed max
         total_pages: totalPages,
         total_results: allResults.length,
         page: 1
@@ -142,7 +136,7 @@ serve(async (req) => {
         baseUrl = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`;
         
         if (fetchAll) {
-          const allData = await fetchAllPages(baseUrl);
+          const allData = await fetchWithBatching(baseUrl);
           const transformedPeople = allData.results?.map((person: any) => ({
             id: person.id,
             title: person.name,
@@ -181,21 +175,31 @@ serve(async (req) => {
     let data;
     
     if (fetchAll && baseUrl) {
-      console.log('Fetching all pages for:', category);
-      data = await fetchAllPages(baseUrl);
+      console.log('Fetching with smart batching for:', category);
+      data = await fetchWithBatching(baseUrl);
     } else {
       const response = await fetch(url);
       data = await response.json();
     }
 
-    // Transform TMDB data to match our Movie interface with enhanced data
+    // Transform TMDB data with selective enhancement
+    const movieCount = data.results?.length || 0;
+    console.log(`Processing ${movieCount} movies`);
+    
+    // Only enhance movies if we have a reasonable number to avoid timeouts
+    const shouldEnhance = movieCount <= 50; // Only enhance if 50 movies or fewer
+    
     const transformedMovies = await Promise.all(
-      (data.results || []).map(async (movie: any) => {
-        // Fetch additional data for each movie
-        const [hasOscar, isBlockbuster] = await Promise.all([
-          getOscarStatus(movie.id),
-          getBoxOfficeData(movie.id)
-        ]);
+      (data.results || []).map(async (movie: any, index: number) => {
+        let hasOscar = false;
+        let isBlockbuster = false;
+        
+        // Only fetch enhanced data for smaller batches or first few movies
+        if (shouldEnhance || index < 20) {
+          const enhanced = await getEnhancedMovieData(movie);
+          hasOscar = enhanced.hasOscar;
+          isBlockbuster = enhanced.isBlockbuster;
+        }
 
         return {
           id: movie.id,
@@ -218,7 +222,7 @@ serve(async (req) => {
       })
     );
 
-    console.log(`Returning ${transformedMovies.length} movies with enhanced data`);
+    console.log(`Returning ${transformedMovies.length} movies${shouldEnhance ? ' with full enhancement' : ' with limited enhancement'}`);
 
     return new Response(JSON.stringify({
       results: transformedMovies,
