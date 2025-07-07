@@ -61,8 +61,8 @@ serve(async (req) => {
         }
         break;
       case 'all':
-        // Search across all movies using multiple endpoints
-        baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&sort_by=popularity.desc`;
+        // Search across popular movies
+        baseUrl = `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`;
         url = `${baseUrl}&page=${page}`;
         break;
       default:
@@ -75,33 +75,26 @@ serve(async (req) => {
     let data;
     
     if (fetchAll) {
-      // Fetch ALL pages for comprehensive results
+      // Fetch multiple pages but limit to prevent resource exhaustion
       const allResults = [];
       let currentPage = 1;
-      let totalPages = 1;
+      const maxPages = 20; // Reduced from 500 to prevent resource limits
       
-      // For "all" category, fetch from multiple sources
+      // For "all" category, fetch from multiple sources but limit pages
       if (category === 'all') {
         const sources = [
           `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`,
           `https://api.themoviedb.org/3/movie/top_rated?api_key=${tmdbApiKey}`,
-          `https://api.themoviedb.org/3/movie/now_playing?api_key=${tmdbApiKey}`,
           `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&sort_by=popularity.desc`,
-          `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&sort_by=vote_average.desc&vote_count.gte=1000`,
         ];
         
         for (const sourceUrl of sources) {
           let sourcePage = 1;
-          let sourceMaxPages = 1;
+          const sourceMaxPages = 10; // Limit per source
           
-          // Get first page to determine total pages for this source
-          const initialResponse = await fetch(`${sourceUrl}&page=1`);
-          const initialData = await initialResponse.json();
-          sourceMaxPages = Math.min(initialData.total_pages || 1, 50); // Cap at 50 pages per source
-          
-          while (sourcePage <= sourceMaxPages && allResults.length < 2000) { // Cap at 2000 total results
+          while (sourcePage <= sourceMaxPages && allResults.length < 1000) {
             const pageUrl = `${sourceUrl}&page=${sourcePage}`;
-            console.log(`Fetching from source page ${sourcePage}/${sourceMaxPages}:`, pageUrl);
+            console.log(`Fetching from source page ${sourcePage}/${sourceMaxPages}`);
             
             try {
               const response = await fetch(pageUrl);
@@ -126,22 +119,19 @@ serve(async (req) => {
           }
         }
       } else {
-        // For specific categories (like year), fetch ALL available pages
-        console.log('Fetching all pages for category:', category);
+        // For specific categories, fetch limited pages
+        console.log('Fetching multiple pages for category:', category);
         
         // First, get the first page to determine total pages
         const initialResponse = await fetch(`${baseUrl}&page=1`);
         const initialData = await initialResponse.json();
-        totalPages = initialData.total_pages || 1;
+        const totalPages = Math.min(initialData.total_pages || 1, maxPages);
         
-        console.log(`Total pages available: ${totalPages}`);
+        console.log(`Total pages to fetch: ${totalPages}`);
         
-        // Fetch all pages (with reasonable limit to prevent timeout)
-        const maxPagesToFetch = Math.min(totalPages, 500); // Cap at 500 pages to prevent timeout
-        
-        while (currentPage <= maxPagesToFetch) {
+        while (currentPage <= totalPages) {
           const pageUrl = `${baseUrl}&page=${currentPage}`;
-          console.log(`Fetching page ${currentPage}/${maxPagesToFetch}:`, pageUrl);
+          console.log(`Fetching page ${currentPage}/${totalPages}`);
           
           try {
             const response = await fetch(pageUrl);
@@ -154,15 +144,8 @@ serve(async (req) => {
               console.log(`Page ${currentPage}: No results, stopping fetch`);
               break;
             }
-            
-            // Stop if we've reached the actual last page
-            if (currentPage >= (pageData.total_pages || 1)) {
-              console.log(`Reached last page: ${currentPage}`);
-              break;
-            }
           } catch (error) {
             console.error(`Error fetching page ${currentPage}:`, error);
-            // Continue to next page on error
           }
           
           currentPage++;
@@ -217,18 +200,6 @@ serve(async (req) => {
               keyword.name.toLowerCase().includes(oscarKeyword)
             )
           );
-        }
-
-        // Alternative Oscar detection using external_ids and checking if it's a prestigious film
-        if (!hasOscar) {
-          // For now, we'll use a combination of high ratings and critical acclaim as a fallback
-          // In a production app, you'd want to integrate with a proper awards database
-          const isHighlyRated = detailedMovie.vote_average >= 8.0 && detailedMovie.vote_count >= 5000;
-          const isDrama = detailedMovie.genres?.some((g: any) => g.name === 'Drama');
-          const isPrestigiousYear = detailedMovie.release_date && new Date(detailedMovie.release_date).getFullYear() >= 1990;
-          
-          // This is still a heuristic, but a more conservative one
-          hasOscar = isHighlyRated && isDrama && isPrestigiousYear;
         }
         
       } catch (error) {
