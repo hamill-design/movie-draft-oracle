@@ -15,20 +15,20 @@ export const useMovies = (category?: string, searchQuery?: string) => {
     setError(null);
     
     try {
-      console.log('Fetching all movies for category:', category, 'query:', searchQuery);
+      console.log('Fetching movies for category:', category, 'query:', searchQuery);
       
       const { data, error } = await supabase.functions.invoke('fetch-movies', {
         body: { 
           category, 
           searchQuery,
-          fetchAll: true // New flag to fetch all pages
+          fetchAll: true
         }
       });
 
       if (error) throw error;
 
-      console.log('Received movies:', data.results?.length || 0);
-      setMovies(data.results || []);
+      console.log('Received movies:', data?.results?.length || 0);
+      setMovies(data?.results || []);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch movies');

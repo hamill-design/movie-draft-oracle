@@ -46,12 +46,8 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     }
   }, [existingPicks]);
 
-  // Get search parameters based on theme and search query
+  // Get search parameters based on theme
   const getSearchParams = () => {
-    if (!searchQuery.trim()) {
-      return { category: '', query: '' };
-    }
-
     if (draftState?.theme === 'year') {
       return {
         category: 'year',
@@ -64,7 +60,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
       };
     }
     
-    return { category: '', query: '' };
+    return { category: 'popular', query: '' };
   };
 
   const searchParams = getSearchParams();
