@@ -61,6 +61,11 @@ serve(async (req) => {
           });
         }
         break;
+      case 'all':
+        // Search across all movies using multiple endpoints
+        baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&sort_by=popularity.desc`;
+        url = `${baseUrl}&page=${page}`;
+        break;
       default:
         baseUrl = `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`;
         url = `${baseUrl}&page=${page}`;
@@ -71,28 +76,71 @@ serve(async (req) => {
     let data;
     
     if (fetchAll) {
-      // Fetch multiple pages for better results - increased from 3 to 10 pages
+      // Fetch multiple pages for comprehensive results
       const allResults = [];
       let currentPage = 1;
-      const maxPages = 10; // Increased to get more comprehensive results
+      const maxPages = category === 'all' ? 20 : 10; // More pages for "all" category
       
-      while (currentPage <= maxPages) {
-        const pageUrl = `${baseUrl}&page=${currentPage}`;
-        console.log(`Fetching page ${currentPage}:`, pageUrl);
+      // For "all" category, fetch from multiple sources
+      if (category === 'all') {
+        const sources = [
+          `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`,
+          `https://api.themoviedb.org/3/movie/top_rated?api_key=${tmdbApiKey}`,
+          `https://api.themoviedb.org/3/movie/now_playing?api_key=${tmdbApiKey}`,
+          `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&sort_by=popularity.desc`,
+          `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&sort_by=vote_average.desc&vote_count.gte=1000`,
+        ];
         
-        const response = await fetch(pageUrl);
-        const pageData = await response.json();
-        
-        if (pageData.results && pageData.results.length > 0) {
-          allResults.push(...pageData.results);
+        for (const sourceUrl of sources) {
+          let sourcePage = 1;
+          const maxSourcePages = 4; // 4 pages per source
+          
+          while (sourcePage <= maxSourcePages && allResults.length < 400) {
+            const pageUrl = `${sourceUrl}&page=${sourcePage}`;
+            console.log(`Fetching from source page ${sourcePage}:`, pageUrl);
+            
+            try {
+              const response = await fetch(pageUrl);
+              const pageData = await response.json();
+              
+              if (pageData.results && pageData.results.length > 0) {
+                // Filter out duplicates based on movie ID
+                const newMovies = pageData.results.filter((movie: any) => 
+                  !allResults.some((existing: any) => existing.id === movie.id)
+                );
+                allResults.push(...newMovies);
+              }
+              
+              if (sourcePage >= (pageData.total_pages || 1)) {
+                break;
+              }
+            } catch (error) {
+              console.error(`Error fetching from source page ${sourcePage}:`, error);
+            }
+            
+            sourcePage++;
+          }
         }
-        
-        // Stop if we've reached the last page or hit our result limit
-        if (currentPage >= (pageData.total_pages || 1) || allResults.length >= 200) {
-          break;
+      } else {
+        // Original logic for specific categories
+        while (currentPage <= maxPages) {
+          const pageUrl = `${baseUrl}&page=${currentPage}`;
+          console.log(`Fetching page ${currentPage}:`, pageUrl);
+          
+          const response = await fetch(pageUrl);
+          const pageData = await response.json();
+          
+          if (pageData.results && pageData.results.length > 0) {
+            allResults.push(...pageData.results);
+          }
+          
+          // Stop if we've reached the last page or hit our result limit
+          if (currentPage >= (pageData.total_pages || 1) || allResults.length >= 200) {
+            break;
+          }
+          
+          currentPage++;
         }
-        
-        currentPage++;
       }
       
       data = {

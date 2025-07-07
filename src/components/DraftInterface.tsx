@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDraftGame } from '@/hooks/useDraftGame';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
@@ -60,7 +59,8 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
       };
     }
     
-    return { category: 'popular', query: '' };
+    // Default to comprehensive search across all movies
+    return { category: 'all', query: '' };
   };
 
   const searchParams = getSearchParams();
