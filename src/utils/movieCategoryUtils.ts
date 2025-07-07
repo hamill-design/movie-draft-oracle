@@ -6,11 +6,10 @@ interface Movie {
   genre: string;
   voteAverage?: number;
   releaseDate?: string;
+  hasOscar?: boolean;
+  isBlockbuster?: boolean;
   // Add other movie properties as needed
 }
-
-// Define blockbuster threshold (you can adjust this)
-const BLOCKBUSTER_THRESHOLD = 50; // Million dollars (this would need to come from movie data)
 
 export const getEligibleCategories = (movie: Movie, allCategories: string[]): string[] => {
   if (!movie) return [];
@@ -59,16 +58,13 @@ export const getEligibleCategories = (movie: Movie, allCategories: string[]): st
     eligibleCategories.push('Horror/Thriller');
   }
 
-  // Special categories (these would need additional data from TMDB)
-  // For now, we'll assume these are available for all movies
-  // You might want to add logic based on awards data or box office data
-  if (allCategories.includes('Academy Award Nominee or Winner')) {
-    // This would require checking awards data
+  // Academy Award category - now using actual data
+  if (movie.hasOscar && allCategories.includes('Academy Award Nominee or Winner')) {
     eligibleCategories.push('Academy Award Nominee or Winner');
   }
   
-  if (allCategories.includes('Blockbuster (minimum of $50 Mil)')) {
-    // This would require checking box office data
+  // Blockbuster category - now using actual data
+  if (movie.isBlockbuster && allCategories.includes('Blockbuster (minimum of $50 Mil)')) {
     eligibleCategories.push('Blockbuster (minimum of $50 Mil)');
   }
 

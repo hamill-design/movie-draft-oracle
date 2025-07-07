@@ -20,6 +20,45 @@ serve(async (req) => {
       throw new Error('TMDB API key not configured');
     }
 
+    // Helper function to check if a movie has Oscar nominations/wins
+    const getOscarStatus = async (movieId: number) => {
+      try {
+        const keywordsUrl = `https://api.themoviedb.org/3/movie/${movieId}/keywords?api_key=${tmdbApiKey}`;
+        const keywordsResponse = await fetch(keywordsUrl);
+        const keywordsData = await keywordsResponse.json();
+        
+        const oscarKeywords = keywordsData.keywords?.filter((keyword: any) => 
+          keyword.name.toLowerCase().includes('oscar') ||
+          keyword.name.toLowerCase().includes('academy award') ||
+          keyword.name.toLowerCase().includes('academy-award')
+        ) || [];
+        
+        return oscarKeywords.length > 0;
+      } catch (error) {
+        console.error(`Error fetching Oscar data for movie ${movieId}:`, error);
+        return false;
+      }
+    };
+
+    // Helper function to get box office data
+    const getBoxOfficeData = async (movieId: number) => {
+      try {
+        const detailsUrl = `https://api.themoviedb.org/3/movie/${movieId}?api_key=${tmdbApiKey}`;
+        const detailsResponse = await fetch(detailsUrl);
+        const detailsData = await detailsResponse.json();
+        
+        // TMDB doesn't always have box office data, but we can use budget as a proxy
+        const budget = detailsData.budget || 0;
+        const revenue = detailsData.revenue || 0;
+        
+        // Consider it a blockbuster if revenue > $50M or budget > $30M (indicating a big production)
+        return revenue > 50000000 || budget > 30000000;
+      } catch (error) {
+        console.error(`Error fetching box office data for movie ${movieId}:`, error);
+        return false;
+      }
+    };
+
     // Helper function to fetch all pages
     const fetchAllPages = async (baseUrl: string) => {
       let allResults: any[] = [];
@@ -149,25 +188,37 @@ serve(async (req) => {
       data = await response.json();
     }
 
-    // Transform TMDB data to match our Movie interface
-    const transformedMovies = data.results?.map((movie: any) => ({
-      id: movie.id,
-      title: movie.title,
-      year: new Date(movie.release_date).getFullYear() || 0,
-      genre: movie.genre_ids?.[0] ? getGenreName(movie.genre_ids[0]) : 'Unknown',
-      director: 'Unknown',
-      runtime: movie.runtime || 120,
-      poster: getMovieEmoji(movie.genre_ids?.[0]),
-      description: movie.overview || 'No description available',
-      isDrafted: false,
-      tmdbId: movie.id,
-      posterPath: movie.poster_path,
-      backdropPath: movie.backdrop_path,
-      voteAverage: movie.vote_average,
-      releaseDate: movie.release_date
-    })) || [];
+    // Transform TMDB data to match our Movie interface with enhanced data
+    const transformedMovies = await Promise.all(
+      (data.results || []).map(async (movie: any) => {
+        // Fetch additional data for each movie
+        const [hasOscar, isBlockbuster] = await Promise.all([
+          getOscarStatus(movie.id),
+          getBoxOfficeData(movie.id)
+        ]);
 
-    console.log(`Returning ${transformedMovies.length} movies`);
+        return {
+          id: movie.id,
+          title: movie.title,
+          year: new Date(movie.release_date).getFullYear() || 0,
+          genre: movie.genre_ids?.[0] ? getGenreName(movie.genre_ids[0]) : 'Unknown',
+          director: 'Unknown',
+          runtime: movie.runtime || 120,
+          poster: getMovieEmoji(movie.genre_ids?.[0]),
+          description: movie.overview || 'No description available',
+          isDrafted: false,
+          tmdbId: movie.id,
+          posterPath: movie.poster_path,
+          backdropPath: movie.backdrop_path,
+          voteAverage: movie.vote_average,
+          releaseDate: movie.release_date,
+          hasOscar,
+          isBlockbuster
+        };
+      })
+    );
+
+    console.log(`Returning ${transformedMovies.length} movies with enhanced data`);
 
     return new Response(JSON.stringify({
       results: transformedMovies,
