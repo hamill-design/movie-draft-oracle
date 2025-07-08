@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     let hasAnyData = false
 
     // Check API keys first
-    const omdbApiKey = Deno.env.get('OMDB_API_KEY')
+    const omdbApiKey = Deno.env.get('OMDB')
     const tmdbApiKey = Deno.env.get('TMDB')
     
     console.log(`OMDB API Key configured: ${omdbApiKey ? 'YES' : 'NO'}`)
@@ -51,30 +51,51 @@ Deno.serve(async (req) => {
       try {
         console.log(`--- FETCHING FROM OMDB ---`)
         
-        // Try direct title search first
-        let omdbUrl = `http://www.omdbapi.com/?t=${encodeURIComponent(movieTitle)}&y=${movieYear}&apikey=${omdbApiKey}&plot=short`
-        console.log(`OMDB URL: ${omdbUrl}`)
+        // Clean the movie title for better search results
+        const cleanTitle = movieTitle.replace(/[^\w\s]/g, '').trim()
         
-        let omdbResponse = await fetch(omdbUrl)
-        let omdbData = await omdbResponse.json()
+        // Try different search strategies
+        const searchStrategies = [
+          `http://www.omdbapi.com/?t=${encodeURIComponent(movieTitle)}&y=${movieYear}&apikey=${omdbApiKey}`,
+          `http://www.omdbapi.com/?t=${encodeURIComponent(cleanTitle)}&y=${movieYear}&apikey=${omdbApiKey}`,
+          `http://www.omdbapi.com/?t=${encodeURIComponent(movieTitle)}&apikey=${omdbApiKey}`,
+          `http://www.omdbapi.com/?t=${encodeURIComponent(cleanTitle)}&apikey=${omdbApiKey}`
+        ]
         
-        console.log(`OMDB Response Status: ${omdbResponse.status}`)
-        console.log(`OMDB Response:`, JSON.stringify(omdbData, null, 2))
-
-        // If direct search fails, try without year
-        if (omdbData.Response === 'False' && movieYear) {
-          console.log(`Direct search failed, trying without year...`)
-          omdbUrl = `http://www.omdbapi.com/?t=${encodeURIComponent(movieTitle)}&apikey=${omdbApiKey}&plot=short`
-          console.log(`OMDB URL (no year): ${omdbUrl}`)
+        let omdbData = null
+        
+        for (const [index, url] of searchStrategies.entries()) {
+          console.log(`OMDB Strategy ${index + 1}: ${url}`)
           
-          omdbResponse = await fetch(omdbUrl)
-          omdbData = await omdbResponse.json()
+          try {
+            const omdbResponse = await fetch(url)
+            const responseText = await omdbResponse.text()
+            console.log(`OMDB Response Status: ${omdbResponse.status}`)
+            console.log(`OMDB Response Text: ${responseText}`)
+            
+            if (omdbResponse.ok) {
+              const data = JSON.parse(responseText)
+              if (data && data.Response !== 'False') {
+                omdbData = data
+                console.log(`✓ OMDB Strategy ${index + 1} succeeded`)
+                break
+              } else {
+                console.log(`✗ OMDB Strategy ${index + 1} failed: ${data.Error || 'No data found'}`)
+              }
+            } else {
+              console.log(`✗ OMDB Strategy ${index + 1} HTTP error: ${omdbResponse.status}`)
+            }
+          } catch (strategyError) {
+            console.log(`✗ OMDB Strategy ${index + 1} error:`, strategyError)
+          }
           
-          console.log(`OMDB Response (no year):`, JSON.stringify(omdbData, null, 2))
+          // Small delay between requests
+          await new Promise(resolve => setTimeout(resolve, 200))
         }
 
-        if (omdbData && omdbData.Response !== 'False') {
+        if (omdbData) {
           console.log(`--- PROCESSING OMDB DATA ---`)
+          console.log(`Full OMDB Data:`, JSON.stringify(omdbData, null, 2))
           
           // Extract IMDB rating
           if (omdbData.imdbRating && omdbData.imdbRating !== 'N/A' && omdbData.imdbRating !== '') {
@@ -135,7 +156,7 @@ Deno.serve(async (req) => {
             console.log(`✓ Oscar Status: none (no awards data)`)
           }
         } else {
-          console.log(`✗ No valid OMDB data found`)
+          console.log(`✗ No valid OMDB data found with any strategy`)
           enrichmentData.oscarStatus = 'none'
         }
       } catch (omdbError) {
@@ -155,29 +176,35 @@ Deno.serve(async (req) => {
         console.log(`TMDB URL: ${tmdbUrl}`)
         
         const tmdbResponse = await fetch(tmdbUrl)
-        const tmdbData = await tmdbResponse.json()
-
+        const responseText = await tmdbResponse.text()
         console.log(`TMDB Response Status: ${tmdbResponse.status}`)
-        console.log(`TMDB Response:`, JSON.stringify(tmdbData, null, 2))
+        console.log(`TMDB Response Text: ${responseText}`)
 
-        if (tmdbData && !tmdbData.status_code) {
-          if (tmdbData.budget && tmdbData.budget > 0) {
-            enrichmentData.budget = tmdbData.budget
-            hasAnyData = true
-            console.log(`✓ Budget: $${enrichmentData.budget.toLocaleString()}`)
+        if (tmdbResponse.ok) {
+          const tmdbData = JSON.parse(responseText)
+          console.log(`TMDB Data:`, JSON.stringify(tmdbData, null, 2))
+
+          if (tmdbData && !tmdbData.status_code) {
+            if (tmdbData.budget && tmdbData.budget > 0) {
+              enrichmentData.budget = tmdbData.budget
+              hasAnyData = true
+              console.log(`✓ Budget: $${enrichmentData.budget.toLocaleString()}`)
+            } else {
+              console.log(`✗ No budget data`)
+            }
+            
+            if (tmdbData.revenue && tmdbData.revenue > 0) {
+              enrichmentData.revenue = tmdbData.revenue
+              hasAnyData = true
+              console.log(`✓ Revenue: $${enrichmentData.revenue.toLocaleString()}`)
+            } else {
+              console.log(`✗ No revenue data`)
+            }
           } else {
-            console.log(`✗ No budget data`)
-          }
-          
-          if (tmdbData.revenue && tmdbData.revenue > 0) {
-            enrichmentData.revenue = tmdbData.revenue
-            hasAnyData = true
-            console.log(`✓ Revenue: $${enrichmentData.revenue.toLocaleString()}`)
-          } else {
-            console.log(`✗ No revenue data`)
+            console.log(`✗ TMDB API error: ${tmdbData.status_message || 'Unknown error'}`)
           }
         } else {
-          console.log(`✗ TMDB API error: ${tmdbData.status_message || 'Unknown error'}`)
+          console.log(`✗ TMDB HTTP error: ${tmdbResponse.status}`)
         }
       } catch (tmdbError) {
         console.error('❌ TMDB Error:', tmdbError)
