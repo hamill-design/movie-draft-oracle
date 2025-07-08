@@ -112,20 +112,11 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
 
           <ScoreMetric
             icon={Star}
-            label="RT Critics (25%)"
+            label="RT Critics (50%)"
             value={scoreBreakdown.rtCriticsScore}
             available={scoreBreakdown.availableComponents.includes('RT Critics')}
             suffix="%"
             color="bg-red-500"
-          />
-
-          <ScoreMetric
-            icon={Users}
-            label="RT Audience (25%)"
-            value={scoreBreakdown.rtAudienceScore}
-            available={scoreBreakdown.availableComponents.includes('RT Audience')}
-            suffix="%"
-            color="bg-blue-500"
           />
 
           <ScoreMetric

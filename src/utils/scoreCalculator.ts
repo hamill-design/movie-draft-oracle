@@ -37,25 +37,18 @@ export const calculateDetailedScore = (data: MovieScoringData): ScoreBreakdown =
     missingComponents.push('Box Office');
   }
 
-  // RT Critics Score (25% weight)
+  // RT Critics Score (50% weight)
   const rtCriticsScore = data.rtCriticsScore || 0;
   if (data.rtCriticsScore) {
-    totalScore += rtCriticsScore * 0.25;
-    totalWeight += 0.25;
+    totalScore += rtCriticsScore * 0.5;
+    totalWeight += 0.5;
     availableComponents.push('RT Critics');
   } else {
     missingComponents.push('RT Critics');
   }
 
-  // RT Audience Score (25% weight)
-  const rtAudienceScore = data.rtAudienceScore || 0;
-  if (data.rtAudienceScore) {
-    totalScore += rtAudienceScore * 0.25;
-    totalWeight += 0.25;
-    availableComponents.push('RT Audience');
-  } else {
-    missingComponents.push('RT Audience');
-  }
+  // RT Audience Score removed from scoring
+  const rtAudienceScore = 0;
 
   // IMDB Score (10% weight)
   let imdbScore = 0;
@@ -80,7 +73,7 @@ export const calculateDetailedScore = (data: MovieScoringData): ScoreBreakdown =
   availableComponents.push('Oscar Status');
 
   // Calculate final score
-  const finalScore = totalWeight > 0 ? (totalScore / totalWeight) * 100 : 0;
+  const finalScore = totalWeight > 0 ? (totalScore / totalWeight) : 0;
 
   return {
     boxOfficeScore: Math.round(boxOfficeScore * 100) / 100,

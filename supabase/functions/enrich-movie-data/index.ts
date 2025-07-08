@@ -47,7 +47,6 @@ Deno.serve(async (req) => {
       budget: null,
       revenue: null,
       rtCriticsScore: null,
-      rtAudienceScore: null,
       imdbRating: null,
       oscarStatus: 'none'
     }
@@ -159,7 +158,7 @@ Deno.serve(async (req) => {
         movie_budget: enrichmentData.budget,
         movie_revenue: enrichmentData.revenue,
         rt_critics_score: enrichmentData.rtCriticsScore,
-        rt_audience_score: enrichmentData.rtAudienceScore,
+        rt_audience_score: null,
         imdb_rating: enrichmentData.imdbRating,
         oscar_status: enrichmentData.oscarStatus,
         calculated_score: finalScore,
@@ -212,16 +211,10 @@ function calculateScore(data: any): number {
     totalWeight += 0.3
   }
 
-  // RT Critics (25%)
+  // RT Critics (50%)
   if (data.rtCriticsScore) {
-    totalScore += data.rtCriticsScore * 0.25
-    totalWeight += 0.25
-  }
-
-  // RT Audience (25%)
-  if (data.rtAudienceScore) {
-    totalScore += data.rtAudienceScore * 0.25
-    totalWeight += 0.25
+    totalScore += data.rtCriticsScore * 0.5
+    totalWeight += 0.5
   }
 
   // IMDB (10%)
