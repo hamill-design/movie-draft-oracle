@@ -27,11 +27,15 @@ export const useMovies = (category?: string, searchQuery?: string) => {
         requestQuery = searchQuery;
       }
       
+      // Only use fetchAll for browsing categories, not for specific searches
+      const shouldFetchAll = !searchQuery && (category === 'all' || category === 'popular');
+      
       const { data, error } = await supabase.functions.invoke('fetch-movies', {
         body: { 
           category: requestCategory, 
           searchQuery: requestQuery,
-          fetchAll: true
+          fetchAll: shouldFetchAll,
+          page: 1
         }
       });
 

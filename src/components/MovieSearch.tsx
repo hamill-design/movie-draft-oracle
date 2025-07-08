@@ -38,6 +38,12 @@ const MovieSearch = ({
 
   const shouldShowResults = searchQuery.trim().length > 0;
 
+  // Filter movies by title if we have a search query to ensure exact matching
+  const filteredMovies = searchQuery ? 
+    movies.filter(movie => 
+      movie.title.toLowerCase().includes(searchQuery.toLowerCase())
+    ) : movies;
+
   return (
     <Card className="bg-gray-800 border-gray-600">
       <CardHeader>
@@ -45,9 +51,9 @@ const MovieSearch = ({
           <Search className="text-yellow-400" size={24} />
           Search Movies
           {theme === 'year' ? ` from ${option}` : theme === 'people' ? ` featuring ${option}` : ''}
-          {!loading && movies.length > 0 && (
+          {!loading && filteredMovies.length > 0 && (
             <span className="text-sm text-gray-400 ml-2">
-              ({movies.length} movies found)
+              ({filteredMovies.length} movies found)
             </span>
           )}
         </CardTitle>
@@ -64,14 +70,14 @@ const MovieSearch = ({
           <div className="mt-4 max-h-60 overflow-y-auto space-y-2">
             {loading ? (
               <div className="text-gray-400">Searching movies...</div>
-            ) : movies.length === 0 ? (
+            ) : filteredMovies.length === 0 ? (
               <div className="text-gray-400">
                 No movies found matching "{searchQuery}"
               </div>
             ) : (
-              movies.slice(0, 50).map((movie) => (
+              filteredMovies.slice(0, 50).map((movie, index) => (
                 <div
-                  key={movie.id}
+                  key={`${movie.id}-${index}`}
                   onClick={() => onMovieSelect(movie)}
                   className={`p-3 rounded cursor-pointer transition-colors ${
                     selectedMovie?.id === movie.id
@@ -86,9 +92,9 @@ const MovieSearch = ({
                 </div>
               ))
             )}
-            {movies.length > 50 && (
+            {filteredMovies.length > 50 && (
               <div className="text-gray-400 text-sm text-center py-2">
-                Showing first 50 results of {movies.length} movies matching "{searchQuery}".
+                Showing first 50 results of {filteredMovies.length} movies matching "{searchQuery}".
               </div>
             )}
           </div>
