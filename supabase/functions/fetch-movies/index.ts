@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -33,7 +32,7 @@ serve(async (req) => {
         url = `${baseUrl}&page=${page}`;
         break;
       case 'search':
-        baseUrl = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}&sort_by=popularity.desc`;
+        baseUrl = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`;
         url = `${baseUrl}&page=${page}`;
         break;
       case 'year':
@@ -62,7 +61,7 @@ serve(async (req) => {
         }
         break;
       case 'all':
-        // Fetch popular movies from different decades to ensure variety
+        // Search across popular movies
         baseUrl = `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`;
         url = `${baseUrl}&page=${page}`;
         break;
@@ -79,26 +78,23 @@ serve(async (req) => {
       // Fetch multiple pages but limit to prevent resource exhaustion
       const allResults = [];
       let currentPage = 1;
-      const maxPages = category === 'year' ? 60 : 15; // Increased limit for year searches to 60 pages
+      const maxPages = 20; // Reduced from 500 to prevent resource limits
       
-      // For "all" category, fetch popular movies from different decades
+      // For "all" category, fetch from multiple sources but limit pages
       if (category === 'all') {
-        const decades = [
-          { start: 2020, end: 2024, name: '2020s' },
-          { start: 2010, end: 2019, name: '2010s' },
-          { start: 2000, end: 2009, name: '2000s' },
-          { start: 1990, end: 1999, name: '1990s' },
-          { start: 1980, end: 1989, name: '1980s' },
-          { start: 1970, end: 1979, name: '1970s' }
+        const sources = [
+          `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`,
+          `https://api.themoviedb.org/3/movie/top_rated?api_key=${tmdbApiKey}`,
+          `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&sort_by=popularity.desc`,
         ];
         
-        for (const decade of decades) {
+        for (const sourceUrl of sources) {
           let sourcePage = 1;
-          const sourceMaxPages = 3; // 3 pages per decade for variety
+          const sourceMaxPages = 10; // Limit per source
           
           while (sourcePage <= sourceMaxPages && allResults.length < 1000) {
-            const pageUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_date.gte=${decade.start}-01-01&primary_release_date.lte=${decade.end}-12-31&sort_by=popularity.desc&page=${sourcePage}`;
-            console.log(`Fetching ${decade.name} page ${sourcePage}/${sourceMaxPages}`);
+            const pageUrl = `${sourceUrl}&page=${sourcePage}`;
+            console.log(`Fetching from source page ${sourcePage}/${sourceMaxPages}`);
             
             try {
               const response = await fetch(pageUrl);
@@ -116,14 +112,14 @@ serve(async (req) => {
                 break;
               }
             } catch (error) {
-              console.error(`Error fetching ${decade.name} page ${sourcePage}:`, error);
+              console.error(`Error fetching from source page ${sourcePage}:`, error);
             }
             
             sourcePage++;
           }
         }
       } else {
-        // For specific categories (including year and person), fetch from the specific endpoint
+        // For specific categories, fetch limited pages
         console.log('Fetching multiple pages for category:', category);
         
         // First, get the first page to determine total pages
@@ -131,9 +127,9 @@ serve(async (req) => {
         const initialData = await initialResponse.json();
         const totalPages = Math.min(initialData.total_pages || 1, maxPages);
         
-        console.log(`Total pages to fetch: ${totalPages} (max allowed: ${maxPages})`);
+        console.log(`Total pages to fetch: ${totalPages}`);
         
-        while (currentPage <= totalPages && allResults.length < 1000) {
+        while (currentPage <= totalPages) {
           const pageUrl = `${baseUrl}&page=${currentPage}`;
           console.log(`Fetching page ${currentPage}/${totalPages}`);
           
@@ -156,22 +152,12 @@ serve(async (req) => {
         }
       }
       
-      // Sort results by popularity score (combination of vote_average and popularity)
-      allResults.sort((a: any, b: any) => {
-        const aScore = calculatePopularityScore(a);
-        const bScore = calculatePopularityScore(b);
-        return bScore - aScore;
-      });
-      
-      // Limit to top 1000 most popular movies
-      const topResults = allResults.slice(0, 1000);
-      
-      console.log(`Fetching complete. Total movies found: ${allResults.length}, returning top ${topResults.length}`);
+      console.log(`Fetching complete. Total movies found: ${allResults.length}`);
       
       data = {
-        results: topResults,
-        total_pages: Math.ceil(topResults.length / 20),
-        total_results: topResults.length,
+        results: allResults,
+        total_pages: Math.ceil(allResults.length / 20),
+        total_results: allResults.length,
         page: 1
       };
     } else {
@@ -238,8 +224,7 @@ serve(async (req) => {
         budget: detailedMovie.budget || 0,
         revenue: detailedMovie.revenue || 0,
         hasOscar,
-        isBlockbuster,
-        popularity: movie.popularity || 0
+        isBlockbuster
       };
     }));
 
@@ -262,19 +247,6 @@ serve(async (req) => {
     });
   }
 });
-
-// Function to calculate popularity score combining multiple factors
-function calculatePopularityScore(movie: any): number {
-  const popularity = movie.popularity || 0;
-  const voteAverage = movie.vote_average || 0;
-  const voteCount = movie.vote_count || 0;
-  
-  // Weighted score: popularity (60%) + vote quality (25%) + vote count factor (15%)
-  const voteCountFactor = Math.min(voteCount / 1000, 10); // Cap at 10x multiplier
-  const voteQuality = voteAverage > 6 ? voteAverage : voteAverage * 0.5; // Penalize low ratings
-  
-  return (popularity * 0.6) + (voteQuality * 25 * 0.25) + (voteCountFactor * 10 * 0.15);
-}
 
 // Helper function to map genre IDs to names
 function getGenreName(genreId: number): string {
