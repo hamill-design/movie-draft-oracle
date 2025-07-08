@@ -12,6 +12,7 @@ import ResetPassword from "./pages/ResetPassword";
 import DraftSetup from "./pages/DraftSetup";
 import Profile from "./pages/Profile";
 import DraftResults from "./pages/DraftResults";
+import FinalScores from "./pages/FinalScores";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/draft" element={<Index />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/draft-results" element={<DraftResults />} />
+            <Route path="/final-scores/:draftId" element={<FinalScores />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

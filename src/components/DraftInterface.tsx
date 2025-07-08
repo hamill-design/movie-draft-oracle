@@ -177,7 +177,9 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
         </>
       )}
 
-      {isComplete && <DraftComplete />}
+      {isComplete && (
+        <DraftComplete />
+      )}
     </div>
   );
 };

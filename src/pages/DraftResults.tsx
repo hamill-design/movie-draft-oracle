@@ -1,8 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Calendar, Users, Trophy } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Trophy, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { DraftPick } from '@/hooks/useDrafts';
@@ -89,6 +90,16 @@ const DraftResults = () => {
             </Button>
             <h1 className="text-3xl font-bold text-white">Draft Results</h1>
           </div>
+          
+          {draft.is_complete && (
+            <Button
+              onClick={() => navigate(`/final-scores/${draftId}`)}
+              className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+            >
+              <BarChart3 size={16} className="mr-2" />
+              View Final Scores
+            </Button>
+          )}
         </div>
 
         {/* Draft Info */}
