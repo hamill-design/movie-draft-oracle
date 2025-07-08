@@ -45,9 +45,10 @@ const MovieSearch = ({
     ? movies.filter(movie => 
         movie.title.toLowerCase().includes(searchQuery.toLowerCase().trim())
       )
-    : movies;
+    : [];
 
-  const shouldShowResults = movies.length > 0;
+  // Only show results if user has started typing
+  const shouldShowResults = searchQuery.trim().length > 0;
 
   return (
     <Card className="bg-gray-800 border-gray-600">
@@ -56,9 +57,9 @@ const MovieSearch = ({
           <Search className="text-yellow-400" size={24} />
           Search Movies
           {theme === 'year' ? ` from ${option}` : theme === 'people' ? ` featuring ${option}` : ''}
-          {!loading && filteredMovies.length > 0 && (
+          {!loading && shouldShowResults && filteredMovies.length > 0 && (
             <span className="text-sm text-gray-400 ml-2">
-              ({filteredMovies.length} movies {searchQuery.trim() ? 'found' : 'available'})
+              ({filteredMovies.length} movies found)
             </span>
           )}
         </CardTitle>
@@ -77,10 +78,7 @@ const MovieSearch = ({
               <div className="text-gray-400">Loading movies...</div>
             ) : filteredMovies.length === 0 ? (
               <div className="text-gray-400">
-                {searchQuery.trim() 
-                  ? `No movies found matching "${searchQuery}" ${theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${option}` : ''}` 
-                  : `No movies found ${theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${option}` : ''}`
-                }
+                No movies found matching "{searchQuery}" {theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${option}` : ''}
               </div>
             ) : (
               filteredMovies.slice(0, 50).map((movie) => (
