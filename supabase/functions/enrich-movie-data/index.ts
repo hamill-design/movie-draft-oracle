@@ -42,37 +42,83 @@ Deno.serve(async (req) => {
     const omdbApiKey = Deno.env.get('OMDB_API_KEY')
     if (omdbApiKey) {
       try {
-        // Search by title and year for better accuracy
-        const omdbUrl = `http://www.omdbapi.com/?t=${encodeURIComponent(movieTitle)}&y=${movieYear}&apikey=${omdbApiKey}&plot=short`
+        // Try multiple search strategies for better accuracy
+        const searchStrategies = [
+          `t=${encodeURIComponent(movieTitle)}&y=${movieYear}`,
+          `t=${encodeURIComponent(movieTitle)}`,
+          `s=${encodeURIComponent(movieTitle)}&y=${movieYear}&type=movie`
+        ]
+
+        let omdbData = null
         
-        console.log(`Fetching from OMDB: ${omdbUrl}`)
-        const omdbResponse = await fetch(omdbUrl)
-        const omdbData = await omdbResponse.json()
+        for (const strategy of searchStrategies) {
+          const omdbUrl = `http://www.omdbapi.com/?${strategy}&apikey=${omdbApiKey}&plot=short`
+          console.log(`Trying OMDB strategy: ${omdbUrl}`)
+          
+          const omdbResponse = await fetch(omdbUrl)
+          const responseData = await omdbResponse.json()
+          
+          console.log(`OMDB Response:`, JSON.stringify(responseData, null, 2))
+          
+          if (responseData.Response !== 'False') {
+            // If it's a search result, take the first match
+            if (responseData.Search && responseData.Search.length > 0) {
+              const firstResult = responseData.Search[0]
+              // Get detailed info for the first result
+              const detailUrl = `http://www.omdbapi.com/?i=${firstResult.imdbID}&apikey=${omdbApiKey}&plot=short`
+              console.log(`Getting detailed info: ${detailUrl}`)
+              const detailResponse = await fetch(detailUrl)
+              omdbData = await detailResponse.json()
+            } else {
+              omdbData = responseData
+            }
+            break
+          }
+        }
 
-        console.log(`OMDB Response for ${movieTitle}:`, JSON.stringify(omdbData, null, 2))
+        if (omdbData && omdbData.Response !== 'False') {
+          console.log(`Final OMDB data for ${movieTitle}:`, JSON.stringify(omdbData, null, 2))
+          
+          // Extract IMDB rating
+          if (omdbData.imdbRating && omdbData.imdbRating !== 'N/A' && omdbData.imdbRating !== '') {
+            const imdbRating = parseFloat(omdbData.imdbRating)
+            if (!isNaN(imdbRating) && imdbRating > 0) {
+              enrichmentData.imdbRating = imdbRating
+              hasAnyData = true
+              console.log(`Successfully extracted IMDB Rating: ${imdbRating}`)
+            }
+          }
 
-        if (omdbData.Response !== 'False') {          
           // Extract Rotten Tomatoes scores
           const ratings = omdbData.Ratings || []
           console.log('Available ratings:', ratings)
           
-          const rtCritics = ratings.find((r: any) => r.Source === 'Rotten Tomatoes')
-          if (rtCritics?.Value) {
-            const criticsScore = parseInt(rtCritics.Value.replace('%', ''))
-            if (!isNaN(criticsScore)) {
-              enrichmentData.rtCriticsScore = criticsScore
-              hasAnyData = true
-              console.log(`RT Critics Score: ${criticsScore}`)
+          for (const rating of ratings) {
+            console.log(`Processing rating:`, rating)
+            
+            if (rating.Source === 'Rotten Tomatoes') {
+              const scoreMatch = rating.Value.match(/(\d+)%/)
+              if (scoreMatch) {
+                const criticsScore = parseInt(scoreMatch[1])
+                if (!isNaN(criticsScore)) {
+                  enrichmentData.rtCriticsScore = criticsScore
+                  hasAnyData = true
+                  console.log(`Successfully extracted RT Critics Score: ${criticsScore}`)
+                }
+              }
             }
-          }
-
-          // Extract IMDB rating
-          if (omdbData.imdbRating && omdbData.imdbRating !== 'N/A') {
-            const imdbRating = parseFloat(omdbData.imdbRating)
-            if (!isNaN(imdbRating)) {
-              enrichmentData.imdbRating = imdbRating
-              hasAnyData = true
-              console.log(`IMDB Rating: ${imdbRating}`)
+            
+            // Some APIs might have audience score separately
+            if (rating.Source.includes('Audience') || rating.Source.includes('Users')) {
+              const scoreMatch = rating.Value.match(/(\d+)%/)
+              if (scoreMatch) {
+                const audienceScore = parseInt(scoreMatch[1])
+                if (!isNaN(audienceScore)) {
+                  enrichmentData.rtAudienceScore = audienceScore
+                  hasAnyData = true
+                  console.log(`Successfully extracted RT Audience Score: ${audienceScore}`)
+                }
+              }
             }
           }
 
@@ -95,7 +141,7 @@ Deno.serve(async (req) => {
             enrichmentData.oscarStatus = 'none'
           }
         } else {
-          console.log(`OMDB API error for ${movieTitle}: ${omdbData.Error}`)
+          console.log(`No OMDB data found for ${movieTitle}`)
           enrichmentData.oscarStatus = 'none'
         }
       } catch (omdbError) {
@@ -143,11 +189,14 @@ Deno.serve(async (req) => {
     console.log('Final enrichment data:', JSON.stringify(enrichmentData, null, 2))
     console.log('Has any data:', hasAnyData)
 
-    // Calculate final score - ALWAYS calculate it, even if we don't have complete data
+    // Calculate final score using the improved scoring system
     const finalScore = calculateFinalScore(enrichmentData)
     console.log(`Calculated final score: ${finalScore}`)
 
-    // Update the draft_picks table - mark as complete if we have ANY data OR if we tried to get data
+    // Only mark as complete if we actually got some meaningful data
+    const shouldMarkComplete = hasAnyData || (enrichmentData.oscarStatus !== undefined)
+
+    // Update the draft_picks table
     const { error: updateError } = await supabaseClient
       .from('draft_picks')
       .update({
@@ -158,7 +207,7 @@ Deno.serve(async (req) => {
         imdb_rating: enrichmentData.imdbRating || null,
         oscar_status: enrichmentData.oscarStatus || 'none',
         calculated_score: finalScore,
-        scoring_data_complete: true // Mark as complete after processing, regardless of data found
+        scoring_data_complete: shouldMarkComplete
       })
       .eq('movie_id', movieId)
 
@@ -166,7 +215,7 @@ Deno.serve(async (req) => {
       throw updateError
     }
 
-    console.log(`Successfully enriched data for ${movieTitle} with score: ${finalScore}, hasData: ${hasAnyData}`)
+    console.log(`Successfully enriched data for ${movieTitle} with score: ${finalScore}, hasData: ${hasAnyData}, marked complete: ${shouldMarkComplete}`)
 
     return new Response(
       JSON.stringify({
@@ -175,7 +224,8 @@ Deno.serve(async (req) => {
           ...enrichmentData,
           calculatedScore: finalScore
         },
-        hasData: hasAnyData
+        hasData: hasAnyData,
+        markedComplete: shouldMarkComplete
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -199,59 +249,59 @@ Deno.serve(async (req) => {
 
 function calculateFinalScore(data: MovieEnrichmentData): number {
   let totalScore = 0
-  let componentCount = 0
+  let totalWeight = 0
 
   console.log('Calculating score with data:', JSON.stringify(data, null, 2))
 
-  // Box Office Score (weight: 1)
+  // Box Office Score (30% weight)
   if (data.budget && data.revenue && data.budget > 0) {
     const roi = ((data.revenue - data.budget) / data.budget) * 100
-    const boxOfficeScore = Math.min(Math.max(roi, 0), 200) // Cap at 200%, floor at 0
-    totalScore += boxOfficeScore
-    componentCount++
-    console.log(`Box Office Score: ${boxOfficeScore} (ROI: ${roi.toFixed(2)}%)`)
+    const boxOfficeScore = Math.min(Math.max(roi, 0), 100)
+    totalScore += boxOfficeScore * 0.3
+    totalWeight += 0.3
+    console.log(`Box Office Score: ${boxOfficeScore} (ROI: ${roi.toFixed(2)}%) - Weight: 30%`)
   }
 
-  // RT Critics Score (weight: 1)
+  // RT Critics Score (25% weight)
   if (data.rtCriticsScore && data.rtCriticsScore > 0) {
-    totalScore += data.rtCriticsScore
-    componentCount++
-    console.log(`RT Critics Score: ${data.rtCriticsScore}`)
+    totalScore += data.rtCriticsScore * 0.25
+    totalWeight += 0.25
+    console.log(`RT Critics Score: ${data.rtCriticsScore} - Weight: 25%`)
   }
 
-  // RT Audience Score (weight: 1)
+  // RT Audience Score (25% weight)
   if (data.rtAudienceScore && data.rtAudienceScore > 0) {
-    totalScore += data.rtAudienceScore
-    componentCount++
-    console.log(`RT Audience Score: ${data.rtAudienceScore}`)
+    totalScore += data.rtAudienceScore * 0.25
+    totalWeight += 0.25
+    console.log(`RT Audience Score: ${data.rtAudienceScore} - Weight: 25%`)
   }
 
-  // IMDB Score (weight: 1) - convert to 0-100 scale
+  // IMDB Score (10% weight) - convert to 0-100 scale
   if (data.imdbRating && data.imdbRating > 0) {
     const imdbScore = (data.imdbRating / 10) * 100
-    totalScore += imdbScore
-    componentCount++
-    console.log(`IMDB Score: ${imdbScore.toFixed(2)} (from rating: ${data.imdbRating})`)
+    totalScore += imdbScore * 0.1
+    totalWeight += 0.1
+    console.log(`IMDB Score: ${imdbScore.toFixed(2)} (from rating: ${data.imdbRating}) - Weight: 10%`)
   }
 
-  // Oscar Bonus (weight: 1) - always included as a component
+  // Oscar Bonus (10% weight)
   let oscarBonus = 0
   if (data.oscarStatus === 'winner') {
-    oscarBonus = 80 // High bonus for winners
+    oscarBonus = 100 // Full score for winners
   } else if (data.oscarStatus === 'nominee') {
-    oscarBonus = 40 // Medium bonus for nominees
+    oscarBonus = 50 // Half score for nominees
   } else {
     oscarBonus = 0 // No bonus for no awards
   }
-  totalScore += oscarBonus
-  componentCount++
-  console.log(`Oscar Bonus: ${oscarBonus} (status: ${data.oscarStatus})`)
+  totalScore += oscarBonus * 0.1
+  totalWeight += 0.1
+  console.log(`Oscar Bonus: ${oscarBonus} (status: ${data.oscarStatus}) - Weight: 10%`)
 
-  console.log(`Total score: ${totalScore}, Component count: ${componentCount}`)
+  console.log(`Total weighted score: ${totalScore}, Total weight: ${totalWeight}`)
 
-  // Calculate average score
-  const finalScore = componentCount > 0 ? totalScore / componentCount : 0
-  console.log(`Final averaged score: ${finalScore.toFixed(2)}`)
+  // Calculate final score - if we have any data, calculate based on available components
+  const finalScore = totalWeight > 0 ? (totalScore / totalWeight) : 0
+  console.log(`Final score: ${finalScore.toFixed(2)}`)
   
   return Math.round(finalScore * 100) / 100
 }
