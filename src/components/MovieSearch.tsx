@@ -29,20 +29,12 @@ const MovieSearch = ({
   const getPlaceholderText = () => {
     if (theme === 'year') {
       return `Search for movies from ${option}...`;
-    } else {
+    } else if (theme === 'people') {
       return `Search for movies with ${option}...`;
+    } else {
+      return `Search for movies by title...`;
     }
   };
-
-  // Filter movies more strictly based on search query
-  const filteredMovies = React.useMemo(() => {
-    if (!searchQuery.trim() || !movies.length) return [];
-    
-    const query = searchQuery.toLowerCase().trim();
-    return movies.filter(movie => 
-      movie.title.toLowerCase().includes(query)
-    );
-  }, [movies, searchQuery]);
 
   const shouldShowResults = searchQuery.trim().length > 0;
 
@@ -52,10 +44,10 @@ const MovieSearch = ({
         <CardTitle className="text-white flex items-center gap-2">
           <Search className="text-yellow-400" size={24} />
           Search Movies
-          {theme === 'year' ? ` from ${option}` : ` featuring ${option}`}
-          {!loading && filteredMovies.length > 0 && (
+          {theme === 'year' ? ` from ${option}` : theme === 'people' ? ` featuring ${option}` : ''}
+          {!loading && movies.length > 0 && (
             <span className="text-sm text-gray-400 ml-2">
-              ({filteredMovies.length} movies found)
+              ({movies.length} movies found)
             </span>
           )}
         </CardTitle>
@@ -72,12 +64,12 @@ const MovieSearch = ({
           <div className="mt-4 max-h-60 overflow-y-auto space-y-2">
             {loading ? (
               <div className="text-gray-400">Searching movies...</div>
-            ) : filteredMovies.length === 0 ? (
+            ) : movies.length === 0 ? (
               <div className="text-gray-400">
-                No movies found matching "{searchQuery}" {theme === 'year' ? `from ${option}` : `featuring ${option}`}
+                No movies found matching "{searchQuery}"
               </div>
             ) : (
-              filteredMovies.slice(0, 50).map((movie) => (
+              movies.slice(0, 50).map((movie) => (
                 <div
                   key={movie.id}
                   onClick={() => onMovieSelect(movie)}
@@ -94,9 +86,9 @@ const MovieSearch = ({
                 </div>
               ))
             )}
-            {filteredMovies.length > 50 && (
+            {movies.length > 50 && (
               <div className="text-gray-400 text-sm text-center py-2">
-                Showing first 50 results of {filteredMovies.length} movies matching "{searchQuery}".
+                Showing first 50 results of {movies.length} movies matching "{searchQuery}".
               </div>
             )}
           </div>

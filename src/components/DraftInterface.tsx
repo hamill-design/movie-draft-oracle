@@ -60,8 +60,8 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
       };
     }
     
-    // Default to comprehensive search across all movies
-    return { category: 'all', query: '' };
+    // For general searches, use 'all' category and pass searchQuery
+    return { category: 'all', query: searchQuery };
   };
 
   const searchParams = getSearchParams();
