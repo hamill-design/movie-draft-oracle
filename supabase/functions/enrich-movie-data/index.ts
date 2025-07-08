@@ -47,6 +47,7 @@ Deno.serve(async (req) => {
       budget: null,
       revenue: null,
       rtCriticsScore: null,
+      metacriticScore: null,
       imdbRating: null,
       oscarStatus: 'none'
     }
@@ -87,7 +88,7 @@ Deno.serve(async (req) => {
               }
             }
 
-            // Rotten Tomatoes
+            // Rotten Tomatoes and Metacritic
             if (omdbData.Ratings) {
               for (const rating of omdbData.Ratings) {
                 if (rating.Source === 'Rotten Tomatoes') {
@@ -95,6 +96,12 @@ Deno.serve(async (req) => {
                   if (match) {
                     enrichmentData.rtCriticsScore = parseInt(match[1])
                     console.log(`RT: ${enrichmentData.rtCriticsScore}%`)
+                  }
+                } else if (rating.Source === 'Metacritic') {
+                  const match = rating.Value.match(/(\d+)\/100/)
+                  if (match) {
+                    enrichmentData.metacriticScore = parseInt(match[1])
+                    console.log(`Metacritic: ${enrichmentData.metacriticScore}/100`)
                   }
                 }
               }
@@ -159,6 +166,7 @@ Deno.serve(async (req) => {
         movie_revenue: enrichmentData.revenue,
         rt_critics_score: enrichmentData.rtCriticsScore,
         rt_audience_score: null,
+        metacritic_score: enrichmentData.metacriticScore,
         imdb_rating: enrichmentData.imdbRating,
         oscar_status: enrichmentData.oscarStatus,
         calculated_score: finalScore,
@@ -203,37 +211,43 @@ function calculateScore(data: any): number {
   let totalScore = 0
   let totalWeight = 0
 
-  // Box Office (30%)
+  // Box Office (20%)
   if (data.budget && data.revenue && data.budget > 0) {
     const profit = data.revenue - data.budget
     const profitPercentage = (profit / data.revenue) * 100
     const boxOfficeScore = Math.min(Math.max(profitPercentage, 0), 100)
-    totalScore += boxOfficeScore * 0.3
-    totalWeight += 0.3
-  }
-
-  // RT Critics (30%)
-  if (data.rtCriticsScore) {
-    totalScore += data.rtCriticsScore * 0.3
-    totalWeight += 0.3
-  }
-
-  // IMDB (20%)
-  if (data.imdbRating) {
-    const imdbScore = (data.imdbRating / 10) * 100
-    totalScore += imdbScore * 0.2
+    totalScore += boxOfficeScore * 0.2
     totalWeight += 0.2
   }
 
-  // Oscar Bonus (20%)
+  // RT Critics (23.33%)
+  if (data.rtCriticsScore) {
+    totalScore += data.rtCriticsScore * 0.2333
+    totalWeight += 0.2333
+  }
+
+  // Metacritic (23.33%)
+  if (data.metacriticScore) {
+    totalScore += data.metacriticScore * 0.2333
+    totalWeight += 0.2333
+  }
+
+  // IMDB (23.33%)
+  if (data.imdbRating) {
+    const imdbScore = (data.imdbRating / 10) * 100
+    totalScore += imdbScore * 0.2333
+    totalWeight += 0.2333
+  }
+
+  // Oscar Bonus (10%)
   let oscarBonus = 0
   if (data.oscarStatus === 'winner') {
     oscarBonus = 100
   } else if (data.oscarStatus === 'nominee') {
     oscarBonus = 50
   }
-  totalScore += oscarBonus * 0.2
-  totalWeight += 0.2
+  totalScore += oscarBonus * 0.1
+  totalWeight += 0.1
 
   const finalScore = totalWeight > 0 ? (totalScore / totalWeight) : 0
   return Math.round(finalScore * 100) / 100

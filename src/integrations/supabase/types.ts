@@ -22,6 +22,7 @@ export type Database = {
           draft_id: string
           id: string
           imdb_rating: number | null
+          metacritic_score: number | null
           movie_budget: number | null
           movie_genre: string | null
           movie_id: number
@@ -43,6 +44,7 @@ export type Database = {
           draft_id: string
           id?: string
           imdb_rating?: number | null
+          metacritic_score?: number | null
           movie_budget?: number | null
           movie_genre?: string | null
           movie_id: number
@@ -64,6 +66,7 @@ export type Database = {
           draft_id?: string
           id?: string
           imdb_rating?: number | null
+          metacritic_score?: number | null
           movie_budget?: number | null
           movie_genre?: string | null
           movie_id?: number

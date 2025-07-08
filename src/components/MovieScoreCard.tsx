@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, Star, DollarSign, Users, Film } from 'lucide-react';
+import { Trophy, Star, DollarSign, Users, Film, Award } from 'lucide-react';
 import { calculateDetailedScore, getScoreColor, getScoreGrade, MovieScoringData } from '@/utils/scoreCalculator';
 
 interface MovieScoreCardProps {
@@ -103,7 +103,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
           
           <ScoreMetric
             icon={DollarSign}
-            label="Box Office Profit % (30%)"
+            label="Box Office Profit % (20%)"
             value={scoreBreakdown.boxOfficeScore}
             available={scoreBreakdown.availableComponents.includes('Box Office')}
             suffix="%"
@@ -112,7 +112,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
 
           <ScoreMetric
             icon={Star}
-            label="RT Critics (30%)"
+            label="RT Critics (23%)"
             value={scoreBreakdown.rtCriticsScore}
             available={scoreBreakdown.availableComponents.includes('RT Critics')}
             suffix="%"
@@ -120,8 +120,17 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
           />
 
           <ScoreMetric
+            icon={Award}
+            label="Metacritic (23%)"
+            value={scoreBreakdown.metacriticScore}
+            available={scoreBreakdown.availableComponents.includes('Metacritic')}
+            suffix="/100"
+            color="bg-purple-500"
+          />
+
+          <ScoreMetric
             icon={Film}
-            label="IMDB (20%)"
+            label="IMDB (23%)"
             value={scoreBreakdown.imdbScore}
             available={scoreBreakdown.availableComponents.includes('IMDB')}
             suffix="%"
@@ -131,7 +140,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy size={16} className="text-yellow-400" />
-              <span className="text-sm text-white">Oscar Status (20%)</span>
+              <span className="text-sm text-white">Oscar Status (10%)</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-white">

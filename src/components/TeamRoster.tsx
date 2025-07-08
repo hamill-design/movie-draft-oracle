@@ -85,6 +85,7 @@ const TeamRoster: React.FC<TeamRosterProps> = ({
                   revenue: pickWithScoring.movie_revenue,
                   rtCriticsScore: pickWithScoring.rt_critics_score,
                   rtAudienceScore: pickWithScoring.rt_audience_score,
+                  metacriticScore: pickWithScoring.metacritic_score,
                   imdbRating: pickWithScoring.imdb_rating,
                   oscarStatus: pickWithScoring.oscar_status
                 }}
