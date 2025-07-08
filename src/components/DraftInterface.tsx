@@ -55,25 +55,16 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     return 'popular';
   };
 
-  // Get the search parameter for the backend - this should be the theme option (year or person name)
-  const getThemeParameter = () => {
-    if (draftState?.theme === 'year') {
-      return draftState.option; // The year
-    } else if (draftState?.theme === 'people') {
-      return draftState.option; // The person name
-    }
-    return '';
-  };
-
   const baseCategory = getBaseCategory();
-  const themeParameter = getThemeParameter();
   
-  // Use movies hook - pass the theme parameter as the searchQuery to constrain results
-  // Then use the actual search query to filter within those results
-  const { movies, loading: moviesLoading } = useMovies(
-    baseCategory,
-    themeParameter // This constrains to year/person, search input will filter within these
-  );
+  // For theme-based drafts, pass the theme option (year or person name) as the constraint
+  // This will fetch ALL movies for that year/person, then MovieSearch will filter by title
+  const themeConstraint = draftState?.theme === 'year' || draftState?.theme === 'people' 
+    ? draftState.option 
+    : '';
+  
+  // Use movies hook - pass the theme constraint to get all movies for that theme
+  const { movies, loading: moviesLoading } = useMovies(baseCategory, themeConstraint);
 
   // Auto-save function
   const performAutoSave = async (updatedPicks: any[], isComplete: boolean) => {
@@ -142,6 +133,8 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   // Debug logging
   console.log('Current player from useDraftGame:', currentPlayer);
   console.log('Randomized players:', randomizedPlayers);
+  console.log('Theme constraint:', themeConstraint);
+  console.log('Base category:', baseCategory);
 
   return (
     <div className="space-y-6">
@@ -164,7 +157,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
             loading={moviesLoading}
             selectedMovie={selectedMovie}
             onMovieSelect={handleMovieSelect}
-            themeParameter={themeParameter}
+            themeParameter={themeConstraint}
           />
 
           <CategorySelection

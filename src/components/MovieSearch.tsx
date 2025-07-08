@@ -39,6 +39,8 @@ const MovieSearch = ({
   };
 
   // Filter movies based on search query if provided
+  // The movies array already contains only movies constrained by the theme (year/person)
+  // Here we just filter by title within those constrained results
   const filteredMovies = searchQuery.trim() 
     ? movies.filter(movie => 
         movie.title.toLowerCase().includes(searchQuery.toLowerCase().trim())

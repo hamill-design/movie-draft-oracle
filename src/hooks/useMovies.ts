@@ -15,14 +15,14 @@ export const useMovies = (category?: string, searchQuery?: string) => {
     setError(null);
     
     try {
-      console.log('Fetching movies for category:', category, 'query:', searchQuery);
+      console.log('Fetching movies for category:', category, 'searchQuery:', searchQuery);
       
-      // For theme-based categories (year, person), always fetch all movies from that constraint
-      // Then filter by search query if provided
+      // For theme-based categories (year, person), we need to pass the theme parameter 
+      // as the searchQuery to the backend to constrain the initial dataset
       const requestBody = {
         category,
         searchQuery: searchQuery || '',
-        fetchAll: true // Always fetch all for theme-based filtering
+        fetchAll: true // Always fetch all within the theme constraint
       };
       
       const { data, error } = await supabase.functions.invoke('fetch-movies', {
@@ -31,18 +31,10 @@ export const useMovies = (category?: string, searchQuery?: string) => {
 
       if (error) throw error;
 
-      let filteredMovies = data?.results || [];
+      const fetchedMovies = data?.results || [];
+      console.log('Received movies:', fetchedMovies.length);
       
-      // If there's a search query, filter the results by title
-      if (searchQuery && searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        filteredMovies = filteredMovies.filter((movie: Movie) =>
-          movie.title.toLowerCase().includes(query)
-        );
-      }
-
-      console.log('Received movies:', filteredMovies.length);
-      setMovies(filteredMovies);
+      setMovies(fetchedMovies);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch movies');
