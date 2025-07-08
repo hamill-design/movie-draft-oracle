@@ -103,7 +103,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
           
           <ScoreMetric
             icon={DollarSign}
-            label="Box Office ROI (30%)"
+            label="Box Office Profit % (30%)"
             value={scoreBreakdown.boxOfficeScore}
             available={scoreBreakdown.availableComponents.includes('Box Office')}
             suffix="%"

@@ -205,8 +205,9 @@ function calculateScore(data: any): number {
 
   // Box Office (30%)
   if (data.budget && data.revenue && data.budget > 0) {
-    const roi = ((data.revenue - data.budget) / data.budget) * 100
-    const boxOfficeScore = Math.min(Math.max(roi, 0), 100)
+    const profit = data.revenue - data.budget
+    const profitPercentage = (profit / data.revenue) * 100
+    const boxOfficeScore = Math.min(Math.max(profitPercentage, 0), 100)
     totalScore += boxOfficeScore * 0.3
     totalWeight += 0.3
   }
