@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -96,7 +95,7 @@ serve(async (req) => {
           let sourcePage = 1;
           const sourceMaxPages = 3; // 3 pages per decade for variety
           
-          while (sourcePage <= sourceMaxPages && allResults.length < 600) {
+          while (sourcePage <= sourceMaxPages && allResults.length < 1000) {
             const pageUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_date.gte=${decade.start}-01-01&primary_release_date.lte=${decade.end}-12-31&sort_by=popularity.desc&page=${sourcePage}`;
             console.log(`Fetching ${decade.name} page ${sourcePage}/${sourceMaxPages}`);
             
@@ -163,8 +162,8 @@ serve(async (req) => {
         return bScore - aScore;
       });
       
-      // Limit to top 600 most popular movies
-      const topResults = allResults.slice(0, 600);
+      // Limit to top 1000 most popular movies
+      const topResults = allResults.slice(0, 1000);
       
       console.log(`Fetching complete. Total movies found: ${allResults.length}, returning top ${topResults.length}`);
       
