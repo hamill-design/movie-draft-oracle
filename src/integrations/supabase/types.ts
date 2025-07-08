@@ -16,43 +16,67 @@ export type Database = {
     Tables: {
       draft_picks: {
         Row: {
+          calculated_score: number | null
           category: string
           created_at: string | null
           draft_id: string
           id: string
+          imdb_rating: number | null
+          movie_budget: number | null
           movie_genre: string | null
           movie_id: number
+          movie_revenue: number | null
           movie_title: string
           movie_year: number | null
+          oscar_status: string | null
           pick_order: number
           player_id: number
           player_name: string
+          rt_audience_score: number | null
+          rt_critics_score: number | null
+          scoring_data_complete: boolean | null
         }
         Insert: {
+          calculated_score?: number | null
           category: string
           created_at?: string | null
           draft_id: string
           id?: string
+          imdb_rating?: number | null
+          movie_budget?: number | null
           movie_genre?: string | null
           movie_id: number
+          movie_revenue?: number | null
           movie_title: string
           movie_year?: number | null
+          oscar_status?: string | null
           pick_order: number
           player_id: number
           player_name: string
+          rt_audience_score?: number | null
+          rt_critics_score?: number | null
+          scoring_data_complete?: boolean | null
         }
         Update: {
+          calculated_score?: number | null
           category?: string
           created_at?: string | null
           draft_id?: string
           id?: string
+          imdb_rating?: number | null
+          movie_budget?: number | null
           movie_genre?: string | null
           movie_id?: number
+          movie_revenue?: number | null
           movie_title?: string
           movie_year?: number | null
+          oscar_status?: string | null
           pick_order?: number
           player_id?: number
           player_name?: string
+          rt_audience_score?: number | null
+          rt_critics_score?: number | null
+          scoring_data_complete?: boolean | null
         }
         Relationships: [
           {
