@@ -15,7 +15,7 @@ export const useMovies = (category?: string, searchQuery?: string) => {
     setError(null);
     
     try {
-      console.log('Fetching movies for category:', category, 'searchQuery:', searchQuery);
+      console.log('useMovies - Fetching movies for category:', category, 'searchQuery:', searchQuery);
       
       // For theme-based categories (year, person), we need to pass the theme parameter 
       // as the searchQuery to the backend to constrain the initial dataset
@@ -25,20 +25,25 @@ export const useMovies = (category?: string, searchQuery?: string) => {
         fetchAll: true // Always fetch all within the theme constraint
       };
       
+      console.log('useMovies - Request body:', requestBody);
+      
       const { data, error } = await supabase.functions.invoke('fetch-movies', {
         body: requestBody
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('useMovies - Supabase function error:', error);
+        throw error;
+      }
 
       const fetchedMovies = data?.results || [];
-      console.log('Received movies:', fetchedMovies.length);
+      console.log('useMovies - Received movies:', fetchedMovies.length);
       
       setMovies(fetchedMovies);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch movies');
-      console.error('Error fetching movies:', err);
+      console.error('useMovies - Error fetching movies:', err);
     } finally {
       setLoading(false);
     }
@@ -46,6 +51,7 @@ export const useMovies = (category?: string, searchQuery?: string) => {
 
   useEffect(() => {
     if (category) {
+      console.log('useMovies - Effect triggered, category:', category, 'searchQuery:', searchQuery);
       fetchMovies();
     }
   }, [category, searchQuery]);

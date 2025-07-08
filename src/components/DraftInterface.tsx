@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useDraftGame } from '@/hooks/useDraftGame';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
@@ -58,13 +59,17 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const baseCategory = getBaseCategory();
   
   // For theme-based drafts, pass the theme option (year or person name) as the constraint
-  // This will fetch ALL movies for that year/person, then MovieSearch will filter by title
+  // This will fetch ALL movies for that year/person
   const themeConstraint = draftState?.theme === 'year' || draftState?.theme === 'people' 
     ? draftState.option 
     : '';
   
+  console.log('DraftInterface - Category:', baseCategory, 'Constraint:', themeConstraint);
+  
   // Use movies hook - pass the theme constraint to get all movies for that theme
   const { movies, loading: moviesLoading } = useMovies(baseCategory, themeConstraint);
+
+  console.log('DraftInterface - Movies loaded:', movies.length, 'Loading:', moviesLoading);
 
   // Auto-save function
   const performAutoSave = async (updatedPicks: any[], isComplete: boolean) => {
@@ -129,12 +134,6 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
       });
     }
   };
-
-  // Debug logging
-  console.log('Current player from useDraftGame:', currentPlayer);
-  console.log('Randomized players:', randomizedPlayers);
-  console.log('Theme constraint:', themeConstraint);
-  console.log('Base category:', baseCategory);
 
   return (
     <div className="space-y-6">
