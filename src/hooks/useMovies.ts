@@ -8,7 +8,7 @@ export const useMovies = (category?: string, searchQuery?: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAllMovies = async () => {
+  const fetchMovies = async () => {
     if (!category) return;
     
     setLoading(true);
@@ -17,15 +17,21 @@ export const useMovies = (category?: string, searchQuery?: string) => {
     try {
       console.log('Fetching movies for category:', category, 'query:', searchQuery);
       
-      // Use "all" category to get comprehensive movie list when no specific constraints
-      const requestCategory = category === 'popular' && !searchQuery ? 'all' : category;
+      // Determine the request type based on whether we have a search query
+      const requestBody = searchQuery && searchQuery.trim() 
+        ? { 
+            category: 'search', 
+            searchQuery: searchQuery.trim(),
+            fetchAll: false 
+          }
+        : { 
+            category, 
+            searchQuery,
+            fetchAll: true 
+          };
       
       const { data, error } = await supabase.functions.invoke('fetch-movies', {
-        body: { 
-          category: requestCategory, 
-          searchQuery,
-          fetchAll: true
-        }
+        body: requestBody
       });
 
       if (error) throw error;
@@ -43,7 +49,7 @@ export const useMovies = (category?: string, searchQuery?: string) => {
 
   useEffect(() => {
     if (category) {
-      fetchAllMovies();
+      fetchMovies();
     }
   }, [category, searchQuery]);
 
@@ -51,6 +57,6 @@ export const useMovies = (category?: string, searchQuery?: string) => {
     movies,
     loading,
     error,
-    refetch: fetchAllMovies
+    refetch: fetchMovies
   };
 };

@@ -29,12 +29,14 @@ const MovieSearch = ({
   const getPlaceholderText = () => {
     if (theme === 'year') {
       return `Search for movies from ${option}...`;
-    } else {
+    } else if (theme === 'people') {
       return `Search for movies with ${option}...`;
+    } else {
+      return `Search for movies...`;
     }
   };
 
-  const shouldShowResults = searchQuery.trim().length > 0;
+  const shouldShowResults = searchQuery.trim().length > 0 || (theme === 'year' || theme === 'people');
 
   return (
     <Card className="bg-gray-800 border-gray-600">
@@ -42,7 +44,7 @@ const MovieSearch = ({
         <CardTitle className="text-white flex items-center gap-2">
           <Search className="text-yellow-400" size={24} />
           Search Movies
-          {theme === 'year' ? ` from ${option}` : ` featuring ${option}`}
+          {theme === 'year' ? ` from ${option}` : theme === 'people' ? ` featuring ${option}` : ''}
           {!loading && movies.length > 0 && (
             <span className="text-sm text-gray-400 ml-2">
               ({movies.length} movies found)
@@ -61,10 +63,13 @@ const MovieSearch = ({
         {shouldShowResults && (
           <div className="mt-4 max-h-60 overflow-y-auto space-y-2">
             {loading ? (
-              <div className="text-gray-400">Searching all available movies...</div>
+              <div className="text-gray-400">Searching movies...</div>
             ) : movies.length === 0 ? (
               <div className="text-gray-400">
-                No movies found {theme === 'year' ? `from ${option}` : `featuring ${option}`}
+                {searchQuery.trim() 
+                  ? `No movies found matching "${searchQuery}"` 
+                  : `No movies found ${theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${option}` : ''}`
+                }
               </div>
             ) : (
               movies.slice(0, 50).map((movie) => (

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useDraftGame } from '@/hooks/useDraftGame';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
@@ -45,38 +46,34 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     }
   }, [existingPicks]);
 
-  // Get search parameters based on theme
-  const getSearchParams = () => {
+  // Get the base category for initial movie loading
+  const getBaseCategory = () => {
     if (draftState?.theme === 'year') {
-      return {
-        category: 'year',
-        query: draftState.option
-      };
+      return 'year';
     } else if (draftState?.theme === 'people') {
-      return {
-        category: 'person',
-        query: draftState.option
-      };
+      return 'person';
     }
-    
-    // Default to comprehensive search across all movies
-    return { category: 'all', query: '' };
+    return 'popular';
   };
 
-  const searchParams = getSearchParams();
-  const { movies, loading: moviesLoading } = useMovies(
-    searchParams.category, 
-    searchParams.query
-  );
+  // Get the search parameter for the backend
+  const getSearchParameter = () => {
+    if (draftState?.theme === 'year') {
+      return draftState.option;
+    } else if (draftState?.theme === 'people') {
+      return draftState.option;
+    }
+    return '';
+  };
 
-  // Filter movies based on the search query
-  const filteredMovies = React.useMemo(() => {
-    if (!searchQuery.trim() || !movies.length) return movies;
-    
-    return movies.filter(movie => 
-      movie.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [movies, searchQuery]);
+  const baseCategory = getBaseCategory();
+  const baseSearchParam = getSearchParameter();
+  
+  // Use movies hook with search functionality
+  const { movies, loading: moviesLoading } = useMovies(
+    baseCategory,
+    searchQuery.trim() || baseSearchParam
+  );
 
   // Auto-save function
   const performAutoSave = async (updatedPicks: any[], isComplete: boolean) => {
@@ -163,7 +160,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
             option={draftState.option}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            movies={filteredMovies}
+            movies={movies}
             loading={moviesLoading}
             selectedMovie={selectedMovie}
             onMovieSelect={handleMovieSelect}
