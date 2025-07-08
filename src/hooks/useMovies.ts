@@ -17,25 +17,14 @@ export const useMovies = (category?: string, searchQuery?: string) => {
     try {
       console.log('Fetching movies for category:', category, 'query:', searchQuery);
       
-      // For title-based searches, use the 'search' category
-      let requestCategory = category;
-      let requestQuery = searchQuery;
-      
-      if (category === 'all' && searchQuery) {
-        // When searching for movie titles, use the search category
-        requestCategory = 'search';
-        requestQuery = searchQuery;
-      }
-      
-      // Only use fetchAll for browsing categories, not for specific searches
-      const shouldFetchAll = !searchQuery && (category === 'all' || category === 'popular');
+      // Use "all" category to get comprehensive movie list when no specific constraints
+      const requestCategory = category === 'popular' && !searchQuery ? 'all' : category;
       
       const { data, error } = await supabase.functions.invoke('fetch-movies', {
         body: { 
           category: requestCategory, 
-          searchQuery: requestQuery,
-          fetchAll: shouldFetchAll,
-          page: 1
+          searchQuery,
+          fetchAll: true
         }
       });
 

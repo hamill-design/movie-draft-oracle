@@ -1,4 +1,3 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -33,16 +32,6 @@ serve(async (req) => {
         url = `${baseUrl}&page=${page}`;
         break;
       case 'search':
-        if (!searchQuery) {
-          return new Response(JSON.stringify({
-            results: [],
-            total_pages: 0,
-            total_results: 0,
-            page: 1
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
         baseUrl = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`;
         url = `${baseUrl}&page=${page}`;
         break;
@@ -72,8 +61,8 @@ serve(async (req) => {
         }
         break;
       case 'all':
-        // For general browsing without search query
-        baseUrl = `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`;
+        // Search across all movies using multiple endpoints
+        baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&sort_by=popularity.desc`;
         url = `${baseUrl}&page=${page}`;
         break;
       default:
@@ -85,27 +74,34 @@ serve(async (req) => {
 
     let data;
     
-    if (fetchAll && category !== 'search') {
-      // Only use fetchAll for non-search categories to avoid overwhelming search results
+    if (fetchAll) {
+      // Fetch ALL pages for comprehensive results
       const allResults = [];
       let currentPage = 1;
-      const maxPages = category === 'all' ? 20 : 10; // Limit pages based on category
+      let totalPages = 1;
       
+      // For "all" category, fetch from multiple sources
       if (category === 'all') {
-        // For "all" category, fetch from multiple sources but limit pages
         const sources = [
           `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`,
           `https://api.themoviedb.org/3/movie/top_rated?api_key=${tmdbApiKey}`,
+          `https://api.themoviedb.org/3/movie/now_playing?api_key=${tmdbApiKey}`,
           `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&sort_by=popularity.desc`,
+          `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&sort_by=vote_average.desc&vote_count.gte=1000`,
         ];
         
         for (const sourceUrl of sources) {
           let sourcePage = 1;
-          const sourceMaxPages = 5; // Limit per source
+          let sourceMaxPages = 1;
           
-          while (sourcePage <= sourceMaxPages && allResults.length < 500) {
+          // Get first page to determine total pages for this source
+          const initialResponse = await fetch(`${sourceUrl}&page=1`);
+          const initialData = await initialResponse.json();
+          sourceMaxPages = Math.min(initialData.total_pages || 1, 50); // Cap at 50 pages per source
+          
+          while (sourcePage <= sourceMaxPages && allResults.length < 2000) { // Cap at 2000 total results
             const pageUrl = `${sourceUrl}&page=${sourcePage}`;
-            console.log(`Fetching from source page ${sourcePage}/${sourceMaxPages}`);
+            console.log(`Fetching from source page ${sourcePage}/${sourceMaxPages}:`, pageUrl);
             
             try {
               const response = await fetch(pageUrl);
@@ -130,19 +126,22 @@ serve(async (req) => {
           }
         }
       } else {
-        // For specific categories, fetch limited pages
-        console.log('Fetching multiple pages for category:', category);
+        // For specific categories (like year), fetch ALL available pages
+        console.log('Fetching all pages for category:', category);
         
         // First, get the first page to determine total pages
         const initialResponse = await fetch(`${baseUrl}&page=1`);
         const initialData = await initialResponse.json();
-        const totalPages = Math.min(initialData.total_pages || 1, maxPages);
+        totalPages = initialData.total_pages || 1;
         
-        console.log(`Total pages to fetch: ${totalPages}`);
+        console.log(`Total pages available: ${totalPages}`);
         
-        while (currentPage <= totalPages) {
+        // Fetch all pages (with reasonable limit to prevent timeout)
+        const maxPagesToFetch = Math.min(totalPages, 500); // Cap at 500 pages to prevent timeout
+        
+        while (currentPage <= maxPagesToFetch) {
           const pageUrl = `${baseUrl}&page=${currentPage}`;
-          console.log(`Fetching page ${currentPage}/${totalPages}`);
+          console.log(`Fetching page ${currentPage}/${maxPagesToFetch}:`, pageUrl);
           
           try {
             const response = await fetch(pageUrl);
@@ -155,8 +154,15 @@ serve(async (req) => {
               console.log(`Page ${currentPage}: No results, stopping fetch`);
               break;
             }
+            
+            // Stop if we've reached the actual last page
+            if (currentPage >= (pageData.total_pages || 1)) {
+              console.log(`Reached last page: ${currentPage}`);
+              break;
+            }
           } catch (error) {
             console.error(`Error fetching page ${currentPage}:`, error);
+            // Continue to next page on error
           }
           
           currentPage++;
@@ -172,35 +178,8 @@ serve(async (req) => {
         page: 1
       };
     } else {
-      // For search category or single page requests, just fetch the specific results
       const response = await fetch(url);
       data = await response.json();
-      
-      // For search category with fetchAll, get more pages but limit to search results
-      if (fetchAll && category === 'search' && data.total_pages > 1) {
-        const allSearchResults = [...(data.results || [])];
-        const maxSearchPages = Math.min(data.total_pages, 5); // Limit search to 5 pages max
-        
-        for (let page = 2; page <= maxSearchPages; page++) {
-          try {
-            const searchPageUrl = `${baseUrl}&page=${page}`;
-            const pageResponse = await fetch(searchPageUrl);
-            const pageData = await pageResponse.json();
-            
-            if (pageData.results && pageData.results.length > 0) {
-              allSearchResults.push(...pageData.results);
-            }
-          } catch (error) {
-            console.error(`Error fetching search page ${page}:`, error);
-          }
-        }
-        
-        data = {
-          ...data,
-          results: allSearchResults,
-          total_results: allSearchResults.length
-        };
-      }
     }
 
     console.log('TMDB API response:', data);
@@ -238,6 +217,18 @@ serve(async (req) => {
               keyword.name.toLowerCase().includes(oscarKeyword)
             )
           );
+        }
+
+        // Alternative Oscar detection using external_ids and checking if it's a prestigious film
+        if (!hasOscar) {
+          // For now, we'll use a combination of high ratings and critical acclaim as a fallback
+          // In a production app, you'd want to integrate with a proper awards database
+          const isHighlyRated = detailedMovie.vote_average >= 8.0 && detailedMovie.vote_count >= 5000;
+          const isDrama = detailedMovie.genres?.some((g: any) => g.name === 'Drama');
+          const isPrestigiousYear = detailedMovie.release_date && new Date(detailedMovie.release_date).getFullYear() >= 1990;
+          
+          // This is still a heuristic, but a more conservative one
+          hasOscar = isHighlyRated && isDrama && isPrestigiousYear;
         }
         
       } catch (error) {
