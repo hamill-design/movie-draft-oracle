@@ -37,11 +37,11 @@ export const calculateDetailedScore = (data: MovieScoringData): ScoreBreakdown =
     missingComponents.push('Box Office');
   }
 
-  // RT Critics Score (50% weight)
+  // RT Critics Score (30% weight)
   const rtCriticsScore = data.rtCriticsScore || 0;
   if (data.rtCriticsScore) {
-    totalScore += rtCriticsScore * 0.5;
-    totalWeight += 0.5;
+    totalScore += rtCriticsScore * 0.3;
+    totalWeight += 0.3;
     availableComponents.push('RT Critics');
   } else {
     missingComponents.push('RT Critics');
@@ -50,26 +50,26 @@ export const calculateDetailedScore = (data: MovieScoringData): ScoreBreakdown =
   // RT Audience Score removed from scoring
   const rtAudienceScore = 0;
 
-  // IMDB Score (10% weight)
+  // IMDB Score (20% weight)
   let imdbScore = 0;
   if (data.imdbRating) {
     imdbScore = (data.imdbRating / 10) * 100;
-    totalScore += imdbScore * 0.1;
-    totalWeight += 0.1;
+    totalScore += imdbScore * 0.2;
+    totalWeight += 0.2;
     availableComponents.push('IMDB');
   } else {
     missingComponents.push('IMDB');
   }
 
-  // Oscar Bonus (10% weight)
+  // Oscar Bonus (20% weight)
   let oscarBonus = 0;
   if (data.oscarStatus === 'winner') {
     oscarBonus = 20;
   } else if (data.oscarStatus === 'nominee') {
     oscarBonus = 10;
   }
-  totalScore += oscarBonus * 0.1;
-  totalWeight += 0.1;
+  totalScore += oscarBonus * 0.2;
+  totalWeight += 0.2;
   availableComponents.push('Oscar Status');
 
   // Calculate final score

@@ -211,28 +211,28 @@ function calculateScore(data: any): number {
     totalWeight += 0.3
   }
 
-  // RT Critics (50%)
+  // RT Critics (30%)
   if (data.rtCriticsScore) {
-    totalScore += data.rtCriticsScore * 0.5
-    totalWeight += 0.5
+    totalScore += data.rtCriticsScore * 0.3
+    totalWeight += 0.3
   }
 
-  // IMDB (10%)
+  // IMDB (20%)
   if (data.imdbRating) {
     const imdbScore = (data.imdbRating / 10) * 100
-    totalScore += imdbScore * 0.1
-    totalWeight += 0.1
+    totalScore += imdbScore * 0.2
+    totalWeight += 0.2
   }
 
-  // Oscar Bonus (10%)
+  // Oscar Bonus (20%)
   let oscarBonus = 0
   if (data.oscarStatus === 'winner') {
     oscarBonus = 100
   } else if (data.oscarStatus === 'nominee') {
     oscarBonus = 50
   }
-  totalScore += oscarBonus * 0.1
-  totalWeight += 0.1
+  totalScore += oscarBonus * 0.2
+  totalWeight += 0.2
 
   const finalScore = totalWeight > 0 ? (totalScore / totalWeight) : 0
   return Math.round(finalScore * 100) / 100

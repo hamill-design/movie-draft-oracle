@@ -112,7 +112,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
 
           <ScoreMetric
             icon={Star}
-            label="RT Critics (50%)"
+            label="RT Critics (30%)"
             value={scoreBreakdown.rtCriticsScore}
             available={scoreBreakdown.availableComponents.includes('RT Critics')}
             suffix="%"
@@ -121,7 +121,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
 
           <ScoreMetric
             icon={Film}
-            label="IMDB (10%)"
+            label="IMDB (20%)"
             value={scoreBreakdown.imdbScore}
             available={scoreBreakdown.availableComponents.includes('IMDB')}
             suffix="%"
@@ -131,7 +131,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy size={16} className="text-yellow-400" />
-              <span className="text-sm text-white">Oscar Status (10%)</span>
+              <span className="text-sm text-white">Oscar Status (20%)</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-white">
