@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -32,6 +33,16 @@ serve(async (req) => {
         url = `${baseUrl}&page=${page}`;
         break;
       case 'search':
+        if (!searchQuery) {
+          return new Response(JSON.stringify({
+            results: [],
+            total_pages: 0,
+            total_results: 0,
+            page: 1
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
         baseUrl = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`;
         url = `${baseUrl}&page=${page}`;
         break;
@@ -61,7 +72,7 @@ serve(async (req) => {
         }
         break;
       case 'all':
-        // Search across popular movies
+        // For general browsing without search query
         baseUrl = `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`;
         url = `${baseUrl}&page=${page}`;
         break;
@@ -74,14 +85,14 @@ serve(async (req) => {
 
     let data;
     
-    if (fetchAll) {
-      // Fetch multiple pages but limit to prevent resource exhaustion
+    if (fetchAll && category !== 'search') {
+      // Only use fetchAll for non-search categories to avoid overwhelming search results
       const allResults = [];
       let currentPage = 1;
-      const maxPages = 20; // Reduced from 500 to prevent resource limits
+      const maxPages = category === 'all' ? 20 : 10; // Limit pages based on category
       
-      // For "all" category, fetch from multiple sources but limit pages
       if (category === 'all') {
+        // For "all" category, fetch from multiple sources but limit pages
         const sources = [
           `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`,
           `https://api.themoviedb.org/3/movie/top_rated?api_key=${tmdbApiKey}`,
@@ -90,9 +101,9 @@ serve(async (req) => {
         
         for (const sourceUrl of sources) {
           let sourcePage = 1;
-          const sourceMaxPages = 10; // Limit per source
+          const sourceMaxPages = 5; // Limit per source
           
-          while (sourcePage <= sourceMaxPages && allResults.length < 1000) {
+          while (sourcePage <= sourceMaxPages && allResults.length < 500) {
             const pageUrl = `${sourceUrl}&page=${sourcePage}`;
             console.log(`Fetching from source page ${sourcePage}/${sourceMaxPages}`);
             
@@ -161,8 +172,35 @@ serve(async (req) => {
         page: 1
       };
     } else {
+      // For search category or single page requests, just fetch the specific results
       const response = await fetch(url);
       data = await response.json();
+      
+      // For search category with fetchAll, get more pages but limit to search results
+      if (fetchAll && category === 'search' && data.total_pages > 1) {
+        const allSearchResults = [...(data.results || [])];
+        const maxSearchPages = Math.min(data.total_pages, 5); // Limit search to 5 pages max
+        
+        for (let page = 2; page <= maxSearchPages; page++) {
+          try {
+            const searchPageUrl = `${baseUrl}&page=${page}`;
+            const pageResponse = await fetch(searchPageUrl);
+            const pageData = await pageResponse.json();
+            
+            if (pageData.results && pageData.results.length > 0) {
+              allSearchResults.push(...pageData.results);
+            }
+          } catch (error) {
+            console.error(`Error fetching search page ${page}:`, error);
+          }
+        }
+        
+        data = {
+          ...data,
+          results: allSearchResults,
+          total_results: allSearchResults.length
+        };
+      }
     }
 
     console.log('TMDB API response:', data);
