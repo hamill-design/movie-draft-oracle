@@ -46,20 +46,24 @@ Deno.serve(async (req) => {
     console.log(`OMDB API Key configured: ${omdbApiKey ? 'YES' : 'NO'}`)
     console.log(`TMDB API Key configured: ${tmdbApiKey ? 'YES' : 'NO'}`)
 
-    // Fetch from OMDB API
+    // Fetch from OMDB API for IMDB and RT data
     if (omdbApiKey) {
       try {
         console.log(`--- FETCHING FROM OMDB ---`)
         
         // Clean the movie title for better search results
-        const cleanTitle = movieTitle.replace(/[^\w\s]/g, '').trim()
+        const cleanTitle = movieTitle.replace(/[^\w\s\-\.]/g, '').trim()
         
         // Try different search strategies
         const searchStrategies = [
-          `http://www.omdbapi.com/?t=${encodeURIComponent(movieTitle)}&y=${movieYear}&apikey=${omdbApiKey}`,
-          `http://www.omdbapi.com/?t=${encodeURIComponent(cleanTitle)}&y=${movieYear}&apikey=${omdbApiKey}`,
-          `http://www.omdbapi.com/?t=${encodeURIComponent(movieTitle)}&apikey=${omdbApiKey}`,
-          `http://www.omdbapi.com/?t=${encodeURIComponent(cleanTitle)}&apikey=${omdbApiKey}`
+          // Primary search with exact title and year
+          `http://www.omdbapi.com/?t=${encodeURIComponent(movieTitle)}&y=${movieYear}&apikey=${omdbApiKey}&plot=short`,
+          // Search with cleaned title and year
+          `http://www.omdbapi.com/?t=${encodeURIComponent(cleanTitle)}&y=${movieYear}&apikey=${omdbApiKey}&plot=short`,
+          // Search with exact title only
+          `http://www.omdbapi.com/?t=${encodeURIComponent(movieTitle)}&apikey=${omdbApiKey}&plot=short`,
+          // Search with cleaned title only
+          `http://www.omdbapi.com/?t=${encodeURIComponent(cleanTitle)}&apikey=${omdbApiKey}&plot=short`
         ]
         
         let omdbData = null
@@ -68,39 +72,50 @@ Deno.serve(async (req) => {
           console.log(`OMDB Strategy ${index + 1}: ${url}`)
           
           try {
-            const omdbResponse = await fetch(url)
+            const omdbResponse = await fetch(url, {
+              method: 'GET',
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (compatible; MovieApp/1.0)'
+              }
+            })
+            
+            if (!omdbResponse.ok) {
+              console.log(`✗ OMDB Strategy ${index + 1} HTTP error: ${omdbResponse.status}`)
+              continue
+            }
+            
             const responseText = await omdbResponse.text()
             console.log(`OMDB Response Status: ${omdbResponse.status}`)
-            console.log(`OMDB Response Text: ${responseText}`)
+            console.log(`OMDB Response Text (first 500 chars): ${responseText.substring(0, 500)}`)
             
-            if (omdbResponse.ok) {
-              const data = JSON.parse(responseText)
-              if (data && data.Response !== 'False') {
-                omdbData = data
-                console.log(`✓ OMDB Strategy ${index + 1} succeeded`)
-                break
-              } else {
-                console.log(`✗ OMDB Strategy ${index + 1} failed: ${data.Error || 'No data found'}`)
-              }
+            const data = JSON.parse(responseText)
+            if (data && data.Response !== 'False' && data.Title) {
+              omdbData = data
+              console.log(`✓ OMDB Strategy ${index + 1} succeeded for "${data.Title}" (${data.Year})`)
+              break
             } else {
-              console.log(`✗ OMDB Strategy ${index + 1} HTTP error: ${omdbResponse.status}`)
+              console.log(`✗ OMDB Strategy ${index + 1} failed: ${data.Error || 'No valid data found'}`)
             }
           } catch (strategyError) {
-            console.log(`✗ OMDB Strategy ${index + 1} error:`, strategyError)
+            console.log(`✗ OMDB Strategy ${index + 1} error:`, strategyError.message)
           }
           
-          // Small delay between requests
-          await new Promise(resolve => setTimeout(resolve, 200))
+          // Small delay between requests to avoid rate limiting
+          if (index < searchStrategies.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 300))
+          }
         }
 
         if (omdbData) {
           console.log(`--- PROCESSING OMDB DATA ---`)
+          console.log(`Movie found: "${omdbData.Title}" (${omdbData.Year})`)
+          console.log(`IMDB ID: ${omdbData.imdbID}`)
           console.log(`Full OMDB Data:`, JSON.stringify(omdbData, null, 2))
           
           // Extract IMDB rating
           if (omdbData.imdbRating && omdbData.imdbRating !== 'N/A' && omdbData.imdbRating !== '') {
             const imdbRating = parseFloat(omdbData.imdbRating)
-            if (!isNaN(imdbRating) && imdbRating > 0) {
+            if (!isNaN(imdbRating) && imdbRating > 0 && imdbRating <= 10) {
               enrichmentData.imdbRating = imdbRating
               hasAnyData = true
               console.log(`✓ IMDB Rating: ${imdbRating}`)
@@ -116,16 +131,18 @@ Deno.serve(async (req) => {
             console.log(`Processing ${omdbData.Ratings.length} ratings...`)
             
             for (const rating of omdbData.Ratings) {
-              console.log(`Rating source: ${rating.Source}, value: ${rating.Value}`)
+              console.log(`Rating source: "${rating.Source}", value: "${rating.Value}"`)
               
               if (rating.Source === 'Rotten Tomatoes') {
                 const scoreMatch = rating.Value.match(/(\d+)%/)
                 if (scoreMatch) {
                   const criticsScore = parseInt(scoreMatch[1])
-                  if (!isNaN(criticsScore)) {
+                  if (!isNaN(criticsScore) && criticsScore >= 0 && criticsScore <= 100) {
                     enrichmentData.rtCriticsScore = criticsScore
                     hasAnyData = true
-                    console.log(`✓ RT Critics Score: ${criticsScore}`)
+                    console.log(`✓ RT Critics Score: ${criticsScore}%`)
+                  } else {
+                    console.log(`✗ Invalid RT score: ${criticsScore}`)
                   }
                 } else {
                   console.log(`✗ Could not parse RT score: ${rating.Value}`)
@@ -139,7 +156,7 @@ Deno.serve(async (req) => {
           // Check for Oscar wins/nominations
           if (omdbData.Awards) {
             const awards = omdbData.Awards.toLowerCase()
-            console.log(`Awards: ${omdbData.Awards}`)
+            console.log(`Awards: "${omdbData.Awards}"`)
             if (awards.includes('won') && (awards.includes('oscar') || awards.includes('academy award'))) {
               enrichmentData.oscarStatus = 'winner'
               console.log(`✓ Oscar Status: winner`)
@@ -160,7 +177,7 @@ Deno.serve(async (req) => {
           enrichmentData.oscarStatus = 'none'
         }
       } catch (omdbError) {
-        console.error('❌ OMDB Error:', omdbError)
+        console.error('❌ OMDB Error:', omdbError.message)
         enrichmentData.oscarStatus = 'none'
       }
     } else {
@@ -175,14 +192,22 @@ Deno.serve(async (req) => {
         const tmdbUrl = `https://api.themoviedb.org/3/movie/${movieId}?api_key=${tmdbApiKey}`
         console.log(`TMDB URL: ${tmdbUrl}`)
         
-        const tmdbResponse = await fetch(tmdbUrl)
-        const responseText = await tmdbResponse.text()
-        console.log(`TMDB Response Status: ${tmdbResponse.status}`)
-        console.log(`TMDB Response Text: ${responseText}`)
+        const tmdbResponse = await fetch(tmdbUrl, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (compatible; MovieApp/1.0)'
+          }
+        })
+        
+        if (!tmdbResponse.ok) {
+          console.log(`✗ TMDB HTTP error: ${tmdbResponse.status}`)
+        } else {
+          const responseText = await tmdbResponse.text()
+          console.log(`TMDB Response Status: ${tmdbResponse.status}`)
+          console.log(`TMDB Response Text (first 500 chars): ${responseText.substring(0, 500)}`)
 
-        if (tmdbResponse.ok) {
           const tmdbData = JSON.parse(responseText)
-          console.log(`TMDB Data:`, JSON.stringify(tmdbData, null, 2))
+          console.log(`TMDB Data budget: ${tmdbData.budget}, revenue: ${tmdbData.revenue}`)
 
           if (tmdbData && !tmdbData.status_code) {
             if (tmdbData.budget && tmdbData.budget > 0) {
@@ -190,7 +215,7 @@ Deno.serve(async (req) => {
               hasAnyData = true
               console.log(`✓ Budget: $${enrichmentData.budget.toLocaleString()}`)
             } else {
-              console.log(`✗ No budget data`)
+              console.log(`✗ No budget data (value: ${tmdbData.budget})`)
             }
             
             if (tmdbData.revenue && tmdbData.revenue > 0) {
@@ -198,16 +223,14 @@ Deno.serve(async (req) => {
               hasAnyData = true
               console.log(`✓ Revenue: $${enrichmentData.revenue.toLocaleString()}`)
             } else {
-              console.log(`✗ No revenue data`)
+              console.log(`✗ No revenue data (value: ${tmdbData.revenue})`)
             }
           } else {
             console.log(`✗ TMDB API error: ${tmdbData.status_message || 'Unknown error'}`)
           }
-        } else {
-          console.log(`✗ TMDB HTTP error: ${tmdbResponse.status}`)
         }
       } catch (tmdbError) {
-        console.error('❌ TMDB Error:', tmdbError)
+        console.error('❌ TMDB Error:', tmdbError.message)
       }
     } else {
       console.log('❌ TMDB API key not configured or no movie ID')
@@ -227,6 +250,16 @@ Deno.serve(async (req) => {
     console.log(`--- UPDATING DATABASE ---`)
     console.log(`Movie ID: ${movieId}`)
     console.log(`Should mark complete: ${shouldMarkComplete}`)
+    console.log(`Update data:`, {
+      movie_budget: enrichmentData.budget || null,
+      movie_revenue: enrichmentData.revenue || null,
+      rt_critics_score: enrichmentData.rtCriticsScore || null,
+      rt_audience_score: enrichmentData.rtAudienceScore || null,
+      imdb_rating: enrichmentData.imdbRating || null,
+      oscar_status: enrichmentData.oscarStatus || 'none',
+      calculated_score: finalScore,
+      scoring_data_complete: shouldMarkComplete
+    })
 
     // Update the draft_picks table
     const { error: updateError } = await supabaseClient
