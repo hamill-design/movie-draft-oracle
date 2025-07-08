@@ -90,12 +90,10 @@ const FinalScores = () => {
   };
 
   const autoEnrichMovieData = async (picksData: DraftPick[]) => {
-    // Check for movies that don't have complete scoring data OR have a score of 0
+    // Check for movies that need RT/IMDB data specifically
     const moviesToEnrich = picksData.filter(pick => {
       const pickWithScoring = pick as any;
-      return !pickWithScoring.scoring_data_complete || 
-             pickWithScoring.calculated_score === null || 
-             pickWithScoring.calculated_score === 0;
+      return !pickWithScoring.rt_critics_score || !pickWithScoring.imdb_rating;
     });
     
     console.log('Auto-enriching movies:', moviesToEnrich.length, 'Total picks:', picksData.length);
