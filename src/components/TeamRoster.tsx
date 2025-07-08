@@ -17,13 +17,13 @@ const TeamRoster: React.FC<TeamRosterProps> = ({
   picks, 
   teamRank 
 }) => {
-  // Calculate team average score
+  // Calculate team average score - using any to access new columns
   const validScores = picks
-    .filter(pick => pick.calculated_score !== null)
-    .map(pick => pick.calculated_score!);
+    .filter(pick => (pick as any).calculated_score !== null)
+    .map(pick => (pick as any).calculated_score!);
   
   const teamAverage = validScores.length > 0 
-    ? validScores.reduce((sum, score) => sum + score, 0) / validScores.length
+    ? validScores.reduce((sum: number, score: number) => sum + score, 0) / validScores.length
     : 0;
 
   const sortedPicks = [...picks].sort((a, b) => a.pick_order - b.pick_order);
@@ -69,32 +69,35 @@ const TeamRoster: React.FC<TeamRosterProps> = ({
 
       {/* Individual Movie Cards */}
       <div className="space-y-4">
-        {sortedPicks.map((pick) => (
-          <div key={pick.id} className="relative">
-            <div className="absolute -left-4 top-4 bg-yellow-400 text-black rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
-              {pick.pick_order}
+        {sortedPicks.map((pick) => {
+          const pickWithScoring = pick as any; // Type assertion to access new columns
+          return (
+            <div key={pick.id} className="relative">
+              <div className="absolute -left-4 top-4 bg-yellow-400 text-black rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
+                {pick.pick_order}
+              </div>
+              <MovieScoreCard
+                movieTitle={pick.movie_title}
+                movieYear={pick.movie_year}
+                movieGenre={pick.movie_genre}
+                scoringData={{
+                  budget: pickWithScoring.movie_budget,
+                  revenue: pickWithScoring.movie_revenue,
+                  rtCriticsScore: pickWithScoring.rt_critics_score,
+                  rtAudienceScore: pickWithScoring.rt_audience_score,
+                  imdbRating: pickWithScoring.imdb_rating,
+                  oscarStatus: pickWithScoring.oscar_status
+                }}
+                className="ml-6"
+              />
+              <div className="ml-6 mt-2">
+                <span className="bg-gray-700 text-yellow-400 px-2 py-1 rounded text-xs font-medium">
+                  {pick.category}
+                </span>
+              </div>
             </div>
-            <MovieScoreCard
-              movieTitle={pick.movie_title}
-              movieYear={pick.movie_year}
-              movieGenre={pick.movie_genre}
-              scoringData={{
-                budget: pick.movie_budget,
-                revenue: pick.movie_revenue,
-                rtCriticsScore: pick.rt_critics_score,
-                rtAudienceScore: pick.rt_audience_score,
-                imdbRating: pick.imdb_rating,
-                oscarStatus: pick.oscar_status
-              }}
-              className="ml-6"
-            />
-            <div className="ml-6 mt-2">
-              <span className="bg-gray-700 text-yellow-400 px-2 py-1 rounded text-xs font-medium">
-                {pick.category}
-              </span>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

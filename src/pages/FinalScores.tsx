@@ -92,11 +92,11 @@ const FinalScores = () => {
     const teams: TeamScore[] = [];
     teamMap.forEach((playerPicks, playerName) => {
       const validScores = playerPicks
-        .filter(pick => pick.calculated_score !== null)
-        .map(pick => pick.calculated_score!);
+        .filter(pick => (pick as any).calculated_score !== null)
+        .map(pick => (pick as any).calculated_score!);
       
       const averageScore = validScores.length > 0 
-        ? validScores.reduce((sum, score) => sum + score, 0) / validScores.length
+        ? validScores.reduce((sum: number, score: number) => sum + score, 0) / validScores.length
         : 0;
 
       teams.push({
@@ -116,7 +116,7 @@ const FinalScores = () => {
     if (!picks.length) return;
 
     setEnrichingData(true);
-    const moviesToEnrich = picks.filter(pick => !pick.scoring_data_complete);
+    const moviesToEnrich = picks.filter(pick => !(pick as any).scoring_data_complete);
     
     if (moviesToEnrich.length === 0) {
       toast({
@@ -176,7 +176,7 @@ const FinalScores = () => {
     return null;
   }
 
-  const incompletePicks = picks.filter(pick => !pick.scoring_data_complete).length;
+  const incompletePicks = picks.filter(pick => !(pick as any).scoring_data_complete).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
