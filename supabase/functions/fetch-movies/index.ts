@@ -118,6 +118,7 @@ serve(async (req) => {
     if (fetchAll) {
       // Fetch ALL pages for comprehensive results
       const allResults = [];
+      const seenMovieIds = new Set(); // Track movie IDs to prevent duplicates
       let currentPage = 1;
       let totalPages = 1;
       
@@ -150,9 +151,13 @@ serve(async (req) => {
               
               if (pageData.results && pageData.results.length > 0) {
                 // Filter out duplicates based on movie ID
-                const newMovies = pageData.results.filter((movie: any) => 
-                  !allResults.some((existing: any) => existing.id === movie.id)
-                );
+                const newMovies = pageData.results.filter((movie: any) => {
+                  if (seenMovieIds.has(movie.id)) {
+                    return false;
+                  }
+                  seenMovieIds.add(movie.id);
+                  return true;
+                });
                 allResults.push(...newMovies);
               }
               
@@ -197,8 +202,16 @@ serve(async (req) => {
               const pageData = await response.json();
               
               if (pageData.results && pageData.results.length > 0) {
-                allResults.push(...pageData.results);
-                console.log(`Page ${currentPage}: Added ${pageData.results.length} movies. Total: ${allResults.length}`);
+                // Filter out duplicates based on movie ID
+                const newMovies = pageData.results.filter((movie: any) => {
+                  if (seenMovieIds.has(movie.id)) {
+                    return false;
+                  }
+                  seenMovieIds.add(movie.id);
+                  return true;
+                });
+                allResults.push(...newMovies);
+                console.log(`Page ${currentPage}: Added ${newMovies.length} new movies (${pageData.results.length - newMovies.length} duplicates filtered). Total unique: ${allResults.length}`);
               } else {
                 console.log(`Page ${currentPage}: No results, stopping fetch`);
                 break;
@@ -231,7 +244,7 @@ serve(async (req) => {
         }
       }
       
-      console.log(`Fetching complete. Total movies found: ${allResults.length}`);
+      console.log(`Fetching complete. Total unique movies found: ${allResults.length}`);
       
       data = {
         results: allResults,
