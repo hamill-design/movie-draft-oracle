@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -122,7 +123,7 @@ serve(async (req) => {
           }
         }
       } else {
-        // For specific categories, fetch limited pages
+        // For specific categories (including year and person), fetch from the specific endpoint
         console.log('Fetching multiple pages for category:', category);
         
         // First, get the first page to determine total pages
@@ -132,7 +133,7 @@ serve(async (req) => {
         
         console.log(`Total pages to fetch: ${totalPages}`);
         
-        while (currentPage <= totalPages) {
+        while (currentPage <= totalPages && allResults.length < 1000) {
           const pageUrl = `${baseUrl}&page=${currentPage}`;
           console.log(`Fetching page ${currentPage}/${totalPages}`);
           
