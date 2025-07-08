@@ -35,82 +35,99 @@ Deno.serve(async (req) => {
 
     console.log(`Enriching data for movie: ${movieTitle} (${movieYear})`)
 
+    let enrichmentData: MovieEnrichmentData = {}
+
     // Fetch from OMDB API
     const omdbApiKey = Deno.env.get('OMDB_API_KEY')
-    if (!omdbApiKey) {
-      throw new Error('OMDB API key not configured')
-    }
+    if (omdbApiKey) {
+      try {
+        // Search by title and year for better accuracy
+        const omdbUrl = `http://www.omdbapi.com/?t=${encodeURIComponent(movieTitle)}&y=${movieYear}&apikey=${omdbApiKey}&plot=short`
+        
+        console.log(`Fetching from OMDB: ${omdbUrl}`)
+        const omdbResponse = await fetch(omdbUrl)
+        const omdbData = await omdbResponse.json()
 
-    // Search by title and year for better accuracy
-    const omdbUrl = `http://www.omdbapi.com/?t=${encodeURIComponent(movieTitle)}&y=${movieYear}&apikey=${omdbApiKey}&plot=short`
-    
-    console.log(`Fetching from OMDB: ${omdbUrl}`)
-    const omdbResponse = await fetch(omdbUrl)
-    const omdbData = await omdbResponse.json()
+        if (omdbData.Response !== 'False') {
+          console.log('OMDB Data received:', JSON.stringify(omdbData, null, 2))
+          
+          // Extract Rotten Tomatoes scores
+          const ratings = omdbData.Ratings || []
+          const rtCritics = ratings.find((r: any) => r.Source === 'Rotten Tomatoes')
+          
+          if (rtCritics?.Value) {
+            const criticsScore = parseInt(rtCritics.Value.replace('%', ''))
+            if (!isNaN(criticsScore)) {
+              enrichmentData.rtCriticsScore = criticsScore
+              console.log(`RT Critics Score: ${criticsScore}`)
+            }
+          }
 
-    if (omdbData.Response === 'False') {
-      console.log(`OMDB API error for ${movieTitle}: ${omdbData.Error}`)
-      // Don't throw error, just log and continue with partial data
+          // Extract IMDB rating
+          if (omdbData.imdbRating && omdbData.imdbRating !== 'N/A') {
+            const imdbRating = parseFloat(omdbData.imdbRating)
+            if (!isNaN(imdbRating)) {
+              enrichmentData.imdbRating = imdbRating
+              console.log(`IMDB Rating: ${imdbRating}`)
+            }
+          }
+
+          // Check for Oscar wins/nominations
+          if (omdbData.Awards) {
+            const awards = omdbData.Awards.toLowerCase()
+            if (awards.includes('won') && (awards.includes('oscar') || awards.includes('academy award'))) {
+              enrichmentData.oscarStatus = 'winner'
+              console.log('Oscar Status: winner')
+            } else if (awards.includes('nominated') && (awards.includes('oscar') || awards.includes('academy award'))) {
+              enrichmentData.oscarStatus = 'nominee'
+              console.log('Oscar Status: nominee')
+            } else {
+              enrichmentData.oscarStatus = 'none'
+            }
+          } else {
+            enrichmentData.oscarStatus = 'none'
+          }
+        } else {
+          console.log(`OMDB API error for ${movieTitle}: ${omdbData.Error}`)
+          enrichmentData.oscarStatus = 'none'
+        }
+      } catch (omdbError) {
+        console.error('Error fetching from OMDB:', omdbError)
+        enrichmentData.oscarStatus = 'none'
+      }
+    } else {
+      console.log('OMDB API key not configured')
+      enrichmentData.oscarStatus = 'none'
     }
 
     // Fetch budget/revenue from TMDB (using existing fetch-movies function)
-    const tmdbResponse = await supabaseClient.functions.invoke('fetch-movies', {
-      body: {
-        category: 'details',
-        movieId: movieId
-      }
-    })
-
-    let enrichmentData: MovieEnrichmentData = {}
-
-    // Process OMDB data
-    if (omdbData.Response !== 'False') {
-      // Extract Rotten Tomatoes scores
-      const ratings = omdbData.Ratings || []
-      const rtCritics = ratings.find((r: any) => r.Source === 'Rotten Tomatoes')
-      const rtAudience = ratings.find((r: any) => r.Source === 'Rotten Tomatoes')
-      
-      if (rtCritics?.Value) {
-        const criticsScore = parseInt(rtCritics.Value.replace('%', ''))
-        if (!isNaN(criticsScore)) {
-          enrichmentData.rtCriticsScore = criticsScore
+    try {
+      const tmdbResponse = await supabaseClient.functions.invoke('fetch-movies', {
+        body: {
+          category: 'details',
+          movieId: movieId
         }
-      }
+      })
 
-      // For audience score, we'll need to make an additional call or parse differently
-      // OMDB doesn't always provide audience scores directly
-      
-      // Extract IMDB rating
-      if (omdbData.imdbRating && omdbData.imdbRating !== 'N/A') {
-        const imdbRating = parseFloat(omdbData.imdbRating)
-        if (!isNaN(imdbRating)) {
-          enrichmentData.imdbRating = imdbRating
-        }
-      }
+      console.log('TMDB Response:', JSON.stringify(tmdbResponse, null, 2))
 
-      // Check for Oscar wins/nominations
-      if (omdbData.Awards) {
-        const awards = omdbData.Awards.toLowerCase()
-        if (awards.includes('won') && (awards.includes('oscar') || awards.includes('academy award'))) {
-          enrichmentData.oscarStatus = 'winner'
-        } else if (awards.includes('nominated') && (awards.includes('oscar') || awards.includes('academy award'))) {
-          enrichmentData.oscarStatus = 'nominee'
-        } else {
-          enrichmentData.oscarStatus = 'none'
-        }
+      if (tmdbResponse.data?.budget) {
+        enrichmentData.budget = tmdbResponse.data.budget
+        console.log(`Budget: ${enrichmentData.budget}`)
       }
+      if (tmdbResponse.data?.revenue) {
+        enrichmentData.revenue = tmdbResponse.data.revenue
+        console.log(`Revenue: ${enrichmentData.revenue}`)
+      }
+    } catch (tmdbError) {
+      console.error('Error fetching from TMDB:', tmdbError)
     }
 
-    // Process TMDB data for budget/revenue
-    if (tmdbResponse.data?.budget) {
-      enrichmentData.budget = tmdbResponse.data.budget
-    }
-    if (tmdbResponse.data?.revenue) {
-      enrichmentData.revenue = tmdbResponse.data.revenue
-    }
+    console.log('Final enrichment data:', JSON.stringify(enrichmentData, null, 2))
 
     // Calculate final score
     const finalScore = calculateFinalScore(enrichmentData)
+    console.log(`Calculated final score: ${finalScore}`)
 
     // Update the draft_picks table
     const { error: updateError } = await supabaseClient
@@ -162,34 +179,48 @@ Deno.serve(async (req) => {
 })
 
 function calculateFinalScore(data: MovieEnrichmentData): number {
-  let score = 0
+  let totalScore = 0
   let totalWeight = 0
+
+  console.log('Calculating score with data:', JSON.stringify(data, null, 2))
 
   // Box Office Score (30% weight)
   if (data.budget && data.revenue && data.budget > 0) {
     const roi = ((data.revenue - data.budget) / data.budget) * 100
     const boxOfficeScore = Math.min(Math.max(roi, 0), 100) // Cap at 100, floor at 0
-    score += boxOfficeScore * 0.3
+    totalScore += boxOfficeScore * 0.3
     totalWeight += 0.3
+    console.log(`Box Office Score: ${boxOfficeScore} (ROI: ${roi}%)`)
+  } else {
+    console.log('No valid budget/revenue data for box office score')
   }
 
   // RT Critics Score (25% weight)
   if (data.rtCriticsScore) {
-    score += data.rtCriticsScore * 0.25
+    totalScore += data.rtCriticsScore * 0.25
     totalWeight += 0.25
+    console.log(`RT Critics Score: ${data.rtCriticsScore}`)
+  } else {
+    console.log('No RT Critics score available')
   }
 
-  // RT Audience Score (25% weight)
+  // RT Audience Score (25% weight) - For now, we'll skip this since OMDB doesn't provide it easily
   if (data.rtAudienceScore) {
-    score += data.rtAudienceScore * 0.25
+    totalScore += data.rtAudienceScore * 0.25
     totalWeight += 0.25
+    console.log(`RT Audience Score: ${data.rtAudienceScore}`)
+  } else {
+    console.log('No RT Audience score available')
   }
 
   // IMDB Score (10% weight)
   if (data.imdbRating) {
     const imdbScore = (data.imdbRating / 10) * 100
-    score += imdbScore * 0.1
+    totalScore += imdbScore * 0.1
     totalWeight += 0.1
+    console.log(`IMDB Score: ${imdbScore} (from rating: ${data.imdbRating})`)
+  } else {
+    console.log('No IMDB rating available')
   }
 
   // Oscar Bonus (10% weight)
@@ -199,13 +230,19 @@ function calculateFinalScore(data: MovieEnrichmentData): number {
   } else if (data.oscarStatus === 'nominee') {
     oscarBonus = 10
   }
-  score += oscarBonus * 0.1
+  totalScore += oscarBonus * 0.1
   totalWeight += 0.1
+  console.log(`Oscar Bonus: ${oscarBonus} (status: ${data.oscarStatus})`)
+
+  console.log(`Total weighted score: ${totalScore}, Total weight: ${totalWeight}`)
 
   // If we don't have all data, normalize by available weight
   if (totalWeight > 0) {
-    return Math.round((score / totalWeight) * 100) / 100
+    const finalScore = (totalScore / totalWeight) * 100
+    console.log(`Final normalized score: ${finalScore}`)
+    return Math.round(finalScore * 100) / 100
   }
 
+  console.log('No scoring data available, returning 0')
   return 0
 }
