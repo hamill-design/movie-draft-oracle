@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDraftGame } from '@/hooks/useDraftGame';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
@@ -56,23 +55,24 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     return 'popular';
   };
 
-  // Get the search parameter for the backend
-  const getSearchParameter = () => {
+  // Get the search parameter for the backend - this should be the theme option (year or person name)
+  const getThemeParameter = () => {
     if (draftState?.theme === 'year') {
-      return draftState.option;
+      return draftState.option; // The year
     } else if (draftState?.theme === 'people') {
-      return draftState.option;
+      return draftState.option; // The person name
     }
     return '';
   };
 
   const baseCategory = getBaseCategory();
-  const baseSearchParam = getSearchParameter();
+  const themeParameter = getThemeParameter();
   
-  // Use movies hook with search functionality
+  // Use movies hook - pass the theme parameter as the searchQuery to constrain results
+  // Then use the actual search query to filter within those results
   const { movies, loading: moviesLoading } = useMovies(
     baseCategory,
-    searchQuery.trim() || baseSearchParam
+    themeParameter // This constrains to year/person, search input will filter within these
   );
 
   // Auto-save function
@@ -164,6 +164,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
             loading={moviesLoading}
             selectedMovie={selectedMovie}
             onMovieSelect={handleMovieSelect}
+            themeParameter={themeParameter}
           />
 
           <CategorySelection
