@@ -79,7 +79,7 @@ serve(async (req) => {
       // Fetch multiple pages but limit to prevent resource exhaustion
       const allResults = [];
       let currentPage = 1;
-      const maxPages = 15; // Further reduced for performance
+      const maxPages = category === 'year' ? 30 : 15; // Increased limit for year searches
       
       // For "all" category, fetch popular movies from different decades
       if (category === 'all') {
@@ -131,7 +131,7 @@ serve(async (req) => {
         const initialData = await initialResponse.json();
         const totalPages = Math.min(initialData.total_pages || 1, maxPages);
         
-        console.log(`Total pages to fetch: ${totalPages}`);
+        console.log(`Total pages to fetch: ${totalPages} (max allowed: ${maxPages})`);
         
         while (currentPage <= totalPages && allResults.length < 1000) {
           const pageUrl = `${baseUrl}&page=${currentPage}`;
