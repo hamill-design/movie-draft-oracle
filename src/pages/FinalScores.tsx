@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -57,6 +56,14 @@ const FinalScores = () => {
       setDraft(draftData);
       setPicks(picksData || []);
       
+      console.log('Fetched picks with scoring data:', picksData?.map(p => ({
+        title: p.movie_title,
+        scoring_data_complete: (p as any).scoring_data_complete,
+        calculated_score: (p as any).calculated_score,
+        imdb_rating: (p as any).imdb_rating,
+        rt_critics_score: (p as any).rt_critics_score
+      })));
+      
       // Process team scores
       const teams = processTeamScores(picksData || []);
       setTeamScores(teams);
@@ -92,7 +99,7 @@ const FinalScores = () => {
     const teams: TeamScore[] = [];
     teamMap.forEach((playerPicks, playerName) => {
       const validScores = playerPicks
-        .filter(pick => (pick as any).calculated_score !== null)
+        .filter(pick => (pick as any).calculated_score !== null && (pick as any).calculated_score !== undefined)
         .map(pick => (pick as any).calculated_score!);
       
       const averageScore = validScores.length > 0 
@@ -116,12 +123,27 @@ const FinalScores = () => {
     if (!picks.length) return;
 
     setEnrichingData(true);
-    const moviesToEnrich = picks.filter(pick => !(pick as any).scoring_data_complete);
+    
+    // Check for movies that don't have complete scoring data OR have a score of 0
+    const moviesToEnrich = picks.filter(pick => {
+      const pickWithScoring = pick as any;
+      return !pickWithScoring.scoring_data_complete || 
+             pickWithScoring.calculated_score === null || 
+             pickWithScoring.calculated_score === 0;
+    });
+    
+    console.log('Movies to enrich:', moviesToEnrich.length, 'Total picks:', picks.length);
+    console.log('Movies needing enrichment:', moviesToEnrich.map(p => ({
+      title: p.movie_title,
+      year: p.movie_year,
+      complete: (p as any).scoring_data_complete,
+      score: (p as any).calculated_score
+    })));
     
     if (moviesToEnrich.length === 0) {
       toast({
-        title: "All movies already enriched",
-        description: "All movies in this draft have complete scoring data",
+        title: "All movies processed",
+        description: "All movies in this draft have been processed for scoring data",
       });
       setEnrichingData(false);
       return;
@@ -133,19 +155,29 @@ const FinalScores = () => {
     });
 
     try {
-      const enrichmentPromises = moviesToEnrich.map(pick => 
-        supabase.functions.invoke('enrich-movie-data', {
+      // Process movies one by one to avoid rate limiting
+      for (const pick of moviesToEnrich) {
+        console.log(`Processing movie: ${pick.movie_title} (${pick.movie_year})`);
+        
+        const { data, error } = await supabase.functions.invoke('enrich-movie-data', {
           body: {
             movieId: pick.movie_id,
             movieTitle: pick.movie_title,
             movieYear: pick.movie_year
           }
-        })
-      );
+        });
 
-      await Promise.allSettled(enrichmentPromises);
+        if (error) {
+          console.error(`Error enriching ${pick.movie_title}:`, error);
+        } else {
+          console.log(`Successfully enriched ${pick.movie_title}:`, data);
+        }
+        
+        // Small delay to avoid overwhelming the APIs
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
       
-      // Refresh data
+      // Refresh data after all movies are processed
       await fetchDraftData();
       
       toast({
@@ -176,7 +208,15 @@ const FinalScores = () => {
     return null;
   }
 
-  const incompletePicks = picks.filter(pick => !(pick as any).scoring_data_complete).length;
+  // Count movies that need enrichment (incomplete OR score of 0)
+  const incompletePicks = picks.filter(pick => {
+    const pickWithScoring = pick as any;
+    return !pickWithScoring.scoring_data_complete || 
+           pickWithScoring.calculated_score === null || 
+           pickWithScoring.calculated_score === 0;
+  }).length;
+
+  console.log('Incomplete picks count:', incompletePicks);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
@@ -199,21 +239,39 @@ const FinalScores = () => {
             </div>
           </div>
           
-          {incompletePicks > 0 && (
-            <Button
-              onClick={enrichAllMovies}
-              disabled={enrichingData}
-              className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
-            >
-              {enrichingData ? (
-                <RefreshCw size={16} className="mr-2 animate-spin" />
-              ) : (
-                <Zap size={16} className="mr-2" />
-              )}
-              {enrichingData ? 'Processing...' : 'Enrich Missing Data'}
-            </Button>
-          )}
+          {/* Always show the enrich button for debugging, but indicate status */}
+          <Button
+            onClick={enrichAllMovies}
+            disabled={enrichingData}
+            className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+          >
+            {enrichingData ? (
+              <RefreshCw size={16} className="mr-2 animate-spin" />
+            ) : (
+              <Zap size={16} className="mr-2" />
+            )}
+            {enrichingData ? 'Processing...' : `Enrich Data (${incompletePicks} need processing)`}
+          </Button>
         </div>
+
+        {/* Debug info */}
+        <Card className="bg-gray-800 border-gray-600 mb-6">
+          <CardHeader>
+            <CardTitle className="text-white">Debug Info</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-gray-300 space-y-2">
+              <p>Total picks: {picks.length}</p>
+              <p>Picks needing enrichment: {incompletePicks}</p>
+              <p>Sample pick data: {picks.length > 0 ? JSON.stringify({
+                title: picks[0].movie_title,
+                scoring_complete: (picks[0] as any).scoring_data_complete,
+                calculated_score: (picks[0] as any).calculated_score,
+                imdb_rating: (picks[0] as any).imdb_rating
+              }, null, 2) : 'No picks'}</p>
+            </div>
+          </CardContent>
+        </Card>
 
         <Tabs value={selectedTeam ? 'teams' : 'leaderboard'} className="space-y-6">
           <TabsList className="bg-gray-800 border-gray-600">

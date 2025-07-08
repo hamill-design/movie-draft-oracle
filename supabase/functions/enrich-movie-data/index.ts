@@ -143,11 +143,11 @@ Deno.serve(async (req) => {
     console.log('Final enrichment data:', JSON.stringify(enrichmentData, null, 2))
     console.log('Has any data:', hasAnyData)
 
-    // Calculate final score only if we have some data
-    const finalScore = hasAnyData ? calculateFinalScore(enrichmentData) : 0
+    // Calculate final score - ALWAYS calculate it, even if we don't have complete data
+    const finalScore = calculateFinalScore(enrichmentData)
     console.log(`Calculated final score: ${finalScore}`)
 
-    // Update the draft_picks table
+    // Update the draft_picks table - mark as complete if we have ANY data OR if we tried to get data
     const { error: updateError } = await supabaseClient
       .from('draft_picks')
       .update({
@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
         imdb_rating: enrichmentData.imdbRating || null,
         oscar_status: enrichmentData.oscarStatus || 'none',
         calculated_score: finalScore,
-        scoring_data_complete: hasAnyData // Only mark as complete if we actually got some data
+        scoring_data_complete: true // Mark as complete after processing, regardless of data found
       })
       .eq('movie_id', movieId)
 
@@ -199,69 +199,59 @@ Deno.serve(async (req) => {
 
 function calculateFinalScore(data: MovieEnrichmentData): number {
   let totalScore = 0
-  let totalWeight = 0
+  let componentCount = 0
 
   console.log('Calculating score with data:', JSON.stringify(data, null, 2))
 
-  // Box Office Score (30% weight)
+  // Box Office Score (weight: 1)
   if (data.budget && data.revenue && data.budget > 0) {
     const roi = ((data.revenue - data.budget) / data.budget) * 100
     const boxOfficeScore = Math.min(Math.max(roi, 0), 200) // Cap at 200%, floor at 0
-    totalScore += boxOfficeScore * 0.3
-    totalWeight += 0.3
+    totalScore += boxOfficeScore
+    componentCount++
     console.log(`Box Office Score: ${boxOfficeScore} (ROI: ${roi.toFixed(2)}%)`)
-  } else {
-    console.log('No valid budget/revenue data for box office score')
   }
 
-  // RT Critics Score (25% weight)
+  // RT Critics Score (weight: 1)
   if (data.rtCriticsScore && data.rtCriticsScore > 0) {
-    totalScore += data.rtCriticsScore * 0.25
-    totalWeight += 0.25
+    totalScore += data.rtCriticsScore
+    componentCount++
     console.log(`RT Critics Score: ${data.rtCriticsScore}`)
-  } else {
-    console.log('No RT Critics score available')
   }
 
-  // RT Audience Score (25% weight)
+  // RT Audience Score (weight: 1)
   if (data.rtAudienceScore && data.rtAudienceScore > 0) {
-    totalScore += data.rtAudienceScore * 0.25
-    totalWeight += 0.25
+    totalScore += data.rtAudienceScore
+    componentCount++
     console.log(`RT Audience Score: ${data.rtAudienceScore}`)
-  } else {
-    console.log('No RT Audience score available')
   }
 
-  // IMDB Score (10% weight)
+  // IMDB Score (weight: 1) - convert to 0-100 scale
   if (data.imdbRating && data.imdbRating > 0) {
     const imdbScore = (data.imdbRating / 10) * 100
-    totalScore += imdbScore * 0.1
-    totalWeight += 0.1
+    totalScore += imdbScore
+    componentCount++
     console.log(`IMDB Score: ${imdbScore.toFixed(2)} (from rating: ${data.imdbRating})`)
-  } else {
-    console.log('No IMDB rating available')
   }
 
-  // Oscar Bonus (10% weight) - always included
+  // Oscar Bonus (weight: 1) - always included as a component
   let oscarBonus = 0
   if (data.oscarStatus === 'winner') {
-    oscarBonus = 100 // Full bonus for winners
+    oscarBonus = 80 // High bonus for winners
   } else if (data.oscarStatus === 'nominee') {
-    oscarBonus = 50 // Half bonus for nominees
+    oscarBonus = 40 // Medium bonus for nominees
+  } else {
+    oscarBonus = 0 // No bonus for no awards
   }
-  totalScore += oscarBonus * 0.1
-  totalWeight += 0.1
+  totalScore += oscarBonus
+  componentCount++
   console.log(`Oscar Bonus: ${oscarBonus} (status: ${data.oscarStatus})`)
 
-  console.log(`Total weighted score: ${totalScore.toFixed(2)}, Total weight: ${totalWeight.toFixed(2)}`)
+  console.log(`Total score: ${totalScore}, Component count: ${componentCount}`)
 
-  // Calculate final score - normalize by the total possible weight
-  if (totalWeight > 0) {
-    const finalScore = totalScore / totalWeight
-    console.log(`Final normalized score: ${finalScore.toFixed(2)}`)
-    return Math.round(finalScore * 100) / 100
-  }
-
-  console.log('No scoring data available, returning 0')
-  return 0
+  // Calculate average score
+  const finalScore = componentCount > 0 ? totalScore / componentCount : 0
+  console.log(`Final averaged score: ${finalScore.toFixed(2)}`)
+  
+  return Math.round(finalScore * 100) / 100
 }
