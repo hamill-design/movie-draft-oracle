@@ -36,20 +36,26 @@ serve(async (req) => {
         url = `${baseUrl}&page=${page}`;
         break;
       case 'year':
-        baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${searchQuery}&sort_by=popularity.desc`;
+        // Make sure we're using the searchQuery as the year parameter
+        const year = searchQuery || new Date().getFullYear();
+        console.log('Searching for movies from year:', year);
+        baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${year}&sort_by=popularity.desc`;
         url = `${baseUrl}&page=${page}`;
         break;
       case 'person':
         // First, search for the person to get their ID
         const personSearchUrl = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`;
+        console.log('Searching for person:', searchQuery);
         const personResponse = await fetch(personSearchUrl);
         const personData = await personResponse.json();
         
         if (personData.results && personData.results.length > 0) {
           const selectedPerson = personData.results[0];
+          console.log('Found person:', selectedPerson.name, 'ID:', selectedPerson.id);
           baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&with_people=${selectedPerson.id}&sort_by=popularity.desc`;
           url = `${baseUrl}&page=${page}`;
         } else {
+          console.log('No person found for query:', searchQuery);
           return new Response(JSON.stringify({
             results: [],
             total_pages: 0,
