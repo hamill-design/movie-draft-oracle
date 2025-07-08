@@ -34,6 +34,16 @@ const MovieSearch = ({
     }
   };
 
+  // Filter movies more strictly based on search query
+  const filteredMovies = React.useMemo(() => {
+    if (!searchQuery.trim() || !movies.length) return [];
+    
+    const query = searchQuery.toLowerCase().trim();
+    return movies.filter(movie => 
+      movie.title.toLowerCase().includes(query)
+    );
+  }, [movies, searchQuery]);
+
   const shouldShowResults = searchQuery.trim().length > 0;
 
   return (
@@ -43,9 +53,9 @@ const MovieSearch = ({
           <Search className="text-yellow-400" size={24} />
           Search Movies
           {theme === 'year' ? ` from ${option}` : ` featuring ${option}`}
-          {!loading && movies.length > 0 && (
+          {!loading && filteredMovies.length > 0 && (
             <span className="text-sm text-gray-400 ml-2">
-              ({movies.length} movies found)
+              ({filteredMovies.length} movies found)
             </span>
           )}
         </CardTitle>
@@ -61,13 +71,13 @@ const MovieSearch = ({
         {shouldShowResults && (
           <div className="mt-4 max-h-60 overflow-y-auto space-y-2">
             {loading ? (
-              <div className="text-gray-400">Searching all available movies...</div>
-            ) : movies.length === 0 ? (
+              <div className="text-gray-400">Searching movies...</div>
+            ) : filteredMovies.length === 0 ? (
               <div className="text-gray-400">
-                No movies found {theme === 'year' ? `from ${option}` : `featuring ${option}`}
+                No movies found matching "{searchQuery}" {theme === 'year' ? `from ${option}` : `featuring ${option}`}
               </div>
             ) : (
-              movies.slice(0, 50).map((movie) => (
+              filteredMovies.slice(0, 50).map((movie) => (
                 <div
                   key={movie.id}
                   onClick={() => onMovieSelect(movie)}
@@ -84,9 +94,9 @@ const MovieSearch = ({
                 </div>
               ))
             )}
-            {movies.length > 50 && (
+            {filteredMovies.length > 50 && (
               <div className="text-gray-400 text-sm text-center py-2">
-                Showing first 50 results of {movies.length} movies. Use search to narrow down.
+                Showing first 50 results of {filteredMovies.length} movies matching "{searchQuery}".
               </div>
             )}
           </div>

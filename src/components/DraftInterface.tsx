@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useDraftGame } from '@/hooks/useDraftGame';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
@@ -68,15 +69,6 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     searchParams.category, 
     searchParams.query
   );
-
-  // Filter movies based on the search query
-  const filteredMovies = React.useMemo(() => {
-    if (!searchQuery.trim() || !movies.length) return movies;
-    
-    return movies.filter(movie => 
-      movie.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [movies, searchQuery]);
 
   // Auto-save function
   const performAutoSave = async (updatedPicks: any[], isComplete: boolean) => {
@@ -163,7 +155,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
             option={draftState.option}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-            movies={filteredMovies}
+            movies={movies}
             loading={moviesLoading}
             selectedMovie={selectedMovie}
             onMovieSelect={handleMovieSelect}
