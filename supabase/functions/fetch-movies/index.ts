@@ -36,33 +36,68 @@ serve(async (req) => {
         url = `${baseUrl}&page=${page}`;
         break;
       case 'year':
-        // Make sure we're using the searchQuery as the year parameter
+        // Use searchQuery as the year parameter and ensure it's a valid year
         const year = searchQuery || new Date().getFullYear();
         console.log('Searching for movies from year:', year);
-        baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${year}&sort_by=popularity.desc`;
+        
+        // Validate year is a reasonable number
+        const yearNum = parseInt(year.toString());
+        if (isNaN(yearNum) || yearNum < 1900 || yearNum > new Date().getFullYear() + 5) {
+          console.error('Invalid year provided:', year);
+          return new Response(JSON.stringify({
+            results: [],
+            total_pages: 0,
+            total_results: 0,
+            page: 1,
+            error: `Invalid year: ${year}`
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${yearNum}&sort_by=popularity.desc`;
         url = `${baseUrl}&page=${page}`;
+        console.log('Year search URL:', url);
         break;
       case 'person':
         // First, search for the person to get their ID
         const personSearchUrl = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`;
         console.log('Searching for person:', searchQuery);
-        const personResponse = await fetch(personSearchUrl);
-        const personData = await personResponse.json();
         
-        if (personData.results && personData.results.length > 0) {
-          const selectedPerson = personData.results[0];
-          console.log('Found person:', selectedPerson.name, 'ID:', selectedPerson.id);
-          baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&with_people=${selectedPerson.id}&sort_by=popularity.desc`;
-          url = `${baseUrl}&page=${page}`;
-        } else {
-          console.log('No person found for query:', searchQuery);
+        try {
+          const personResponse = await fetch(personSearchUrl);
+          if (!personResponse.ok) {
+            throw new Error(`Person search failed: ${personResponse.status}`);
+          }
+          const personData = await personResponse.json();
+          
+          if (personData.results && personData.results.length > 0) {
+            const selectedPerson = personData.results[0];
+            console.log('Found person:', selectedPerson.name, 'ID:', selectedPerson.id);
+            baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&with_people=${selectedPerson.id}&sort_by=popularity.desc`;
+            url = `${baseUrl}&page=${page}`;
+          } else {
+            console.log('No person found for query:', searchQuery);
+            return new Response(JSON.stringify({
+              results: [],
+              total_pages: 0,
+              total_results: 0,
+              page: 1
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+          }
+        } catch (personError) {
+          console.error('Error searching for person:', personError);
           return new Response(JSON.stringify({
             results: [],
             total_pages: 0,
             total_results: 0,
-            page: 1
+            page: 1,
+            error: `Person search failed: ${personError.message}`
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500
           });
         }
         break;
@@ -136,42 +171,63 @@ serve(async (req) => {
         console.log('Fetching all pages for category:', category);
         
         // First, get the first page to determine total pages
-        const initialResponse = await fetch(`${baseUrl}&page=1`);
-        const initialData = await initialResponse.json();
-        totalPages = initialData.total_pages || 1;
-        
-        console.log(`Total pages available: ${totalPages}`);
-        
-        // Fetch all pages (with reasonable limit to prevent timeout)
-        const maxPagesToFetch = Math.min(totalPages, 500); // Cap at 500 pages to prevent timeout
-        
-        while (currentPage <= maxPagesToFetch) {
-          const pageUrl = `${baseUrl}&page=${currentPage}`;
-          console.log(`Fetching page ${currentPage}/${maxPagesToFetch}:`, pageUrl);
-          
-          try {
-            const response = await fetch(pageUrl);
-            const pageData = await response.json();
-            
-            if (pageData.results && pageData.results.length > 0) {
-              allResults.push(...pageData.results);
-              console.log(`Page ${currentPage}: Added ${pageData.results.length} movies. Total: ${allResults.length}`);
-            } else {
-              console.log(`Page ${currentPage}: No results, stopping fetch`);
-              break;
-            }
-            
-            // Stop if we've reached the actual last page
-            if (currentPage >= (pageData.total_pages || 1)) {
-              console.log(`Reached last page: ${currentPage}`);
-              break;
-            }
-          } catch (error) {
-            console.error(`Error fetching page ${currentPage}:`, error);
-            // Continue to next page on error
+        try {
+          const initialResponse = await fetch(`${baseUrl}&page=1`);
+          if (!initialResponse.ok) {
+            throw new Error(`Initial fetch failed: ${initialResponse.status} ${initialResponse.statusText}`);
           }
+          const initialData = await initialResponse.json();
+          totalPages = initialData.total_pages || 1;
           
-          currentPage++;
+          console.log(`Total pages available: ${totalPages}`);
+          
+          // Fetch all pages (with reasonable limit to prevent timeout)
+          const maxPagesToFetch = Math.min(totalPages, 100); // Reduced from 500 to 100 for faster response
+          
+          while (currentPage <= maxPagesToFetch) {
+            const pageUrl = `${baseUrl}&page=${currentPage}`;
+            console.log(`Fetching page ${currentPage}/${maxPagesToFetch}:`, pageUrl);
+            
+            try {
+              const response = await fetch(pageUrl);
+              if (!response.ok) {
+                console.error(`Page ${currentPage} fetch failed: ${response.status} ${response.statusText}`);
+                break;
+              }
+              const pageData = await response.json();
+              
+              if (pageData.results && pageData.results.length > 0) {
+                allResults.push(...pageData.results);
+                console.log(`Page ${currentPage}: Added ${pageData.results.length} movies. Total: ${allResults.length}`);
+              } else {
+                console.log(`Page ${currentPage}: No results, stopping fetch`);
+                break;
+              }
+              
+              // Stop if we've reached the actual last page
+              if (currentPage >= (pageData.total_pages || 1)) {
+                console.log(`Reached last page: ${currentPage}`);
+                break;
+              }
+            } catch (error) {
+              console.error(`Error fetching page ${currentPage}:`, error);
+              // Continue to next page on error
+            }
+            
+            currentPage++;
+          }
+        } catch (initialError) {
+          console.error('Error in initial fetch:', initialError);
+          return new Response(JSON.stringify({
+            results: [],
+            total_pages: 0,
+            total_results: 0,
+            page: 1,
+            error: `Failed to fetch movies: ${initialError.message}`
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 500
+          });
         }
       }
       
@@ -184,8 +240,25 @@ serve(async (req) => {
         page: 1
       };
     } else {
-      const response = await fetch(url);
-      data = await response.json();
+      try {
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
+        }
+        data = await response.json();
+      } catch (fetchError) {
+        console.error('Error fetching from TMDB:', fetchError);
+        return new Response(JSON.stringify({
+          results: [],
+          total_pages: 0,
+          total_results: 0,
+          page: 1,
+          error: `TMDB fetch failed: ${fetchError.message}`
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
+        });
+      }
     }
 
     console.log('TMDB API response:', data);
@@ -276,7 +349,13 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error fetching movies from TMDB:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      results: [],
+      total_pages: 0,
+      total_results: 0,
+      page: 1
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
