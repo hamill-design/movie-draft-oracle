@@ -79,7 +79,7 @@ serve(async (req) => {
       // Fetch multiple pages but limit to prevent resource exhaustion
       const allResults = [];
       let currentPage = 1;
-      const maxPages = category === 'year' ? 30 : 15; // Increased limit for year searches
+      const maxPages = category === 'year' ? 60 : 15; // Increased limit for year searches to 60 pages
       
       // For "all" category, fetch popular movies from different decades
       if (category === 'all') {
