@@ -1,9 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Trophy, Users, Zap, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Trophy, Users, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { useToast } from '@/hooks/use-toast';
@@ -71,6 +72,10 @@ const FinalScores = () => {
       if (teams.length > 0) {
         setSelectedTeam(teams[0].playerName);
       }
+
+      // Automatically enrich data if needed
+      await autoEnrichMovieData(picksData || []);
+      
     } catch (error) {
       console.error('Error fetching draft data:', error);
       toast({
@@ -81,6 +86,76 @@ const FinalScores = () => {
       navigate('/profile');
     } finally {
       setLoadingData(false);
+    }
+  };
+
+  const autoEnrichMovieData = async (picksData: DraftPick[]) => {
+    // Check for movies that don't have complete scoring data OR have a score of 0
+    const moviesToEnrich = picksData.filter(pick => {
+      const pickWithScoring = pick as any;
+      return !pickWithScoring.scoring_data_complete || 
+             pickWithScoring.calculated_score === null || 
+             pickWithScoring.calculated_score === 0;
+    });
+    
+    console.log('Auto-enriching movies:', moviesToEnrich.length, 'Total picks:', picksData.length);
+    
+    if (moviesToEnrich.length === 0) {
+      console.log('All movies already have scoring data');
+      return;
+    }
+
+    setEnrichingData(true);
+    
+    toast({
+      title: "Loading movie data",
+      description: `Processing ${moviesToEnrich.length} movies automatically...`,
+    });
+
+    try {
+      // Process movies one by one to avoid rate limiting
+      for (const pick of moviesToEnrich) {
+        console.log(`Auto-processing movie: ${pick.movie_title} (${pick.movie_year})`);
+        
+        const { data, error } = await supabase.functions.invoke('enrich-movie-data', {
+          body: {
+            movieId: pick.movie_id,
+            movieTitle: pick.movie_title,
+            movieYear: pick.movie_year
+          }
+        });
+
+        if (error) {
+          console.error(`Error enriching ${pick.movie_title}:`, error);
+        } else {
+          console.log(`Successfully enriched ${pick.movie_title}:`, data);
+        }
+        
+        // Small delay to avoid overwhelming the APIs
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      // Refresh data after all movies are processed
+      const { draft: refreshedDraft, picks: refreshedPicks } = await getDraftWithPicks(draftId!);
+      setPicks(refreshedPicks || []);
+      
+      // Recalculate team scores
+      const refreshedTeams = processTeamScores(refreshedPicks || []);
+      setTeamScores(refreshedTeams);
+      
+      toast({
+        title: "Movie data loaded",
+        description: "All movie scoring data has been updated automatically",
+      });
+    } catch (error) {
+      console.error('Error auto-enriching movie data:', error);
+      toast({
+        title: "Data loading failed",
+        description: "Some movies could not be processed automatically",
+        variant: "destructive"
+      });
+    } finally {
+      setEnrichingData(false);
     }
   };
 
@@ -119,87 +194,19 @@ const FinalScores = () => {
     return teams.sort((a, b) => b.averageScore - a.averageScore);
   };
 
-  const enrichAllMovies = async () => {
-    if (!picks.length) return;
-
-    setEnrichingData(true);
-    
-    // Check for movies that don't have complete scoring data OR have a score of 0
-    const moviesToEnrich = picks.filter(pick => {
-      const pickWithScoring = pick as any;
-      return !pickWithScoring.scoring_data_complete || 
-             pickWithScoring.calculated_score === null || 
-             pickWithScoring.calculated_score === 0;
-    });
-    
-    console.log('Movies to enrich:', moviesToEnrich.length, 'Total picks:', picks.length);
-    console.log('Movies needing enrichment:', moviesToEnrich.map(p => ({
-      title: p.movie_title,
-      year: p.movie_year,
-      complete: (p as any).scoring_data_complete,
-      score: (p as any).calculated_score
-    })));
-    
-    if (moviesToEnrich.length === 0) {
-      toast({
-        title: "All movies processed",
-        description: "All movies in this draft have been processed for scoring data",
-      });
-      setEnrichingData(false);
-      return;
-    }
-
-    toast({
-      title: "Enriching movie data",
-      description: `Processing ${moviesToEnrich.length} movies...`,
-    });
-
-    try {
-      // Process movies one by one to avoid rate limiting
-      for (const pick of moviesToEnrich) {
-        console.log(`Processing movie: ${pick.movie_title} (${pick.movie_year})`);
-        
-        const { data, error } = await supabase.functions.invoke('enrich-movie-data', {
-          body: {
-            movieId: pick.movie_id,
-            movieTitle: pick.movie_title,
-            movieYear: pick.movie_year
-          }
-        });
-
-        if (error) {
-          console.error(`Error enriching ${pick.movie_title}:`, error);
-        } else {
-          console.log(`Successfully enriched ${pick.movie_title}:`, data);
-        }
-        
-        // Small delay to avoid overwhelming the APIs
-        await new Promise(resolve => setTimeout(resolve, 500));
-      }
-      
-      // Refresh data after all movies are processed
-      await fetchDraftData();
-      
-      toast({
-        title: "Data enrichment complete",
-        description: "Movie scoring data has been updated",
-      });
-    } catch (error) {
-      console.error('Error enriching movie data:', error);
-      toast({
-        title: "Enrichment failed",
-        description: "Some movies could not be processed. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setEnrichingData(false);
-    }
-  };
-
   if (loading || loadingData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl">
+          {enrichingData ? (
+            <div className="flex items-center gap-3">
+              <RefreshCw size={24} className="animate-spin" />
+              Loading movie data...
+            </div>
+          ) : (
+            'Loading...'
+          )}
+        </div>
       </div>
     );
   }
@@ -215,8 +222,6 @@ const FinalScores = () => {
            pickWithScoring.calculated_score === null || 
            pickWithScoring.calculated_score === 0;
   }).length;
-
-  console.log('Incomplete picks count:', incompletePicks);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
@@ -236,42 +241,28 @@ const FinalScores = () => {
             <div>
               <h1 className="text-3xl font-bold text-white">Final Scores</h1>
               <p className="text-gray-400">{draft.title}</p>
+              {enrichingData && (
+                <p className="text-yellow-400 text-sm mt-1 flex items-center gap-2">
+                  <RefreshCw size={14} className="animate-spin" />
+                  Processing movie data automatically...
+                </p>
+              )}
             </div>
           </div>
-          
-          {/* Always show the enrich button for debugging, but indicate status */}
-          <Button
-            onClick={enrichAllMovies}
-            disabled={enrichingData}
-            className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
-          >
-            {enrichingData ? (
-              <RefreshCw size={16} className="mr-2 animate-spin" />
-            ) : (
-              <Zap size={16} className="mr-2" />
-            )}
-            {enrichingData ? 'Processing...' : `Enrich Data (${incompletePicks} need processing)`}
-          </Button>
         </div>
 
-        {/* Debug info */}
-        <Card className="bg-gray-800 border-gray-600 mb-6">
-          <CardHeader>
-            <CardTitle className="text-white">Debug Info</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-gray-300 space-y-2">
-              <p>Total picks: {picks.length}</p>
-              <p>Picks needing enrichment: {incompletePicks}</p>
-              <p>Sample pick data: {picks.length > 0 ? JSON.stringify({
-                title: picks[0].movie_title,
-                scoring_complete: (picks[0] as any).scoring_data_complete,
-                calculated_score: (picks[0] as any).calculated_score,
-                imdb_rating: (picks[0] as any).imdb_rating
-              }, null, 2) : 'No picks'}</p>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Show loading state while enriching */}
+        {enrichingData && (
+          <Card className="bg-gray-800 border-gray-600 mb-6">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <RefreshCw size={32} className="animate-spin text-yellow-400 mx-auto mb-3" />
+                <p className="text-white text-lg">Processing movie scoring data...</p>
+                <p className="text-gray-400 text-sm">Please wait while we gather data from movie databases</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs value={selectedTeam ? 'teams' : 'leaderboard'} className="space-y-6">
           <TabsList className="bg-gray-800 border-gray-600">
