@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
@@ -32,7 +33,7 @@ serve(async (req) => {
         url = `${baseUrl}&page=${page}`;
         break;
       case 'search':
-        baseUrl = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`;
+        baseUrl = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}&sort_by=popularity.desc`;
         url = `${baseUrl}&page=${page}`;
         break;
       case 'year':
@@ -61,7 +62,7 @@ serve(async (req) => {
         }
         break;
       case 'all':
-        // Search across popular movies
+        // Fetch popular movies from different decades to ensure variety
         baseUrl = `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`;
         url = `${baseUrl}&page=${page}`;
         break;
@@ -78,23 +79,26 @@ serve(async (req) => {
       // Fetch multiple pages but limit to prevent resource exhaustion
       const allResults = [];
       let currentPage = 1;
-      const maxPages = 20; // Reduced from 500 to prevent resource limits
+      const maxPages = 15; // Further reduced for performance
       
-      // For "all" category, fetch from multiple sources but limit pages
+      // For "all" category, fetch popular movies from different decades
       if (category === 'all') {
-        const sources = [
-          `https://api.themoviedb.org/3/movie/popular?api_key=${tmdbApiKey}`,
-          `https://api.themoviedb.org/3/movie/top_rated?api_key=${tmdbApiKey}`,
-          `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&sort_by=popularity.desc`,
+        const decades = [
+          { start: 2020, end: 2024, name: '2020s' },
+          { start: 2010, end: 2019, name: '2010s' },
+          { start: 2000, end: 2009, name: '2000s' },
+          { start: 1990, end: 1999, name: '1990s' },
+          { start: 1980, end: 1989, name: '1980s' },
+          { start: 1970, end: 1979, name: '1970s' }
         ];
         
-        for (const sourceUrl of sources) {
+        for (const decade of decades) {
           let sourcePage = 1;
-          const sourceMaxPages = 10; // Limit per source
+          const sourceMaxPages = 3; // 3 pages per decade for variety
           
-          while (sourcePage <= sourceMaxPages && allResults.length < 1000) {
-            const pageUrl = `${sourceUrl}&page=${sourcePage}`;
-            console.log(`Fetching from source page ${sourcePage}/${sourceMaxPages}`);
+          while (sourcePage <= sourceMaxPages && allResults.length < 600) {
+            const pageUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_date.gte=${decade.start}-01-01&primary_release_date.lte=${decade.end}-12-31&sort_by=popularity.desc&page=${sourcePage}`;
+            console.log(`Fetching ${decade.name} page ${sourcePage}/${sourceMaxPages}`);
             
             try {
               const response = await fetch(pageUrl);
@@ -112,7 +116,7 @@ serve(async (req) => {
                 break;
               }
             } catch (error) {
-              console.error(`Error fetching from source page ${sourcePage}:`, error);
+              console.error(`Error fetching ${decade.name} page ${sourcePage}:`, error);
             }
             
             sourcePage++;
@@ -152,12 +156,22 @@ serve(async (req) => {
         }
       }
       
-      console.log(`Fetching complete. Total movies found: ${allResults.length}`);
+      // Sort results by popularity score (combination of vote_average and popularity)
+      allResults.sort((a: any, b: any) => {
+        const aScore = calculatePopularityScore(a);
+        const bScore = calculatePopularityScore(b);
+        return bScore - aScore;
+      });
+      
+      // Limit to top 600 most popular movies
+      const topResults = allResults.slice(0, 600);
+      
+      console.log(`Fetching complete. Total movies found: ${allResults.length}, returning top ${topResults.length}`);
       
       data = {
-        results: allResults,
-        total_pages: Math.ceil(allResults.length / 20),
-        total_results: allResults.length,
+        results: topResults,
+        total_pages: Math.ceil(topResults.length / 20),
+        total_results: topResults.length,
         page: 1
       };
     } else {
@@ -224,7 +238,8 @@ serve(async (req) => {
         budget: detailedMovie.budget || 0,
         revenue: detailedMovie.revenue || 0,
         hasOscar,
-        isBlockbuster
+        isBlockbuster,
+        popularity: movie.popularity || 0
       };
     }));
 
@@ -247,6 +262,19 @@ serve(async (req) => {
     });
   }
 });
+
+// Function to calculate popularity score combining multiple factors
+function calculatePopularityScore(movie: any): number {
+  const popularity = movie.popularity || 0;
+  const voteAverage = movie.vote_average || 0;
+  const voteCount = movie.vote_count || 0;
+  
+  // Weighted score: popularity (60%) + vote quality (25%) + vote count factor (15%)
+  const voteCountFactor = Math.min(voteCount / 1000, 10); // Cap at 10x multiplier
+  const voteQuality = voteAverage > 6 ? voteAverage : voteAverage * 0.5; // Penalize low ratings
+  
+  return (popularity * 0.6) + (voteQuality * 25 * 0.25) + (voteCountFactor * 10 * 0.15);
+}
 
 // Helper function to map genre IDs to names
 function getGenreName(genreId: number): string {
