@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Download, Share2, Twitter, Facebook, Linkedin, Copy, Check, Image as ImageIcon } from 'lucide-react';
+import { X, Download, Share2, Facebook, Instagram, Copy, Check, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -75,11 +75,19 @@ const ShareModal: React.FC<ShareModalProps> = ({
         }
         break;
       
-      case 'twitter':
-        console.log('Attempting Twitter share...');
-        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareData.text)}&url=${encodeURIComponent(shareData.url)}`;
-        console.log('Twitter URL:', twitterUrl);
-        window.open(twitterUrl, '_blank');
+      case 'instagram':
+        console.log('Attempting Instagram share...');
+        // Instagram doesn't have a direct URL share, so we'll copy the text for the user to paste
+        try {
+          const textToCopy = `${shareData.text}\n\n${shareData.url}`;
+          await navigator.clipboard.writeText(textToCopy);
+          toast({
+            title: "Text copied for Instagram!",
+            description: "Paste this in your Instagram post or story.",
+          });
+        } catch (error) {
+          console.error('Copy for Instagram failed:', error);
+        }
         break;
       
       case 'facebook':
@@ -95,12 +103,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
         window.open(facebookUrl, '_blank');
         break;
       
-      case 'linkedin':
-        console.log('Attempting LinkedIn share...');
-        const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareData.url)}&summary=${encodeURIComponent(shareData.text)}`;
-        console.log('LinkedIn URL:', linkedinUrl);
-        window.open(linkedinUrl, '_blank');
-        break;
       
       case 'copy':
         console.log('Attempting to copy to clipboard...');
@@ -194,15 +196,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
       <Button
         variant="outline"
         size="sm"
-        onClick={() => handleShare('twitter', useImage)}
-        className="justify-start"
-      >
-        <Twitter size={16} className="mr-2" />
-        Twitter
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
         onClick={() => handleShare('facebook', useImage)}
         className="justify-start"
       >
@@ -212,11 +205,11 @@ const ShareModal: React.FC<ShareModalProps> = ({
       <Button
         variant="outline"
         size="sm"
-        onClick={() => handleShare('linkedin', useImage)}
+        onClick={() => handleShare('instagram', useImage)}
         className="justify-start"
       >
-        <Linkedin size={16} className="mr-2" />
-        LinkedIn
+        <Instagram size={16} className="mr-2" />
+        Instagram
       </Button>
       <Button
         variant="outline"
@@ -260,10 +253,6 @@ const ShareModal: React.FC<ShareModalProps> = ({
           
           <TabsContent value="text" className="space-y-4">
             <div className="space-y-3">
-              <h3 className="font-semibold">Share Text Preview</h3>
-              <div className="bg-muted p-4 rounded-lg text-sm whitespace-pre-line max-h-40 overflow-y-auto">
-                {textShareData.text}
-              </div>
               <ShareButtons useImage={false} />
             </div>
           </TabsContent>
