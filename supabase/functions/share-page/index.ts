@@ -62,9 +62,41 @@ serve(async (req) => {
 
     const winner = teamScores[0]
     const title = `${draft.title} - CineDraft Championship Results`
-    const description = winner 
-      ? `🏆 ${winner.playerName} wins &quot;${draft.title}&quot; with ${winner.averageScore.toFixed(1)} points! Check out the epic movie draft battle results.`
-      : `Check out the final scores from &quot;${draft.title}&quot; movie draft competition!`
+    
+    // Generate the same rich description format as the frontend
+    let description = winner 
+      ? `🎬 The Ultimate Movie Draft Experience\n\n🏆 "${draft.title}" CHAMPION: ${winner.playerName}!\n📊 Winning Score: ${winner.averageScore.toFixed(1)} points\n`
+      : `🎬 The Ultimate Movie Draft Experience\n\nCheck out the final scores from "${draft.title}" movie draft competition!`
+    
+    if (winner) {
+      // Add top pick if available
+      const topPick = picks
+        .filter(pick => pick.player_name === winner.playerName && pick.calculated_score !== null)
+        .sort((a, b) => (b.calculated_score || 0) - (a.calculated_score || 0))[0]
+      
+      if (topPick) {
+        description += `🎯 Power Pick: ${topPick.movie_title} (${topPick.calculated_score?.toFixed(1)}pts)\n`
+      }
+      
+      description += `\n🏅 FINAL LEADERBOARD:\n`
+      teamScores.slice(0, 3).forEach((team, index) => {
+        const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'
+        description += `${medal} ${team.playerName}: ${team.averageScore.toFixed(1)}pts\n`
+      })
+      
+      if (teamScores.length > 3) {
+        description += `...and ${teamScores.length - 3} more competitors!\n`
+      }
+      
+      description += `\n⚡ Think you can draft better? #CineDraft #MovieDraft #Movies #FilmBattle`
+    }
+
+    // Escape HTML for meta tag attributes and convert newlines to spaces for better readability
+    const escapedDescription = description
+      .replace(/"/g, '&quot;')
+      .replace(/\n/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
 
     const appUrl = 'https://964f15f1-a644-4dc2-849a-48e1e55bfa91.lovableproject.com'
     const finalScoresUrl = `${appUrl}/final-scores/${draftId}`
@@ -103,14 +135,14 @@ serve(async (req) => {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${title}</title>
-    <meta name="description" content="${description}" />
+    <meta name="description" content="${escapedDescription}" />
     
     <!-- Facebook App ID -->
     <meta property="fb:app_id" content="966242223397117" />
     
     <!-- Open Graph tags -->
     <meta property="og:title" content="${title}" />
-    <meta property="og:description" content="${description}" />
+    <meta property="og:description" content="${escapedDescription}" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="${finalScoresUrl}" />
     <meta property="og:site_name" content="CineDraft" />
@@ -123,7 +155,7 @@ serve(async (req) => {
     <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="${description}" />
+    <meta property="og:image:alt" content="${escapedDescription}" />
     
     <!-- Additional Open Graph tags -->
     <meta property="og:determiner" content="the" />
@@ -132,9 +164,9 @@ serve(async (req) => {
     <!-- Twitter Card tags -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${title}" />
-    <meta name="twitter:description" content="${description}" />
+    <meta name="twitter:description" content="${escapedDescription}" />
     <meta name="twitter:image" content="${imageUrl}" />
-    <meta name="twitter:image:alt" content="${description}" />
+    <meta name="twitter:image:alt" content="${escapedDescription}" />
     <meta name="twitter:site" content="@CineDraft" />
     <meta name="twitter:creator" content="@CineDraft" />
     
