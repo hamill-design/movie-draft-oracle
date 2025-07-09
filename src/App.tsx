@@ -13,6 +13,8 @@ import DraftSetup from "./pages/DraftSetup";
 import Profile from "./pages/Profile";
 import DraftResults from "./pages/DraftResults";
 import FinalScores from "./pages/FinalScores";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +35,8 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/draft-results" element={<DraftResults />} />
             <Route path="/final-scores/:draftId" element={<FinalScores />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
