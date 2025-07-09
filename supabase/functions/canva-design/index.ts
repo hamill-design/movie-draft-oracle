@@ -29,7 +29,19 @@ serve(async (req) => {
     const baseUrl = 'https://api.canva.com/rest/v1'
 
     if (action === 'create') {
-      // Create a new design from template
+      console.log('Creating automated Canva design with data:', { draftTitle, teamScores: teamScores.length })
+      
+      // Sort teams by score for leaderboard
+      const sortedTeams = teamScores.sort((a, b) => b.averageScore - a.averageScore)
+      const winner = sortedTeams[0]
+      
+      // Get top movies from winner's picks
+      const topMovies = winner.picks
+        .sort((a, b) => (b.calculated_score || 0) - (a.calculated_score || 0))
+        .slice(0, 3)
+        .map(pick => pick.movie_title)
+
+      // Create design with automated data population
       const createResponse = await fetch(`${baseUrl}/designs`, {
         method: 'POST',
         headers: {
@@ -37,65 +49,107 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          design_type: 'Instagram Story',
-          width: 1080,
-          height: 1920,
+          design_type: 'InstagramStory',
+          title: `${draftTitle} - Results`,
+          content: {
+            elements: [
+              {
+                type: 'text',
+                content: draftTitle,
+                style: {
+                  font_size: '48px',
+                  font_weight: 'bold',
+                  color: '#FFFFFF',
+                  align: 'center'
+                },
+                position: { x: 50, y: 100, width: 980, height: 80 }
+              },
+              {
+                type: 'text',
+                content: `🏆 WINNER: ${winner.playerName}`,
+                style: {
+                  font_size: '36px',
+                  font_weight: 'bold',
+                  color: '#FFD700',
+                  align: 'center'
+                },
+                position: { x: 50, y: 200, width: 980, height: 60 }
+              },
+              {
+                type: 'text',
+                content: `Final Score: ${winner.averageScore.toFixed(1)}/10`,
+                style: {
+                  font_size: '28px',
+                  color: '#FFFFFF',
+                  align: 'center'
+                },
+                position: { x: 50, y: 280, width: 980, height: 50 }
+              },
+              {
+                type: 'text',
+                content: 'LEADERBOARD',
+                style: {
+                  font_size: '24px',
+                  font_weight: 'bold',
+                  color: '#FFFFFF',
+                  align: 'center'
+                },
+                position: { x: 50, y: 360, width: 980, height: 40 }
+              },
+              ...sortedTeams.slice(0, 5).map((team, index) => ({
+                type: 'text',
+                content: `${index + 1}. ${team.playerName} - ${team.averageScore.toFixed(1)}⭐`,
+                style: {
+                  font_size: '22px',
+                  color: index === 0 ? '#FFD700' : '#FFFFFF',
+                  align: 'left'
+                },
+                position: { x: 80, y: 420 + (index * 50), width: 920, height: 40 }
+              })),
+              {
+                type: 'text',
+                content: `Top Picks: ${topMovies.join(', ')}`,
+                style: {
+                  font_size: '18px',
+                  color: '#CCCCCC',
+                  align: 'center'
+                },
+                position: { x: 50, y: 750, width: 980, height: 100 }
+              },
+              {
+                type: 'text',
+                content: `#MovieDraft #${draftTitle.replace(/\s+/g, '')}`,
+                style: {
+                  font_size: '16px',
+                  color: '#888888',
+                  align: 'center'
+                },
+                position: { x: 50, y: 1800, width: 980, height: 40 }
+              }
+            ],
+            background: {
+              type: 'gradient',
+              colors: ['#1a1a2e', '#16213e', '#0f3460']
+            }
+          }
         })
       })
 
       if (!createResponse.ok) {
-        const error = await createResponse.text()
-        throw new Error(`Failed to create design: ${error}`)
+        const errorText = await createResponse.text()
+        console.error('Canva API Error:', errorText)
+        throw new Error(`Failed to create design: ${errorText}`)
       }
 
       const design = await createResponse.json()
-      const designId = design.design.id
-
-      // Add content to the design
-      const winner = teamScores.sort((a, b) => b.averageScore - a.averageScore)[0]
-      const content = [
-        {
-          type: 'text',
-          text: draftTitle,
-          font_size: 48,
-          color: '#FFFFFF',
-          position: { x: 50, y: 100 }
-        },
-        {
-          type: 'text',
-          text: `🏆 Winner: ${winner.playerName}`,
-          font_size: 36,
-          color: '#FFD700',
-          position: { x: 50, y: 200 }
-        },
-        {
-          type: 'text',
-          text: `Score: ${winner.averageScore.toFixed(1)}/10`,
-          font_size: 28,
-          color: '#FFFFFF',
-          position: { x: 50, y: 280 }
-        }
-      ]
-
-      // Add leaderboard
-      teamScores.slice(0, 5).forEach((team, index) => {
-        content.push({
-          type: 'text',
-          text: `${index + 1}. ${team.playerName} - ${team.averageScore.toFixed(1)}`,
-          font_size: 24,
-          color: '#FFFFFF',
-          position: { x: 50, y: 400 + (index * 60) }
-        })
-      })
-
-      // Update design with content (this would need actual Canva API endpoints)
-      // For now, return the design ID for further processing
+      console.log('Design created successfully:', design.design?.id)
       
       return new Response(JSON.stringify({ 
         success: true, 
-        designId,
-        editUrl: `https://www.canva.com/design/${designId}/edit`,
-        message: 'Design created successfully. You can edit it in Canva.'
+        designId: design.design.id,
+        editUrl: `https://www.canva.com/design/${design.design.id}/edit`,
+        previewUrl: design.design.urls?.view_url,
+        message: 'Automated design created with your draft data!'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -103,8 +157,8 @@ serve(async (req) => {
 
     if (action === 'export') {
       const { designId } = await req.json()
+      console.log('Exporting design:', designId)
       
-      // Export the design
       const exportResponse = await fetch(`${baseUrl}/designs/${designId}/export`, {
         method: 'POST',
         headers: {
@@ -113,20 +167,23 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           format: 'PNG',
-          quality: 'high'
+          quality: 'high',
+          pages: 'all'
         })
       })
 
       if (!exportResponse.ok) {
-        const error = await exportResponse.text()
-        throw new Error(`Failed to export design: ${error}`)
+        const errorText = await exportResponse.text()
+        console.error('Export Error:', errorText)
+        throw new Error(`Failed to export design: ${errorText}`)
       }
 
       const exportData = await exportResponse.json()
+      console.log('Export completed:', exportData.job?.id)
       
       return new Response(JSON.stringify({ 
         success: true, 
-        downloadUrl: exportData.urls[0],
+        downloadUrl: exportData.job?.result?.urls?.[0],
         message: 'Design exported successfully'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
