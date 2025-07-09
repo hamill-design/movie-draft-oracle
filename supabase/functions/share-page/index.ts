@@ -70,7 +70,7 @@ serve(async (req) => {
     const finalScoresUrl = `${appUrl}/final-scores/${draftId}`
     const imageUrl = 'https://lovable.dev/opengraph-image-p98pqg.png'
 
-    // Generate HTML with proper meta tags
+    // Generate HTML with proper meta tags (no JavaScript redirect for crawlers)
     const html = `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -96,18 +96,37 @@ serve(async (req) => {
     <meta name="twitter:image" content="${imageUrl}" />
     <meta name="twitter:site" content="@CineDraft" />
     
-    <!-- Redirect to main app -->
+    <!-- Only redirect for real users, not crawlers -->
     <script>
-      // Redirect to the main app immediately
-      window.location.href = '${finalScoresUrl}';
+      // Check if this is likely a social media crawler
+      const userAgent = navigator.userAgent.toLowerCase();
+      const isCrawler = userAgent.includes('facebookexternalhit') || 
+                       userAgent.includes('twitterbot') || 
+                       userAgent.includes('linkedinbot');
+      
+      // Only redirect if not a crawler
+      if (!isCrawler) {
+        window.location.href = '${finalScoresUrl}';
+      }
     </script>
   </head>
   <body>
-    <div>
-      <h1>${title}</h1>
-      <p>${description}</p>
-      <p>Redirecting to final scores...</p>
-      <a href="${finalScoresUrl}">Click here if you're not redirected automatically</a>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px;">
+      <h1 style="color: #333;">${title}</h1>
+      <p style="color: #666; font-size: 18px;">${description}</p>
+      <div style="margin: 30px 0;">
+        <h2 style="color: #333;">Final Standings:</h2>
+        ${teamScores.slice(0, 5).map((team, index) => {
+          const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🏅';
+          return `<p style="font-size: 16px; margin: 10px 0;">${medal} <strong>${team.playerName}</strong>: ${team.averageScore.toFixed(1)} points</p>`;
+        }).join('')}
+      </div>
+      <div style="margin-top: 40px;">
+        <a href="${finalScoresUrl}" style="background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Full Results</a>
+      </div>
+      <p style="color: #999; font-size: 14px; margin-top: 30px;">
+        <a href="${finalScoresUrl}">Click here to view the complete draft results</a>
+      </p>
     </div>
   </body>
 </html>`

@@ -1,1 +1,4 @@
 project_id = "zduruulowyopdstihfwk"
+
+[functions.share-page]
+verify_jwt = false
