@@ -278,12 +278,12 @@ const ShareModal: React.FC<ShareModalProps> = ({
               <div className="lg:w-1/2 flex justify-center">
                 <div 
                   ref={shareCardRef}
-                  className="overflow-hidden"
+                  className="overflow-hidden border border-border/20 shadow-lg"
                   style={{ 
-                    width: '216px', 
-                    height: '384px',
-                    transform: 'scale(0.2)',
-                    transformOrigin: 'top left'
+                    width: '540px', 
+                    height: '960px',
+                    transform: 'scale(0.5)',
+                    transformOrigin: 'top center'
                   }}
                 >
                   <ShareCard 
