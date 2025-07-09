@@ -22,7 +22,15 @@ const ShareCard: React.FC<ShareCardProps> = ({ draftTitle, teamScores, className
     .sort((a, b) => (b.calculated_score || 0) - (a.calculated_score || 0))[0];
 
   return (
-    <div className={`bg-gradient-to-br from-primary to-secondary text-primary-foreground p-8 rounded-2xl shadow-2xl max-w-md mx-auto ${className}`}>
+    <div 
+      className={`bg-gradient-to-br from-primary to-secondary text-primary-foreground p-8 shadow-2xl ${className}`}
+      style={{ 
+        width: '1080px', 
+        height: '1920px', 
+        aspectRatio: '9/16',
+        borderRadius: '0px'
+      }}
+    >
       {/* Header */}
       <div className="text-center mb-6">
         <div className="flex items-center justify-center gap-2 mb-2">
@@ -35,12 +43,12 @@ const ShareCard: React.FC<ShareCardProps> = ({ draftTitle, teamScores, className
       {/* Draft Title */}
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold mb-2 line-clamp-2">{draftTitle}</h2>
-        <div className="w-16 h-1 bg-white/30 rounded mx-auto"></div>
+        <div className="w-16 h-1 bg-white/30 mx-auto"></div>
       </div>
 
       {/* Winner Section */}
       {winner && (
-        <div className="bg-white/10 rounded-xl p-4 mb-4 backdrop-blur-sm">
+        <div className="bg-white/10 p-4 mb-4 backdrop-blur-sm">
           <div className="flex items-center gap-3 mb-3">
             <Trophy className="w-8 h-8 text-yellow-300" />
             <div>
@@ -64,7 +72,7 @@ const ShareCard: React.FC<ShareCardProps> = ({ draftTitle, teamScores, className
 
       {/* Top Pick */}
       {topPick && (
-        <div className="bg-white/10 rounded-xl p-4 mb-4 backdrop-blur-sm">
+        <div className="bg-white/10 p-4 mb-4 backdrop-blur-sm">
           <div className="flex items-center gap-2 mb-2">
             <Star className="w-5 h-5 text-yellow-300" />
             <p className="text-sm font-semibold opacity-80">POWER PICK</p>
@@ -84,7 +92,7 @@ const ShareCard: React.FC<ShareCardProps> = ({ draftTitle, teamScores, className
         {teamScores.slice(0, 3).map((team, index) => {
           const medals = ['🥇', '🥈', '🥉'];
           return (
-            <div key={team.playerName} className="flex justify-between items-center py-2 px-3 bg-white/5 rounded-lg">
+            <div key={team.playerName} className="flex justify-between items-center py-2 px-3 bg-white/5">
               <div className="flex items-center gap-2">
                 <span className="text-lg">{medals[index]}</span>
                 <span className="font-medium">{team.playerName}</span>
