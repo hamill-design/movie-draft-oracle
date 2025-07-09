@@ -65,7 +65,8 @@ export const generateShareText = (
 };
 
 export const generateFacebookShareUrl = (draftId: string): string => {
-  const sharePageUrl = `https://zdururulowypdsttihfwk.supabase.co/functions/v1/share-page?draftId=${draftId}`;
+  const sharePageUrl = `https://zduruulowyopdstihfwk.supabase.co/functions/v1/share-page?draftId=${draftId}`;
+  console.log('Generated Facebook share URL:', sharePageUrl);
   return sharePageUrl;
 };
 

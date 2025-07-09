@@ -51,10 +51,13 @@ const ShareModal: React.FC<ShareModalProps> = ({
   }, []);
 
   const handleShare = async (platform: string, useImage = false) => {
+    console.log('Share button clicked:', platform, 'useImage:', useImage);
     const shareData = useImage ? imageShareData : textShareData;
+    console.log('Share data:', shareData);
     
     switch (platform) {
       case 'native':
+        console.log('Attempting native share...');
         if (navigator.share) {
           try {
             await navigator.share({ 
@@ -62,41 +65,54 @@ const ShareModal: React.FC<ShareModalProps> = ({
               text: shareData.text, 
               url: shareData.url 
             });
+            console.log('Native share successful');
           } catch (error) {
-            console.log('Share cancelled');
+            console.log('Native share cancelled or failed:', error);
           }
         } else {
+          console.log('Native share not supported, falling back to copy');
           handleShare('copy', useImage);
         }
         break;
       
       case 'twitter':
+        console.log('Attempting Twitter share...');
         const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareData.text)}&url=${encodeURIComponent(shareData.url)}`;
+        console.log('Twitter URL:', twitterUrl);
         window.open(twitterUrl, '_blank');
         break;
       
       case 'facebook':
+        console.log('Attempting Facebook share...');
         // Use the special share page URL that has proper meta tags for Facebook
         const facebookShareUrl = generateFacebookShareUrl(draftId);
         const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(facebookShareUrl)}`;
+        console.log('Facebook URL:', facebookUrl);
         window.open(facebookUrl, '_blank');
         break;
       
       case 'linkedin':
+        console.log('Attempting LinkedIn share...');
         const linkedinUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareData.url)}&summary=${encodeURIComponent(shareData.text)}`;
+        console.log('LinkedIn URL:', linkedinUrl);
         window.open(linkedinUrl, '_blank');
         break;
       
       case 'copy':
+        console.log('Attempting to copy to clipboard...');
         try {
-          await navigator.clipboard.writeText(`${shareData.text}\n\n${shareData.url}`);
+          const textToCopy = `${shareData.text}\n\n${shareData.url}`;
+          console.log('Text to copy:', textToCopy);
+          await navigator.clipboard.writeText(textToCopy);
           setCopied(true);
+          console.log('Successfully copied to clipboard');
           toast({
             title: "Copied to clipboard!",
             description: "Share text has been copied to your clipboard.",
           });
           setTimeout(() => setCopied(false), 2000);
         } catch (error) {
+          console.error('Copy to clipboard failed:', error);
           toast({
             title: "Copy failed",
             description: "Could not copy to clipboard. Please try again.",
@@ -104,6 +120,9 @@ const ShareModal: React.FC<ShareModalProps> = ({
           });
         }
         break;
+        
+      default:
+        console.warn('Unknown share platform:', platform);
     }
   };
 
