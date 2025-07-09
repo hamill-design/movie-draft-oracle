@@ -1,8 +1,9 @@
 
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Calendar, Users, Trophy } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDrafts } from '@/hooks/useDrafts';
@@ -147,6 +148,25 @@ const Profile = () => {
             )}
           </CardContent>
         </Card>
+        
+        {/* Footer */}
+        <footer className="mt-12 pt-6 border-t border-gray-700">
+          <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
+            <Link 
+              to="/privacy-policy" 
+              className="hover:text-gray-300 transition-colors"
+            >
+              Privacy Policy
+            </Link>
+            <Separator orientation="vertical" className="h-4 bg-gray-600" />
+            <Link 
+              to="/terms-of-service" 
+              className="hover:text-gray-300 transition-colors"
+            >
+              Terms of Service
+            </Link>
+          </div>
+        </footer>
       </div>
     </div>
   );
