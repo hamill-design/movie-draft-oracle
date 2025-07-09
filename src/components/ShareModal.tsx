@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Download, Share2, Facebook, Instagram, Copy, Check, Image as ImageIcon } from 'lucide-react';
+import { X, Download, Share2, Instagram, Copy, Check, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -8,6 +8,7 @@ import html2canvas from 'html2canvas';
 import ShareCard from './ShareCard';
 import { generateShareText, generateImageShareText, generateFacebookShareUrl } from '@/utils/shareUtils';
 import { generateAndUploadShareImage, ensureStorageBucketExists } from '@/utils/imageUpload';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TeamScore {
   playerName: string;
@@ -38,6 +39,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [generatingStory, setGeneratingStory] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const { toast } = useToast();
   const shareCardRef = useRef<HTMLDivElement>(null);
@@ -75,46 +77,17 @@ const ShareModal: React.FC<ShareModalProps> = ({
         }
         break;
       
-      case 'instagram':
-        console.log('Attempting Instagram share...');
-        // Instagram doesn't have a direct URL share, so we'll copy the text for the user to paste
-        try {
-          const textToCopy = `${shareData.text}\n\n${shareData.url}`;
-          await navigator.clipboard.writeText(textToCopy);
-          toast({
-            title: "Text copied for Instagram!",
-            description: "Paste this in your Instagram post or story.",
-          });
-        } catch (error) {
-          console.error('Copy for Instagram failed:', error);
-        }
-        break;
-      
-      case 'facebook':
-        console.log('Attempting Facebook share...');
-        // Use the special share page URL that has proper meta tags for Facebook
-        const facebookShareUrl = generateFacebookShareUrl(draftId);
-        console.log('Generated Facebook share URL:', facebookShareUrl);
-        
-        // Add quote parameter to pre-populate Facebook post with our custom text
-        const encodedQuote = encodeURIComponent(shareData.text);
-        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(facebookShareUrl)}&quote=${encodedQuote}`;
-        console.log('Facebook URL:', facebookUrl);
-        window.open(facebookUrl, '_blank');
-        break;
-      
       
       case 'copy':
-        console.log('Attempting to copy to clipboard...');
+        console.log('Attempting to copy link to clipboard...');
         try {
-          const textToCopy = `${shareData.text}\n\n${shareData.url}`;
-          console.log('Text to copy:', textToCopy);
-          await navigator.clipboard.writeText(textToCopy);
+          console.log('Link to copy:', shareData.url);
+          await navigator.clipboard.writeText(shareData.url);
           setCopied(true);
-          console.log('Successfully copied to clipboard');
+          console.log('Successfully copied link to clipboard');
           toast({
-            title: "Copied to clipboard!",
-            description: "Share text has been copied to your clipboard.",
+            title: "Link copied to clipboard!",
+            description: "Share link has been copied to your clipboard.",
           });
           setTimeout(() => setCopied(false), 2000);
         } catch (error) {
@@ -126,6 +99,8 @@ const ShareModal: React.FC<ShareModalProps> = ({
           });
         }
         break;
+      
+      
         
       default:
         console.warn('Unknown share platform:', platform);
@@ -180,52 +155,63 @@ const ShareModal: React.FC<ShareModalProps> = ({
     }
   };
 
+  const generateInstagramStory = async () => {
+    setGeneratingStory(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-instagram-story', {
+        body: {
+          draftId,
+          draftTitle,
+          teamScores
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Instagram Story Generated!",
+          description: "Check the image tab to download your Instagram story image.",
+        });
+        
+        // Auto-copy the story text to clipboard
+        await navigator.clipboard.writeText(data.storyText);
+        
+        // Show additional instructions
+        toast({
+          title: "Story text copied!",
+          description: "Paste this text when you post to Instagram.",
+        });
+      }
+    } catch (error) {
+      console.error('Instagram story generation failed:', error);
+      toast({
+        title: "Generation failed",
+        description: "Could not generate Instagram story. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingStory(false);
+    }
+  };
+
   const ShareButtons = ({ useImage = false }: { useImage?: boolean }) => (
-    <div className="grid grid-cols-2 gap-3">
-      {navigator.share && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleShare('native', useImage)}
-          className="justify-start"
-        >
-          <Share2 size={16} className="mr-2" />
-          Share
-        </Button>
-      )}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => handleShare('facebook', useImage)}
-        className="justify-start"
-      >
-        <Facebook size={16} className="mr-2" />
-        Facebook
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => handleShare('instagram', useImage)}
-        className="justify-start"
-      >
-        <Instagram size={16} className="mr-2" />
-        Instagram
-      </Button>
+    <div className="flex justify-center">
       <Button
         variant="outline"
         size="sm"
         onClick={() => handleShare('copy', useImage)}
-        className="justify-start col-span-2"
+        className="justify-start min-w-[200px]"
       >
         {copied ? (
           <>
             <Check size={16} className="mr-2 text-green-500" />
-            Copied!
+            Link Copied!
           </>
         ) : (
           <>
             <Copy size={16} className="mr-2" />
-            Copy to Clipboard
+            Copy Link to Clipboard
           </>
         )}
       </Button>
@@ -284,6 +270,18 @@ const ShareModal: React.FC<ShareModalProps> = ({
                 </div>
                 
                 <div className="lg:w-1/2 space-y-4">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={generateInstagramStory}
+                      disabled={generatingStory}
+                      className="flex-1"
+                    >
+                      <Instagram size={16} className="mr-2" />
+                      {generatingStory ? 'Generating...' : 'Generate for Instagram'}
+                    </Button>
+                  </div>
                   <div>
                     <h4 className="font-medium mb-2">Caption Text</h4>
                     <div className="bg-muted p-3 rounded text-sm whitespace-pre-line max-h-32 overflow-y-auto">
