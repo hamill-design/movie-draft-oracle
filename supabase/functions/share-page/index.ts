@@ -68,7 +68,33 @@ serve(async (req) => {
 
     const appUrl = 'https://964f15f1-a644-4dc2-849a-48e1e55bfa91.lovableproject.com'
     const finalScoresUrl = `${appUrl}/final-scores/${draftId}`
-    const imageUrl = 'https://lovable.dev/opengraph-image-p98pqg.png'
+    
+    // Try to get the actual share image from storage
+    let imageUrl = 'https://lovable.dev/opengraph-image-p98pqg.png' // fallback
+    
+    try {
+      const { data: files } = await supabase.storage
+        .from('share-images')
+        .list('', {
+          search: draftId
+        })
+      
+      if (files && files.length > 0) {
+        // Get the most recent share image for this draft
+        const latestFile = files
+          .filter(file => file.name.includes(draftId))
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0]
+        
+        if (latestFile) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('share-images')
+            .getPublicUrl(latestFile.name)
+          imageUrl = publicUrl
+        }
+      }
+    } catch (error) {
+      console.log('Could not fetch share image, using fallback:', error)
+    }
 
     // Generate HTML with proper meta tags (no JavaScript redirect for crawlers)
     const html = `<!DOCTYPE html>
