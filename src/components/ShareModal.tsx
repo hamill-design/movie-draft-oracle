@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import html2canvas from 'html2canvas';
 import ShareCard from './ShareCard';
 import { generateShareText, generateImageShareText } from '@/utils/shareUtils';
+import { generateAndUploadShareImage, ensureStorageBucketExists } from '@/utils/imageUpload';
 
 interface TeamScore {
   playerName: string;
@@ -19,25 +20,35 @@ interface TeamScore {
 interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
+  draftId: string;
   draftTitle: string;
   teamScores: TeamScore[];
   totalPicks: number;
+  onImageGenerated?: (imageUrl: string) => void;
 }
 
 const ShareModal: React.FC<ShareModalProps> = ({ 
   isOpen, 
   onClose, 
+  draftId,
   draftTitle, 
   teamScores, 
-  totalPicks 
+  totalPicks,
+  onImageGenerated
 }) => {
   const [copied, setCopied] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const { toast } = useToast();
   const shareCardRef = useRef<HTMLDivElement>(null);
 
   const textShareData = generateShareText(draftTitle, teamScores, totalPicks);
   const imageShareData = generateImageShareText(draftTitle, teamScores);
+
+  // Initialize storage bucket on mount
+  React.useEffect(() => {
+    ensureStorageBucketExists();
+  }, []);
 
   const handleShare = async (platform: string, useImage = false) => {
     const shareData = useImage ? imageShareData : textShareData;
@@ -99,6 +110,19 @@ const ShareModal: React.FC<ShareModalProps> = ({
     
     setGenerating(true);
     try {
+      // Generate and upload image for social sharing
+      const uploadedImageUrl = await generateAndUploadShareImage(
+        shareCardRef.current,
+        draftId,
+        draftTitle
+      );
+
+      if (uploadedImageUrl) {
+        setShareImageUrl(uploadedImageUrl);
+        onImageGenerated?.(uploadedImageUrl);
+      }
+
+      // Also download locally
       const canvas = await html2canvas(shareCardRef.current, {
         backgroundColor: null,
         scale: 2,
@@ -113,8 +137,10 @@ const ShareModal: React.FC<ShareModalProps> = ({
       link.click();
       
       toast({
-        title: "Image saved!",
-        description: "Your share image has been downloaded.",
+        title: uploadedImageUrl ? "Image generated and uploaded!" : "Image saved!",
+        description: uploadedImageUrl 
+          ? "Your share image is ready for social media and has been downloaded."
+          : "Your share image has been downloaded.",
       });
     } catch (error) {
       toast({

@@ -12,12 +12,14 @@ interface TeamScore {
 }
 
 interface ShareButtonProps {
+  draftId: string;
   draftTitle: string;
   teamScores: TeamScore[];
   totalPicks: number;
+  onImageGenerated?: (imageUrl: string) => void;
 }
 
-const ShareButton: React.FC<ShareButtonProps> = ({ draftTitle, teamScores, totalPicks }) => {
+const ShareButton: React.FC<ShareButtonProps> = ({ draftId, draftTitle, teamScores, totalPicks, onImageGenerated }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -35,9 +37,11 @@ const ShareButton: React.FC<ShareButtonProps> = ({ draftTitle, teamScores, total
       <ShareModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        draftId={draftId}
         draftTitle={draftTitle}
         teamScores={teamScores}
         totalPicks={totalPicks}
+        onImageGenerated={onImageGenerated}
       />
     </>
   );

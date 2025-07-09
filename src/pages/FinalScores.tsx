@@ -14,6 +14,7 @@ import TeamRoster from '@/components/TeamRoster';
 import ShareButton from '@/components/ShareButton';
 import { getScoreColor, getScoreGrade } from '@/utils/scoreCalculator';
 import { generateShareText } from '@/utils/shareUtils';
+import { useMetaTags, generateMetaTags } from '@/hooks/useMetaTags';
 
 interface TeamScore {
   playerName: string;
@@ -35,6 +36,7 @@ const FinalScores = () => {
   const [teamScores, setTeamScores] = useState<TeamScore[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [enrichingData, setEnrichingData] = useState(false);
+  const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
 
   useEffect(() => {
@@ -194,6 +196,17 @@ const FinalScores = () => {
     return teams.sort((a, b) => b.averageScore - a.averageScore);
   };
 
+  // Update meta tags when data is available
+  const winner = teamScores.length > 0 ? teamScores[0] : null;
+  const metaTags = winner && draft 
+    ? generateMetaTags(draft.title, winner.playerName, winner.averageScore, shareImageUrl)
+    : [];
+  
+  useMetaTags(
+    metaTags, 
+    winner && draft ? `${draft.title} - CineDraft Championship Results` : undefined
+  );
+
   if (loading || loadingData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
@@ -253,9 +266,11 @@ const FinalScores = () => {
           {/* Share Button */}
           {teamScores.length > 0 && !enrichingData && (
             <ShareButton
+              draftId={draft.id}
               draftTitle={draft.title}
               teamScores={teamScores}
               totalPicks={picks.length}
+              onImageGenerated={setShareImageUrl}
             />
           )}
         </div>
