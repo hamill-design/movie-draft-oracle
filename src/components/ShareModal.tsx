@@ -275,12 +275,20 @@ const ShareModal: React.FC<ShareModalProps> = ({
             </div>
             
             <div className="flex flex-col lg:flex-row gap-4">
-              <div className="lg:w-1/2">
-                <div ref={shareCardRef}>
+              <div className="lg:w-1/2 flex justify-center">
+                <div 
+                  ref={shareCardRef}
+                  className="overflow-hidden"
+                  style={{ 
+                    width: '216px', 
+                    height: '384px',
+                    transform: 'scale(0.2)',
+                    transformOrigin: 'top left'
+                  }}
+                >
                   <ShareCard 
                     draftTitle={draftTitle} 
                     teamScores={teamScores}
-                    className="transform scale-90 origin-top"
                   />
                 </div>
               </div>
