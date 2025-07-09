@@ -3,10 +3,10 @@ import { X, Download, Share2, Instagram, Facebook, Copy, Check, Image as ImageIc
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import html2canvas from 'html2canvas';
 import ShareCard from './ShareCard';
 import { generateShareText, generateImageShareText, generateFacebookShareUrl } from '@/utils/shareUtils';
 import { generateAndUploadShareImage, ensureStorageBucketExists } from '@/utils/imageUpload';
+import { generateShareImageCanvas } from '@/utils/canvasImageGenerator';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TeamScore {
@@ -120,15 +120,12 @@ const ShareModal: React.FC<ShareModalProps> = ({
   };
 
   const generateAndDownloadImage = async () => {
-    if (!shareCardRef.current) return;
-    
     setGenerating(true);
     try {
       // Generate and upload image for social sharing
       const uploadedImageUrl = await generateAndUploadShareImage(
-        shareCardRef.current,
-        draftId,
-        draftTitle
+        draftTitle,
+        teamScores
       );
 
       if (uploadedImageUrl) {
@@ -136,14 +133,8 @@ const ShareModal: React.FC<ShareModalProps> = ({
         onImageGenerated?.(uploadedImageUrl);
       }
 
-      // Also download locally at full dimensions
-      const canvas = await html2canvas(shareCardRef.current, {
-        backgroundColor: null,
-        scale: 1,
-        width: 1080,
-        height: 1920,
-        useCORS: true,
-      });
+      // Also download locally using canvas
+      const canvas = generateShareImageCanvas({ draftTitle, teamScores });
       
       const link = document.createElement('a');
       link.download = `${draftTitle}-results.png`;

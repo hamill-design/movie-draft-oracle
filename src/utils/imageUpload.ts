@@ -1,20 +1,21 @@
-import html2canvas from 'html2canvas';
 import { supabase } from '@/integrations/supabase/client';
+import { generateShareImageCanvas } from './canvasImageGenerator';
+
+interface TeamScore {
+  playerName: string;
+  picks: any[];
+  averageScore: number;
+  completedPicks: number;
+  totalPicks: number;
+}
 
 export const generateAndUploadShareImage = async (
-  shareCardElement: HTMLElement,
-  draftId: string,
-  draftTitle: string
+  draftTitle: string,
+  teamScores: TeamScore[]
 ): Promise<string | null> => {
   try {
-    // Generate canvas from the share card at full Instagram story dimensions
-    const canvas = await html2canvas(shareCardElement, {
-      backgroundColor: null,
-      scale: 1,
-      width: 1080,
-      height: 1920,
-      useCORS: true,
-    });
+    // Generate canvas image
+    const canvas = generateShareImageCanvas({ draftTitle, teamScores });
 
     // Convert canvas to blob
     const blob = await new Promise<Blob>((resolve) => {
@@ -22,7 +23,7 @@ export const generateAndUploadShareImage = async (
     });
 
     // Generate file name
-    const fileName = `share-images/${draftId}-${Date.now()}.png`;
+    const fileName = `share-images/${Date.now()}-${draftTitle.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.png`;
 
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
