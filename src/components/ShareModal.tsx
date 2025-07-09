@@ -136,12 +136,12 @@ const ShareModal: React.FC<ShareModalProps> = ({
         onImageGenerated?.(uploadedImageUrl);
       }
 
-      // Also download locally
+      // Also download locally at full dimensions
       const canvas = await html2canvas(shareCardRef.current, {
         backgroundColor: null,
-        scale: 2,
-        width: 400,
-        height: 600,
+        scale: 1,
+        width: 1080,
+        height: 1920,
         useCORS: true,
       });
       
@@ -280,9 +280,9 @@ const ShareModal: React.FC<ShareModalProps> = ({
                   ref={shareCardRef}
                   className="overflow-hidden border border-border/20 shadow-lg"
                   style={{ 
-                    width: '540px', 
-                    height: '960px',
-                    transform: 'scale(0.5)',
+                    width: '270px', 
+                    height: '480px',
+                    transform: 'scale(1)',
                     transformOrigin: 'top center'
                   }}
                 >

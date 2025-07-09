@@ -7,12 +7,12 @@ export const generateAndUploadShareImage = async (
   draftTitle: string
 ): Promise<string | null> => {
   try {
-    // Generate canvas from the share card
+    // Generate canvas from the share card at full Instagram story dimensions
     const canvas = await html2canvas(shareCardElement, {
       backgroundColor: null,
-      scale: 2,
-      width: 400,
-      height: 600,
+      scale: 1,
+      width: 1080,
+      height: 1920,
       useCORS: true,
     });
 
