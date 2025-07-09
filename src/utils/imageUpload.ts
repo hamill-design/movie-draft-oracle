@@ -13,6 +13,9 @@ export const generateAndUploadShareImage = async (
   teamScores: TeamScore[]
 ): Promise<string | null> => {
   try {
+    console.log('Starting Canva image generation for:', draftTitle);
+    console.log('Team scores count:', teamScores.length);
+
     // Create design using Canva API
     const { data, error } = await supabase.functions.invoke('canva-design', {
       body: {
@@ -22,28 +25,22 @@ export const generateAndUploadShareImage = async (
       }
     });
 
-    if (error || !data.success) {
+    console.log('Canva create response:', { data, error });
+
+    if (error || !data?.success) {
       console.error('Canva design creation error:', error);
-      return null;
+      // Fallback: return a placeholder or throw with more details
+      throw new Error(`Canva design creation failed: ${error?.message || 'Unknown error'}`);
     }
 
-    // Export the design
-    const exportResponse = await supabase.functions.invoke('canva-design', {
-      body: {
-        action: 'export',
-        designId: data.designId
-      }
-    });
+    // For now, just return the edit URL since export might not work
+    // We'll simplify and just let users edit in Canva
+    console.log('Canva design created successfully:', data.designId);
+    return data.editUrl;
 
-    if (exportResponse.error || !exportResponse.data.success) {
-      console.error('Canva export error:', exportResponse.error);
-      return null;
-    }
-
-    return exportResponse.data.downloadUrl;
   } catch (error) {
-    console.error('Error generating/uploading share image:', error);
-    return null;
+    console.error('Error in generateAndUploadShareImage:', error);
+    throw error;
   }
 };
 

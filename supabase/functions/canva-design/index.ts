@@ -20,13 +20,18 @@ serve(async (req) => {
 
   try {
     const { draftTitle, teamScores, action = 'create' } = await req.json()
+    console.log('Canva function called with:', { action, draftTitle, teamScoresCount: teamScores?.length })
+    
     const canvaApiKey = Deno.env.get('CANVA_API_KEY')
+    console.log('Canva API key available:', !!canvaApiKey)
 
     if (!canvaApiKey) {
+      console.error('Canva API key not configured')
       throw new Error('Canva API key not configured')
     }
 
     const baseUrl = 'https://api.canva.com/rest/v1'
+    console.log('Using Canva API base URL:', baseUrl)
 
     if (action === 'create') {
       console.log('Creating automated Canva design with data:', { draftTitle, teamScores: teamScores.length })

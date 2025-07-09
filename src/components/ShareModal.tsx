@@ -121,33 +121,35 @@ const ShareModal: React.FC<ShareModalProps> = ({
   const generateAndDownloadImage = async () => {
     setGenerating(true);
     try {
-      // Generate and download image using Canva API
-      const downloadUrl = await generateAndUploadShareImage(
+      console.log('Starting image generation process...');
+      
+      // Generate design using Canva API
+      const result = await generateAndUploadShareImage(
         draftTitle,
         teamScores
       );
 
-      if (downloadUrl) {
-        setShareImageUrl(downloadUrl);
-        onImageGenerated?.(downloadUrl);
-        
-        // Download the image
-        const link = document.createElement('a');
-        link.download = `${draftTitle}-results.png`;
-        link.href = downloadUrl;
-        link.click();
+      console.log('Image generation result:', result);
+
+      if (result) {
+        setShareImageUrl(result);
+        onImageGenerated?.(result);
         
         toast({
-          title: "Image generated and downloaded!",
-          description: "Your professional Canva design has been created and downloaded.",
+          title: "Canva design created!",
+          description: "Opening Canva editor for your movie draft results.",
         });
+        
+        // Open Canva editor
+        window.open(result, '_blank');
       } else {
-        throw new Error('Failed to generate image');
+        throw new Error('Failed to generate Canva design');
       }
     } catch (error) {
+      console.error('Generation error:', error);
       toast({
         title: "Generation failed",
-        description: "Could not generate image. Please try again.",
+        description: error instanceof Error ? error.message : "Could not generate image. Please try again.",
         variant: "destructive",
       });
     } finally {
