@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Download, Share2, Instagram, Copy, Check, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { X, Download, Share2, Instagram, Facebook, Copy, Check, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -77,6 +77,19 @@ const ShareModal: React.FC<ShareModalProps> = ({
         break;
       
       
+      case 'facebook':
+        console.log('Attempting Facebook share...');
+        // Use the special share page URL that has proper meta tags for Facebook
+        const facebookShareUrl = generateFacebookShareUrl(draftId);
+        console.log('Generated Facebook share URL:', facebookShareUrl);
+        
+        // Add quote parameter to pre-populate Facebook post with our custom text
+        const encodedQuote = encodeURIComponent(shareData.text);
+        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(facebookShareUrl)}&quote=${encodedQuote}`;
+        console.log('Facebook URL:', facebookUrl);
+        window.open(facebookUrl, '_blank');
+        break;
+        
       case 'copy':
         console.log('Attempting to copy link to clipboard...');
         try {
@@ -195,12 +208,12 @@ const ShareModal: React.FC<ShareModalProps> = ({
   };
 
   const ShareButtons = ({ useImage = false }: { useImage?: boolean }) => (
-    <div className="flex justify-center">
+    <div className="flex gap-3 justify-center">
       <Button
         variant="outline"
         size="sm"
         onClick={() => handleShare('copy', useImage)}
-        className="justify-start min-w-[200px]"
+        className="justify-start min-w-[180px]"
       >
         {copied ? (
           <>
@@ -213,6 +226,15 @@ const ShareModal: React.FC<ShareModalProps> = ({
             Copy Link to Clipboard
           </>
         )}
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => handleShare('facebook', useImage)}
+        className="justify-start"
+      >
+        <Facebook size={16} className="mr-2" />
+        Facebook
       </Button>
     </div>
   );
