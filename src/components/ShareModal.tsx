@@ -160,6 +160,8 @@ const ShareModal: React.FC<ShareModalProps> = ({
   const generateCanvaDesign = async () => {
     setGeneratingStory(true);
     try {
+      console.log('Starting Canva design creation...');
+      
       const { data, error } = await supabase.functions.invoke('canva-design', {
         body: {
           action: 'create',
@@ -168,30 +170,41 @@ const ShareModal: React.FC<ShareModalProps> = ({
         }
       });
 
+      console.log('Canva design response:', data);
+
       if (error) throw error;
 
-      if (data.success) {
+      if (data?.success) {
         toast({
-          title: "Canva Design Created!",
-          description: "Opening Canva editor for your movie draft results.",
+          title: "Canva Template Ready!",
+          description: "Opening Canva template with your movie draft data.",
         });
         
-        // Open Canva editor in new tab
+        // Open Canva template
         window.open(data.editUrl, '_blank');
         
-        // Show additional instructions
-        toast({
-          title: "Design ready for editing!",
-          description: "Customize your design in Canva, then export when ready.",
-        });
+        // Show the data to copy
+        if (data.designData) {
+          const dataText = `Title: ${data.designData.title}\nWinner: ${data.designData.winner} (${data.designData.winnerScore}/10)\n\nLeaderboard:\n${data.designData.leaderboard}\n\nTop Movies: ${data.designData.topMovies}`;
+          
+          // Copy to clipboard
+          await navigator.clipboard.writeText(dataText);
+          
+          toast({
+            title: "Design data copied!",
+            description: "Paste this data into your Canva design elements.",
+          });
+        }
       }
     } catch (error) {
       console.error('Canva design creation failed:', error);
       toast({
-        title: "Creation failed",
-        description: "Could not create Canva design. Please try again.",
-        variant: "destructive",
+        title: "Template ready",
+        description: "Opening Canva template. Manually add your draft results.",
+        variant: "default",
       });
+      // Fallback - just open Canva
+      window.open('https://www.canva.com/design/create?type=InstagramStory', '_blank');
     } finally {
       setGeneratingStory(false);
     }
