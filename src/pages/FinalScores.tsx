@@ -39,11 +39,19 @@ const FinalScores = () => {
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
 
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
+  // Set default meta tags immediately for social crawlers
+  useMetaTags([
+    { property: 'og:title', content: 'CineDraft Championship Results' },
+    { property: 'og:description', content: 'Check out the final scores from this movie draft competition!' },
+    { property: 'og:type', content: 'website' },
+    { property: 'og:url', content: window.location.href },
+    { name: 'twitter:card', content: 'summary_large_image' },
+    { name: 'twitter:title', content: 'CineDraft Championship Results' },
+    { name: 'twitter:description', content: 'Check out the final scores from this movie draft competition!' }
+  ], 'CineDraft Championship Results');
+
+  // Only redirect to auth if user is actively trying to access protected features
+  // Don't redirect for social media crawlers viewing the results
 
   useEffect(() => {
     if (!draftId) {
@@ -224,7 +232,8 @@ const FinalScores = () => {
     );
   }
 
-  if (!user || !draft) {
+  // Allow viewing final scores without authentication for social sharing
+  if (!draft) {
     return null;
   }
 
@@ -242,15 +251,17 @@ const FinalScores = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
-            <Button
-              onClick={() => navigate('/profile')}
-              variant="outline"
-              size="sm"
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
-            >
-              <ArrowLeft size={16} className="mr-2" />
-              Back to Profile
-            </Button>
+            {user && (
+              <Button
+                onClick={() => navigate('/profile')}
+                variant="outline"
+                size="sm"
+                className="border-gray-600 text-gray-300 hover:bg-gray-700"
+              >
+                <ArrowLeft size={16} className="mr-2" />
+                Back to Profile
+              </Button>
+            )}
             <div>
               <h1 className="text-3xl font-bold text-white">Final Scores</h1>
               <p className="text-gray-400">{draft.title}</p>
@@ -263,8 +274,8 @@ const FinalScores = () => {
             </div>
           </div>
           
-          {/* Share Button */}
-          {teamScores.length > 0 && !enrichingData && (
+          {/* Share Button - only show for authenticated users */}
+          {user && teamScores.length > 0 && !enrichingData && (
             <ShareButton
               draftId={draft.id}
               draftTitle={draft.title}
