@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import html2canvas from 'html2canvas';
 import ShareCard from './ShareCard';
-import { generateShareText, generateImageShareText } from '@/utils/shareUtils';
+import { generateShareText, generateImageShareText, generateFacebookShareUrl } from '@/utils/shareUtils';
 import { generateAndUploadShareImage, ensureStorageBucketExists } from '@/utils/imageUpload';
 
 interface TeamScore {
@@ -76,7 +76,9 @@ const ShareModal: React.FC<ShareModalProps> = ({
         break;
       
       case 'facebook':
-        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareData.url)}&quote=${encodeURIComponent(shareData.text)}`;
+        // Use the special share page URL that has proper meta tags for Facebook
+        const facebookShareUrl = generateFacebookShareUrl(draftId);
+        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(facebookShareUrl)}`;
         window.open(facebookUrl, '_blank');
         break;
       

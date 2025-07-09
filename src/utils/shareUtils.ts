@@ -64,6 +64,11 @@ export const generateShareText = (
   };
 };
 
+export const generateFacebookShareUrl = (draftId: string): string => {
+  const sharePageUrl = `https://zdururulowypdsttihfwk.supabase.co/functions/v1/share-page?draftId=${draftId}`;
+  return sharePageUrl;
+};
+
 export const generateQuickShareText = (
   draftTitle: string,
   winner: TeamScore
