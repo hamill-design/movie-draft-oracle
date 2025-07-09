@@ -63,8 +63,8 @@ serve(async (req) => {
     const winner = teamScores[0]
     const title = `${draft.title} - CineDraft Championship Results`
     const description = winner 
-      ? `🏆 ${winner.playerName} wins "${draft.title}" with ${winner.averageScore.toFixed(1)} points! Check out the epic movie draft battle results.`
-      : `Check out the final scores from "${draft.title}" movie draft competition!`
+      ? `🏆 ${winner.playerName} wins &quot;${draft.title}&quot; with ${winner.averageScore.toFixed(1)} points! Check out the epic movie draft battle results.`
+      : `Check out the final scores from &quot;${draft.title}&quot; movie draft competition!`
 
     const appUrl = 'https://964f15f1-a644-4dc2-849a-48e1e55bfa91.lovableproject.com'
     const finalScoresUrl = `${appUrl}/final-scores/${draftId}`
