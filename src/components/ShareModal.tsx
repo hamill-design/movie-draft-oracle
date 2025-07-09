@@ -250,7 +250,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
           {/* Visual Share Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Visual Share Card</h3>
+              <h3 className="font-semibold">Professional Design with Canva</h3>
               <Button
                 variant="outline"
                 size="sm"
@@ -258,26 +258,34 @@ const ShareModal: React.FC<ShareModalProps> = ({
                 disabled={generating}
               >
                 <Download size={16} className="mr-2" />
-                {generating ? 'Generating...' : 'Download'}
+                {generating ? 'Creating...' : 'Generate & Download'}
               </Button>
             </div>
             
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="lg:w-1/2 flex justify-center">
-                <div 
-                  ref={shareCardRef}
-                  className="overflow-hidden border border-border/20 shadow-lg"
-                  style={{ 
-                    width: '270px', 
-                    height: '480px',
-                    transform: 'scale(1)',
-                    transformOrigin: 'top center'
-                  }}
-                >
-                  <ShareCard 
-                    draftTitle={draftTitle} 
-                    teamScores={teamScores}
-                  />
+                <div className="bg-gradient-to-br from-primary/10 to-secondary/10 border border-border/20 rounded-lg p-8 shadow-lg w-full max-w-sm">
+                  <div className="text-center space-y-4">
+                    <Sparkles size={48} className="mx-auto text-primary" />
+                    <h4 className="font-semibold text-lg">Canva Design Preview</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Your movie draft results will be transformed into a professional Canva design optimized for social media sharing.
+                    </p>
+                    <div className="space-y-2 text-xs text-muted-foreground">
+                      <div className="flex justify-between">
+                        <span>Winner:</span>
+                        <span className="font-medium">{teamScores.sort((a, b) => b.averageScore - a.averageScore)[0]?.playerName}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Top Score:</span>
+                        <span className="font-medium">{teamScores.sort((a, b) => b.averageScore - a.averageScore)[0]?.averageScore.toFixed(1)}/10</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Participants:</span>
+                        <span className="font-medium">{teamScores.length}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
               
@@ -291,14 +299,19 @@ const ShareModal: React.FC<ShareModalProps> = ({
                     className="flex-1"
                   >
                     <Sparkles size={16} className="mr-2" />
-                    {generatingStory ? 'Creating...' : 'Create with Canva'}
+                    {generatingStory ? 'Creating...' : 'Edit in Canva'}
                   </Button>
                 </div>
                 <div>
-                  <h4 className="font-medium mb-2">Caption Text</h4>
+                  <h4 className="font-medium mb-2">Share Text</h4>
                   <div className="bg-muted p-3 rounded text-sm whitespace-pre-line max-h-32 overflow-y-auto">
                     {imageShareData.text}
                   </div>
+                </div>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p>• Click "Edit in Canva" to customize your design</p>
+                  <p>• Use "Generate & Download" for instant sharing</p>
+                  <p>• Professional templates optimized for Instagram Stories</p>
                 </div>
               </div>
             </div>
