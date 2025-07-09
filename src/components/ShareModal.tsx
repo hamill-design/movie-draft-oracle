@@ -86,7 +86,11 @@ const ShareModal: React.FC<ShareModalProps> = ({
         console.log('Attempting Facebook share...');
         // Use the special share page URL that has proper meta tags for Facebook
         const facebookShareUrl = generateFacebookShareUrl(draftId);
-        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(facebookShareUrl)}`;
+        console.log('Generated Facebook share URL:', facebookShareUrl);
+        
+        // Add quote parameter to pre-populate Facebook post with our custom text
+        const encodedQuote = encodeURIComponent(shareData.text);
+        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(facebookShareUrl)}&quote=${encodedQuote}`;
         console.log('Facebook URL:', facebookUrl);
         window.open(facebookUrl, '_blank');
         break;
