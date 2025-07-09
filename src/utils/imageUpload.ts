@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-import { generateShareImageCanvas } from './canvasImageGenerator';
 
 interface TeamScore {
   playerName: string;
@@ -14,37 +13,34 @@ export const generateAndUploadShareImage = async (
   teamScores: TeamScore[]
 ): Promise<string | null> => {
   try {
-    // Generate canvas image
-    const canvas = generateShareImageCanvas({ draftTitle, teamScores });
-
-    // Convert canvas to blob
-    const blob = await new Promise<Blob>((resolve) => {
-      canvas.toBlob((blob) => resolve(blob!), 'image/png', 0.9);
+    // Create design using Canva API
+    const { data, error } = await supabase.functions.invoke('canva-design', {
+      body: {
+        action: 'create',
+        draftTitle,
+        teamScores
+      }
     });
 
-    // Generate file name
-    const fileName = `share-images/${Date.now()}-${draftTitle.replace(/[^a-z0-9]/gi, '-').toLowerCase()}.png`;
-
-    // Upload to Supabase Storage
-    const { data, error } = await supabase.storage
-      .from('share-images')
-      .upload(fileName, blob, {
-        contentType: 'image/png',
-        cacheControl: '3600',
-        upsert: true
-      });
-
-    if (error) {
-      console.error('Upload error:', error);
+    if (error || !data.success) {
+      console.error('Canva design creation error:', error);
       return null;
     }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('share-images')
-      .getPublicUrl(data.path);
+    // Export the design
+    const exportResponse = await supabase.functions.invoke('canva-design', {
+      body: {
+        action: 'export',
+        designId: data.designId
+      }
+    });
 
-    return publicUrl;
+    if (exportResponse.error || !exportResponse.data.success) {
+      console.error('Canva export error:', exportResponse.error);
+      return null;
+    }
+
+    return exportResponse.data.downloadUrl;
   } catch (error) {
     console.error('Error generating/uploading share image:', error);
     return null;

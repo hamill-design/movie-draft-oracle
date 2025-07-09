@@ -1,12 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { X, Download, Share2, Instagram, Facebook, Copy, Check, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { X, Download, Share2, Facebook, Copy, Check, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import ShareCard from './ShareCard';
 import { generateShareText, generateImageShareText, generateFacebookShareUrl } from '@/utils/shareUtils';
 import { generateAndUploadShareImage, ensureStorageBucketExists } from '@/utils/imageUpload';
-import { generateShareImageCanvas } from '@/utils/canvasImageGenerator';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TeamScore {
@@ -122,31 +121,29 @@ const ShareModal: React.FC<ShareModalProps> = ({
   const generateAndDownloadImage = async () => {
     setGenerating(true);
     try {
-      // Generate and upload image for social sharing
-      const uploadedImageUrl = await generateAndUploadShareImage(
+      // Generate and download image using Canva API
+      const downloadUrl = await generateAndUploadShareImage(
         draftTitle,
         teamScores
       );
 
-      if (uploadedImageUrl) {
-        setShareImageUrl(uploadedImageUrl);
-        onImageGenerated?.(uploadedImageUrl);
+      if (downloadUrl) {
+        setShareImageUrl(downloadUrl);
+        onImageGenerated?.(downloadUrl);
+        
+        // Download the image
+        const link = document.createElement('a');
+        link.download = `${draftTitle}-results.png`;
+        link.href = downloadUrl;
+        link.click();
+        
+        toast({
+          title: "Image generated and downloaded!",
+          description: "Your professional Canva design has been created and downloaded.",
+        });
+      } else {
+        throw new Error('Failed to generate image');
       }
-
-      // Also download locally using canvas
-      const canvas = generateShareImageCanvas({ draftTitle, teamScores });
-      
-      const link = document.createElement('a');
-      link.download = `${draftTitle}-results.png`;
-      link.href = canvas.toDataURL();
-      link.click();
-      
-      toast({
-        title: uploadedImageUrl ? "Image generated and uploaded!" : "Image saved!",
-        description: uploadedImageUrl 
-          ? "Your share image is ready for social media and has been downloaded."
-          : "Your share image has been downloaded.",
-      });
     } catch (error) {
       toast({
         title: "Generation failed",
