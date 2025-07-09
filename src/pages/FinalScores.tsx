@@ -253,7 +253,9 @@ const FinalScores = () => {
           {/* Share Button */}
           {teamScores.length > 0 && !enrichingData && (
             <ShareButton
-              {...generateShareText(draft.title, teamScores, picks.length)}
+              draftTitle={draft.title}
+              teamScores={teamScores}
+              totalPicks={picks.length}
             />
           )}
         </div>
