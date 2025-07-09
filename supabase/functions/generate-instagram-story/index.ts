@@ -30,13 +30,16 @@ serve(async (req) => {
     const winner = teamScores[0]
     const storyText = `🎬 ${draftTitle} Results!\n\n🏆 Winner: ${winner.playerName}\n📊 Score: ${winner.averageScore.toFixed(1)}\n\n🎯 ${winner.completedPicks}/${winner.totalPicks} picks scored\n\n#MovieDraft #DraftResults`
 
-    // Generate Instagram Story optimized image (1080x1920)
+    // Generate Instagram Story optimized image (1080x1920, no rounded edges)
     const imagePrompt = `Create a vibrant Instagram story image for movie draft results. 
+    IMPORTANT: Exact dimensions 1080x1920 pixels, vertical orientation, NO rounded corners or borders.
     Title: "${draftTitle}"
     Winner: "${winner.playerName}" with score ${winner.averageScore.toFixed(1)}
-    Style: Modern, eye-catching design with movie theme, trophy elements, and celebration vibes.
-    Aspect ratio: 9:16 (1080x1920), Instagram story format.
-    Include space for text overlay, cinema/movie themed graphics, and winner celebration.`
+    Style: Modern, clean design with movie theme, trophy elements, and celebration vibes.
+    Format: Full bleed Instagram story (9:16 aspect ratio), sharp rectangular edges.
+    Include bold typography, cinema/movie themed graphics, winner celebration elements.
+    Background should fill entire frame with no padding or margins.
+    Colors: Vibrant and eye-catching for social media.`
 
     // Call OpenAI to generate the image
     const openaiKey = Deno.env.get('OPENAI_API_KEY')
@@ -58,7 +61,8 @@ serve(async (req) => {
         prompt: imagePrompt,
         size: '1080x1920',
         quality: 'high',
-        output_format: 'png'
+        output_format: 'png',
+        background: 'opaque'
       }),
     })
 
