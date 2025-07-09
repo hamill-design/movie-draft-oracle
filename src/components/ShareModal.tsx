@@ -2,7 +2,6 @@ import React, { useState, useRef } from 'react';
 import { X, Download, Share2, Instagram, Copy, Check, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import html2canvas from 'html2canvas';
 import ShareCard from './ShareCard';
@@ -231,69 +230,62 @@ const ShareModal: React.FC<ShareModalProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="text" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="text">Text Share</TabsTrigger>
-            <TabsTrigger value="image">Visual Share</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="text" className="space-y-4">
-            <div className="space-y-3">
-              <ShareButtons useImage={false} />
+        <div className="space-y-6">
+          {/* Copy Link Section */}
+          <div className="space-y-3">
+            <h3 className="font-semibold">Share Link</h3>
+            <ShareButtons useImage={false} />
+          </div>
+
+          {/* Visual Share Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">Visual Share Card</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={generateAndDownloadImage}
+                disabled={generating}
+              >
+                <Download size={16} className="mr-2" />
+                {generating ? 'Generating...' : 'Download'}
+              </Button>
             </div>
-          </TabsContent>
-          
-          <TabsContent value="image" className="space-y-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Visual Share Card</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={generateAndDownloadImage}
-                  disabled={generating}
-                >
-                  <Download size={16} className="mr-2" />
-                  {generating ? 'Generating...' : 'Download'}
-                </Button>
+            
+            <div className="flex flex-col lg:flex-row gap-4">
+              <div className="lg:w-1/2">
+                <div ref={shareCardRef}>
+                  <ShareCard 
+                    draftTitle={draftTitle} 
+                    teamScores={teamScores}
+                    className="transform scale-90 origin-top"
+                  />
+                </div>
               </div>
               
-              <div className="flex flex-col lg:flex-row gap-4">
-                <div className="lg:w-1/2">
-                  <div ref={shareCardRef}>
-                    <ShareCard 
-                      draftTitle={draftTitle} 
-                      teamScores={teamScores}
-                      className="transform scale-90 origin-top"
-                    />
-                  </div>
+              <div className="lg:w-1/2 space-y-4">
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={generateInstagramStory}
+                    disabled={generatingStory}
+                    className="flex-1"
+                  >
+                    <Instagram size={16} className="mr-2" />
+                    {generatingStory ? 'Generating...' : 'Generate for Instagram'}
+                  </Button>
                 </div>
-                
-                <div className="lg:w-1/2 space-y-4">
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={generateInstagramStory}
-                      disabled={generatingStory}
-                      className="flex-1"
-                    >
-                      <Instagram size={16} className="mr-2" />
-                      {generatingStory ? 'Generating...' : 'Generate for Instagram'}
-                    </Button>
+                <div>
+                  <h4 className="font-medium mb-2">Caption Text</h4>
+                  <div className="bg-muted p-3 rounded text-sm whitespace-pre-line max-h-32 overflow-y-auto">
+                    {imageShareData.text}
                   </div>
-                  <div>
-                    <h4 className="font-medium mb-2">Caption Text</h4>
-                    <div className="bg-muted p-3 rounded text-sm whitespace-pre-line max-h-32 overflow-y-auto">
-                      {imageShareData.text}
-                    </div>
-                  </div>
-                  <ShareButtons useImage={true} />
                 </div>
               </div>
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
