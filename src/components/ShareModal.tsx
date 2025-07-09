@@ -158,12 +158,12 @@ const ShareModal: React.FC<ShareModalProps> = ({
     }
   };
 
-  const generateInstagramStory = async () => {
+  const generateCanvaDesign = async () => {
     setGeneratingStory(true);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-instagram-story', {
+      const { data, error } = await supabase.functions.invoke('canva-design', {
         body: {
-          draftId,
+          action: 'create',
           draftTitle,
           teamScores
         }
@@ -173,24 +173,24 @@ const ShareModal: React.FC<ShareModalProps> = ({
 
       if (data.success) {
         toast({
-          title: "Instagram Story Generated!",
-          description: "Check the image tab to download your Instagram story image.",
+          title: "Canva Design Created!",
+          description: "Opening Canva editor for your movie draft results.",
         });
         
-        // Auto-copy the story text to clipboard
-        await navigator.clipboard.writeText(data.storyText);
+        // Open Canva editor in new tab
+        window.open(data.editUrl, '_blank');
         
         // Show additional instructions
         toast({
-          title: "Story text copied!",
-          description: "Paste this text when you post to Instagram.",
+          title: "Design ready for editing!",
+          description: "Customize your design in Canva, then export when ready.",
         });
       }
     } catch (error) {
-      console.error('Instagram story generation failed:', error);
+      console.error('Canva design creation failed:', error);
       toast({
-        title: "Generation failed",
-        description: "Could not generate Instagram story. Please try again.",
+        title: "Creation failed",
+        description: "Could not create Canva design. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -289,12 +289,12 @@ const ShareModal: React.FC<ShareModalProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={generateInstagramStory}
+                    onClick={generateCanvaDesign}
                     disabled={generatingStory}
                     className="flex-1"
                   >
-                    <Instagram size={16} className="mr-2" />
-                    {generatingStory ? 'Generating...' : 'Generate for Instagram'}
+                    <Sparkles size={16} className="mr-2" />
+                    {generatingStory ? 'Creating...' : 'Create with Canva'}
                   </Button>
                 </div>
                 <div>
