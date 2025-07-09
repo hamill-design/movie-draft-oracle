@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Download, Share2, Twitter, Facebook, Linkedin, Copy, Check, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import html2canvas from 'html2canvas';
@@ -243,6 +243,9 @@ const ShareModal: React.FC<ShareModalProps> = ({
             <Share2 size={20} />
             Share Your Draft Results
           </DialogTitle>
+          <DialogDescription>
+            Share your movie draft results on social media or copy the link to share with friends.
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="text" className="w-full">
