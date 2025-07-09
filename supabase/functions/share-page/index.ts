@@ -106,7 +106,7 @@ serve(async (req) => {
     <meta name="description" content="${description}" />
     
     <!-- Facebook App ID -->
-    <meta property="fb:app_id" content="1449255142879910" />
+    <meta property="fb:app_id" content="966242223397117" />
     
     <!-- Open Graph tags -->
     <meta property="og:title" content="${title}" />
@@ -114,9 +114,11 @@ serve(async (req) => {
     <meta property="og:type" content="website" />
     <meta property="og:url" content="${finalScoresUrl}" />
     <meta property="og:image" content="${imageUrl}" />
-    <meta property="og:image:width" content="400" />
-    <meta property="og:image:height" content="600" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:site_name" content="CineDraft" />
+    <meta property="og:locale" content="en_US" />
     
     <!-- Twitter Card tags -->
     <meta name="twitter:card" content="summary_large_image" />
