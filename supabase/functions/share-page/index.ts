@@ -113,19 +113,30 @@ serve(async (req) => {
     <meta property="og:description" content="${description}" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="${finalScoresUrl}" />
-    <meta property="og:image" content="${imageUrl}" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:type" content="image/png" />
     <meta property="og:site_name" content="CineDraft" />
     <meta property="og:locale" content="en_US" />
+    <meta property="og:updated_time" content="${new Date().toISOString()}" />
+    
+    <!-- Open Graph Image tags -->
+    <meta property="og:image" content="${imageUrl}" />
+    <meta property="og:image:secure_url" content="${imageUrl}" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="${description}" />
+    
+    <!-- Additional Open Graph tags -->
+    <meta property="og:determiner" content="the" />
+    <meta property="og:rich_attachment" content="true" />
     
     <!-- Twitter Card tags -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${title}" />
     <meta name="twitter:description" content="${description}" />
     <meta name="twitter:image" content="${imageUrl}" />
+    <meta name="twitter:image:alt" content="${description}" />
     <meta name="twitter:site" content="@CineDraft" />
+    <meta name="twitter:creator" content="@CineDraft" />
     
     <!-- Only redirect for real users, not crawlers -->
     <script>
