@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Users, Calendar, Film, Search, LogOut } from 'lucide-react';
-import { useMovies } from '@/hooks/useMovies';
+import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Home = () => {
@@ -26,8 +26,7 @@ const Home = () => {
   }, [user, loading, navigate]);
 
   // Only search for people when theme is 'people'
-  const { movies, loading: moviesLoading } = useMovies(
-    theme === 'people' ? 'person_search' : '', 
+  const { people, loading: peopleLoading } = usePeopleSearch(
     theme === 'people' ? searchQuery : ''
   );
 
@@ -195,24 +194,24 @@ const Home = () => {
 
                     {shouldShowResults && (
                       <div className="max-h-60 overflow-y-auto space-y-2">
-                        {moviesLoading ? (
+                        {peopleLoading ? (
                           <div className="text-gray-400">Searching...</div>
-                        ) : movies.length === 0 ? (
+                        ) : people.length === 0 ? (
                           <div className="text-gray-400">No people found</div>
                         ) : (
-                          movies.slice(0, 10).map((item) => (
+                          people.slice(0, 10).map((person) => (
                             <div
-                              key={item.id}
-                              onClick={() => handleOptionSelect(item.title)}
+                              key={person.id}
+                              onClick={() => handleOptionSelect(person.name)}
                               className={`p-3 rounded cursor-pointer transition-colors ${
-                                selectedOption === item.title
+                                selectedOption === person.name
                                   ? 'bg-yellow-400 text-black'
                                   : 'bg-gray-700 hover:bg-gray-600 text-white'
                               }`}
                             >
-                              <div className="font-medium">{item.title}</div>
+                              <div className="font-medium">{person.name}</div>
                               <div className="text-sm opacity-75">
-                                {item.genre} • {item.description}
+                                {person.known_for_department} • Known for: {person.known_for.slice(0, 2).map(item => item.title).join(', ')}
                               </div>
                             </div>
                           ))
