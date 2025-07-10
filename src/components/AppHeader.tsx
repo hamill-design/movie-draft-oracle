@@ -22,7 +22,6 @@ const AppHeader = () => {
               className="flex items-center gap-3 text-yellow-400 hover:text-yellow-300 transition-colors h-full py-1"
             >
               <Logo fillHeight={true} />
-              <span className="text-2xl font-bold hidden sm:inline">Movie Drafter</span>
             </button>
 
             {/* Right side buttons */}
