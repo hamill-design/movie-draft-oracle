@@ -267,27 +267,6 @@ const FinalScores = () => {
         )}
 
         <div className="space-y-6">
-          {/* Overall Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <Card className="bg-gray-800 border-gray-600">
-              <CardContent className="pt-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-400">{teamScores.length}</div>
-                  <div className="text-gray-400">Teams</div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="bg-gray-800 border-gray-600">
-              <CardContent className="pt-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-400">{picks.length}</div>
-                  <div className="text-gray-400">Total Picks</div>
-                </div>
-              </CardContent>
-            </Card>
-            
-          </div>
 
           {/* Leaderboard */}
           <Card className="bg-gray-800 border-gray-600">
