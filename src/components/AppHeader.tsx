@@ -44,7 +44,7 @@ const AppHeader = () => {
                   </DialogHeader>
                   <div className="space-y-4 text-sm">
                     <div>
-                      <h3 className="font-semibold text-white mb-2">🎬 What is Movie Draft?</h3>
+                      <h3 className="font-semibold text-white mb-2">What is Movie Draft?</h3>
                       <p className="text-gray-300">
                         Movie Draft is a competitive game where players take turns selecting movies based on a chosen theme. 
                         The goal is to build the highest-scoring collection of films!
@@ -52,7 +52,7 @@ const AppHeader = () => {
                     </div>
                     
                     <div>
-                      <h3 className="font-semibold text-white mb-2">🎯 How to Set Up:</h3>
+                      <h3 className="font-semibold text-white mb-2">How to Set Up:</h3>
                       <ol className="list-decimal list-inside space-y-1 text-gray-300">
                         <li>Choose a draft theme (by Person or by Year)</li>
                         <li>Select your specific option (actor/director or year)</li>
@@ -62,7 +62,7 @@ const AppHeader = () => {
                     </div>
 
                     <div>
-                      <h3 className="font-semibold text-white mb-2">🎮 How to Draft:</h3>
+                      <h3 className="font-semibold text-white mb-2">How to Draft:</h3>
                       <ol className="list-decimal list-inside space-y-1 text-gray-300">
                         <li>Players take turns in order selecting movies</li>
                         <li>Search and pick movies that match your theme</li>
@@ -72,7 +72,7 @@ const AppHeader = () => {
                     </div>
 
                     <div>
-                      <h3 className="font-semibold text-white mb-2">🏆 Scoring:</h3>
+                      <h3 className="font-semibold text-white mb-2">Scoring:</h3>
                       <p className="text-gray-300">
                         Movies are scored based on the categories you selected (IMDb rating, box office, critics scores, etc.). 
                         The player with the highest total score wins!
@@ -80,7 +80,7 @@ const AppHeader = () => {
                     </div>
 
                     <div>
-                      <h3 className="font-semibold text-white mb-2">💡 Pro Tips:</h3>
+                      <h3 className="font-semibold text-white mb-2">Pro Tips:</h3>
                       <ul className="list-disc list-inside space-y-1 text-gray-300">
                         <li>Consider all scoring categories when picking</li>
                         <li>Balance popular hits with hidden gems</li>
