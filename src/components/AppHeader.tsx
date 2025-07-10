@@ -19,9 +19,9 @@ const AppHeader = () => {
             {/* Logo */}
             <button
               onClick={() => navigate('/')}
-              className="flex items-center gap-3 text-yellow-400 hover:text-yellow-300 transition-colors"
+              className="flex items-center gap-3 text-yellow-400 hover:text-yellow-300 transition-colors h-full py-1"
             >
-              <Logo size={48} />
+              <Logo fillHeight={true} />
               <span className="text-2xl font-bold hidden sm:inline">Movie Drafter</span>
             </button>
 
