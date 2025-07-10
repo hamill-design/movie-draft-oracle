@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Film, User, HelpCircle } from 'lucide-react';
+import { User, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import Logo from './Logo';
 
 const AppHeader = () => {
   const navigate = useNavigate();
@@ -18,10 +19,10 @@ const AppHeader = () => {
             {/* Logo */}
             <button
               onClick={() => navigate('/')}
-              className="flex items-center gap-2 text-white hover:text-yellow-400 transition-colors"
+              className="flex items-center gap-2 text-yellow-400 hover:text-yellow-300 transition-colors"
             >
-              <Film size={32} className="text-yellow-400" />
-              <span className="text-xl font-bold">Movie Draft</span>
+              <Logo size={32} />
+              <span className="text-xl font-bold hidden sm:inline">Movie Drafter</span>
             </button>
 
             {/* Right side buttons */}
