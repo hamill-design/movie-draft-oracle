@@ -33,6 +33,7 @@ export type Database = {
           pick_order: number
           player_id: number
           player_name: string
+          poster_path: string | null
           rt_audience_score: number | null
           rt_critics_score: number | null
           scoring_data_complete: boolean | null
@@ -55,6 +56,7 @@ export type Database = {
           pick_order: number
           player_id: number
           player_name: string
+          poster_path?: string | null
           rt_audience_score?: number | null
           rt_critics_score?: number | null
           scoring_data_complete?: boolean | null
@@ -77,6 +79,7 @@ export type Database = {
           pick_order?: number
           player_id?: number
           player_name?: string
+          poster_path?: string | null
           rt_audience_score?: number | null
           rt_critics_score?: number | null
           scoring_data_complete?: boolean | null

@@ -49,7 +49,8 @@ Deno.serve(async (req) => {
       rtCriticsScore: null,
       metacriticScore: null,
       imdbRating: null,
-      oscarStatus: 'none'
+      oscarStatus: 'none',
+      posterPath: null
     }
 
     // Simple timeout helper
@@ -147,6 +148,11 @@ Deno.serve(async (req) => {
               enrichmentData.revenue = tmdbData.revenue
               console.log(`Revenue: $${enrichmentData.revenue.toLocaleString()}`)
             }
+
+            if (tmdbData.poster_path) {
+              enrichmentData.posterPath = tmdbData.poster_path
+              console.log(`Poster: ${enrichmentData.posterPath}`)
+            }
           }
         }
       } catch (error) {
@@ -169,6 +175,7 @@ Deno.serve(async (req) => {
         metacritic_score: enrichmentData.metacriticScore,
         imdb_rating: enrichmentData.imdbRating,
         oscar_status: enrichmentData.oscarStatus,
+        poster_path: enrichmentData.posterPath,
         calculated_score: finalScore,
         scoring_data_complete: true
       })
