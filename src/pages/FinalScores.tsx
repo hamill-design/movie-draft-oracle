@@ -287,16 +287,6 @@ const FinalScores = () => {
               </CardContent>
             </Card>
             
-            <Card className="bg-gray-800 border-gray-600">
-              <CardContent className="pt-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-400">
-                    {picks.length - incompletePicks}
-                  </div>
-                  <div className="text-gray-400">Scored Movies</div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Leaderboard */}
