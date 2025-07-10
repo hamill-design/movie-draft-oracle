@@ -148,25 +148,6 @@ const Profile = () => {
             )}
           </CardContent>
         </Card>
-        
-        {/* Footer */}
-        <footer className="mt-12 pt-6 border-t border-gray-700">
-          <div className="flex items-center justify-center gap-4 text-sm text-gray-500">
-            <Link 
-              to="/privacy-policy" 
-              className="hover:text-gray-300 transition-colors"
-            >
-              Privacy Policy
-            </Link>
-            <Separator orientation="vertical" className="h-4 bg-gray-600" />
-            <Link 
-              to="/terms-of-service" 
-              className="hover:text-gray-300 transition-colors"
-            >
-              Terms of Service
-            </Link>
-          </div>
-        </footer>
       </div>
     </div>
   );
