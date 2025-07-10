@@ -5,11 +5,14 @@ interface LogoProps {
   size?: number;
 }
 
-const Logo = ({ className = "", size = 32 }: LogoProps) => {
+const Logo = ({ className = "", size = 60 }: LogoProps) => {
+  const height = 60;
+  const width = height * (65.78 / 19.13); // maintain aspect ratio (width/height from viewBox)
+  
   return (
     <svg 
-      width={size} 
-      height={size * 0.29} // maintain aspect ratio (19.13/65.78)
+      width={width} 
+      height={height}
       viewBox="0 0 65.78 19.13" 
       className={className}
       fill="currentColor"
