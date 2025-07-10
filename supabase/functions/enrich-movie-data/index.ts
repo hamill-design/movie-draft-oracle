@@ -152,6 +152,9 @@ Deno.serve(async (req) => {
             if (tmdbData.poster_path) {
               enrichmentData.posterPath = tmdbData.poster_path
               console.log(`Poster: ${enrichmentData.posterPath}`)
+            } else {
+              console.log('No poster_path found in TMDB data')
+              console.log('TMDB response keys:', Object.keys(tmdbData))
             }
           }
         }
