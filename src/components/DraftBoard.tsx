@@ -41,7 +41,7 @@ const DraftBoard = ({ players, categories, picks, theme, currentPlayer }: DraftB
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="hover:bg-transparent">
                 <TableHead className="text-gray-300">Player</TableHead>
                 {categories.map((category) => (
                   <TableHead key={category} className="text-gray-300 text-center min-w-[150px]">
