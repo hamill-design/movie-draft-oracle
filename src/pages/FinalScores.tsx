@@ -11,10 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { DraftPick } from '@/hooks/useDrafts';
 import TeamRoster from '@/components/TeamRoster';
-import ShareButton from '@/components/ShareButton';
 import { getScoreColor, getScoreGrade } from '@/utils/scoreCalculator';
-import { generateShareText } from '@/utils/shareUtils';
-import { useMetaTags, generateMetaTags } from '@/hooks/useMetaTags';
 
 interface TeamScore {
   playerName: string;
@@ -39,16 +36,6 @@ const FinalScores = () => {
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
 
-  // Set default meta tags immediately for social crawlers
-  useMetaTags([
-    { property: 'og:title', content: 'CineDraft Championship Results' },
-    { property: 'og:description', content: 'Check out the final scores from this movie draft competition!' },
-    { property: 'og:type', content: 'website' },
-    { property: 'og:url', content: window.location.href },
-    { name: 'twitter:card', content: 'summary_large_image' },
-    { name: 'twitter:title', content: 'CineDraft Championship Results' },
-    { name: 'twitter:description', content: 'Check out the final scores from this movie draft competition!' }
-  ], 'CineDraft Championship Results');
 
   // Only redirect to auth if user is actively trying to access protected features
   // Don't redirect for social media crawlers viewing the results
@@ -204,16 +191,6 @@ const FinalScores = () => {
     return teams.sort((a, b) => b.averageScore - a.averageScore);
   };
 
-  // Update meta tags when data is available
-  const winner = teamScores.length > 0 ? teamScores[0] : null;
-  const metaTags = winner && draft 
-    ? generateMetaTags(draft.title, winner.playerName, winner.averageScore, shareImageUrl)
-    : [];
-  
-  useMetaTags(
-    metaTags, 
-    winner && draft ? `${draft.title} - CineDraft Championship Results` : undefined
-  );
 
   if (loading || loadingData) {
     return (
@@ -274,16 +251,6 @@ const FinalScores = () => {
             </div>
           </div>
           
-          {/* Share Button - only show for authenticated users */}
-          {user && teamScores.length > 0 && !enrichingData && (
-            <ShareButton
-              draftId={draft.id}
-              draftTitle={draft.title}
-              teamScores={teamScores}
-              totalPicks={picks.length}
-              onImageGenerated={setShareImageUrl}
-            />
-          )}
         </div>
 
         {/* Show loading state while enriching */}
