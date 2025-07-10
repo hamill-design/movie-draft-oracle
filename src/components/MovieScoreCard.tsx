@@ -11,6 +11,7 @@ interface MovieScoreCardProps {
   movieYear?: number | null;
   movieGenre?: string | null;
   scoringData: MovieScoringData;
+  posterUrl?: string | null;
   className?: string;
 }
 
@@ -19,6 +20,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
   movieYear,
   movieGenre,
   scoringData,
+  posterUrl,
   className = ''
 }) => {
   const scoreBreakdown = calculateDetailedScore(scoringData);
@@ -73,24 +75,40 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
   return (
     <Card className={`bg-gray-800 border-gray-600 ${className}`}>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-white text-lg">{movieTitle}</CardTitle>
-            {movieYear && (
-              <p className="text-gray-400 text-sm">({movieYear})</p>
-            )}
-            {movieGenre && (
-              <Badge variant="secondary" className="mt-1">
-                {movieGenre}
-              </Badge>
-            )}
-          </div>
-          <div className="text-right">
-            <div className={`text-3xl font-bold ${getScoreColor(scoreBreakdown.finalScore)}`}>
-              {scoreBreakdown.finalScore}
+        <div className="flex items-start gap-4">
+          {/* Movie Poster */}
+          {posterUrl && (
+            <div className="flex-shrink-0">
+              <img
+                src={posterUrl}
+                alt={`${movieTitle} poster`}
+                className="w-20 h-30 object-cover rounded border border-gray-600"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
             </div>
-            <div className="text-gray-400 text-sm">
-              Grade: {getScoreGrade(scoreBreakdown.finalScore)}
+          )}
+          
+          <div className="flex items-center justify-between flex-1">
+            <div>
+              <CardTitle className="text-white text-lg">{movieTitle}</CardTitle>
+              {movieYear && (
+                <p className="text-gray-400 text-sm">({movieYear})</p>
+              )}
+              {movieGenre && (
+                <Badge variant="secondary" className="mt-1">
+                  {movieGenre}
+                </Badge>
+              )}
+            </div>
+            <div className="text-right">
+              <div className={`text-3xl font-bold ${getScoreColor(scoreBreakdown.finalScore)}`}>
+                {scoreBreakdown.finalScore}
+              </div>
+              <div className="text-gray-400 text-sm">
+                Grade: {getScoreGrade(scoreBreakdown.finalScore)}
+              </div>
             </div>
           </div>
         </div>

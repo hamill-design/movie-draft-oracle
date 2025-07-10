@@ -80,6 +80,7 @@ const TeamRoster: React.FC<TeamRosterProps> = ({
                 movieTitle={pick.movie_title}
                 movieYear={pick.movie_year}
                 movieGenre={pick.movie_genre}
+                posterUrl={pick.movie_id ? `https://image.tmdb.org/t/p/w200${pickWithScoring.poster_path || ''}` : null}
                 scoringData={{
                   budget: pickWithScoring.movie_budget,
                   revenue: pickWithScoring.movie_revenue,
