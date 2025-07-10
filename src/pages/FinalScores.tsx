@@ -267,7 +267,7 @@ const FinalScores = () => {
         )}
 
         <Tabs value={selectedTeam ? 'teams' : 'leaderboard'} className="space-y-6">
-          <TabsList className="bg-gray-800 border-gray-600">
+          <TabsList>
             <TabsTrigger value="leaderboard" className="data-[state=active]:bg-gray-700">
               <Trophy size={16} className="mr-2" />
               Leaderboard
