@@ -78,11 +78,11 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
         <div className="flex items-start gap-4">
           {/* Movie Poster */}
           {posterUrl && (
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 w-20 h-30">
               <img
-                src={posterUrl}
+                src={posterUrl.startsWith('/') ? `https://image.tmdb.org/t/p/w185${posterUrl}` : posterUrl}
                 alt={`${movieTitle} poster`}
-                className="w-20 h-30 object-cover rounded border border-gray-600"
+                className="w-full h-full object-cover rounded border border-gray-600"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                 }}
