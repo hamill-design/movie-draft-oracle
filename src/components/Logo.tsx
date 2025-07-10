@@ -3,26 +3,17 @@ import React from 'react';
 interface LogoProps {
   className?: string;
   size?: number;
-  fillHeight?: boolean;
 }
 
-const Logo = ({ className = "", size = 32, fillHeight = false }: LogoProps) => {
-  const svgProps = fillHeight 
-    ? { 
-        className: `${className} h-full w-auto`,
-        viewBox: "0 0 65.78 19.13",
-        fill: "currentColor"
-      }
-    : {
-        width: size,
-        height: size * 0.29, // maintain aspect ratio (19.13/65.78)
-        viewBox: "0 0 65.78 19.13",
-        className: className,
-        fill: "currentColor"
-      };
-
+const Logo = ({ className = "", size = 32 }: LogoProps) => {
   return (
-    <svg {...svgProps}>
+    <svg 
+      width={size} 
+      height={size * 0.29} // maintain aspect ratio (19.13/65.78)
+      viewBox="0 0 65.78 19.13" 
+      className={className}
+      fill="currentColor"
+    >
       <path d="M14.21.22v7.96c0,.12-.1.22-.22.22h-2.15c-.12,0-.22-.1-.22-.22V3.7c0-.18-.21-.28-.35-.17l-3.99,3.16c-.08.06-.19.06-.27,0L2.93,3.5c-.14-.11-.35,0-.35.17v4.51c0,.12-.1.22-.22.22H.22c-.12,0-.22-.1-.22-.22V.22c0-.12.1-.22.22-.22h2.29s.09.02.13.04l4.39,3.34c.08.06.19.06.26,0L11.58.05s.09-.05.13-.05h2.29c.12,0,.22.1.22.22Z"/>
       <path d="M27.4,8.4h-11.77c-.12,0-.22-.1-.22-.22V.22c0-.12.1-.22.22-.22h11.77c.12,0,.22.1.22.22v7.96c0,.12-.1.22-.22.22ZM24.98,5.86v-3.35c0-.12-.1-.22-.22-.22h-6.49c-.12,0-.22.1-.22.22v3.35c0,.12.1.22.22.22h6.49c.12,0,.22-.1.22-.22Z"/>
       <path d="M40.65.3l-3.53,7.96c-.03.08-.11.13-.2.13h-4.88v-.06L28.48.3c-.06-.14.04-.3.2-.3h2.34c.09,0,.16.05.2.13l2.5,5.82c.03.08.11.13.2.13h1.27c.09,0,.16-.05.2-.13L37.88.13c.03-.08.11-.13.2-.13h2.37c.16,0,.26.16.2.3Z"/>
