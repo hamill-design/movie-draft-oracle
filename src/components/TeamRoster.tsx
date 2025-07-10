@@ -72,15 +72,14 @@ const TeamRoster: React.FC<TeamRosterProps> = ({
         {sortedPicks.map((pick) => {
           const pickWithScoring = pick as any; // Type assertion to access new columns
           return (
-            <div key={pick.id} className="relative">
-              <div className="absolute -left-4 top-4 bg-yellow-400 text-black rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold">
-                {pick.pick_order}
-              </div>
+            <div key={pick.id}>
               <MovieScoreCard
                 movieTitle={pick.movie_title}
                 movieYear={pick.movie_year}
                 movieGenre={pick.movie_genre}
                 posterUrl={pick.movie_id ? `https://image.tmdb.org/t/p/w200${pickWithScoring.poster_path || ''}` : null}
+                pickNumber={pick.pick_order}
+                category={pick.category}
                 scoringData={{
                   budget: pickWithScoring.movie_budget,
                   revenue: pickWithScoring.movie_revenue,
@@ -90,13 +89,7 @@ const TeamRoster: React.FC<TeamRosterProps> = ({
                   imdbRating: pickWithScoring.imdb_rating,
                   oscarStatus: pickWithScoring.oscar_status
                 }}
-                className="ml-6"
               />
-              <div className="ml-6 mt-2">
-                <span className="bg-gray-700 text-yellow-400 px-2 py-1 rounded text-xs font-medium">
-                  {pick.category}
-                </span>
-              </div>
             </div>
           );
         })}

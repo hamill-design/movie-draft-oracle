@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Trophy, Star, DollarSign, Users, Film, Award } from 'lucide-react';
 import { calculateDetailedScore, getScoreColor, getScoreGrade, MovieScoringData } from '@/utils/scoreCalculator';
+import PickBadge from './PickBadge';
 
 interface MovieScoreCardProps {
   movieTitle: string;
@@ -12,6 +13,8 @@ interface MovieScoreCardProps {
   movieGenre?: string | null;
   scoringData: MovieScoringData;
   posterUrl?: string | null;
+  pickNumber?: number;
+  category?: string;
   className?: string;
 }
 
@@ -21,6 +24,8 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
   movieGenre,
   scoringData,
   posterUrl,
+  pickNumber,
+  category,
   className = ''
 }) => {
   const scoreBreakdown = calculateDetailedScore(scoringData);
@@ -75,6 +80,10 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
   return (
     <Card className={`bg-gray-800 border-gray-600 ${className}`}>
       <CardHeader>
+        {/* Pick Number and Category */}
+        {pickNumber && category && (
+          <PickBadge pickNumber={pickNumber} category={category} />
+        )}
         <div className="flex items-start gap-4">
           {/* Movie Poster */}
           {posterUrl && (
