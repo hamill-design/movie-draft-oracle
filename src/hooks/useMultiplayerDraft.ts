@@ -26,6 +26,7 @@ interface MultiplayerDraft {
   is_multiplayer: boolean;
   invite_code: string | null;
   draft_order: string[] | null;
+  turn_order: any;
 }
 
 export const useMultiplayerDraft = (draftId?: string) => {
@@ -392,8 +393,8 @@ export const useMultiplayerDraft = (draftId?: string) => {
       console.log('Pick inserted successfully:', pickResult);
 
       // Use the pre-calculated turn order (much simpler than complex calculations)
-      const turnOrder = (draft as any).turn_order;
-      if (!turnOrder || turnOrder.length === 0) {
+      const turnOrder = draft.turn_order;
+      if (!turnOrder || !Array.isArray(turnOrder) || turnOrder.length === 0) {
         throw new Error('Turn order not found - draft may not have been started properly');
       }
 
