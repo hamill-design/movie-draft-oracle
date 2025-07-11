@@ -287,9 +287,9 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
         </div>
 
         {/* Draft Content */}
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="space-y-6">
           {/* Draft Board */}
-          <div className="lg:col-span-2">
+          <div>
             <DraftBoard
               picks={picks}
               players={participants.map((p, index) => ({ id: index + 1, name: p.participant_name }))}
