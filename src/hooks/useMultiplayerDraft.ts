@@ -229,6 +229,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
   // Make a pick (only if it's your turn)
   const makePick = useCallback(async (movie: any, category: string) => {
     if (!user || !draft || !isMyTurn) {
+      console.log('Pick blocked - user:', !!user, 'draft:', !!draft, 'isMyTurn:', isMyTurn);
       toast({
         title: "Error",
         description: "It's not your turn!",
@@ -237,33 +238,54 @@ export const useMultiplayerDraft = (draftId?: string) => {
       return;
     }
 
+    console.log('Making pick for movie:', movie.title, 'category:', category);
+    console.log('Current draft state:', { 
+      currentPickNumber: draft.current_pick_number, 
+      currentTurnUserId: draft.current_turn_user_id,
+      myUserId: user.id 
+    });
+
     try {
       // Find current participant
       const currentParticipant = participants.find(p => p.user_id === user.id);
-      if (!currentParticipant) throw new Error('User not found in participants');
+      if (!currentParticipant) {
+        console.error('Current participant not found. Available participants:', participants);
+        throw new Error('User not found in participants');
+      }
+
+      console.log('Current participant:', currentParticipant);
 
       // Find the current participant's position in the ordered list
       const currentParticipantIndex = participants.findIndex(p => p.user_id === user.id);
+      console.log('Current participant index:', currentParticipantIndex);
+      
+      // Prepare pick data
+      const pickData = {
+        draft_id: draft.id,
+        player_id: currentParticipantIndex + 1, // Use 1-based indexing for player_id
+        player_name: currentParticipant.participant_name,
+        movie_id: movie.id,
+        movie_title: movie.title,
+        category,
+        pick_order: draft.current_pick_number,
+        poster_path: movie.poster_path,
+        movie_year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
+      };
+
+      console.log('Inserting pick with data:', pickData);
       
       // Insert the pick
-      const { error: pickError } = await supabase
+      const { data: pickResult, error: pickError } = await supabase
         .from('draft_picks')
-        .insert({
-          draft_id: draft.id,
-          player_id: currentParticipantIndex + 1, // Use 1-based indexing for player_id
-          player_name: currentParticipant.participant_name,
-          movie_id: movie.id,
-          movie_title: movie.title,
-          category,
-          pick_order: draft.current_pick_number,
-          poster_path: movie.poster_path,
-          movie_year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
-        });
+        .insert(pickData)
+        .select();
 
       if (pickError) {
-        console.error('Pick error:', pickError);
+        console.error('Pick insertion error:', pickError);
         throw pickError;
       }
+
+      console.log('Pick inserted successfully:', pickResult);
 
       // Calculate next turn - cycle through participants
       const nextParticipantIndex = draft.current_pick_number % participants.length;
@@ -280,7 +302,12 @@ export const useMultiplayerDraft = (draftId?: string) => {
         })
         .eq('id', draft.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Draft update error:', updateError);
+        throw updateError;
+      }
+
+      console.log('Draft updated successfully');
 
       toast({
         title: "Pick Made",
