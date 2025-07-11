@@ -405,18 +405,27 @@ export const useMultiplayerDraft = (draftId?: string) => {
         console.log(`Pick ${pick}: Round ${round}, Pos ${pos}, Index ${idx}, User: ${participant?.participant_name || 'Unknown'}`);
       }
       
+      // Check if draft should be completed
+      const totalPossiblePicks = numParticipants * draft.categories.length;
+      const isComplete = newPickNumber > totalPossiblePicks;
+      
       // Update draft with next turn
-      console.log('About to update draft with:', {
-        current_turn_user_id: nextParticipant.user_id,
-        current_pick_number: newPickNumber,
-      });
+      const updateData = isComplete 
+        ? {
+            current_turn_user_id: null,
+            current_pick_number: newPickNumber,
+            is_complete: true
+          }
+        : {
+            current_turn_user_id: nextParticipant.user_id,
+            current_pick_number: newPickNumber,
+          };
+      
+      console.log('About to update draft with:', updateData);
       
       const { error: updateError } = await supabase
         .from('drafts')
-        .update({
-          current_turn_user_id: nextParticipant.user_id,
-          current_pick_number: newPickNumber,
-        })
+        .update(updateData)
         .eq('id', draft.id);
 
       if (updateError) {
