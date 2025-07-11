@@ -241,9 +241,17 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
             </CardHeader>
             <CardContent>
               {isComplete ? (
-                <div className="text-center">
-                  <Badge variant="default" className="mb-2">Draft Complete</Badge>
-                  <p className="text-muted-foreground">All picks have been made!</p>
+                <div className="text-center space-y-4">
+                  <div>
+                    <Badge variant="default" className="mb-2">Draft Complete</Badge>
+                    <p className="text-muted-foreground">All picks have been made!</p>
+                  </div>
+                  <Button 
+                    onClick={() => navigate(`/final-scores/${draft.id}`)}
+                    className="w-full md:w-auto"
+                  >
+                    🏆 View Final Scores
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -396,7 +404,17 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
                       categories={draft.categories}
                       selectedCategory={selectedCategory}
                       onCategorySelect={handleCategorySelect}
-                      picks={picks}
+                      picks={picks.map(pick => ({
+                        playerId: participants.findIndex(p => p.participant_name === pick.player_name) + 1,
+                        playerName: pick.player_name,
+                        movie: {
+                          id: pick.movie_id,
+                          title: pick.movie_title,
+                          year: pick.movie_year,
+                          poster_path: pick.poster_path
+                        },
+                        category: pick.category
+                      }))}
                       currentPlayerId={participants.findIndex(p => p.user_id === user?.id) + 1}
                     />
 
