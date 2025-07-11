@@ -383,13 +383,27 @@ export const useMultiplayerDraft = (draftId?: string) => {
       }
       
       console.log('Snake draft calculation:');
+      console.log('- Draft order:', draftOrder);
       console.log('- Current pick number:', draft.current_pick_number);
       console.log('- New pick number:', newPickNumber);
+      console.log('- Number of participants:', numParticipants);
       console.log('- Round:', round, '(even rounds = normal order, odd = reverse)');
       console.log('- Position in round:', positionInRound);
-      console.log('- Next participant index:', nextParticipantIndex);
-      console.log('- Next participant user_id:', nextParticipantUserId);
-      console.log('- Next participant:', nextParticipant);
+      console.log('- Next participant index calculated:', nextParticipantIndex);
+      console.log('- Next participant user_id from draft_order:', nextParticipantUserId);
+      console.log('- Next participant found:', nextParticipant);
+      console.log('- Available participants:', participants.map(p => ({ name: p.participant_name, user_id: p.user_id })));
+      
+      // Debug: Show expected turn order for validation
+      console.log('Expected turn order for reference:');
+      for (let pick = 1; pick <= 8; pick++) {
+        const round = Math.floor((pick - 1) / numParticipants);
+        const pos = (pick - 1) % numParticipants;
+        const idx = round % 2 === 0 ? pos : numParticipants - 1 - pos;
+        const userId = draftOrder[idx];
+        const participant = participants.find(p => p.user_id === userId);
+        console.log(`Pick ${pick}: Round ${round}, Pos ${pos}, Index ${idx}, User: ${participant?.participant_name || 'Unknown'}`);
+      }
       
       // Update draft with next turn
       console.log('About to update draft with:', {
