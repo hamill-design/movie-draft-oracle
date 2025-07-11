@@ -39,11 +39,6 @@ const Index = () => {
     }
   }, [user, loading, navigate]);
 
-  // If we have a URL draft ID, this is a multiplayer draft
-  if (urlDraftId && user) {
-    return <MultiplayerDraftInterface draftId={urlDraftId} />;
-  }
-
   useEffect(() => {
     if (!draftState && !urlDraftId) {
       navigate('/');
@@ -80,6 +75,12 @@ const Index = () => {
       loadExistingDraft();
     }
   }, [draftState?.existingDraftId, user, getDraftWithPicks]);
+
+  // If we have a URL draft ID, this is a multiplayer draft
+  if (urlDraftId && user) {
+    return <MultiplayerDraftInterface draftId={urlDraftId} />;
+  }
+
 
   // Show loading state while checking auth or loading existing draft
   if (loading || loadingExistingDraft) {
