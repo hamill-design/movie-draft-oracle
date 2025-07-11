@@ -216,6 +216,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      is_draft_participant: {
+        Args: { draft_id_param: string }
+        Returns: boolean
+      }
       join_draft_by_invite_code: {
         Args: { invite_code_param: string; participant_name_param: string }
         Returns: string
