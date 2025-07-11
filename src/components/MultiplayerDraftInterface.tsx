@@ -51,15 +51,19 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
   // Get base category for movie search
   const getBaseCategory = () => {
     if (!draft) return '';
-    return draft.theme === 'people' ? 'person' : 'title';
+    if (draft.theme === 'people') {
+      return 'person';
+    }
+    return 'popular';
   };
 
-  const themeConstraint = draft?.theme === 'people' ? draft.option : undefined;
+  // For theme-based drafts, pass the theme option (year or person name) as the constraint
+  // This will fetch ALL movies for that year/person
+  const themeConstraint = draft?.theme === 'year' || draft?.theme === 'people' 
+    ? draft.option 
+    : '';
 
-  const { movies, loading: moviesLoading } = useMovies(
-    searchQuery,
-    getBaseCategory()
-  );
+  const { movies, loading: moviesLoading } = useMovies(getBaseCategory(), themeConstraint);
 
   // Create draft if this is a new multiplayer draft
   useEffect(() => {
@@ -323,7 +327,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
                       loading={moviesLoading}
                       onMovieSelect={handleMovieSelect}
                       selectedMovie={selectedMovie}
-                      themeParameter={draft.option}
+                      themeParameter={themeConstraint}
                     />
 
                     <Separator />
