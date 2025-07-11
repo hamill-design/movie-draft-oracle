@@ -38,13 +38,13 @@ export const useMultiplayerDraft = (draftId?: string) => {
   const [loading, setLoading] = useState(false);
   const [isMyTurn, setIsMyTurn] = useState(false);
 
-  // Create a multiplayer draft
+  // Create a multiplayer draft with email invitations
   const createMultiplayerDraft = useCallback(async (draftData: {
     title: string;
     theme: string;
     option: string;
     categories: string[];
-    participantNames: string[];
+    participantEmails: string[];  // Changed from participantNames to participantEmails
   }) => {
     if (!user) throw new Error('User not authenticated');
 
@@ -59,7 +59,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
           theme: draftData.theme,
           option: draftData.option,
           categories: draftData.categories,
-          participants: draftData.participantNames,
+          participants: draftData.participantEmails, // Store emails as participants
           user_id: user.id,
           is_multiplayer: true,
           current_pick_number: 1,
@@ -69,19 +69,29 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
       if (draftError) throw draftError;
 
-      // Add the host as the first participant
-      const { error: hostError } = await supabase
-        .from('draft_participants')
-        .insert({
-          draft_id: newDraft.id,
-          user_id: user.id,
-          participant_name: draftData.participantNames[0], // Assuming first participant is the host
-          status: 'joined',
-          is_host: true,
-          joined_at: new Date().toISOString(),
+      // Send email invitations to participants
+      try {
+        const inviteResponse = await supabase.functions.invoke('send-draft-invitations', {
+          body: {
+            draftId: newDraft.id,
+            draftTitle: draftData.title,
+            hostName: user.email || 'Unknown Host',
+            participantEmails: draftData.participantEmails,
+            theme: draftData.theme,
+            option: draftData.option,
+          }
         });
 
-      if (hostError) throw hostError;
+        if (inviteResponse.error) {
+          console.error('Failed to send invitations:', inviteResponse.error);
+          // Don't fail the draft creation if email sending fails
+        } else {
+          console.log('Invitations sent successfully:', inviteResponse.data);
+        }
+      } catch (emailError) {
+        console.error('Email invitation error:', emailError);
+        // Continue with draft creation even if emails fail
+      }
 
       return newDraft;
     } catch (error) {

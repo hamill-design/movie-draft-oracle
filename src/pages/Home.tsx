@@ -5,13 +5,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Users, Calendar, Film, Search, LogOut } from 'lucide-react';
+import { Trash2, Users, Calendar, Film, Search, LogOut, Mail } from 'lucide-react';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDraftCategories } from '@/hooks/useDraftCategories';
 import CategoriesForm from '@/components/CategoriesForm';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
+import { useToast } from '@/hooks/use-toast';
 
 interface DraftSetupForm {
   participants: string[];
@@ -21,6 +22,7 @@ interface DraftSetupForm {
 const Home = () => {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
+  const { toast } = useToast();
   const [theme, setTheme] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOption, setSelectedOption] = useState('');
@@ -71,8 +73,26 @@ const Home = () => {
     setParticipants(participants.filter(p => p !== participant));
   };
 
+  const isEmailValid = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleStartDraft = (data: DraftSetupForm) => {
     if (!selectedOption || participants.length === 0 || !data.categories.length) return;
+
+    // For multiplayer, validate that all participants are valid emails
+    if (draftMode === 'multiplayer') {
+      const invalidEmails = participants.filter(p => !isEmailValid(p));
+      if (invalidEmails.length > 0) {
+        toast({
+          title: "Invalid Email Addresses",
+          description: `Please enter valid email addresses for: ${invalidEmails.join(', ')}`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
 
     const draftData = {
       theme,
@@ -264,7 +284,7 @@ const Home = () => {
               
               <div className="flex gap-2 mb-4">
                 <Input
-                  placeholder="Enter participant name..."
+                  placeholder={draftMode === 'multiplayer' ? "Enter participant email..." : "Enter participant name..."}
                   value={newParticipant}
                   onChange={(e) => setNewParticipant(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddParticipant()}
@@ -275,17 +295,36 @@ const Home = () => {
                 </Button>
               </div>
 
+              {draftMode === 'multiplayer' && (
+                <div className="mb-4 p-3 bg-orange-900/20 border border-orange-600/30 rounded-lg">
+                  <p className="text-orange-300 text-sm flex items-center gap-2">
+                    <Mail size={16} />
+                    <strong>Multiplayer Mode:</strong> Enter email addresses of friends you want to invite. They'll receive an email invitation to join your draft.
+                  </p>
+                </div>
+              )}
+
               {participants.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-white font-medium">Participants ({participants.length}):</h4>
+                  <h4 className="text-white font-medium">
+                    {draftMode === 'multiplayer' ? 'Email Invitations' : 'Participants'} ({participants.length}):
+                  </h4>
                   <div className="flex flex-wrap gap-2">
                     {participants.map((participant) => (
                       <Badge
                         key={participant}
                         variant="secondary"
-                        className="bg-gray-700 text-white pr-1 flex items-center gap-1"
+                        className={`pr-1 flex items-center gap-1 ${
+                          draftMode === 'multiplayer' && !isEmailValid(participant)
+                            ? 'bg-red-700 text-white border border-red-500'
+                            : 'bg-gray-700 text-white'
+                        }`}
                       >
+                        {draftMode === 'multiplayer' && <Mail size={12} />}
                         {participant}
+                        {draftMode === 'multiplayer' && !isEmailValid(participant) && (
+                          <span className="text-xs text-red-300 ml-1">Invalid</span>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"

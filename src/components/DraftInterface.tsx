@@ -27,8 +27,20 @@ interface DraftInterfaceProps {
 }
 
 const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
+  const { toast } = useToast();
+  
   // If this is a multiplayer draft, use the multiplayer interface
   if (draftState.isMultiplayer) {
+    // Show success message for multiplayer draft creation
+    useEffect(() => {
+      if (!draftState.existingDraftId) {
+        toast({
+          title: "Multiplayer Draft Created!",
+          description: `Email invitations have been sent to ${draftState.participants.length} participant(s)`,
+        });
+      }
+    }, []);
+
     return (
       <MultiplayerDraftInterface 
         draftId={draftState.existingDraftId}
@@ -49,7 +61,6 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(draftState?.existingDraftId || null);
   
-  const { toast } = useToast();
   const { autoSaveDraft } = useDraftOperations();
   
   const {

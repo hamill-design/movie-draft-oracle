@@ -71,7 +71,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
             theme: initialData.theme,
             option: initialData.option,
             categories: initialData.categories,
-            participantNames: initialData.participants,
+            participantEmails: initialData.participants,
           });
           
           // Navigate to the new draft
