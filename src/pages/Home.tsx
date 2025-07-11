@@ -12,8 +12,6 @@ import { useDraftCategories } from '@/hooks/useDraftCategories';
 import CategoriesForm from '@/components/CategoriesForm';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
-import { DraftModeSelector } from '@/components/DraftModeSelector';
-import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 
 interface DraftSetupForm {
   participants: string[];
@@ -28,10 +26,7 @@ const Home = () => {
   const [selectedOption, setSelectedOption] = useState('');
   const [participants, setParticipants] = useState<string[]>([]);
   const [newParticipant, setNewParticipant] = useState('');
-  const [draftMode, setDraftMode] = useState<'single' | 'multiplayer' | null>(null);
-  const [showModeSelector, setShowModeSelector] = useState(false);
-  
-  const { joinDraftByCode } = useMultiplayerDraft();
+  const [draftMode, setDraftMode] = useState<'single' | 'multiplayer'>('single');
 
   const form = useForm<DraftSetupForm>({
     defaultValues: {
@@ -79,42 +74,17 @@ const Home = () => {
   const handleStartDraft = (data: DraftSetupForm) => {
     if (!selectedOption || participants.length === 0 || !data.categories.length) return;
 
-    // Show draft mode selector
-    setShowModeSelector(true);
-  };
-
-  const handleModeSelect = async (mode: 'single' | 'multiplayer', inviteCode?: string) => {
     const draftData = {
       theme,
       option: selectedOption,
       participants: participants,
-      categories: form.getValues('categories'),
-      isMultiplayer: mode === 'multiplayer'
+      categories: data.categories,
+      isMultiplayer: draftMode === 'multiplayer'
     };
 
-    if (mode === 'single') {
-      // Navigate to single player draft
-      navigate('/draft', {
-        state: draftData
-      });
-    } else if (mode === 'multiplayer') {
-      if (inviteCode) {
-        // Join existing draft
-        try {
-          await joinDraftByCode(inviteCode, participants[0] || 'Player');
-          // Navigation will be handled by the hook after successful join
-        } catch (error) {
-          console.error('Failed to join draft:', error);
-        }
-      } else {
-        // Create new multiplayer draft
-        navigate('/draft', {
-          state: draftData
-        });
-      }
-    }
-    
-    setShowModeSelector(false);
+    navigate('/draft', {
+      state: draftData
+    });
   };
 
   const handleOptionSelect = (option: string | { title: string }) => {
@@ -332,10 +302,54 @@ const Home = () => {
             </CardContent>
           </Card>
 
-          {/* Categories Selection */}
+          {/* Draft Mode and Categories Selection */}
           {selectedOption && participants.length > 0 && (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleStartDraft)} className="space-y-8">
+                {/* Draft Mode Selection */}
+                <Card className="bg-gray-800 border-gray-600">
+                  <CardContent className="pt-6">
+                    <h3 className="text-xl font-bold text-white mb-4">
+                      Draft Mode
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Button
+                        type="button"
+                        onClick={() => setDraftMode('single')}
+                        variant={draftMode === 'single' ? 'default' : 'outline'}
+                        className={`h-16 text-lg ${
+                          draftMode === 'single'
+                            ? 'bg-yellow-400 text-black hover:bg-yellow-500'
+                            : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                        }`}
+                      >
+                        <Users className="mr-3" size={20} />
+                        Single Player
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={() => setDraftMode('multiplayer')}
+                        variant={draftMode === 'multiplayer' ? 'default' : 'outline'}
+                        className={`h-16 text-lg ${
+                          draftMode === 'multiplayer'
+                            ? 'bg-yellow-400 text-black hover:bg-yellow-500'
+                            : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                        }`}
+                      >
+                        <Users className="mr-3" size={20} />
+                        Multiplayer
+                      </Button>
+                    </div>
+                    {draftMode === 'multiplayer' && (
+                      <div className="mt-4 p-4 bg-blue-900/20 border border-blue-600/30 rounded-lg">
+                        <p className="text-blue-300 text-sm">
+                          🌐 <strong>Multiplayer Mode:</strong> Create a collaborative draft where friends can join in real-time using an invite code. Each player takes turns picking from their own device!
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
                 <CategoriesForm form={form} categories={categories} />
 
                 {/* Start Draft Button */}
@@ -345,7 +359,7 @@ const Home = () => {
                     className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-4 text-lg"
                     size="lg"
                   >
-                    Start Draft
+                    {draftMode === 'multiplayer' ? 'Create Multiplayer Draft' : 'Start Solo Draft'}
                   </Button>
                 </div>
               </form>
@@ -353,22 +367,6 @@ const Home = () => {
           )}
         </div>
       </div>
-      
-      {/* Draft Mode Selector Overlay */}
-      {showModeSelector && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-background rounded-lg p-6 max-w-4xl w-full">
-            <DraftModeSelector onModeSelect={handleModeSelect} />
-            <Button 
-              variant="outline" 
-              onClick={() => setShowModeSelector(false)}
-              className="mt-4 w-full"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
