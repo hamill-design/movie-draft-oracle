@@ -434,10 +434,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
         throw updateError;
       }
 
-      console.log('Draft updated successfully, now calling loadDraft...');
-
-      // Refresh the draft data to ensure UI is up to date
-      await loadDraft(draft.id);
+      console.log('Draft updated successfully, pick completed.');
 
       toast({
         title: "Pick Made",
