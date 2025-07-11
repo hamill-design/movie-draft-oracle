@@ -394,7 +394,12 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
       // Use the pre-calculated turn order (much simpler than complex calculations)
       const turnOrder = draft.turn_order;
+      console.log('Turn order from draft:', turnOrder);
+      console.log('Turn order type:', typeof turnOrder);
+      console.log('Turn order is array:', Array.isArray(turnOrder));
+      
       if (!turnOrder || !Array.isArray(turnOrder) || turnOrder.length === 0) {
+        console.error('Turn order invalid:', { turnOrder, isArray: Array.isArray(turnOrder), length: turnOrder?.length });
         throw new Error('Turn order not found - draft may not have been started properly');
       }
 
