@@ -10,6 +10,7 @@ import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDraftCategories } from '@/hooks/useDraftCategories';
 import CategoriesForm from '@/components/CategoriesForm';
+import { JoinDraftForm } from '@/components/JoinDraftForm';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
@@ -143,6 +144,9 @@ const Home = () => {
       <div className="container mx-auto px-4 py-8">
 
         <div className="max-w-4xl mx-auto space-y-8">
+          {/* Join Existing Draft */}
+          <JoinDraftForm />
+          
           {/* Theme Selection */}
           <Card className="bg-gray-800 border-gray-600">
             <CardContent className="pt-6">

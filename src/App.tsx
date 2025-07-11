@@ -18,6 +18,7 @@ import FinalScores from "./pages/FinalScores";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
+import { JoinDraft } from "./pages/JoinDraft";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,8 @@ const App = () => (
             <Route path="/profile" element={<Profile />} />
             <Route path="/draft-results" element={<DraftResults />} />
             <Route path="/final-scores/:draftId" element={<FinalScores />} />
+            <Route path="/join-draft/:draftId" element={<JoinDraft />} />
+            <Route path="/join-draft" element={<JoinDraft />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

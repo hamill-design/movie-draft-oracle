@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
+import { Resend } from "npm:resend@2.0.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,23 +39,79 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Sending draft invitations:', { draftId, participantEmails: participantEmails.length });
 
-    // For now, we'll just log the invitation details and return success
-    // In a real implementation, you would integrate with an email service like Resend
-    console.log('Draft invitation details:', {
-      draftId,
-      draftTitle,
-      hostName,
-      participantEmails,
-      theme,
-      option
-    });
+    // Initialize Resend
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendApiKey) {
+      console.warn('RESEND_API_KEY not found - emails will not be sent');
+    }
 
-    // Simulate sending emails to each participant
-    const invitationResults = participantEmails.map(email => ({
-      email,
-      status: 'sent',
-      inviteLink: `${req.headers.get('origin')}/join-draft/${draftId}?email=${encodeURIComponent(email)}`
-    }));
+    const resend = resendApiKey ? new Resend(resendApiKey) : null;
+    const origin = req.headers.get('origin') || 'https://your-app-domain.com';
+
+    // Send emails to each participant
+    const invitationResults = await Promise.all(
+      participantEmails.map(async (email) => {
+        const inviteLink = `${origin}/join-draft/${draftId}?email=${encodeURIComponent(email)}`;
+        
+        try {
+          if (resend) {
+            const emailResponse = await resend.emails.send({
+              from: "Movie Draft <noreply@resend.dev>",
+              to: [email],
+              subject: `🎬 You're invited to join "${draftTitle}"`,
+              html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h1 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
+                    🎬 Movie Draft Invitation
+                  </h1>
+                  
+                  <p>Hi there!</p>
+                  
+                  <p><strong>${hostName}</strong> has invited you to join their movie draft: <strong>"${draftTitle}"</strong></p>
+                  
+                  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="margin-top: 0; color: #007bff;">Draft Details</h3>
+                    <p><strong>Theme:</strong> ${theme}</p>
+                    <p><strong>Category:</strong> ${option}</p>
+                  </div>
+                  
+                  <div style="text-align: center; margin: 30px 0;">
+                    <a href="${inviteLink}" 
+                       style="background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+                      Join Draft Session
+                    </a>
+                  </div>
+                  
+                  <p style="color: #666; font-size: 14px;">
+                    If the button doesn't work, copy and paste this link into your browser:<br>
+                    <a href="${inviteLink}">${inviteLink}</a>
+                  </p>
+                  
+                  <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+                  
+                  <p style="color: #999; font-size: 12px;">
+                    This invitation was sent to ${email}. If you didn't expect this invitation, you can safely ignore this email.
+                  </p>
+                </div>
+              `,
+            });
+
+            if (emailResponse.error) {
+              console.error(`Failed to send email to ${email}:`, emailResponse.error);
+              return { email, status: 'failed', error: emailResponse.error.message, inviteLink };
+            }
+
+            return { email, status: 'sent', inviteLink, emailId: emailResponse.data?.id };
+          } else {
+            console.log(`Would send email to ${email} with link: ${inviteLink}`);
+            return { email, status: 'simulated', inviteLink };
+          }
+        } catch (error) {
+          console.error(`Error sending email to ${email}:`, error);
+          return { email, status: 'failed', error: error.message, inviteLink };
+        }
+      })
+    );
 
     return new Response(JSON.stringify({ 
       success: true, 
