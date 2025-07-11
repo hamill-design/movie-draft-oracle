@@ -287,17 +287,31 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
       console.log('Pick inserted successfully:', pickResult);
 
-      // Calculate next turn - cycle through participants
-      // After this pick, it will be pick number (current_pick_number + 1)
-      // So the next participant index should be based on the new pick number
+      // Calculate next turn using snake draft logic
+      // In snake draft, the order reverses each round
       const newPickNumber = draft.current_pick_number + 1;
-      const nextParticipantIndex = (newPickNumber - 1) % participants.length;
+      const numParticipants = participants.length;
+      const round = Math.floor((newPickNumber - 1) / numParticipants);
+      const positionInRound = (newPickNumber - 1) % numParticipants;
+      
+      let nextParticipantIndex;
+      if (round % 2 === 0) {
+        // Even rounds (0, 2, 4...): normal order
+        nextParticipantIndex = positionInRound;
+      } else {
+        // Odd rounds (1, 3, 5...): reverse order
+        nextParticipantIndex = numParticipants - 1 - positionInRound;
+      }
+      
       const nextParticipant = participants[nextParticipantIndex];
       
-      console.log('Current pick number:', draft.current_pick_number);
-      console.log('New pick number:', newPickNumber);
-      console.log('Next participant index:', nextParticipantIndex);
-      console.log('Next participant:', nextParticipant);
+      console.log('Snake draft calculation:');
+      console.log('- Current pick number:', draft.current_pick_number);
+      console.log('- New pick number:', newPickNumber);
+      console.log('- Round:', round, '(even rounds = normal order, odd = reverse)');
+      console.log('- Position in round:', positionInRound);
+      console.log('- Next participant index:', nextParticipantIndex);
+      console.log('- Next participant:', nextParticipant);
       
       // Update draft with next turn
       const { error: updateError } = await supabase
