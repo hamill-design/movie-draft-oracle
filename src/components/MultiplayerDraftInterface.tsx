@@ -16,6 +16,7 @@ import PickConfirmation from '@/components/PickConfirmation';
 import DraftBoard from '@/components/DraftBoard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DiagnosticInfo } from '@/components/DiagnosticInfo';
+import EmailDiagnostic from '@/components/EmailDiagnostic';
 
 interface MultiplayerDraftInterfaceProps {
   draftId?: string;
@@ -450,6 +451,9 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
           </div>
         </div>
       </div>
+
+      {/* Email Diagnostic - Temporary for debugging */}
+      <EmailDiagnostic />
 
       {/* Diagnostic Info - Only show in development or when debugging */}
       <DiagnosticInfo
