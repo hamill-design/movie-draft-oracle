@@ -25,6 +25,7 @@ interface MultiplayerDraft {
   is_complete: boolean;
   is_multiplayer: boolean;
   invite_code: string | null;
+  draft_order: string[] | null;
 }
 
 export const useMultiplayerDraft = (draftId?: string) => {
