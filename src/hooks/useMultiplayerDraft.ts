@@ -63,6 +63,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
           user_id: user.id,
           is_multiplayer: true,
           current_pick_number: 1,
+          current_turn_user_id: user.id,  // Set the host as the first player
         })
         .select()
         .single();
