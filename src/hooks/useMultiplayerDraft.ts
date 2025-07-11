@@ -434,7 +434,18 @@ export const useMultiplayerDraft = (draftId?: string) => {
         throw updateError;
       }
 
-      console.log('Draft updated successfully, pick completed.');
+      console.log('Draft updated successfully, refreshing picks...');
+
+      // Refresh only the picks to ensure they show up immediately
+      const { data: updatedPicks, error: picksError } = await supabase
+        .from('draft_picks')
+        .select('*')
+        .eq('draft_id', draft.id)
+        .order('pick_order');
+
+      if (!picksError && updatedPicks) {
+        setPicks(updatedPicks);
+      }
 
       toast({
         title: "Pick Made",
