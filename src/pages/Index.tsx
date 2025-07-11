@@ -93,6 +93,7 @@ const Index = () => {
     return (
       <MultiplayerDraftInterface 
         draftId={draftState.existingDraftId}
+        initialData={!draftState.existingDraftId ? draftState : undefined}
       />
     );
   }
