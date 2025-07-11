@@ -144,15 +144,18 @@ export const useMultiplayerDraft = (draftId?: string) => {
       // Randomize the participant order
       const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
       const firstPlayer = shuffledParticipants[0];
+      const draftOrder = shuffledParticipants.map(p => p.user_id);
 
       console.log('Starting draft with randomized order:', shuffledParticipants.map(p => p.participant_name));
+      console.log('Draft order (user_ids):', draftOrder);
       console.log('First player:', firstPlayer.participant_name);
 
-      // Update the draft to start with the randomly selected first player
+      // Update the draft to start with the randomly selected first player and save the draft order
       const { error: updateError } = await supabase
         .from('drafts')
         .update({
           current_turn_user_id: firstPlayer.user_id,
+          draft_order: draftOrder,
         })
         .eq('id', draftId);
 
@@ -349,10 +352,17 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
       console.log('Pick inserted successfully:', pickResult);
 
-      // Calculate next turn using snake draft logic
-      // In snake draft, the order reverses each round
+      // Use the saved draft order for snake draft calculation
+      const draftOrder = (draft as any).draft_order;
+      if (!draftOrder || draftOrder.length === 0) {
+        throw new Error('Draft order not found - draft may not have been started properly');
+      }
+
+      console.log('Using draft order:', draftOrder);
+
+      // Calculate next turn using snake draft logic based on the saved draft order
       const newPickNumber = draft.current_pick_number + 1;
-      const numParticipants = participants.length;
+      const numParticipants = draftOrder.length;
       const round = Math.floor((newPickNumber - 1) / numParticipants);
       const positionInRound = (newPickNumber - 1) % numParticipants;
       
@@ -365,7 +375,12 @@ export const useMultiplayerDraft = (draftId?: string) => {
         nextParticipantIndex = numParticipants - 1 - positionInRound;
       }
       
-      const nextParticipant = participants[nextParticipantIndex];
+      const nextParticipantUserId = draftOrder[nextParticipantIndex];
+      const nextParticipant = participants.find(p => p.user_id === nextParticipantUserId);
+      
+      if (!nextParticipant) {
+        throw new Error('Next participant not found in participants list');
+      }
       
       console.log('Snake draft calculation:');
       console.log('- Current pick number:', draft.current_pick_number);
@@ -373,6 +388,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
       console.log('- Round:', round, '(even rounds = normal order, odd = reverse)');
       console.log('- Position in round:', positionInRound);
       console.log('- Next participant index:', nextParticipantIndex);
+      console.log('- Next participant user_id:', nextParticipantUserId);
       console.log('- Next participant:', nextParticipant);
       
       // Update draft with next turn

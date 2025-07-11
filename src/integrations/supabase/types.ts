@@ -141,6 +141,7 @@ export type Database = {
           created_at: string | null
           current_pick_number: number | null
           current_turn_user_id: string | null
+          draft_order: string[] | null
           id: string
           invite_code: string | null
           is_complete: boolean | null
@@ -157,6 +158,7 @@ export type Database = {
           created_at?: string | null
           current_pick_number?: number | null
           current_turn_user_id?: string | null
+          draft_order?: string[] | null
           id?: string
           invite_code?: string | null
           is_complete?: boolean | null
@@ -173,6 +175,7 @@ export type Database = {
           created_at?: string | null
           current_pick_number?: number | null
           current_turn_user_id?: string | null
+          draft_order?: string[] | null
           id?: string
           invite_code?: string | null
           is_complete?: boolean | null
