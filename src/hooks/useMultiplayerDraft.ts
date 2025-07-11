@@ -327,14 +327,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
   // Make a pick (only if it's your turn)
   const makePick = useCallback(async (movie: any, category: string) => {
-    console.log('=== MAKE PICK ATTEMPT ===');
-    console.log('User:', !!user, 'Draft:', !!draft, 'IsMyTurn:', isMyTurn);
-    console.log('Draft current_turn_user_id:', draft?.current_turn_user_id);
-    console.log('My user ID:', user?.id);
-    console.log('Participants:', participants.map(p => ({ name: p.participant_name, user_id: p.user_id })));
-
     if (!user || !draft || !isMyTurn) {
-      console.log('Pick blocked - user:', !!user, 'draft:', !!draft, 'isMyTurn:', isMyTurn);
       toast({
         title: "Error",
         description: "It's not your turn!",
@@ -343,98 +336,41 @@ export const useMultiplayerDraft = (draftId?: string) => {
       return;
     }
 
-    console.log('Making pick for movie:', movie.title, 'category:', category);
-    console.log('Current draft state:', { 
-      currentPickNumber: draft.current_pick_number, 
-      currentTurnUserId: draft.current_turn_user_id,
-      myUserId: user.id 
-    });
-
     try {
       // Find current participant
       const currentParticipant = participants.find(p => p.user_id === user.id);
       if (!currentParticipant) {
-        console.error('Current participant not found. Available participants:', participants);
         throw new Error('User not found in participants');
       }
 
-      console.log('Current participant:', currentParticipant);
-
-      // Find the current participant's position in the ordered list
       const currentParticipantIndex = participants.findIndex(p => p.user_id === user.id);
-      console.log('Current participant index:', currentParticipantIndex);
-      
-      // Prepare pick data
-      const pickData = {
-        draft_id: draft.id,
-        player_id: currentParticipantIndex + 1, // Use 1-based indexing for player_id
-        player_name: currentParticipant.participant_name,
-        movie_id: movie.id,
-        movie_title: movie.title,
-        category,
-        pick_order: draft.current_pick_number,
-        poster_path: movie.poster_path,
-        movie_year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
-      };
-
-      console.log('Inserting pick with data:', pickData);
-      
-      // Insert the pick
-      const { data: pickResult, error: pickError } = await supabase
-        .from('draft_picks')
-        .insert(pickData)
-        .select();
-
-      if (pickError) {
-        console.error('Pick insertion error:', pickError);
-        throw pickError;
-      }
-
-      console.log('Pick inserted successfully:', pickResult);
-
-      // Use the pre-calculated turn order (much simpler than complex calculations)
       const turnOrder = draft.turn_order;
-      console.log('Turn order from draft:', turnOrder);
-      console.log('Turn order type:', typeof turnOrder);
-      console.log('Turn order is array:', Array.isArray(turnOrder));
       
       if (!turnOrder || turnOrder.length === 0) {
-        console.error('Turn order invalid:', { turnOrder, length: turnOrder?.length });
         throw new Error('Turn order not found - draft may not have been started properly');
       }
 
-      console.log('Using pre-calculated turn order:', turnOrder);
-
-      // Simple advancement: just go to the next pick in the sequence
-      const newPickNumber = draft.current_pick_number + 1;
-      const nextTurnIndex = newPickNumber - 1; // 0-based index for array lookup
+      // STEP 1: Reserve the next pick number immediately to prevent race conditions
+      const reservedPickNumber = draft.current_pick_number;
+      const nextPickNumber = reservedPickNumber + 1;
+      const nextTurnIndex = nextPickNumber - 1; // 0-based index for array lookup
       const isComplete = nextTurnIndex >= turnOrder.length;
       
-      console.log('Simple turn advancement:');
-      console.log('- Current pick number:', draft.current_pick_number);
-      console.log('- New pick number:', newPickNumber);
-      console.log('- Next turn index:', nextTurnIndex);
-      console.log('- Turn order length:', turnOrder.length);
-      console.log('- Is complete:', isComplete);
-      
-      // Update draft with next turn
+      // Update draft first to reserve the pick number
       let updateData;
       if (isComplete) {
         updateData = {
           current_turn_user_id: null,
-          current_pick_number: newPickNumber,
+          current_pick_number: nextPickNumber,
           is_complete: true
         };
       } else {
         const nextTurn = turnOrder[nextTurnIndex];
         updateData = {
           current_turn_user_id: nextTurn.user_id,
-          current_pick_number: newPickNumber,
+          current_pick_number: nextPickNumber,
         };
-        console.log('Next turn:', nextTurn);
       }
-      
-      console.log('About to update draft with:', updateData);
       
       const { error: updateError } = await supabase
         .from('drafts')
@@ -442,11 +378,29 @@ export const useMultiplayerDraft = (draftId?: string) => {
         .eq('id', draft.id);
 
       if (updateError) {
-        console.error('Draft update error:', updateError);
         throw updateError;
       }
 
-      console.log('Draft updated successfully, refreshing picks...');
+      // STEP 2: Insert the pick with the reserved pick number
+      const pickData = {
+        draft_id: draft.id,
+        player_id: currentParticipantIndex + 1,
+        player_name: currentParticipant.participant_name,
+        movie_id: movie.id,
+        movie_title: movie.title,
+        category,
+        pick_order: reservedPickNumber,
+        poster_path: movie.poster_path,
+        movie_year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
+      };
+      
+      const { error: pickError } = await supabase
+        .from('draft_picks')
+        .insert(pickData);
+
+      if (pickError) {
+        throw pickError;
+      }
 
       // Refresh only the picks to ensure they show up immediately
       const { data: updatedPicks, error: picksError } = await supabase
