@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DraftHeader from '@/components/DraftHeader';
 import DraftInterface from '@/components/DraftInterface';
+import { MultiplayerDraftInterface } from '@/components/MultiplayerDraftInterface';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 
@@ -85,6 +86,15 @@ const Index = () => {
   // Don't render anything if not authenticated (redirect will happen)
   if (!user || !draftState) {
     return null;
+  }
+
+  // Render multiplayer interface if this is a multiplayer draft
+  if (draftState.isMultiplayer) {
+    return (
+      <MultiplayerDraftInterface 
+        draftId={draftState.existingDraftId}
+      />
+    );
   }
 
   return (
