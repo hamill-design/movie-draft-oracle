@@ -2,13 +2,16 @@
 import React, { useState, useEffect } from 'react';
 import { useDraftGame } from '@/hooks/useDraftGame';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
+import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useMovies } from '@/hooks/useMovies';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import DraftBoard from './DraftBoard';
 import MovieSearch from './MovieSearch';
 import CategorySelection from './CategorySelection';
 import PickConfirmation from './PickConfirmation';
 import DraftComplete from './DraftComplete';
+import { MultiplayerDraftInterface } from './MultiplayerDraftInterface';
 
 interface DraftInterfaceProps {
   draftState: {
@@ -17,11 +20,30 @@ interface DraftInterfaceProps {
     participants: string[];
     categories: string[];
     existingDraftId?: string;
+    isMultiplayer?: boolean;
+    inviteCode?: string;
   };
   existingPicks?: any[];
 }
 
 const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
+  // If this is a multiplayer draft, use the multiplayer interface
+  if (draftState.isMultiplayer) {
+    return (
+      <MultiplayerDraftInterface 
+        draftId={draftState.existingDraftId}
+        initialData={draftState.existingDraftId ? undefined : {
+          theme: draftState.theme,
+          option: draftState.option,
+          participants: draftState.participants,
+          categories: draftState.categories,
+          isHost: true
+        }}
+      />
+    );
+  }
+
+  // Single player draft logic (existing code)
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState('');

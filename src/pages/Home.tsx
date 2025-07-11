@@ -88,7 +88,8 @@ const Home = () => {
       theme,
       option: selectedOption,
       participants: participants,
-      categories: form.getValues('categories')
+      categories: form.getValues('categories'),
+      isMultiplayer: mode === 'multiplayer'
     };
 
     if (mode === 'single') {
@@ -107,11 +108,8 @@ const Home = () => {
         }
       } else {
         // Create new multiplayer draft
-        navigate('/draft/multiplayer', {
-          state: {
-            ...draftData,
-            isHost: true
-          }
+        navigate('/draft', {
+          state: draftData
         });
       }
     }

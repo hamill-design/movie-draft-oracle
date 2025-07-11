@@ -12,6 +12,8 @@ interface DraftState {
   participants: string[];
   categories: string[];
   existingDraftId?: string;
+  isMultiplayer?: boolean;
+  inviteCode?: string;
 }
 
 const Index = () => {

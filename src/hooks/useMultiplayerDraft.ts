@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +30,7 @@ interface MultiplayerDraft {
 export const useMultiplayerDraft = (draftId?: string) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [draft, setDraft] = useState<MultiplayerDraft | null>(null);
   const [participants, setParticipants] = useState<DraftParticipant[]>([]);
@@ -104,9 +106,30 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
       if (error) throw error;
 
+      // Find the draft by invite code to get its details
+      const { data: draftData, error: draftError } = await supabase
+        .from('drafts')
+        .select('*')
+        .eq('invite_code', inviteCode)
+        .single();
+
+      if (draftError) throw draftError;
+
       toast({
         title: "Joined Draft",
         description: "Successfully joined the draft!",
+      });
+
+      // Navigate to the draft page with multiplayer flag
+      navigate('/draft', {
+        state: {
+          theme: draftData.theme,
+          option: draftData.option,
+          participants: draftData.participants,
+          categories: draftData.categories,
+          existingDraftId: draftData.id,
+          isMultiplayer: true
+        }
       });
 
       return data;
@@ -121,7 +144,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user, toast, navigate]);
 
   // Load draft data
   const loadDraft = useCallback(async (id: string) => {

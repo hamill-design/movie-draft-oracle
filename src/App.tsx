@@ -17,7 +17,6 @@ import DraftResults from "./pages/DraftResults";
 import FinalScores from "./pages/FinalScores";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
-import MultiplayerDraft from "./pages/MultiplayerDraft";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,8 +35,6 @@ const App = () => (
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/draft-setup" element={<DraftSetup />} />
             <Route path="/draft" element={<Index />} />
-            <Route path="/draft/multiplayer" element={<MultiplayerDraft />} />
-            <Route path="/draft/multiplayer/:draftId" element={<MultiplayerDraft />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/draft-results" element={<DraftResults />} />
             <Route path="/final-scores/:draftId" element={<FinalScores />} />
