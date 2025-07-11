@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      draft_participants: {
+        Row: {
+          created_at: string
+          draft_id: string
+          id: string
+          is_host: boolean
+          joined_at: string | null
+          participant_name: string
+          status: Database["public"]["Enums"]["participant_status"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          draft_id: string
+          id?: string
+          is_host?: boolean
+          joined_at?: string | null
+          participant_name: string
+          status?: Database["public"]["Enums"]["participant_status"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          draft_id?: string
+          id?: string
+          is_host?: boolean
+          joined_at?: string | null
+          participant_name?: string
+          status?: Database["public"]["Enums"]["participant_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_participants_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       draft_picks: {
         Row: {
           calculated_score: number | null
@@ -98,8 +139,12 @@ export type Database = {
         Row: {
           categories: string[]
           created_at: string | null
+          current_pick_number: number | null
+          current_turn_user_id: string | null
           id: string
+          invite_code: string | null
           is_complete: boolean | null
+          is_multiplayer: boolean | null
           option: string
           participants: string[]
           theme: string
@@ -110,8 +155,12 @@ export type Database = {
         Insert: {
           categories: string[]
           created_at?: string | null
+          current_pick_number?: number | null
+          current_turn_user_id?: string | null
           id?: string
+          invite_code?: string | null
           is_complete?: boolean | null
+          is_multiplayer?: boolean | null
           option: string
           participants: string[]
           theme: string
@@ -122,8 +171,12 @@ export type Database = {
         Update: {
           categories?: string[]
           created_at?: string | null
+          current_pick_number?: number | null
+          current_turn_user_id?: string | null
           id?: string
+          invite_code?: string | null
           is_complete?: boolean | null
+          is_multiplayer?: boolean | null
           option?: string
           participants?: string[]
           theme?: string
@@ -159,10 +212,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_invite_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      join_draft_by_invite_code: {
+        Args: { invite_code_param: string; participant_name_param: string }
+        Returns: string
+      }
     }
     Enums: {
-      [_ in never]: never
+      participant_status: "invited" | "joined" | "left"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -289,6 +349,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      participant_status: ["invited", "joined", "left"],
+    },
   },
 } as const

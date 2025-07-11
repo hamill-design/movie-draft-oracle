@@ -12,6 +12,8 @@ import { useDraftCategories } from '@/hooks/useDraftCategories';
 import CategoriesForm from '@/components/CategoriesForm';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
+import { DraftModeSelector } from '@/components/DraftModeSelector';
+import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 
 interface DraftSetupForm {
   participants: string[];
@@ -26,6 +28,10 @@ const Home = () => {
   const [selectedOption, setSelectedOption] = useState('');
   const [participants, setParticipants] = useState<string[]>([]);
   const [newParticipant, setNewParticipant] = useState('');
+  const [draftMode, setDraftMode] = useState<'single' | 'multiplayer' | null>(null);
+  const [showModeSelector, setShowModeSelector] = useState(false);
+  
+  const { joinDraftByCode } = useMultiplayerDraft();
 
   const form = useForm<DraftSetupForm>({
     defaultValues: {
@@ -73,14 +79,44 @@ const Home = () => {
   const handleStartDraft = (data: DraftSetupForm) => {
     if (!selectedOption || participants.length === 0 || !data.categories.length) return;
 
-    navigate('/draft', {
-      state: {
-        theme,
-        option: selectedOption,
-        participants: participants,
-        categories: data.categories
+    // Show draft mode selector
+    setShowModeSelector(true);
+  };
+
+  const handleModeSelect = async (mode: 'single' | 'multiplayer', inviteCode?: string) => {
+    const draftData = {
+      theme,
+      option: selectedOption,
+      participants: participants,
+      categories: form.getValues('categories')
+    };
+
+    if (mode === 'single') {
+      // Navigate to single player draft
+      navigate('/draft', {
+        state: draftData
+      });
+    } else if (mode === 'multiplayer') {
+      if (inviteCode) {
+        // Join existing draft
+        try {
+          await joinDraftByCode(inviteCode, participants[0] || 'Player');
+          // Navigation will be handled by the hook after successful join
+        } catch (error) {
+          console.error('Failed to join draft:', error);
+        }
+      } else {
+        // Create new multiplayer draft
+        navigate('/draft/multiplayer', {
+          state: {
+            ...draftData,
+            isHost: true
+          }
+        });
       }
-    });
+    }
+    
+    setShowModeSelector(false);
   };
 
   const handleOptionSelect = (option: string | { title: string }) => {
@@ -319,6 +355,22 @@ const Home = () => {
           )}
         </div>
       </div>
+      
+      {/* Draft Mode Selector Overlay */}
+      {showModeSelector && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg p-6 max-w-4xl w-full">
+            <DraftModeSelector onModeSelect={handleModeSelect} />
+            <Button 
+              variant="outline" 
+              onClick={() => setShowModeSelector(false)}
+              className="mt-4 w-full"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
