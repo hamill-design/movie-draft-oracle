@@ -385,6 +385,9 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
       console.log('Draft updated successfully');
 
+      // Refresh the draft data to ensure UI is up to date
+      await loadDraft(draft.id);
+
       toast({
         title: "Pick Made",
         description: `Successfully picked ${movie.title}`,
