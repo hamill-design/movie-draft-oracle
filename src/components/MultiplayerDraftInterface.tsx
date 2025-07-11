@@ -41,6 +41,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
     createMultiplayerDraft,
     joinDraftByCode,
     makePick,
+    startDraft,
   } = useMultiplayerDraft(draftId);
 
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
@@ -289,6 +290,40 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
             </CardContent>
           </Card>
         </div>
+
+        {/* Start Draft Button - Show when draft hasn't started */}
+        {!draft.current_turn_user_id && participants.length >= 2 && (
+          <Card>
+            <CardContent className="p-6 text-center">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-semibold mb-2">Ready to Start?</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {participants.length} players have joined. Click below to randomize turn order and start the draft!
+                  </p>
+                </div>
+                <Button onClick={() => startDraft(draft.id)} className="w-full md:w-auto">
+                  🎲 Start Draft (Random Turn Order)
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Waiting for Players - Show when not enough players */}
+        {!draft.current_turn_user_id && participants.length < 2 && (
+          <Card>
+            <CardContent className="p-6 text-center">
+              <div className="space-y-2">
+                <Users className="h-8 w-8 mx-auto text-muted-foreground" />
+                <h3 className="font-semibold">Waiting for Players</h3>
+                <p className="text-sm text-muted-foreground">
+                  Need at least 2 players to start the draft. Share the invite code above!
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Draft Content */}
         <div className="space-y-6">

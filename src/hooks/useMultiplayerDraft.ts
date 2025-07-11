@@ -51,7 +51,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
     try {
       setLoading(true);
 
-      // Create the draft
+      // Create the draft (without setting current_turn_user_id yet - draft hasn't started)
       const { data: newDraft, error: draftError } = await supabase
         .from('drafts')
         .insert({
@@ -63,7 +63,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
           user_id: user.id,
           is_multiplayer: true,
           current_pick_number: 1,
-          current_turn_user_id: user.id, // Set host as first player
+          // Don't set current_turn_user_id yet - draft hasn't started
         })
         .select()
         .single();
@@ -119,6 +119,62 @@ export const useMultiplayerDraft = (draftId?: string) => {
       setLoading(false);
     }
   }, [user]);
+
+  // Start the draft with randomized turn order
+  const startDraft = useCallback(async (draftId: string) => {
+    if (!user) throw new Error('User not authenticated');
+
+    try {
+      setLoading(true);
+
+      // Get all joined participants
+      const { data: participants, error: participantsError } = await supabase
+        .from('draft_participants')
+        .select('*')
+        .eq('draft_id', draftId)
+        .eq('status', 'joined')
+        .order('joined_at');
+
+      if (participantsError) throw participantsError;
+      
+      if (participants.length < 2) {
+        throw new Error('Need at least 2 players to start the draft');
+      }
+
+      // Randomize the participant order
+      const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
+      const firstPlayer = shuffledParticipants[0];
+
+      console.log('Starting draft with randomized order:', shuffledParticipants.map(p => p.participant_name));
+      console.log('First player:', firstPlayer.participant_name);
+
+      // Update the draft to start with the randomly selected first player
+      const { error: updateError } = await supabase
+        .from('drafts')
+        .update({
+          current_turn_user_id: firstPlayer.user_id,
+        })
+        .eq('id', draftId);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Draft Started!",
+        description: `${firstPlayer.participant_name} goes first!`,
+      });
+
+    } catch (error) {
+      console.error('Error starting draft:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to start draft",
+        variant: "destructive",
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [user, toast]);
 
   // Join a draft by invite code
   const joinDraftByCode = useCallback(async (inviteCode: string, participantName: string) => {
@@ -417,5 +473,6 @@ export const useMultiplayerDraft = (draftId?: string) => {
     joinDraftByCode,
     makePick,
     loadDraft,
+    startDraft,
   };
 };
