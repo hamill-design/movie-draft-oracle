@@ -69,6 +69,23 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
       if (draftError) throw draftError;
 
+      // Create a participant record for the host
+      const { error: hostParticipantError } = await supabase
+        .from('draft_participants')
+        .insert({
+          draft_id: newDraft.id,
+          user_id: user.id,
+          participant_name: user.email || 'Host',
+          status: 'joined',
+          is_host: true,
+          joined_at: new Date().toISOString(),
+        });
+
+      if (hostParticipantError) {
+        console.error('Failed to create host participant:', hostParticipantError);
+        // Don't fail the draft creation if this fails
+      }
+
       // Send email invitations to participants
       try {
         const inviteResponse = await supabase.functions.invoke('send-draft-invitations', {
