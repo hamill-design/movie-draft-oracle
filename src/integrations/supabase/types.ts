@@ -150,6 +150,7 @@ export type Database = {
           participants: string[]
           theme: string
           title: string
+          turn_order: Json | null
           updated_at: string | null
           user_id: string
         }
@@ -167,6 +168,7 @@ export type Database = {
           participants: string[]
           theme: string
           title: string
+          turn_order?: Json | null
           updated_at?: string | null
           user_id: string
         }
@@ -184,6 +186,7 @@ export type Database = {
           participants?: string[]
           theme?: string
           title?: string
+          turn_order?: Json | null
           updated_at?: string | null
           user_id?: string
         }

@@ -121,7 +121,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
     }
   }, [user]);
 
-  // Start the draft with randomized turn order
+  // Start the draft with pre-calculated snake draft turn order
   const startDraft = useCallback(async (draftId: string) => {
     if (!user) throw new Error('User not authenticated');
 
@@ -142,21 +142,59 @@ export const useMultiplayerDraft = (draftId?: string) => {
         throw new Error('Need at least 2 players to start the draft');
       }
 
+      // Get draft details to know categories
+      const { data: draftData, error: draftError } = await supabase
+        .from('drafts')
+        .select('categories')
+        .eq('id', draftId)
+        .single();
+
+      if (draftError) throw draftError;
+
       // Randomize the participant order
       const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
-      const firstPlayer = shuffledParticipants[0];
-      const draftOrder = shuffledParticipants.map(p => p.user_id);
+      
+      // Generate complete snake draft turn order (like single-player draftOrder)
+      const numPlayers = shuffledParticipants.length;
+      const numCategories = draftData.categories.length;
+      const turnOrder = [];
+      
+      for (let round = 0; round < numCategories; round++) {
+        if (round % 2 === 0) {
+          // Forward order
+          for (let i = 0; i < numPlayers; i++) {
+            turnOrder.push({
+              user_id: shuffledParticipants[i].user_id,
+              participant_name: shuffledParticipants[i].participant_name,
+              round,
+              pick_number: turnOrder.length + 1
+            });
+          }
+        } else {
+          // Reverse order (snake draft)
+          for (let i = numPlayers - 1; i >= 0; i--) {
+            turnOrder.push({
+              user_id: shuffledParticipants[i].user_id,
+              participant_name: shuffledParticipants[i].participant_name,
+              round,
+              pick_number: turnOrder.length + 1
+            });
+          }
+        }
+      }
 
-      console.log('Starting draft with randomized order:', shuffledParticipants.map(p => p.participant_name));
-      console.log('Draft order (user_ids):', draftOrder);
-      console.log('First player:', firstPlayer.participant_name);
+      // Start the draft with the first turn
+      const firstTurn = turnOrder[0];
+      
+      console.log('Generated complete turn order:', turnOrder);
+      console.log('First player:', firstTurn.participant_name);
 
-      // Update the draft to start with the randomly selected first player and save the draft order
       const { error: updateError } = await supabase
         .from('drafts')
         .update({
-          current_turn_user_id: firstPlayer.user_id,
-          draft_order: draftOrder,
+          current_turn_user_id: firstTurn.user_id,
+          current_pick_number: 1,
+          turn_order: turnOrder
         })
         .eq('id', draftId);
 
@@ -164,7 +202,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
       toast({
         title: "Draft Started!",
-        description: `${firstPlayer.participant_name} goes first!`,
+        description: `${firstTurn.participant_name} goes first!`,
       });
 
     } catch (error) {
@@ -353,74 +391,42 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
       console.log('Pick inserted successfully:', pickResult);
 
-      // Use the saved draft order for snake draft calculation
-      const draftOrder = (draft as any).draft_order;
-      if (!draftOrder || draftOrder.length === 0) {
-        throw new Error('Draft order not found - draft may not have been started properly');
+      // Use the pre-calculated turn order (much simpler than complex calculations)
+      const turnOrder = (draft as any).turn_order;
+      if (!turnOrder || turnOrder.length === 0) {
+        throw new Error('Turn order not found - draft may not have been started properly');
       }
 
-      console.log('Using draft order:', draftOrder);
+      console.log('Using pre-calculated turn order:', turnOrder);
 
-      // Calculate next turn using snake draft logic based on the saved draft order
+      // Simple advancement: just go to the next pick in the sequence
       const newPickNumber = draft.current_pick_number + 1;
-      const numParticipants = draftOrder.length;
-      const round = Math.floor((newPickNumber - 1) / numParticipants);
-      const positionInRound = (newPickNumber - 1) % numParticipants;
+      const nextTurnIndex = newPickNumber - 1; // 0-based index for array lookup
+      const isComplete = nextTurnIndex >= turnOrder.length;
       
-      let nextParticipantIndex;
-      if (round % 2 === 0) {
-        // Even rounds (0, 2, 4...): normal order
-        nextParticipantIndex = positionInRound;
-      } else {
-        // Odd rounds (1, 3, 5...): reverse order
-        nextParticipantIndex = numParticipants - 1 - positionInRound;
-      }
-      
-      const nextParticipantUserId = draftOrder[nextParticipantIndex];
-      const nextParticipant = participants.find(p => p.user_id === nextParticipantUserId);
-      
-      if (!nextParticipant) {
-        throw new Error('Next participant not found in participants list');
-      }
-      
-      console.log('Snake draft calculation:');
-      console.log('- Draft order:', draftOrder);
+      console.log('Simple turn advancement:');
       console.log('- Current pick number:', draft.current_pick_number);
       console.log('- New pick number:', newPickNumber);
-      console.log('- Number of participants:', numParticipants);
-      console.log('- Round:', round, '(even rounds = normal order, odd = reverse)');
-      console.log('- Position in round:', positionInRound);
-      console.log('- Next participant index calculated:', nextParticipantIndex);
-      console.log('- Next participant user_id from draft_order:', nextParticipantUserId);
-      console.log('- Next participant found:', nextParticipant);
-      console.log('- Available participants:', participants.map(p => ({ name: p.participant_name, user_id: p.user_id })));
-      
-      // Debug: Show expected turn order for validation
-      console.log('Expected turn order for reference:');
-      for (let pick = 1; pick <= 8; pick++) {
-        const round = Math.floor((pick - 1) / numParticipants);
-        const pos = (pick - 1) % numParticipants;
-        const idx = round % 2 === 0 ? pos : numParticipants - 1 - pos;
-        const userId = draftOrder[idx];
-        const participant = participants.find(p => p.user_id === userId);
-        console.log(`Pick ${pick}: Round ${round}, Pos ${pos}, Index ${idx}, User: ${participant?.participant_name || 'Unknown'}`);
-      }
-      
-      // Check if draft should be completed
-      const totalPossiblePicks = numParticipants * draft.categories.length;
-      const isComplete = newPickNumber > totalPossiblePicks;
+      console.log('- Next turn index:', nextTurnIndex);
+      console.log('- Turn order length:', turnOrder.length);
+      console.log('- Is complete:', isComplete);
       
       // Update draft with next turn
-      const updateData = isComplete 
-        ? {
-            current_turn_user_id: null,
-            current_pick_number: newPickNumber,
-            is_complete: true
-          }
-        : {
-            current_turn_user_id: nextParticipant.user_id,
-            current_pick_number: newPickNumber,
-          };
+      let updateData;
+      if (isComplete) {
+        updateData = {
+          current_turn_user_id: null,
+          current_pick_number: newPickNumber,
+          is_complete: true
+        };
+      } else {
+        const nextTurn = turnOrder[nextTurnIndex];
+        updateData = {
+          current_turn_user_id: nextTurn.user_id,
+          current_pick_number: newPickNumber,
+        };
+        console.log('Next turn:', nextTurn);
+      }
       
       console.log('About to update draft with:', updateData);
       
