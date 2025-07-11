@@ -242,12 +242,15 @@ export const useMultiplayerDraft = (draftId?: string) => {
       const currentParticipant = participants.find(p => p.user_id === user.id);
       if (!currentParticipant) throw new Error('User not found in participants');
 
+      // Find the current participant's position in the ordered list
+      const currentParticipantIndex = participants.findIndex(p => p.user_id === user.id);
+      
       // Insert the pick
       const { error: pickError } = await supabase
         .from('draft_picks')
         .insert({
           draft_id: draft.id,
-          player_id: draft.current_pick_number, // This might need adjustment based on your logic
+          player_id: currentParticipantIndex + 1, // Use 1-based indexing for player_id
           player_name: currentParticipant.participant_name,
           movie_id: movie.id,
           movie_title: movie.title,
@@ -257,11 +260,16 @@ export const useMultiplayerDraft = (draftId?: string) => {
           movie_year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
         });
 
-      if (pickError) throw pickError;
+      if (pickError) {
+        console.error('Pick error:', pickError);
+        throw pickError;
+      }
 
-      // Calculate next turn (this logic might need to be more sophisticated for snake draft)
-      const nextParticipantIndex = (draft.current_pick_number - 1) % participants.length;
+      // Calculate next turn - cycle through participants
+      const nextParticipantIndex = draft.current_pick_number % participants.length;
       const nextParticipant = participants[nextParticipantIndex];
+      
+      console.log('Next participant:', nextParticipant, 'Index:', nextParticipantIndex);
       
       // Update draft with next turn
       const { error: updateError } = await supabase
