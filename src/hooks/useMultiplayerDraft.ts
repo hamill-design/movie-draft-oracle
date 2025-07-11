@@ -284,6 +284,12 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
   // Make a pick (only if it's your turn)
   const makePick = useCallback(async (movie: any, category: string) => {
+    console.log('=== MAKE PICK ATTEMPT ===');
+    console.log('User:', !!user, 'Draft:', !!draft, 'IsMyTurn:', isMyTurn);
+    console.log('Draft current_turn_user_id:', draft?.current_turn_user_id);
+    console.log('My user ID:', user?.id);
+    console.log('Participants:', participants.map(p => ({ name: p.participant_name, user_id: p.user_id })));
+
     if (!user || !draft || !isMyTurn) {
       console.log('Pick blocked - user:', !!user, 'draft:', !!draft, 'isMyTurn:', isMyTurn);
       toast({
@@ -370,6 +376,11 @@ export const useMultiplayerDraft = (draftId?: string) => {
       console.log('- Next participant:', nextParticipant);
       
       // Update draft with next turn
+      console.log('About to update draft with:', {
+        current_turn_user_id: nextParticipant.user_id,
+        current_pick_number: newPickNumber,
+      });
+      
       const { error: updateError } = await supabase
         .from('drafts')
         .update({
@@ -383,7 +394,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
         throw updateError;
       }
 
-      console.log('Draft updated successfully');
+      console.log('Draft updated successfully, now calling loadDraft...');
 
       // Refresh the draft data to ensure UI is up to date
       await loadDraft(draft.id);
@@ -418,8 +429,11 @@ export const useMultiplayerDraft = (draftId?: string) => {
           filter: `id=eq.${draftId}`,
         },
         (payload) => {
+          console.log('Real-time draft update received:', payload);
           if (payload.eventType === 'UPDATE') {
+            console.log('Setting draft from real-time:', payload.new);
             setDraft(payload.new as MultiplayerDraft);
+            console.log('Setting isMyTurn to:', payload.new.current_turn_user_id === user.id, 'because current_turn_user_id:', payload.new.current_turn_user_id, 'vs my ID:', user.id);
             setIsMyTurn(payload.new.current_turn_user_id === user.id);
           }
         }
