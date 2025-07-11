@@ -18,43 +18,131 @@ interface DraftInviteRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  console.log('📧 EDGE FUNCTION - Request received:', req.method);
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
+    console.log('📧 EDGE FUNCTION - Handling OPTIONS request');
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
     // Get auth header
     const authHeader = req.headers.get('Authorization');
+    console.log('📧 EDGE FUNCTION - Auth header present:', !!authHeader);
+    
     if (!authHeader) {
+      console.error('📧 EDGE FUNCTION - Missing authorization header');
       throw new Error('Missing authorization header');
     }
 
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    console.log('📧 EDGE FUNCTION - Supabase config:', { 
+      hasUrl: !!supabaseUrl, 
+      hasKey: !!supabaseKey 
+    });
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase configuration');
+    }
+
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { draftId, draftTitle, hostName, participantEmails, theme, option }: DraftInviteRequest = await req.json();
+    // Parse request body
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (parseError) {
+      console.error('📧 EDGE FUNCTION - Failed to parse request body:', parseError);
+      throw new Error('Invalid JSON request body');
+    }
 
-    console.log('Sending draft invitations:', { draftId, participantEmails: participantEmails.length });
+    const { draftId, draftTitle, hostName, participantEmails, theme, option }: DraftInviteRequest = requestBody;
+
+    console.log('📧 EDGE FUNCTION - Processing invitations:', { 
+      draftId, 
+      draftTitle,
+      hostName,
+      emailCount: participantEmails?.length,
+      theme,
+      option,
+      emails: participantEmails
+    });
+
+    // Validate required fields
+    if (!draftId || !draftTitle || !participantEmails || !Array.isArray(participantEmails)) {
+      console.error('📧 EDGE FUNCTION - Missing required fields:', {
+        hasDraftId: !!draftId,
+        hasDraftTitle: !!draftTitle,
+        hasEmails: !!participantEmails,
+        isEmailsArray: Array.isArray(participantEmails)
+      });
+      throw new Error('Missing required fields in request');
+    }
+
+    // Validate email addresses
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const validEmails = participantEmails.filter(email => {
+      const isValid = emailRegex.test(email);
+      if (!isValid) {
+        console.warn('📧 EDGE FUNCTION - Invalid email format:', email);
+      }
+      return isValid;
+    });
+
+    console.log('📧 EDGE FUNCTION - Email validation:', {
+      total: participantEmails.length,
+      valid: validEmails.length,
+      invalid: participantEmails.length - validEmails.length
+    });
 
     // Initialize Resend
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
+    console.log('📧 EDGE FUNCTION - Resend API key status:', {
+      hasKey: !!resendApiKey,
+      keyLength: resendApiKey?.length || 0
+    });
+    
     if (!resendApiKey) {
-      console.warn('RESEND_API_KEY not found - emails will not be sent');
+      console.warn('📧 EDGE FUNCTION - RESEND_API_KEY not found - emails will be simulated');
     }
 
     const resend = resendApiKey ? new Resend(resendApiKey) : null;
-    const origin = req.headers.get('origin') || 'https://your-app-domain.com';
+    const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://movie-draft-app.lovable.app';
+    console.log('📧 EDGE FUNCTION - Using origin:', origin);
 
-    // Send emails to each participant
+    // Get draft invite code for fallback
+    let inviteCode = null;
+    try {
+      const { data: draftData, error: draftError } = await supabase
+        .from('drafts')
+        .select('invite_code')
+        .eq('id', draftId)
+        .single();
+      
+      if (draftError) {
+        console.error('📧 EDGE FUNCTION - Failed to get invite code:', draftError);
+      } else {
+        inviteCode = draftData.invite_code;
+        console.log('📧 EDGE FUNCTION - Retrieved invite code:', inviteCode);
+      }
+    } catch (error) {
+      console.error('📧 EDGE FUNCTION - Exception getting invite code:', error);
+    }
+
+    // Send emails to each valid participant
     const invitationResults = await Promise.all(
-      participantEmails.map(async (email) => {
-        const inviteLink = `${origin}/join-draft/${draftId}?email=${encodeURIComponent(email)}`;
+      validEmails.map(async (email) => {
+        const inviteLink = `${origin}/join-draft?code=${inviteCode}&email=${encodeURIComponent(email)}`;
+        
+        console.log('📧 EDGE FUNCTION - Processing email for:', email);
         
         try {
           if (resend) {
+            console.log('📧 EDGE FUNCTION - Sending real email to:', email);
+            
             const emailResponse = await resend.emails.send({
               from: "Movie Draft <noreply@resend.dev>",
               to: [email],
@@ -83,6 +171,7 @@ const handler = async (req: Request): Promise<Response> => {
                   </div>
                   
                   <p style="color: #666; font-size: 14px;">
+                    <strong>Invite Code:</strong> ${inviteCode}<br>
                     If the button doesn't work, copy and paste this link into your browser:<br>
                     <a href="${inviteLink}">${inviteLink}</a>
                   </p>
@@ -97,27 +186,84 @@ const handler = async (req: Request): Promise<Response> => {
             });
 
             if (emailResponse.error) {
-              console.error(`Failed to send email to ${email}:`, emailResponse.error);
-              return { email, status: 'failed', error: emailResponse.error.message, inviteLink };
+              console.error('📧 EDGE FUNCTION - Resend error for', email, ':', emailResponse.error);
+              return { 
+                email, 
+                status: 'failed', 
+                error: emailResponse.error.message, 
+                inviteLink,
+                inviteCode 
+              };
             }
 
-            return { email, status: 'sent', inviteLink, emailId: emailResponse.data?.id };
+            console.log('📧 EDGE FUNCTION - Email sent successfully to:', email, 'ID:', emailResponse.data?.id);
+            return { 
+              email, 
+              status: 'sent', 
+              inviteLink, 
+              inviteCode,
+              emailId: emailResponse.data?.id 
+            };
           } else {
-            console.log(`Would send email to ${email} with link: ${inviteLink}`);
-            return { email, status: 'simulated', inviteLink };
+            console.log('📧 EDGE FUNCTION - Simulating email to:', email, 'with link:', inviteLink);
+            return { 
+              email, 
+              status: 'simulated', 
+              inviteLink,
+              inviteCode,
+              reason: 'No RESEND_API_KEY configured'
+            };
           }
         } catch (error) {
-          console.error(`Error sending email to ${email}:`, error);
-          return { email, status: 'failed', error: error.message, inviteLink };
+          console.error('📧 EDGE FUNCTION - Exception sending email to:', email, ':', error);
+          return { 
+            email, 
+            status: 'failed', 
+            error: error.message, 
+            inviteLink,
+            inviteCode
+          };
         }
       })
     );
 
-    return new Response(JSON.stringify({ 
+    // Include results for invalid emails too
+    const invalidEmailResults = participantEmails
+      .filter(email => !emailRegex.test(email))
+      .map(email => ({
+        email,
+        status: 'failed',
+        error: 'Invalid email format',
+        inviteCode
+      }));
+
+    const allResults = [...invitationResults, ...invalidEmailResults];
+    const successCount = allResults.filter(r => r.status === 'sent').length;
+    const failedCount = allResults.filter(r => r.status === 'failed').length;
+    const simulatedCount = allResults.filter(r => r.status === 'simulated').length;
+
+    console.log('📧 EDGE FUNCTION - Final results:', {
+      total: allResults.length,
+      sent: successCount,
+      failed: failedCount,
+      simulated: simulatedCount,
+      inviteCode
+    });
+
+    const response = { 
       success: true, 
-      invitations: invitationResults,
-      message: `Invitations sent to ${participantEmails.length} participants` 
-    }), {
+      invitations: allResults,
+      summary: {
+        total: allResults.length,
+        sent: successCount,
+        failed: failedCount,
+        simulated: simulatedCount
+      },
+      inviteCode,
+      message: `Processed ${allResults.length} invitations: ${successCount} sent, ${simulatedCount} simulated, ${failedCount} failed`
+    };
+
+    return new Response(JSON.stringify(response), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
@@ -125,9 +271,13 @@ const handler = async (req: Request): Promise<Response> => {
       },
     });
   } catch (error: any) {
-    console.error("Error in send-draft-invitations function:", error);
+    console.error("📧 EDGE FUNCTION - Critical error:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: false,
+        error: error.message,
+        details: error.stack?.split('\n')[0] || 'Unknown error location'
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },

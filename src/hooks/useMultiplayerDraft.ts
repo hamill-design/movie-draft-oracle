@@ -89,28 +89,86 @@ export const useMultiplayerDraft = (draftId?: string) => {
         // Don't fail the draft creation if this fails
       }
 
-      // Send email invitations to participants
+      // Send email invitations to participants with detailed debugging
+      console.log('📧 EMAIL DEBUG - Starting email invitation process:', {
+        draftId: newDraft.id,
+        hostEmail: user.email,
+        participantEmails: draftData.participantEmails,
+        inviteCode: newDraft.invite_code
+      });
+
+      let emailResults = null;
       try {
+        const invitePayload = {
+          draftId: newDraft.id,
+          draftTitle: draftData.title,
+          hostName: user.email || 'Unknown Host',
+          participantEmails: draftData.participantEmails,
+          theme: draftData.theme,
+          option: draftData.option,
+        };
+
+        console.log('📧 EMAIL DEBUG - Calling edge function with payload:', invitePayload);
+
         const inviteResponse = await supabase.functions.invoke('send-draft-invitations', {
-          body: {
-            draftId: newDraft.id,
-            draftTitle: draftData.title,
-            hostName: user.email || 'Unknown Host',
-            participantEmails: draftData.participantEmails,
-            theme: draftData.theme,
-            option: draftData.option,
-          }
+          body: invitePayload
+        });
+
+        console.log('📧 EMAIL DEBUG - Edge function response:', {
+          data: inviteResponse.data,
+          error: inviteResponse.error
         });
 
         if (inviteResponse.error) {
-          console.error('Failed to send invitations:', inviteResponse.error);
-          // Don't fail the draft creation if email sending fails
+          console.error('📧 EMAIL DEBUG - Edge function error:', inviteResponse.error);
+          emailResults = { success: false, error: inviteResponse.error };
         } else {
-          console.log('Invitations sent successfully:', inviteResponse.data);
+          console.log('📧 EMAIL DEBUG - Invitations processed:', inviteResponse.data);
+          emailResults = inviteResponse.data;
         }
       } catch (emailError) {
-        console.error('Email invitation error:', emailError);
-        // Continue with draft creation even if emails fail
+        console.error('📧 EMAIL DEBUG - Exception during email call:', emailError);
+        emailResults = { success: false, error: emailError.message };
+      }
+
+      // Show detailed results to user
+      if (emailResults) {
+        if (emailResults.success && emailResults.invitations) {
+          const successful = emailResults.invitations.filter(inv => inv.status === 'sent').length;
+          const failed = emailResults.invitations.filter(inv => inv.status === 'failed').length;
+          const simulated = emailResults.invitations.filter(inv => inv.status === 'simulated').length;
+          
+          if (simulated > 0) {
+            toast({
+              title: "⚠️ Email Setup Required",
+              description: `Draft created! ${simulated} invitations were simulated. Set up Resend API key for actual emails.`,
+              variant: "default",
+            });
+          } else if (successful > 0 && failed === 0) {
+            toast({
+              title: "✅ All Invitations Sent",
+              description: `Successfully sent ${successful} email invitations!`,
+            });
+          } else if (successful > 0) {
+            toast({
+              title: "⚠️ Partial Success",
+              description: `${successful} emails sent, ${failed} failed. Check console for details.`,
+              variant: "default",
+            });
+          } else {
+            toast({
+              title: "❌ Email Sending Failed",
+              description: "All email invitations failed. Use invite code: " + newDraft.invite_code,
+              variant: "destructive",
+            });
+          }
+        } else {
+          toast({
+            title: "❌ Email System Error",
+            description: "Email service failed. Share invite code: " + newDraft.invite_code,
+            variant: "destructive",
+          });
+        }
       }
 
       return newDraft;
