@@ -337,6 +337,13 @@ export const useMultiplayerDraft = (draftId?: string) => {
     }
 
     try {
+      console.log('=== MAKE PICK ATTEMPT ===');
+      console.log('User:', !!user, 'Draft:', !!draft, 'IsMyTurn:', isMyTurn);
+      console.log('Draft current_turn_user_id:', draft?.current_turn_user_id);
+      console.log('My user ID:', user?.id);
+      console.log('Participants:', participants);
+      console.log('Making pick for movie:', movie.title, 'category:', category);
+      
       // Find current participant
       const currentParticipant = participants.find(p => p.user_id === user.id);
       if (!currentParticipant) {
@@ -344,17 +351,36 @@ export const useMultiplayerDraft = (draftId?: string) => {
       }
 
       const currentParticipantIndex = participants.findIndex(p => p.user_id === user.id);
+      console.log('Current draft state:', {
+        currentPickNumber: draft.current_pick_number,
+        currentTurnUserId: draft.current_turn_user_id,
+        myUserId: user.id
+      });
+      console.log('Current participant:', currentParticipant);
+      console.log('Current participant index:', currentParticipantIndex);
+      
       const turnOrder = draft.turn_order;
       
       if (!turnOrder || turnOrder.length === 0) {
+        console.log('Turn order is missing or empty:', turnOrder);
         throw new Error('Turn order not found - draft may not have been started properly');
       }
+      
+      console.log('Turn order found, length:', turnOrder.length);
 
       // STEP 1: Reserve the next pick number immediately to prevent race conditions
       const reservedPickNumber = draft.current_pick_number;
       const nextPickNumber = reservedPickNumber + 1;
       const nextTurnIndex = nextPickNumber - 1; // 0-based index for array lookup
       const isComplete = nextTurnIndex >= turnOrder.length;
+      
+      console.log('Pick calculation:', {
+        reservedPickNumber,
+        nextPickNumber,
+        nextTurnIndex,
+        isComplete,
+        turnOrderLength: turnOrder.length
+      });
       
       // Update draft first to reserve the pick number
       let updateData;
@@ -364,22 +390,28 @@ export const useMultiplayerDraft = (draftId?: string) => {
           current_pick_number: nextPickNumber,
           is_complete: true
         };
+        console.log('Draft is complete, updating with:', updateData);
       } else {
         const nextTurn = turnOrder[nextTurnIndex];
+        console.log('Next turn data:', nextTurn);
         updateData = {
           current_turn_user_id: nextTurn.user_id,
           current_pick_number: nextPickNumber,
         };
+        console.log('Updating draft with next turn:', updateData);
       }
       
+      console.log('Updating draft with data:', updateData);
       const { error: updateError } = await supabase
         .from('drafts')
         .update(updateData)
         .eq('id', draft.id);
 
       if (updateError) {
+        console.log('Update error:', updateError);
         throw updateError;
       }
+      console.log('Draft updated successfully');
 
       // STEP 2: Insert the pick with the reserved pick number
       const pickData = {
@@ -394,13 +426,17 @@ export const useMultiplayerDraft = (draftId?: string) => {
         movie_year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
       };
       
-      const { error: pickError } = await supabase
+      console.log('Inserting pick with data:', pickData);
+      const { data: insertResult, error: pickError } = await supabase
         .from('draft_picks')
-        .insert(pickData);
+        .insert(pickData)
+        .select();
 
       if (pickError) {
+        console.log('Pick insert error:', pickError);
         throw pickError;
       }
+      console.log('Pick inserted successfully:', insertResult);
 
       // Refresh only the picks to ensure they show up immediately
       const { data: updatedPicks, error: picksError } = await supabase
