@@ -15,6 +15,7 @@ import CategorySelection from '@/components/CategorySelection';
 import PickConfirmation from '@/components/PickConfirmation';
 import DraftBoard from '@/components/DraftBoard';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DiagnosticInfo } from '@/components/DiagnosticInfo';
 
 interface MultiplayerDraftInterfaceProps {
   draftId?: string;
@@ -114,15 +115,28 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
   };
 
   const confirmPick = async () => {
-    if (!selectedMovie || !selectedCategory) return;
+    console.log('🔍 DIAGNOSTIC v1.0 - confirmPick called in MultiplayerDraftInterface');
+    console.log('🔍 Selected movie:', selectedMovie);
+    console.log('🔍 Selected category:', selectedCategory);
+    console.log('🔍 Draft state:', draft);
+    console.log('🔍 IsMyTurn:', isMyTurn);
+    console.log('🔍 User:', user);
+    console.log('🔍 Participants:', participants);
+    
+    if (!selectedMovie || !selectedCategory) {
+      console.log('🚫 DIAGNOSTIC v1.0 - Missing movie or category');
+      return;
+    }
 
     try {
+      console.log('🔍 DIAGNOSTIC v1.0 - Calling makePick...');
       await makePick(selectedMovie, selectedCategory);
+      console.log('✅ DIAGNOSTIC v1.0 - makePick completed successfully');
       setSelectedMovie(null);
       setSelectedCategory('');
       setSearchQuery('');
     } catch (error) {
-      console.error('Failed to make pick:', error);
+      console.error('🚫 DIAGNOSTIC v1.0 - Failed to make pick in interface:', error);
     }
   };
 
@@ -418,6 +432,15 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
           </div>
         </div>
       </div>
+
+      {/* Diagnostic Info - Only show in development or when debugging */}
+      <DiagnosticInfo
+        draft={draft}
+        participants={participants}
+        picks={picks}
+        user={user}
+        isMyTurn={isMyTurn}
+      />
     </div>
   );
 };
