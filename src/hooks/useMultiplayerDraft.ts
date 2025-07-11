@@ -449,6 +449,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
         setPicks(updatedPicks);
       }
 
+      console.log('Pick operation completed successfully');
       toast({
         title: "Pick Made",
         description: `Successfully picked ${movie.title}`,
@@ -461,6 +462,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
         description: "Failed to make pick",
         variant: "destructive",
       });
+      throw error; // Re-throw to let caller handle if needed
     }
   }, [user, draft, isMyTurn, participants, toast]);
 
