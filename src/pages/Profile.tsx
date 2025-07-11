@@ -31,7 +31,8 @@ const Profile = () => {
         option: draft.option,
         participants: draft.participants,
         categories: draft.categories,
-        existingDraftId: draft.id
+        existingDraftId: draft.id,
+        isMultiplayer: draft.is_multiplayer
       }
     });
   };
