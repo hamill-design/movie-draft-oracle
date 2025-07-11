@@ -288,17 +288,23 @@ export const useMultiplayerDraft = (draftId?: string) => {
       console.log('Pick inserted successfully:', pickResult);
 
       // Calculate next turn - cycle through participants
-      const nextParticipantIndex = draft.current_pick_number % participants.length;
+      // After this pick, it will be pick number (current_pick_number + 1)
+      // So the next participant index should be based on the new pick number
+      const newPickNumber = draft.current_pick_number + 1;
+      const nextParticipantIndex = (newPickNumber - 1) % participants.length;
       const nextParticipant = participants[nextParticipantIndex];
       
-      console.log('Next participant:', nextParticipant, 'Index:', nextParticipantIndex);
+      console.log('Current pick number:', draft.current_pick_number);
+      console.log('New pick number:', newPickNumber);
+      console.log('Next participant index:', nextParticipantIndex);
+      console.log('Next participant:', nextParticipant);
       
       // Update draft with next turn
       const { error: updateError } = await supabase
         .from('drafts')
         .update({
           current_turn_user_id: nextParticipant.user_id,
-          current_pick_number: draft.current_pick_number + 1,
+          current_pick_number: newPickNumber,
         })
         .eq('id', draft.id);
 
