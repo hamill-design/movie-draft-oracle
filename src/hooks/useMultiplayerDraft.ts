@@ -354,14 +354,10 @@ export const useMultiplayerDraft = (draftId?: string) => {
     }
   }, [user, toast]);
 
-  // Make a pick (only if it's your turn)
+  // Make a pick using atomic database function
   const makePick = useCallback(async (movie: any, category: string) => {
-    // DIAGNOSTIC v1.0 - Add unique identifier to track this code version
-    console.log('🔍 DIAGNOSTIC v1.0 - makePick function called');
-    console.log('🔍 Timestamp:', new Date().toISOString());
-    
     if (!user || !draft || !isMyTurn) {
-      console.log('🚫 DIAGNOSTIC v1.0 - Validation failed:', {
+      console.log('🚫 ATOMIC v1.0 - Validation failed:', {
         hasUser: !!user,
         hasDraft: !!draft,
         isMyTurn,
@@ -370,185 +366,73 @@ export const useMultiplayerDraft = (draftId?: string) => {
       });
       toast({
         title: "Error",
-        description: "DIAGNOSTIC v1.0 - It's not your turn!",
+        description: "It's not your turn!",
         variant: "destructive",
       });
       return;
     }
 
     try {
-      console.log('🔍 DIAGNOSTIC v1.0 - === MAKE PICK ATTEMPT ===');
-      console.log('🔍 User exists:', !!user);
-      console.log('🔍 Draft exists:', !!draft);
-      console.log('🔍 IsMyTurn:', isMyTurn);
-      console.log('🔍 Draft current_turn_user_id:', draft?.current_turn_user_id);
-      console.log('🔍 My user ID:', user?.id);
-      console.log('🔍 Participants count:', participants.length);
-      console.log('🔍 Full participants array:', participants);
-      console.log('🔍 Movie being picked:', { title: movie.title, id: movie.id });
-      console.log('🔍 Category:', category);
-      console.log('🔍 Draft turn_order type:', typeof draft.turn_order);
-      console.log('🔍 Draft turn_order value:', draft.turn_order);
-      console.log('🔍 Draft turn_order length:', draft.turn_order?.length || 'N/A');
+      setLoading(true);
       
-      // DIAGNOSTIC - Find current participant
-      console.log('🔍 DIAGNOSTIC v1.0 - Finding current participant...');
-      const currentParticipant = participants.find(p => p.user_id === user.id);
-      console.log('🔍 Current participant found:', currentParticipant);
-      
-      if (!currentParticipant) {
-        console.log('🚫 DIAGNOSTIC v1.0 - User not found in participants!');
-        console.log('🚫 User ID:', user.id);
-        console.log('🚫 All participants:', participants.map(p => ({ id: p.user_id, name: p.participant_name })));
-        throw new Error('DIAGNOSTIC v1.0 - User not found in participants');
-      }
-
-      const currentParticipantIndex = participants.findIndex(p => p.user_id === user.id);
-      console.log('🔍 DIAGNOSTIC v1.0 - Current participant index:', currentParticipantIndex);
-      
-      console.log('🔍 DIAGNOSTIC v1.0 - Current draft state:', {
-        currentPickNumber: draft.current_pick_number,
-        currentTurnUserId: draft.current_turn_user_id,
-        myUserId: user.id,
-        isComplete: draft.is_complete,
-        draftId: draft.id
-      });
-      
-      console.log('🔍 DIAGNOSTIC v1.0 - Extracting turn_order from draft...');
-      const turnOrder = draft.turn_order;
-      console.log('🔍 DIAGNOSTIC v1.0 - Turn order extracted:', turnOrder);
-      console.log('🔍 DIAGNOSTIC v1.0 - Turn order type:', typeof turnOrder);
-      console.log('🔍 DIAGNOSTIC v1.0 - Turn order is array:', Array.isArray(turnOrder));
-      
-      if (!turnOrder || turnOrder.length === 0) {
-        console.log('🚫 DIAGNOSTIC v1.0 - Turn order validation failed!');
-        console.log('🚫 turnOrder exists:', !!turnOrder);
-        console.log('🚫 turnOrder length:', turnOrder?.length);
-        console.log('🚫 turnOrder value:', turnOrder);
-        console.log('🚫 Draft object keys:', Object.keys(draft));
-        console.log('🚫 Full draft object:', draft);
-        throw new Error('DIAGNOSTIC v1.0 - Turn order not found - draft may not have been started properly');
-      }
-      
-      console.log('🔍 DIAGNOSTIC v1.0 - Turn order validation passed, length:', turnOrder.length);
-      console.log('🔍 DIAGNOSTIC v1.0 - Turn order contents:', turnOrder);
-
-      // DIAGNOSTIC - STEP 1: Reserve the next pick number immediately to prevent race conditions
-      console.log('🔍 DIAGNOSTIC v1.0 - Calculating pick numbers...');
-      const reservedPickNumber = draft.current_pick_number;
-      const nextPickNumber = reservedPickNumber + 1;
-      const nextTurnIndex = nextPickNumber - 1; // 0-based index for array lookup
-      const isComplete = nextTurnIndex >= turnOrder.length;
-      
-      console.log('🔍 DIAGNOSTIC v1.0 - Pick calculation:', {
-        reservedPickNumber,
-        nextPickNumber,
-        nextTurnIndex,
-        isComplete,
-        turnOrderLength: turnOrder.length,
-        currentTurnFromOrder: turnOrder[reservedPickNumber - 1] || 'INDEX_OUT_OF_BOUNDS',
-        nextTurnFromOrder: turnOrder[nextTurnIndex] || 'INDEX_OUT_OF_BOUNDS'
-      });
-      
-      // DIAGNOSTIC - Update draft first to reserve the pick number
-      console.log('🔍 DIAGNOSTIC v1.0 - Preparing draft update...');
-      let updateData;
-      if (isComplete) {
-        updateData = {
-          current_turn_user_id: null,
-          current_pick_number: nextPickNumber,
-          is_complete: true
-        };
-        console.log('🔍 DIAGNOSTIC v1.0 - Draft is complete, updating with:', updateData);
-      } else {
-        const nextTurn = turnOrder[nextTurnIndex];
-        console.log('🔍 DIAGNOSTIC v1.0 - Next turn data from array:', nextTurn);
-        console.log('🔍 DIAGNOSTIC v1.0 - Next turn index:', nextTurnIndex);
-        updateData = {
-          current_turn_user_id: nextTurn.user_id,
-          current_pick_number: nextPickNumber,
-        };
-        console.log('🔍 DIAGNOSTIC v1.0 - Updating draft with next turn:', updateData);
-      }
-      
-      console.log('🔍 DIAGNOSTIC v1.0 - Final update data:', updateData);
-      console.log('🔍 DIAGNOSTIC v1.0 - Updating draft ID:', draft.id);
-      
-      const { error: updateError } = await supabase
-        .from('drafts')
-        .update(updateData)
-        .eq('id', draft.id);
-
-      if (updateError) {
-        console.log('🚫 DIAGNOSTIC v1.0 - Update error:', updateError);
-        console.log('🚫 DIAGNOSTIC v1.0 - Update data that failed:', updateData);
-        throw updateError;
-      }
-      console.log('✅ DIAGNOSTIC v1.0 - Draft updated successfully');
-
-      // DIAGNOSTIC - STEP 2: Insert the pick with the reserved pick number
-      console.log('🔍 DIAGNOSTIC v1.0 - Preparing pick data...');
-      const pickData = {
-        draft_id: draft.id,
-        player_id: currentParticipantIndex + 1,
-        player_name: currentParticipant.participant_name,
-        movie_id: movie.id,
-        movie_title: movie.title,
+      console.log('🔍 ATOMIC v1.0 - Making pick with atomic function:', {
+        draftId: draft.id,
+        movieId: movie.id,
+        movieTitle: movie.title,
         category,
-        pick_order: reservedPickNumber,
-        poster_path: movie.poster_path,
-        movie_year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
-      };
-      
-      console.log('🔍 DIAGNOSTIC v1.0 - Pick data prepared:', pickData);
-      console.log('🔍 DIAGNOSTIC v1.0 - Inserting pick into database...');
-      
-      const { data: insertResult, error: pickError } = await supabase
-        .from('draft_picks')
-        .insert(pickData)
-        .select();
+        currentPickNumber: draft.current_pick_number,
+        userId: user.id
+      });
 
-      if (pickError) {
-        console.log('🚫 DIAGNOSTIC v1.0 - Pick insert error:', pickError);
-        console.log('🚫 DIAGNOSTIC v1.0 - Pick data that failed:', pickData);
-        throw pickError;
-      }
-      console.log('✅ DIAGNOSTIC v1.0 - Pick inserted successfully:', insertResult);
+      // Use the atomic database function
+      const { data, error } = await supabase.rpc('make_multiplayer_pick', {
+        p_draft_id: draft.id,
+        p_movie_id: movie.id,
+        p_movie_title: movie.title,
+        p_movie_year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
+        p_movie_genre: movie.genres?.[0]?.name || 'Unknown',
+        p_category: category,
+        p_poster_path: movie.poster_path
+      });
 
-      // Refresh only the picks to ensure they show up immediately
-      const { data: updatedPicks, error: picksError } = await supabase
-        .from('draft_picks')
-        .select('*')
-        .eq('draft_id', draft.id)
-        .order('pick_order');
-
-      if (!picksError && updatedPicks) {
-        setPicks(updatedPicks);
+      if (error) {
+        console.error('🚫 ATOMIC v1.0 - RPC error:', error);
+        throw error;
       }
 
-      console.log('✅ DIAGNOSTIC v1.0 - Pick operation completed successfully');
-      console.log('🔍 DIAGNOSTIC v1.0 - === MAKE PICK COMPLETE ===');
-      
+      if (!data || data.length === 0) {
+        throw new Error('No response from pick function');
+      }
+
+      const result = data[0];
+      console.log('✅ ATOMIC v1.0 - Pick function result:', result);
+
+      if (!result.success) {
+        throw new Error(result.message || 'Pick failed');
+      }
+
+      console.log('✅ ATOMIC v1.0 - Pick made successfully:', {
+        newPickNumber: result.new_pick_number,
+        nextTurnUserId: result.next_turn_user_id
+      });
+
       toast({
         title: "Pick Made",
-        description: `DIAGNOSTIC v1.0 - Successfully picked ${movie.title}`,
+        description: `Successfully picked ${movie.title}`,
       });
-
-    } catch (error) {
-      console.error('🚫 DIAGNOSTIC v1.0 - Error making pick:', error);
-      console.error('🚫 DIAGNOSTIC v1.0 - Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-      console.error('🚫 DIAGNOSTIC v1.0 - Draft state when error occurred:', draft);
-      console.error('🚫 DIAGNOSTIC v1.0 - User state when error occurred:', user);
-      console.error('🚫 DIAGNOSTIC v1.0 - Participants when error occurred:', participants);
       
+    } catch (error) {
+      console.error('🚫 ATOMIC v1.0 - Error making pick:', error);
       toast({
         title: "Error",
-        description: `DIAGNOSTIC v1.0 - Failed to make pick: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        description: `Failed to make pick: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
-      throw error; // Re-throw to let caller handle if needed
+      throw error;
+    } finally {
+      setLoading(false);
     }
-  }, [user, draft, isMyTurn, participants, toast]);
+  }, [user, draft, isMyTurn, toast]);
 
   // Set up real-time subscriptions
   useEffect(() => {

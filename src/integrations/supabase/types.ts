@@ -230,6 +230,23 @@ export type Database = {
         Args: { invite_code_param: string; participant_name_param: string }
         Returns: string
       }
+      make_multiplayer_pick: {
+        Args: {
+          p_draft_id: string
+          p_movie_id: number
+          p_movie_title: string
+          p_movie_year: number
+          p_movie_genre: string
+          p_category: string
+          p_poster_path?: string
+        }
+        Returns: {
+          success: boolean
+          message: string
+          new_pick_number: number
+          next_turn_user_id: string
+        }[]
+      }
     }
     Enums: {
       participant_status: "invited" | "joined" | "left"
