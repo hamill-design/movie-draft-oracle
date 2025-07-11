@@ -295,7 +295,17 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
           {/* Draft Board */}
           <div>
             <DraftBoard
-              picks={picks}
+              picks={picks.map(pick => ({
+                playerId: pick.player_id,
+                playerName: pick.player_name,
+                movie: {
+                  id: pick.movie_id,
+                  title: pick.movie_title,
+                  year: pick.movie_year,
+                  poster_path: pick.poster_path
+                },
+                category: pick.category
+              }))}
               players={participants.map((p, index) => ({ id: index + 1, name: p.participant_name }))}
               categories={draft.categories}
               theme={draft.theme}
