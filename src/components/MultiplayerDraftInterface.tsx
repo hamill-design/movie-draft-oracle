@@ -74,8 +74,18 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
             participantEmails: initialData.participants,
           });
           
-          // Navigate to the new draft
-          navigate(`/draft/multiplayer/${newDraft.id}`, { replace: true });
+          // Navigate to the draft page with the multiplayer data
+          navigate('/draft', { 
+            replace: true, 
+            state: {
+              theme: initialData.theme,
+              option: initialData.option,
+              participants: initialData.participants,
+              categories: initialData.categories,
+              existingDraftId: newDraft.id,
+              isMultiplayer: true
+            }
+          });
         } catch (error) {
           console.error('Failed to create draft:', error);
           toast({
