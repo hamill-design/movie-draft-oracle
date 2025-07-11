@@ -8,6 +8,15 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Users, Calendar, Film, Search, LogOut } from 'lucide-react';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { useAuth } from '@/contexts/AuthContext';
+import { useDraftCategories } from '@/hooks/useDraftCategories';
+import CategoriesForm from '@/components/CategoriesForm';
+import { Form } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+
+interface DraftSetupForm {
+  participants: string[];
+  categories: string[];
+}
 
 const Home = () => {
   const navigate = useNavigate();
@@ -17,6 +26,13 @@ const Home = () => {
   const [selectedOption, setSelectedOption] = useState('');
   const [participants, setParticipants] = useState<string[]>([]);
   const [newParticipant, setNewParticipant] = useState('');
+
+  const form = useForm<DraftSetupForm>({
+    defaultValues: {
+      participants: [],
+      categories: []
+    }
+  });
 
   // Redirect to auth if not logged in
   useEffect(() => {
@@ -29,6 +45,8 @@ const Home = () => {
   const { people, loading: peopleLoading } = usePeopleSearch(
     theme === 'people' ? searchQuery : ''
   );
+
+  const categories = useDraftCategories(theme || null);
 
   // Generate years from 1970 to 2024
   const generateYears = () => {
@@ -52,15 +70,15 @@ const Home = () => {
     setParticipants(participants.filter(p => p !== participant));
   };
 
-  const handleStartDraft = () => {
-    if (!selectedOption || participants.length === 0) return;
+  const handleStartDraft = (data: DraftSetupForm) => {
+    if (!selectedOption || participants.length === 0 || !data.categories.length) return;
 
-    navigate('/draft-setup', {
+    navigate('/draft', {
       state: {
         theme,
         option: selectedOption,
-        participants,
-        draftSize: participants.length
+        participants: participants,
+        categories: data.categories
       }
     });
   };
@@ -280,17 +298,25 @@ const Home = () => {
             </CardContent>
           </Card>
 
-          {/* Start Draft Button */}
-          <div className="text-center">
-            <Button
-              onClick={handleStartDraft}
-              disabled={!selectedOption || participants.length === 0}
-              className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-4 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              size="lg"
-            >
-              Start Draft Setup
-            </Button>
-          </div>
+          {/* Categories Selection */}
+          {selectedOption && participants.length > 0 && (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleStartDraft)} className="space-y-8">
+                <CategoriesForm form={form} categories={categories} />
+
+                {/* Start Draft Button */}
+                <div className="text-center">
+                  <Button
+                    type="submit"
+                    className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-4 text-lg"
+                    size="lg"
+                  >
+                    Start Draft
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          )}
         </div>
       </div>
     </div>
