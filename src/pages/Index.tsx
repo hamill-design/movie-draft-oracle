@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import DraftHeader from '@/components/DraftHeader';
 import DraftInterface from '@/components/DraftInterface';
 import { MultiplayerDraftInterface } from '@/components/MultiplayerDraftInterface';
@@ -20,6 +20,7 @@ interface DraftState {
 const Index = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, loading } = useAuth();
   const { getDraftWithPicks } = useDraftOperations();
   const draftState = location.state as DraftState;
@@ -28,6 +29,9 @@ const Index = () => {
   const [loadingExistingDraft, setLoadingExistingDraft] = useState(false);
   const [existingPicks, setExistingPicks] = useState<any[]>([]);
   
+  // Get draft ID from URL parameters (for multiplayer drafts)
+  const urlDraftId = searchParams.get('id');
+  
   // Check authentication
   useEffect(() => {
     if (!loading && !user) {
@@ -35,11 +39,16 @@ const Index = () => {
     }
   }, [user, loading, navigate]);
 
+  // If we have a URL draft ID, this is a multiplayer draft
+  if (urlDraftId && user) {
+    return <MultiplayerDraftInterface draftId={urlDraftId} />;
+  }
+
   useEffect(() => {
-    if (!draftState) {
+    if (!draftState && !urlDraftId) {
       navigate('/');
     }
-  }, [draftState, navigate]);
+  }, [draftState, urlDraftId, navigate]);
 
   // Load existing draft data if editing an existing draft
   useEffect(() => {
