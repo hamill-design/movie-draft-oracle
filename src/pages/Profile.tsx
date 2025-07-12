@@ -4,14 +4,17 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Calendar, Users, Trophy } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Trophy, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDrafts } from '@/hooks/useDrafts';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const Profile = () => {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
-  const { drafts, loading: draftsLoading } = useDrafts();
+  const { drafts, loading: draftsLoading, refetch } = useDrafts();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -35,6 +38,30 @@ const Profile = () => {
         isMultiplayer: draft.is_multiplayer
       }
     });
+  };
+
+  const handleDeleteDraft = async (draftId: string) => {
+    try {
+      const { error } = await supabase
+        .from('drafts')
+        .delete()
+        .eq('id', draftId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Draft deleted",
+        description: "Your draft has been successfully deleted.",
+      });
+
+      refetch();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete draft. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading || draftsLoading) {
@@ -103,47 +130,55 @@ const Profile = () => {
             ) : (
               <div className="grid gap-4">
                 {drafts.map((draft) => (
-                  <Card key={draft.id} className="bg-gray-700 border-gray-600">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-white font-semibold text-lg mb-2">
-                            {draft.title}
-                          </h3>
-                          <div className="flex items-center gap-4 text-sm text-gray-300">
-                            <div className="flex items-center gap-1">
-                              <Calendar size={14} />
-                              {new Date(draft.created_at).toLocaleDateString()}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Users size={14} />
-                              {draft.participants.length} players
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Trophy size={14} />
-                              {draft.categories.length} categories
-                            </div>
-                          </div>
-                          <div className="mt-2">
-                            <span className="text-yellow-400 font-medium">
-                              {draft.theme === 'year' ? 'Year' : 'Person'}: {draft.option}
-                            </span>
-                            {draft.is_complete && (
-                              <span className="ml-4 bg-green-600 text-white px-2 py-1 rounded text-xs">
-                                Complete
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <Button
-                          onClick={() => handleViewDraft(draft)}
-                          className="bg-yellow-400 text-black hover:bg-yellow-500"
-                        >
-                          {draft.is_complete ? 'View Draft' : 'Continue Draft'}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                   <Card key={draft.id} className="bg-gray-700 border-gray-600 relative">
+                     <Button
+                       onClick={() => handleDeleteDraft(draft.id)}
+                       variant="ghost"
+                       size="sm"
+                       className="absolute top-2 right-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 p-1 h-8 w-8"
+                     >
+                       <Trash2 size={14} />
+                     </Button>
+                     <CardContent className="pt-6">
+                       <div className="flex items-center justify-between">
+                         <div>
+                           <h3 className="text-white font-semibold text-lg mb-2">
+                             {draft.title}
+                           </h3>
+                           <div className="flex items-center gap-4 text-sm text-gray-300">
+                             <div className="flex items-center gap-1">
+                               <Calendar size={14} />
+                               {new Date(draft.created_at).toLocaleDateString()}
+                             </div>
+                             <div className="flex items-center gap-1">
+                               <Users size={14} />
+                               {draft.participants.length} players
+                             </div>
+                             <div className="flex items-center gap-1">
+                               <Trophy size={14} />
+                               {draft.categories.length} categories
+                             </div>
+                           </div>
+                           <div className="mt-2">
+                             <span className="text-yellow-400 font-medium">
+                               {draft.theme === 'year' ? 'Year' : 'Person'}: {draft.option}
+                             </span>
+                             {draft.is_complete && (
+                               <span className="ml-4 bg-green-600 text-white px-2 py-1 rounded text-xs">
+                                 Complete
+                               </span>
+                             )}
+                           </div>
+                         </div>
+                         <Button
+                           onClick={() => handleViewDraft(draft)}
+                           className="bg-yellow-400 text-black hover:bg-yellow-500"
+                         >
+                           {draft.is_complete ? 'View Draft' : 'Continue Draft'}
+                         </Button>
+                       </div>
+                     </CardContent>
+                   </Card>
                 ))}
               </div>
             )}
