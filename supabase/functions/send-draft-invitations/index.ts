@@ -144,7 +144,7 @@ const handler = async (req: Request): Promise<Response> => {
             console.log('📧 EDGE FUNCTION - Sending real email to:', email);
             
             const emailResponse = await resend.emails.send({
-              from: "Movie Draft <noreply@resend.dev>",
+              from: "Movie Draft <contact@roberthamill.design>",
               to: [email],
               subject: `🎬 You're invited to join "${draftTitle}"`,
               html: `
