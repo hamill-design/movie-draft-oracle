@@ -325,7 +325,8 @@ const Home = () => {
           )}
 
           {/* Participants */}
-          <Card className="bg-gray-800 border-gray-600">
+          {draftMode && (
+            <Card className="bg-gray-800 border-gray-600">
             <CardContent className="pt-6">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                 <Users className="text-yellow-400" />
@@ -389,7 +390,8 @@ const Home = () => {
                 </div>
               )}
             </CardContent>
-          </Card>
+            </Card>
+          )}
 
           {/* Categories Selection */}
           {selectedOption && participants.length > 0 && (
