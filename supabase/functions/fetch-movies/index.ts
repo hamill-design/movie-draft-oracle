@@ -302,25 +302,53 @@ serve(async (req) => {
           const keywordsData = await keywordsResponse.json();
           const keywords = keywordsData.keywords || [];
           
+          console.log(`DEBUG Oscar Detection for "${movie.title}": Found ${keywords.length} keywords`);
+          
           // Check for Oscar-related keywords
           const oscarKeywords = ['oscar', 'academy award', 'academy awards', 'oscar nomination', 'oscar winner', 'oscar nominated'];
-          hasOscar = keywords.some((keyword: any) => 
-            oscarKeywords.some(oscarKeyword => 
+          hasOscar = keywords.some((keyword: any) => {
+            const isOscarKeyword = oscarKeywords.some(oscarKeyword => 
               keyword.name.toLowerCase().includes(oscarKeyword)
-            )
-          );
+            );
+            if (isOscarKeyword) {
+              console.log(`DEBUG: Found Oscar keyword for "${movie.title}": ${keyword.name}`);
+            }
+            return isOscarKeyword;
+          });
+          
+          if (hasOscar) {
+            console.log(`DEBUG: "${movie.title}" detected as Oscar movie via keywords`);
+          }
         }
 
-        // Alternative Oscar detection using external_ids and checking if it's a prestigious film
+        // Improved Oscar detection fallback
         if (!hasOscar) {
-          // For now, we'll use a combination of high ratings and critical acclaim as a fallback
-          // In a production app, you'd want to integrate with a proper awards database
-          const isHighlyRated = detailedMovie.vote_average >= 8.0 && detailedMovie.vote_count >= 5000;
-          const isDrama = detailedMovie.genres?.some((g: any) => g.name === 'Drama');
-          const isPrestigiousYear = detailedMovie.release_date && new Date(detailedMovie.release_date).getFullYear() >= 1990;
+          // More inclusive heuristic for Oscar nominees/winners
+          // La La Land criteria: rating >= 7.5, votes >= 1000, music/drama/romance genres, post-2000
+          const isWellRated = detailedMovie.vote_average >= 7.5 && detailedMovie.vote_count >= 1000;
+          const hasPrestigiousGenre = detailedMovie.genres?.some((g: any) => 
+            ['Drama', 'Music', 'Romance', 'History', 'Biography', 'War'].includes(g.name)
+          );
+          const isRecentEnough = detailedMovie.release_date && new Date(detailedMovie.release_date).getFullYear() >= 2000;
           
-          // This is still a heuristic, but a more conservative one
-          hasOscar = isHighlyRated && isDrama && isPrestigiousYear;
+          console.log(`DEBUG Improved Oscar Detection for "${movie.title}": rating=${detailedMovie.vote_average}, votes=${detailedMovie.vote_count}, hasPrestigiousGenre=${hasPrestigiousGenre}, year=${detailedMovie.release_date ? new Date(detailedMovie.release_date).getFullYear() : 'unknown'}`);
+          
+          // Check for known Oscar patterns in title or description
+          const titleAndOverview = `${movie.title} ${movie.overview || ''}`.toLowerCase();
+          const oscarIndicators = [
+            'academy award', 'oscar', 'nominated', 'winner', 'best picture', 
+            'critically acclaimed', 'award-winning', 'masterpiece'
+          ];
+          const hasOscarIndicators = oscarIndicators.some(indicator => 
+            titleAndOverview.includes(indicator)
+          );
+          
+          // More lenient criteria
+          hasOscar = (isWellRated && hasPrestigiousGenre && isRecentEnough) || hasOscarIndicators;
+          
+          if (hasOscar) {
+            console.log(`DEBUG: "${movie.title}" detected as Oscar movie via improved fallback (wellRated=${isWellRated}, prestigiousGenre=${hasPrestigiousGenre}, recent=${isRecentEnough}, indicators=${hasOscarIndicators})`);
+          }
         }
         
       } catch (error) {
