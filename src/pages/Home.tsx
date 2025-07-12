@@ -278,6 +278,52 @@ const Home = () => {
             </Card>
           )}
 
+          {/* Draft Mode Selection */}
+          {selectedOption && (
+            <Card className="bg-gray-800 border-gray-600">
+              <CardContent className="pt-6">
+                <h3 className="text-xl font-bold text-white mb-4">
+                  Draft Mode
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button
+                    type="button"
+                    onClick={() => setDraftMode('single')}
+                    variant={draftMode === 'single' ? 'default' : 'outline'}
+                    className={`h-16 text-lg ${
+                      draftMode === 'single'
+                        ? 'bg-yellow-400 text-black hover:bg-yellow-500'
+                        : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                    }`}
+                  >
+                    <Users className="mr-3" size={20} />
+                    Single Player
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => setDraftMode('multiplayer')}
+                    variant={draftMode === 'multiplayer' ? 'default' : 'outline'}
+                    className={`h-16 text-lg ${
+                      draftMode === 'multiplayer'
+                        ? 'bg-yellow-400 text-black hover:bg-yellow-500'
+                        : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                    }`}
+                  >
+                    <Users className="mr-3" size={20} />
+                    Multiplayer
+                  </Button>
+                </div>
+                {draftMode === 'multiplayer' && (
+                  <div className="mt-4 p-4 bg-blue-900/20 border border-blue-600/30 rounded-lg">
+                    <p className="text-blue-300 text-sm">
+                      🌐 <strong>Multiplayer Mode:</strong> Create a collaborative draft where friends can join in real-time using an invite code. Each player takes turns picking from their own device!
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
           {/* Participants */}
           <Card className="bg-gray-800 border-gray-600">
             <CardContent className="pt-6">
@@ -345,54 +391,10 @@ const Home = () => {
             </CardContent>
           </Card>
 
-          {/* Draft Mode and Categories Selection */}
+          {/* Categories Selection */}
           {selectedOption && participants.length > 0 && (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleStartDraft)} className="space-y-8">
-                {/* Draft Mode Selection */}
-                <Card className="bg-gray-800 border-gray-600">
-                  <CardContent className="pt-6">
-                    <h3 className="text-xl font-bold text-white mb-4">
-                      Draft Mode
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Button
-                        type="button"
-                        onClick={() => setDraftMode('single')}
-                        variant={draftMode === 'single' ? 'default' : 'outline'}
-                        className={`h-16 text-lg ${
-                          draftMode === 'single'
-                            ? 'bg-yellow-400 text-black hover:bg-yellow-500'
-                            : 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                        }`}
-                      >
-                        <Users className="mr-3" size={20} />
-                        Single Player
-                      </Button>
-                      <Button
-                        type="button"
-                        onClick={() => setDraftMode('multiplayer')}
-                        variant={draftMode === 'multiplayer' ? 'default' : 'outline'}
-                        className={`h-16 text-lg ${
-                          draftMode === 'multiplayer'
-                            ? 'bg-yellow-400 text-black hover:bg-yellow-500'
-                            : 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                        }`}
-                      >
-                        <Users className="mr-3" size={20} />
-                        Multiplayer
-                      </Button>
-                    </div>
-                    {draftMode === 'multiplayer' && (
-                      <div className="mt-4 p-4 bg-blue-900/20 border border-blue-600/30 rounded-lg">
-                        <p className="text-blue-300 text-sm">
-                          🌐 <strong>Multiplayer Mode:</strong> Create a collaborative draft where friends can join in real-time using an invite code. Each player takes turns picking from their own device!
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
                 <CategoriesForm form={form} categories={categories} />
 
                 {/* Start Draft Button */}
