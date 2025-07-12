@@ -315,7 +315,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
         </div>
 
         {/* Start Draft Button - Show when draft hasn't started */}
-        {!draft.current_turn_user_id && participants.length >= 2 && (
+        {!draft.current_turn_user_id && participants.length >= 2 && !isComplete && (
           <Card>
             <CardContent className="p-6 text-center">
               <div className="space-y-4">
