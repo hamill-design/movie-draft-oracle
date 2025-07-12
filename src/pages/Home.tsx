@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Users, Calendar, Film, Search, LogOut, Mail } from 'lucide-react';
+import { Trash2, Users, Calendar, Film, Search, Mail } from 'lucide-react';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDraftCategories } from '@/hooks/useDraftCategories';
@@ -14,22 +14,29 @@ import { JoinDraftForm } from '@/components/JoinDraftForm';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
-
-interface DraftSetupForm {
-  participants: string[];
-  categories: string[];
-}
+import { useDraftForm, DraftSetupForm } from '@/hooks/useDraftForm';
 
 const Home = () => {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
   const { toast } = useToast();
-  const [theme, setTheme] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedOption, setSelectedOption] = useState('');
-  const [participants, setParticipants] = useState<string[]>([]);
-  const [newParticipant, setNewParticipant] = useState('');
-  const [draftMode, setDraftMode] = useState<'single' | 'multiplayer'>('single');
+  
+  const {
+    state: { theme, searchQuery, selectedOption, participants, newParticipant, draftMode },
+    getCurrentStep,
+    isStepComplete,
+    isStepVisible,
+    setTheme,
+    setSelectedOption,
+    setDraftMode,
+    setSearchQuery,
+    setNewParticipant,
+    addParticipant,
+    removeParticipant,
+    isEmailValid,
+    validateStep,
+    canStartDraft,
+  } = useDraftForm();
 
   const form = useForm<DraftSetupForm>({
     defaultValues: {
@@ -64,19 +71,11 @@ const Home = () => {
   const years = generateYears();
 
   const handleAddParticipant = () => {
-    if (newParticipant.trim() && !participants.includes(newParticipant.trim())) {
-      setParticipants([...participants, newParticipant.trim()]);
-      setNewParticipant('');
-    }
+    addParticipant(newParticipant);
   };
 
   const handleRemoveParticipant = (participant: string) => {
-    setParticipants(participants.filter(p => p !== participant));
-  };
-
-  const isEmailValid = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+    removeParticipant(participant);
   };
 
   const handleStartDraft = (data: DraftSetupForm) => {
@@ -192,7 +191,7 @@ const Home = () => {
           </Card>
 
           {/* Option Selection */}
-          {theme && (
+          {isStepVisible('option') && (
             <Card className="bg-gray-800 border-gray-600">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
@@ -279,7 +278,7 @@ const Home = () => {
           )}
 
           {/* Draft Mode Selection */}
-          {selectedOption && (
+          {isStepVisible('mode') && (
             <Card className="bg-gray-800 border-gray-600">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-bold text-white mb-4">
@@ -325,7 +324,7 @@ const Home = () => {
           )}
 
           {/* Participants */}
-          {draftMode && (
+          {isStepVisible('participants') && (
             <Card className="bg-gray-800 border-gray-600">
             <CardContent className="pt-6">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
@@ -394,7 +393,7 @@ const Home = () => {
           )}
 
           {/* Categories Selection */}
-          {selectedOption && participants.length > 0 && (
+          {isStepVisible('categories') && participants.length > 0 && (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleStartDraft)} className="space-y-8">
                 <CategoriesForm form={form} categories={categories} />
