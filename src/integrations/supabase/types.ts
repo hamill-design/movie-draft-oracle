@@ -192,6 +192,39 @@ export type Database = {
         }
         Relationships: []
       }
+      oscar_cache: {
+        Row: {
+          awards_data: string | null
+          created_at: string
+          id: string
+          movie_title: string
+          movie_year: number | null
+          oscar_status: string
+          tmdb_id: number
+          updated_at: string
+        }
+        Insert: {
+          awards_data?: string | null
+          created_at?: string
+          id?: string
+          movie_title: string
+          movie_year?: number | null
+          oscar_status?: string
+          tmdb_id: number
+          updated_at?: string
+        }
+        Update: {
+          awards_data?: string | null
+          created_at?: string
+          id?: string
+          movie_title?: string
+          movie_year?: number | null
+          oscar_status?: string
+          tmdb_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

@@ -1,10 +1,96 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Rate limiting for OMDb API calls
+let omdbCallsToday = 0;
+const OMDB_DAILY_LIMIT = 900; // Stay under 1000 limit
+let lastResetDate = new Date().toDateString();
+
+// Initialize Supabase client for oscar_cache
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Helper function to check and get Oscar status from cache or OMDb
+async function getOscarStatus(tmdbId: number, title: string, year: number): Promise<string> {
+  try {
+    // Reset daily counter if needed
+    const today = new Date().toDateString();
+    if (lastResetDate !== today) {
+      omdbCallsToday = 0;
+      lastResetDate = today;
+    }
+
+    // First check cache
+    const { data: cached } = await supabase
+      .from('oscar_cache')
+      .select('oscar_status')
+      .eq('tmdb_id', tmdbId)
+      .single();
+
+    if (cached) {
+      console.log(`Oscar cache hit for "${title}": ${cached.oscar_status}`);
+      return cached.oscar_status;
+    }
+
+    // Check rate limit
+    if (omdbCallsToday >= OMDB_DAILY_LIMIT) {
+      console.log(`OMDb rate limit reached for today (${omdbCallsToday}/${OMDB_DAILY_LIMIT})`);
+      return 'none';
+    }
+
+    // Call OMDb API
+    const omdbApiKey = Deno.env.get('OMDB');
+    if (!omdbApiKey) {
+      console.log('OMDb API key not configured');
+      return 'none';
+    }
+
+    const omdbUrl = `http://www.omdbapi.com/?apikey=${omdbApiKey}&t=${encodeURIComponent(title)}&y=${year}`;
+    console.log(`Calling OMDb for "${title}" (${year}):`, omdbUrl);
+    
+    const response = await fetch(omdbUrl);
+    const data = await response.json();
+    omdbCallsToday++;
+
+    let oscarStatus = 'none';
+    let awardsData = '';
+
+    if (data.Response === 'True' && data.Awards) {
+      awardsData = data.Awards;
+      console.log(`OMDb awards for "${title}": ${awardsData}`);
+      
+      const awards = awardsData.toLowerCase();
+      if (awards.includes('won') && (awards.includes('oscar') || awards.includes('academy award'))) {
+        oscarStatus = 'winner';
+      } else if (awards.includes('nominated') && (awards.includes('oscar') || awards.includes('academy award'))) {
+        oscarStatus = 'nominee';
+      }
+    }
+
+    // Cache the result
+    await supabase.from('oscar_cache').insert({
+      tmdb_id: tmdbId,
+      movie_title: title,
+      movie_year: year,
+      oscar_status: oscarStatus,
+      awards_data: awardsData
+    });
+
+    console.log(`OMDb result for "${title}": ${oscarStatus}`);
+    return oscarStatus;
+
+  } catch (error) {
+    console.error(`Error getting Oscar status for "${title}":`, error);
+    return 'none';
+  }
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -296,60 +382,10 @@ serve(async (req) => {
           console.log(`Movie: ${movie.title}, Budget: $${budget}, Revenue: $${revenue}, Blockbuster: ${isBlockbuster}`);
         }
 
-        // Get actual Academy Award nominations/wins using keywords
-        const keywordsResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}/keywords?api_key=${tmdbApiKey}`);
-        if (keywordsResponse.ok) {
-          const keywordsData = await keywordsResponse.json();
-          const keywords = keywordsData.keywords || [];
-          
-          console.log(`DEBUG Oscar Detection for "${movie.title}": Found ${keywords.length} keywords`);
-          
-          // Check for Oscar-related keywords
-          const oscarKeywords = ['oscar', 'academy award', 'academy awards', 'oscar nomination', 'oscar winner', 'oscar nominated'];
-          hasOscar = keywords.some((keyword: any) => {
-            const isOscarKeyword = oscarKeywords.some(oscarKeyword => 
-              keyword.name.toLowerCase().includes(oscarKeyword)
-            );
-            if (isOscarKeyword) {
-              console.log(`DEBUG: Found Oscar keyword for "${movie.title}": ${keyword.name}`);
-            }
-            return isOscarKeyword;
-          });
-          
-          if (hasOscar) {
-            console.log(`DEBUG: "${movie.title}" detected as Oscar movie via keywords`);
-          }
-        }
-
-        // Improved Oscar detection fallback
-        if (!hasOscar) {
-          // More inclusive heuristic for Oscar nominees/winners
-          // La La Land criteria: rating >= 7.5, votes >= 1000, music/drama/romance genres, post-2000
-          const isWellRated = detailedMovie.vote_average >= 7.5 && detailedMovie.vote_count >= 1000;
-          const hasPrestigiousGenre = detailedMovie.genres?.some((g: any) => 
-            ['Drama', 'Music', 'Romance', 'History', 'Biography', 'War'].includes(g.name)
-          );
-          const isRecentEnough = detailedMovie.release_date && new Date(detailedMovie.release_date).getFullYear() >= 2000;
-          
-          console.log(`DEBUG Improved Oscar Detection for "${movie.title}": rating=${detailedMovie.vote_average}, votes=${detailedMovie.vote_count}, hasPrestigiousGenre=${hasPrestigiousGenre}, year=${detailedMovie.release_date ? new Date(detailedMovie.release_date).getFullYear() : 'unknown'}`);
-          
-          // Check for known Oscar patterns in title or description
-          const titleAndOverview = `${movie.title} ${movie.overview || ''}`.toLowerCase();
-          const oscarIndicators = [
-            'academy award', 'oscar', 'nominated', 'winner', 'best picture', 
-            'critically acclaimed', 'award-winning', 'masterpiece'
-          ];
-          const hasOscarIndicators = oscarIndicators.some(indicator => 
-            titleAndOverview.includes(indicator)
-          );
-          
-          // More lenient criteria
-          hasOscar = (isWellRated && hasPrestigiousGenre && isRecentEnough) || hasOscarIndicators;
-          
-          if (hasOscar) {
-            console.log(`DEBUG: "${movie.title}" detected as Oscar movie via improved fallback (wellRated=${isWellRated}, prestigiousGenre=${hasPrestigiousGenre}, recent=${isRecentEnough}, indicators=${hasOscarIndicators})`);
-          }
-        }
+        // Get accurate Oscar status from OMDb API with caching
+        const movieYear = detailedMovie.release_date ? new Date(detailedMovie.release_date).getFullYear() : movie.release_date ? new Date(movie.release_date).getFullYear() : 0;
+        const oscarStatus = await getOscarStatus(movie.id, movie.title, movieYear);
+        hasOscar = oscarStatus !== 'none';
         
       } catch (error) {
         console.log(`Could not fetch detailed info for movie ${movie.id}:`, error);
