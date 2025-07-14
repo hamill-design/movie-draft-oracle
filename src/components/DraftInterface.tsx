@@ -143,6 +143,17 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const confirmPick = async () => {
     if (!selectedMovie || !selectedCategory || !currentPlayer) return;
 
+    // Check if this movie has already been drafted
+    const isDuplicate = picks.some(pick => pick.movie.id === selectedMovie.id);
+    if (isDuplicate) {
+      toast({
+        title: "Movie Already Drafted",
+        description: `${selectedMovie.title} has already been selected by another player.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const newPick = {
       playerId: currentPlayer.id,
       playerName: currentPlayer.name,
