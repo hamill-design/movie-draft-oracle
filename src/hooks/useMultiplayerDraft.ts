@@ -442,6 +442,16 @@ export const useMultiplayerDraft = (draftId?: string) => {
         userId: user.id
       });
 
+      // Check if this movie has already been drafted
+      if (picks.some(pick => pick.movie_id === movie.id)) {
+        toast({
+          title: "Movie Already Drafted",
+          description: `${movie.title} has already been selected by another player.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       // Use the atomic database function
       const { data, error } = await supabase.rpc('make_multiplayer_pick', {
         p_draft_id: draft.id,
