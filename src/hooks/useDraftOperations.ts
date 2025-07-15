@@ -16,8 +16,8 @@ export const useDraftOperations = () => {
   }, existingDraftId?: string) => {
     if (!user) throw new Error('User not authenticated');
 
-    // Generate a title based on theme and option
-    const title = `${draftData.theme === 'year' ? 'Year' : 'Person'}: ${draftData.option}`;
+    // Generate a simple title (just the option)
+    const title = draftData.option;
 
     if (existingDraftId) {
       // Update existing draft

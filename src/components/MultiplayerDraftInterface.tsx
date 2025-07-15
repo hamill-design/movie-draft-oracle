@@ -74,7 +74,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
       const createDraft = async () => {
         try {
           const newDraft = await createMultiplayerDraft({
-            title: `${initialData.theme} Draft - ${new Date().toLocaleDateString()}`,
+            title: initialData.option,
             theme: initialData.theme,
             option: initialData.option,
             categories: initialData.categories,

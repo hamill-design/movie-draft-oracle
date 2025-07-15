@@ -4,7 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Calendar, Users, Trophy, Trash2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Trophy, Trash2, User } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDrafts } from '@/hooks/useDrafts';
 import { supabase } from '@/integrations/supabase/client';
@@ -140,35 +141,42 @@ const Profile = () => {
                        <Trash2 size={14} />
                      </Button>
                      <CardContent className="pt-6">
-                       <div className="flex items-center justify-between">
-                         <div>
-                           <h3 className="text-white font-semibold text-lg mb-2">
-                             {draft.title}
-                           </h3>
-                           <div className="flex items-center gap-4 text-sm text-gray-300">
-                             <div className="flex items-center gap-1">
-                               <Calendar size={14} />
-                               {new Date(draft.created_at).toLocaleDateString()}
-                             </div>
-                             <div className="flex items-center gap-1">
-                               <Users size={14} />
-                               {draft.participants.length} players
-                             </div>
-                             <div className="flex items-center gap-1">
-                               <Trophy size={14} />
-                               {draft.categories.length} categories
-                             </div>
-                           </div>
-                           <div className="mt-2">
-                             <span className="text-yellow-400 font-medium">
-                               {draft.theme === 'year' ? 'Year' : 'Person'}: {draft.option}
-                             </span>
-                             {draft.is_complete && (
-                               <span className="ml-4 bg-green-600 text-white px-2 py-1 rounded text-xs">
-                                 Complete
-                               </span>
-                             )}
-                           </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              {draft.theme === 'year' ? (
+                                <Calendar size={20} className="text-yellow-400" />
+                              ) : (
+                                <User size={20} className="text-yellow-400" />
+                              )}
+                              <h3 className="text-white font-semibold text-lg">
+                                {draft.title}
+                              </h3>
+                            </div>
+                            <div className="mb-2">
+                              <Badge variant={draft.is_multiplayer ? "default" : "secondary"}>
+                                {draft.is_multiplayer ? 'Multiplayer' : 'Local'}
+                              </Badge>
+                              {draft.is_complete && (
+                                <Badge variant="secondary" className="ml-2 bg-green-600 text-white">
+                                  Complete
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-gray-300">
+                              <div className="flex items-center gap-1">
+                                <Calendar size={14} />
+                                {new Date(draft.created_at).toLocaleDateString()}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Users size={14} />
+                                {draft.participants.length} players
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Trophy size={14} />
+                                {draft.categories.length} categories
+                              </div>
+                            </div>
                          </div>
                          <Button
                            onClick={() => handleViewDraft(draft)}

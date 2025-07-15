@@ -11,6 +11,7 @@ export interface Draft {
   participants: string[];
   categories: string[];
   is_complete: boolean;
+  is_multiplayer: boolean;
   created_at: string;
   updated_at: string;
 }
