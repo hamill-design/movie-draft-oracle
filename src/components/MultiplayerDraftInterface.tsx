@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Copy, Check, Users, Clock, Film } from 'lucide-react';
+import { Copy, Check, Users, Clock, Film, User, Calendar } from 'lucide-react';
 import MovieSearch from '@/components/MovieSearch';
 import CategorySelection from '@/components/CategorySelection';
 import PickConfirmation from '@/components/PickConfirmation';
@@ -205,10 +205,17 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
           <CardHeader>
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <CardTitle className="text-2xl">{draft.title}</CardTitle>
-                <p className="text-muted-foreground">
-                  {draft.theme} Draft • {draft.option}
-                </p>
+                <div className="flex items-center gap-3 mb-2">
+                  {draft.theme === 'people' ? (
+                    <User size={24} className="text-yellow-400" />
+                  ) : (
+                    <Calendar size={24} className="text-yellow-400" />
+                  )}
+                  <CardTitle className="text-2xl">{draft.option}</CardTitle>
+                </div>
+                <Badge variant="secondary" className="w-fit">
+                  Multiplayer
+                </Badge>
               </div>
               
               {draft.invite_code && (
