@@ -150,7 +150,7 @@ const Profile = () => {
                                 <User size={20} className="text-yellow-400" />
                               )}
                               <h3 className="text-white font-semibold text-lg">
-                                {draft.title}
+                                {draft.option}
                               </h3>
                             </div>
                             <div className="mb-2">
