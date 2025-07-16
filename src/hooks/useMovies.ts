@@ -8,6 +8,19 @@ export const useMovies = (category?: string, searchQuery?: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Connection health check
+  const checkConnection = async () => {
+    try {
+      const { error } = await supabase.functions.invoke('fetch-movies', {
+        body: { category: 'popular', searchQuery: '', fetchAll: false },
+        headers: { 'Content-Type': 'application/json' }
+      });
+      return !error;
+    } catch {
+      return false;
+    }
+  };
+
   const fetchMovies = async (retryCount = 0) => {
     if (!category) return;
     
@@ -16,6 +29,14 @@ export const useMovies = (category?: string, searchQuery?: string) => {
     
     try {
       console.log('useMovies - Fetching movies for category:', category, 'searchQuery:', searchQuery, 'attempt:', retryCount + 1);
+      
+      // Connection health check on first attempt
+      if (retryCount === 0) {
+        const isConnected = await checkConnection();
+        if (!isConnected) {
+          console.log('useMovies - Connection check failed, proceeding with retry logic');
+        }
+      }
       
       // For theme-based categories (year, person), we need to pass the theme parameter 
       // as the searchQuery to the backend to constrain the initial dataset
@@ -27,6 +48,7 @@ export const useMovies = (category?: string, searchQuery?: string) => {
       
       console.log('useMovies - Request body:', requestBody);
       
+      // Enhanced timeout and retry configuration
       const { data, error } = await supabase.functions.invoke('fetch-movies', {
         body: requestBody,
         headers: {
@@ -47,14 +69,28 @@ export const useMovies = (category?: string, searchQuery?: string) => {
     } catch (err) {
       console.error('useMovies - Error fetching movies:', err);
       
-      // Retry up to 2 times for network errors
-      if (retryCount < 2 && (err instanceof Error && (err.message.includes('Failed to fetch') || err.message.includes('Failed to send')))) {
-        console.log('useMovies - Retrying in 1 second...');
-        setTimeout(() => fetchMovies(retryCount + 1), 1000);
+      // Enhanced retry logic with exponential backoff
+      const isNetworkError = err instanceof Error && (
+        err.message.includes('Failed to fetch') || 
+        err.message.includes('Failed to send') ||
+        err.message.includes('NetworkError') ||
+        err.message.includes('timeout')
+      );
+      
+      if (retryCount < 3 && isNetworkError) {
+        // Exponential backoff: 1s, 2s, 4s
+        const delay = Math.pow(2, retryCount) * 1000;
+        console.log(`useMovies - Retrying in ${delay}ms (attempt ${retryCount + 1}/3)...`);
+        setTimeout(() => fetchMovies(retryCount + 1), delay);
         return;
       }
       
-      setError(err instanceof Error ? err.message : 'Failed to fetch movies');
+      // Set user-friendly error message
+      if (isNetworkError) {
+        setError('Unable to connect to movie service. Please check your connection and try again.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Failed to fetch movies');
+      }
     } finally {
       setLoading(false);
     }
