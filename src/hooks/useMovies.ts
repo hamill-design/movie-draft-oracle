@@ -43,7 +43,7 @@ export const useMovies = (category?: string, searchQuery?: string) => {
       const requestBody = {
         category,
         searchQuery: searchQuery || '',
-        fetchAll: true // Always fetch all within the theme constraint
+        fetchAll: category !== 'person' // Only fetch all for non-person searches to avoid timeouts
       };
       
       console.log('useMovies - Request body:', requestBody);
