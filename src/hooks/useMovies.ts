@@ -8,14 +8,14 @@ export const useMovies = (category?: string, searchQuery?: string) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMovies = async () => {
+  const fetchMovies = async (retryCount = 0) => {
     if (!category) return;
     
     setLoading(true);
     setError(null);
     
     try {
-      console.log('useMovies - Fetching movies for category:', category, 'searchQuery:', searchQuery);
+      console.log('useMovies - Fetching movies for category:', category, 'searchQuery:', searchQuery, 'attempt:', retryCount + 1);
       
       // For theme-based categories (year, person), we need to pass the theme parameter 
       // as the searchQuery to the backend to constrain the initial dataset
@@ -28,7 +28,10 @@ export const useMovies = (category?: string, searchQuery?: string) => {
       console.log('useMovies - Request body:', requestBody);
       
       const { data, error } = await supabase.functions.invoke('fetch-movies', {
-        body: requestBody
+        body: requestBody,
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
 
       if (error) {
@@ -42,8 +45,16 @@ export const useMovies = (category?: string, searchQuery?: string) => {
       setMovies(fetchedMovies);
       
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch movies');
       console.error('useMovies - Error fetching movies:', err);
+      
+      // Retry up to 2 times for network errors
+      if (retryCount < 2 && (err instanceof Error && (err.message.includes('Failed to fetch') || err.message.includes('Failed to send')))) {
+        console.log('useMovies - Retrying in 1 second...');
+        setTimeout(() => fetchMovies(retryCount + 1), 1000);
+        return;
+      }
+      
+      setError(err instanceof Error ? err.message : 'Failed to fetch movies');
     } finally {
       setLoading(false);
     }
