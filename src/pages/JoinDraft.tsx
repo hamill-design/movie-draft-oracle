@@ -22,8 +22,10 @@ export const JoinDraft = () => {
   const [inviteCode, setInviteCode] = useState('');
   const [participantName, setParticipantName] = useState('');
   const [isEmailInvite, setIsEmailInvite] = useState(false);
+  const [isAutoJoining, setIsAutoJoining] = useState(false);
 
   const invitedEmail = searchParams.get('email');
+  const autoJoin = searchParams.get('auto') === 'true';
 
   useEffect(() => {
     // Check if this is an email invitation
@@ -37,6 +39,42 @@ export const JoinDraft = () => {
       setParticipantName(user.email);
     }
   }, [draftId, invitedEmail, user?.email, participantName]);
+
+  // Auto-join effect for email invitations
+  useEffect(() => {
+    if (autoJoin && draftId && user && invitedEmail && !isAutoJoining) {
+      handleAutoJoin();
+    }
+  }, [autoJoin, draftId, user, invitedEmail, isAutoJoining]);
+
+  const handleAutoJoin = async () => {
+    if (!draftId || !invitedEmail || !user) return;
+    
+    setIsAutoJoining(true);
+    
+    try {
+      // Get the invite code from the draft
+      const { data: draftData, error } = await supabase
+        .from('drafts')
+        .select('invite_code')
+        .eq('id', draftId)
+        .single();
+
+      if (error || !draftData?.invite_code) {
+        throw new Error('Invalid or expired invitation');
+      }
+
+      await joinDraftByCode(draftData.invite_code, invitedEmail);
+    } catch (error) {
+      console.error('Auto-join failed:', error);
+      toast({
+        title: "Auto-join Failed",
+        description: "Unable to automatically join the draft. Please try manually.",
+        variant: "destructive",
+      });
+      setIsAutoJoining(false);
+    }
+  };
 
   const handleJoinByCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,6 +149,30 @@ export const JoinDraft = () => {
     );
   }
 
+  // Show auto-joining state
+  if (isAutoJoining) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="flex items-center justify-center gap-2">
+              <Users className="h-6 w-6" />
+              Joining Draft
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <div className="flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+            <p className="text-muted-foreground">
+              Automatically joining the draft...
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -125,7 +187,7 @@ export const JoinDraft = () => {
         </CardHeader>
         
         <CardContent className="space-y-6">
-          {isEmailInvite ? (
+          {isEmailInvite && !autoJoin ? (
             // Email invitation flow
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">

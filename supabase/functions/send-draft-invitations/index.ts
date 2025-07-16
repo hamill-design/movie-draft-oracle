@@ -135,7 +135,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Send emails to each valid participant
     const invitationResults = await Promise.all(
       validEmails.map(async (email) => {
-        const inviteLink = `${origin}/join-draft?code=${inviteCode}&email=${encodeURIComponent(email)}`;
+        const inviteLink = `${origin}/join-draft/${draftId}?email=${encodeURIComponent(email)}&auto=true`;
         
         console.log('📧 EDGE FUNCTION - Processing email for:', email);
         
