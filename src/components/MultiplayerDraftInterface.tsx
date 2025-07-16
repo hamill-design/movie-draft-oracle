@@ -66,7 +66,9 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
     ? draft.option 
     : '';
 
-  const { movies, loading: moviesLoading } = useMovies(getBaseCategory(), themeConstraint);
+  // Only call useMovies when draft is available
+  const baseCategory = draft ? getBaseCategory() : '';
+  const { movies, loading: moviesLoading } = useMovies(baseCategory, themeConstraint);
 
   // Create draft if this is a new multiplayer draft
   useEffect(() => {
