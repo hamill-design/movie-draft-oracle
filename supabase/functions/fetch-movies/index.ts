@@ -99,7 +99,30 @@ serve(async (req) => {
   }
 
   try {
-    const { searchQuery, category, page = 1, fetchAll = false } = await req.json();
+    // Add timeout for request parsing
+    const reqText = await Promise.race([
+      req.text(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 5000))
+    ]);
+    
+    let requestData;
+    try {
+      requestData = JSON.parse(reqText);
+    } catch (parseError) {
+      console.error('Error parsing request JSON:', parseError);
+      return new Response(JSON.stringify({
+        error: 'Invalid JSON in request',
+        results: [],
+        total_pages: 0,
+        total_results: 0,
+        page: 1
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    const { searchQuery, category, page = 1, fetchAll = false } = requestData;
     const tmdbApiKey = Deno.env.get('TMDB');
 
     if (!tmdbApiKey) {
@@ -272,20 +295,29 @@ serve(async (req) => {
           
           console.log(`Total pages available: ${totalPages}`);
           
-          // Fetch all pages (with reasonable limit to prevent timeout)
-          const maxPagesToFetch = Math.min(totalPages, 100); // Reduced from 500 to 100 for faster response
+          // Fetch limited pages to prevent timeout
+          const maxPagesToFetch = Math.min(totalPages, 10); // Reduced to 10 for faster response
           
           while (currentPage <= maxPagesToFetch) {
             const pageUrl = `${baseUrl}&page=${currentPage}`;
             console.log(`Fetching page ${currentPage}/${maxPagesToFetch}:`, pageUrl);
             
             try {
-              const response = await fetch(pageUrl);
+              const response = await Promise.race([
+                fetch(pageUrl),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Fetch timeout')), 10000))
+              ]);
               if (!response.ok) {
                 console.error(`Page ${currentPage} fetch failed: ${response.status} ${response.statusText}`);
                 break;
               }
-              const pageData = await response.json();
+              let pageData;
+              try {
+                pageData = await response.json();
+              } catch (jsonError) {
+                console.error(`Error parsing JSON for page ${currentPage}:`, jsonError);
+                break;
+              }
               
               if (pageData.results && pageData.results.length > 0) {
                 // Filter out duplicates based on movie ID
@@ -340,11 +372,19 @@ serve(async (req) => {
       };
     } else {
       try {
-        const response = await fetch(url);
+        const response = await Promise.race([
+          fetch(url),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 10000))
+        ]);
         if (!response.ok) {
           throw new Error(`TMDB API error: ${response.status} ${response.statusText}`);
         }
-        data = await response.json();
+        try {
+          data = await response.json();
+        } catch (jsonError) {
+          console.error('Error parsing TMDB JSON response:', jsonError);
+          throw new Error('Invalid JSON response from TMDB');
+        }
       } catch (fetchError) {
         console.error('Error fetching from TMDB:', fetchError);
         return new Response(JSON.stringify({
@@ -362,34 +402,13 @@ serve(async (req) => {
 
     console.log('TMDB API response:', data);
 
-    // Enhanced movie data transformation with proper Oscar and blockbuster detection
-    const transformedMovies = await Promise.all((data.results || []).map(async (movie: any) => {
-      let detailedMovie = movie;
-      let hasOscar = false;
-      let isBlockbuster = false;
+    // Optimized movie data transformation - skip expensive operations for better performance
+    const transformedMovies = (data.results || []).map((movie: any) => {
+      // Use basic blockbuster detection based on popularity and vote count
+      const isBlockbuster = movie.vote_count > 5000 && movie.vote_average > 7.0;
       
-      try {
-        // Get detailed movie information including budget and revenue
-        const detailResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${tmdbApiKey}`);
-        if (detailResponse.ok) {
-          detailedMovie = await detailResponse.json();
-          
-          // Proper blockbuster detection using actual budget/revenue data
-          const budget = detailedMovie.budget || 0;
-          const revenue = detailedMovie.revenue || 0;
-          isBlockbuster = budget >= 50000000 || revenue >= 100000000;
-          
-          console.log(`Movie: ${movie.title}, Budget: $${budget}, Revenue: $${revenue}, Blockbuster: ${isBlockbuster}`);
-        }
-
-        // Get accurate Oscar status from OMDb API with caching
-        const movieYear = detailedMovie.release_date ? new Date(detailedMovie.release_date).getFullYear() : movie.release_date ? new Date(movie.release_date).getFullYear() : 0;
-        const oscarStatus = await getOscarStatus(movie.id, movie.title, movieYear);
-        hasOscar = oscarStatus !== 'none';
-        
-      } catch (error) {
-        console.log(`Could not fetch detailed info for movie ${movie.id}:`, error);
-      }
+      // Skip detailed API calls and Oscar status lookup for faster response
+      // These can be fetched on-demand later if needed
 
       return {
         id: movie.id,
@@ -397,7 +416,7 @@ serve(async (req) => {
         year: movie.release_date ? new Date(movie.release_date).getFullYear() : 0,
         genre: movie.genre_ids?.[0] ? getGenreName(movie.genre_ids[0]) : 'Unknown',
         director: 'Unknown',
-        runtime: detailedMovie.runtime || 120,
+        runtime: 120, // Default runtime
         poster: getMovieEmoji(movie.genre_ids?.[0]),
         description: movie.overview || 'No description available',
         isDrafted: false,
@@ -406,12 +425,12 @@ serve(async (req) => {
         backdropPath: movie.backdrop_path,
         voteAverage: movie.vote_average,
         releaseDate: movie.release_date,
-        budget: detailedMovie.budget || 0,
-        revenue: detailedMovie.revenue || 0,
-        hasOscar,
+        budget: 0, // Skip expensive budget lookup
+        revenue: 0, // Skip expensive revenue lookup
+        hasOscar: false, // Skip expensive Oscar lookup
         isBlockbuster
       };
-    }));
+    });
 
     console.log('Returning transformed movies:', transformedMovies.length);
 
@@ -427,7 +446,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error fetching movies from TMDB:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: error.message || 'Unknown error occurred',
       results: [],
       total_pages: 0,
       total_results: 0,
