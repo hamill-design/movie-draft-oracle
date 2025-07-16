@@ -99,28 +99,13 @@ serve(async (req) => {
   }
 
   try {
-    // Add timeout for request parsing
-    const reqText = await Promise.race([
-      req.text(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 5000))
+    // Parse JSON request directly with timeout
+    const requestData = await Promise.race([
+      req.json(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Request parsing timeout')), 5000))
     ]);
     
-    let requestData;
-    try {
-      requestData = JSON.parse(reqText);
-    } catch (parseError) {
-      console.error('Error parsing request JSON:', parseError);
-      return new Response(JSON.stringify({
-        error: 'Invalid JSON in request',
-        results: [],
-        total_pages: 0,
-        total_results: 0,
-        page: 1
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
-    }
+    console.log('Parsed request data:', requestData);
     
     const { searchQuery, category, page = 1, fetchAll = false } = requestData;
     const tmdbApiKey = Deno.env.get('TMDB');
