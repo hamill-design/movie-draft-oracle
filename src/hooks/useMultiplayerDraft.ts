@@ -457,10 +457,10 @@ export const useMultiplayerDraft = (draftId?: string) => {
         p_draft_id: draft.id,
         p_movie_id: movie.id,
         p_movie_title: movie.title,
-        p_movie_year: movie.release_date ? new Date(movie.release_date).getFullYear() : null,
-        p_movie_genre: movie.genres?.[0]?.name || 'Unknown',
+        p_movie_year: movie.year || movie.release_date ? new Date(movie.release_date).getFullYear() : null,
+        p_movie_genre: movie.genre || 'Unknown',
         p_category: category,
-        p_poster_path: movie.poster_path
+        p_poster_path: movie.poster_path || movie.posterPath
       });
 
       if (error) {

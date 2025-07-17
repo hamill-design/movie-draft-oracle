@@ -45,9 +45,10 @@ export const useDraftOperations = () => {
           movie_id: pick.movie.id,
           movie_title: pick.movie.title,
           movie_year: pick.movie.year,
-          movie_genre: pick.movie.genre,
+          movie_genre: pick.movie.genre || 'Unknown',
           category: pick.category,
-          pick_order: index + 1
+          pick_order: index + 1,
+          poster_path: pick.movie.posterPath || pick.movie.poster_path || null
         }));
 
         const { error: picksError } = await supabase
@@ -78,17 +79,18 @@ export const useDraftOperations = () => {
 
       // Save picks if any exist
       if (draftData.picks.length > 0) {
-        const picks = draftData.picks.map((pick, index) => ({
-          draft_id: draft.id,
-          player_id: pick.playerId,
-          player_name: pick.playerName,
-          movie_id: pick.movie.id,
-          movie_title: pick.movie.title,
-          movie_year: pick.movie.year,
-          movie_genre: pick.movie.genre,
-          category: pick.category,
-          pick_order: index + 1
-        }));
+      const picks = draftData.picks.map((pick, index) => ({
+        draft_id: draft.id,
+        player_id: pick.playerId,
+        player_name: pick.playerName,
+        movie_id: pick.movie.id,
+        movie_title: pick.movie.title,
+        movie_year: pick.movie.year,
+        movie_genre: pick.movie.genre || 'Unknown',
+        category: pick.category,
+        pick_order: index + 1,
+        poster_path: pick.movie.posterPath || pick.movie.poster_path || null
+      }));
 
         const { error: picksError } = await supabase
           .from('draft_picks')
@@ -137,9 +139,10 @@ export const useDraftOperations = () => {
         movie_id: pick.movie.id,
         movie_title: pick.movie.title,
         movie_year: pick.movie.year,
-        movie_genre: pick.movie.genre,
+        movie_genre: pick.movie.genre || 'Unknown',
         category: pick.category,
-        pick_order: index + 1
+        pick_order: index + 1,
+        poster_path: pick.movie.posterPath || pick.movie.poster_path || null
       }));
 
       const { error: picksError } = await supabase

@@ -114,7 +114,26 @@ const FinalScores = () => {
     }
   };
 
+  const backfillMovieGenres = async () => {
+    console.log('Starting movie genre backfill...');
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('backfill-movie-genres');
+
+      if (error) {
+        console.error('Failed to backfill movie genres:', error);
+      } else {
+        console.log('Successfully backfilled movie genres:', data);
+      }
+    } catch (error) {
+      console.error('Error during genre backfill:', error);
+    }
+  };
+
   const autoEnrichMovieData = async (picksData: DraftPick[]) => {
+    // First, backfill any missing genres
+    await backfillMovieGenres();
+
     // Check for movies that need RT/IMDB/Metacritic data or poster data
     const moviesToEnrich = picksData.filter(pick => {
       const pickWithScoring = pick as any;
