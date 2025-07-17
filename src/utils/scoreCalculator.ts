@@ -23,28 +23,25 @@ export interface ScoreBreakdown {
 
 export const calculateDetailedScore = (data: MovieScoringData): ScoreBreakdown => {
   let totalScore = 0;
-  let totalWeight = 0;
   const availableComponents: string[] = [];
   const missingComponents: string[] = [];
 
-  // Box Office Score (20% weight)
+  // Box Office Score - Direct profit percentage (0-100+ points)
   let boxOfficeScore = 0;
   if (data.budget && data.revenue && data.budget > 0) {
     const profit = data.revenue - data.budget;
     const profitPercentage = (profit / data.revenue) * 100;
-    boxOfficeScore = Math.min(Math.max(profitPercentage, 0), 100);
-    totalScore += boxOfficeScore * 0.2;
-    totalWeight += 0.2;
+    boxOfficeScore = Math.max(profitPercentage, 0); // Allow unlimited upside
+    totalScore += boxOfficeScore;
     availableComponents.push('Box Office');
   } else {
     missingComponents.push('Box Office');
   }
 
-  // RT Critics Score (23.33% weight)
+  // RT Critics Score - Direct percentage (0-100 points)
   const rtCriticsScore = data.rtCriticsScore || 0;
   if (data.rtCriticsScore) {
-    totalScore += rtCriticsScore * 0.2333;
-    totalWeight += 0.2333;
+    totalScore += rtCriticsScore;
     availableComponents.push('RT Critics');
   } else {
     missingComponents.push('RT Critics');
@@ -53,40 +50,37 @@ export const calculateDetailedScore = (data: MovieScoringData): ScoreBreakdown =
   // RT Audience Score removed from scoring
   const rtAudienceScore = 0;
 
-  // Metacritic Score (23.33% weight)
+  // Metacritic Score - Direct score (0-100 points)
   const metacriticScore = data.metacriticScore || 0;
   if (data.metacriticScore) {
-    totalScore += metacriticScore * 0.2333;
-    totalWeight += 0.2333;
+    totalScore += metacriticScore;
     availableComponents.push('Metacritic');
   } else {
     missingComponents.push('Metacritic');
   }
 
-  // IMDB Score (23.33% weight)
+  // IMDB Score - Convert to percentage (0-100 points)
   let imdbScore = 0;
   if (data.imdbRating) {
     imdbScore = (data.imdbRating / 10) * 100;
-    totalScore += imdbScore * 0.2333;
-    totalWeight += 0.2333;
+    totalScore += imdbScore;
     availableComponents.push('IMDB');
   } else {
     missingComponents.push('IMDB');
   }
 
-  // Oscar Bonus (10% weight)
+  // Oscar Bonus - Direct points (+10 for nomination, +20 for winner)
   let oscarBonus = 0;
   if (data.oscarStatus === 'winner') {
     oscarBonus = 20;
   } else if (data.oscarStatus === 'nominee') {
     oscarBonus = 10;
   }
-  totalScore += oscarBonus * 0.1;
-  totalWeight += 0.1;
+  totalScore += oscarBonus;
   availableComponents.push('Oscar Status');
 
-  // Calculate final score
-  const finalScore = totalWeight > 0 ? (totalScore / totalWeight) : 0;
+  // Final score is the sum of all components
+  const finalScore = totalScore;
 
   return {
     boxOfficeScore: Math.round(boxOfficeScore * 100) / 100,
@@ -102,17 +96,17 @@ export const calculateDetailedScore = (data: MovieScoringData): ScoreBreakdown =
 };
 
 export const getScoreColor = (score: number): string => {
-  if (score >= 80) return 'text-green-500';
-  if (score >= 60) return 'text-yellow-500';
-  if (score >= 40) return 'text-orange-500';
+  if (score >= 300) return 'text-green-500';
+  if (score >= 250) return 'text-yellow-500';
+  if (score >= 200) return 'text-orange-500';
   return 'text-red-500';
 };
 
 export const getScoreGrade = (score: number): string => {
-  if (score >= 90) return 'A+';
-  if (score >= 80) return 'A';
-  if (score >= 70) return 'B';
-  if (score >= 60) return 'C';
-  if (score >= 50) return 'D';
+  if (score >= 350) return 'A+';
+  if (score >= 300) return 'A';
+  if (score >= 250) return 'B';
+  if (score >= 200) return 'C';
+  if (score >= 150) return 'D';
   return 'F';
 };

@@ -125,44 +125,45 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
           
           <ScoreMetric
             icon={DollarSign}
-            label="Box Office Profit % (20%)"
+            label="Box Office Profit %"
             value={scoreBreakdown.boxOfficeScore}
             available={scoreBreakdown.availableComponents.includes('Box Office')}
-            suffix="%"
+            suffix=" pts"
             color="bg-green-500"
+            maxValue={200}
           />
 
           <ScoreMetric
             icon={Star}
-            label="RT Critics (23%)"
+            label="RT Critics Score"
             value={scoreBreakdown.rtCriticsScore}
             available={scoreBreakdown.availableComponents.includes('RT Critics')}
-            suffix="%"
+            suffix=" pts"
             color="bg-red-500"
           />
 
           <ScoreMetric
             icon={Award}
-            label="Metacritic (23%)"
+            label="Metacritic Score"
             value={scoreBreakdown.metacriticScore}
             available={scoreBreakdown.availableComponents.includes('Metacritic')}
-            suffix="/100"
+            suffix=" pts"
             color="bg-purple-500"
           />
 
           <ScoreMetric
             icon={Film}
-            label="IMDB (23%)"
+            label="IMDB Score"
             value={scoreBreakdown.imdbScore}
             available={scoreBreakdown.availableComponents.includes('IMDB')}
-            suffix="%"
+            suffix=" pts"
             color="bg-yellow-500"
           />
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy size={16} className="text-yellow-400" />
-              <span className="text-sm text-white">Oscar Status (10%)</span>
+              <span className="text-sm text-white">Oscar Bonus</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold text-white">

@@ -17,13 +17,13 @@ const TeamRoster: React.FC<TeamRosterProps> = ({
   picks, 
   teamRank 
 }) => {
-  // Calculate team average score - using any to access new columns
+  // Calculate team total score - using any to access new columns
   const validScores = picks
     .filter(pick => (pick as any).calculated_score !== null)
     .map(pick => (pick as any).calculated_score!);
   
-  const teamAverage = validScores.length > 0 
-    ? validScores.reduce((sum: number, score: number) => sum + score, 0) / validScores.length
+  const teamTotal = validScores.length > 0 
+    ? validScores.reduce((sum: number, score: number) => sum + score, 0)
     : 0;
 
   const sortedPicks = [...picks].sort((a, b) => a.pick_order - b.pick_order);
@@ -48,11 +48,11 @@ const TeamRoster: React.FC<TeamRosterProps> = ({
                   <span className="text-gray-400 text-sm">Rank #{teamRank}</span>
                 </div>
               )}
-              <div className={`text-2xl font-bold ${getScoreColor(teamAverage)}`}>
-                {teamAverage.toFixed(1)}
+              <div className={`text-2xl font-bold ${getScoreColor(teamTotal)}`}>
+                {teamTotal.toFixed(1)}
               </div>
               <div className="text-gray-400 text-sm">
-                Team Average ({getScoreGrade(teamAverage)})
+                Team Total ({getScoreGrade(teamTotal)})
               </div>
             </div>
           </div>
