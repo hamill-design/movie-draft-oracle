@@ -15,7 +15,7 @@ import { getScoreColor, getScoreGrade } from '@/utils/scoreCalculator';
 interface TeamScore {
   playerName: string;
   picks: DraftPick[];
-  averageScore: number;
+  totalScore: number;
   completedPicks: number;
   totalPicks: number;
 }
@@ -217,21 +217,21 @@ const FinalScores = () => {
         .filter(pick => (pick as any).calculated_score !== null && (pick as any).calculated_score !== undefined)
         .map(pick => (pick as any).calculated_score!);
       
-      const averageScore = validScores.length > 0 
-        ? validScores.reduce((sum: number, score: number) => sum + score, 0) / validScores.length
+      const totalScore = validScores.length > 0 
+        ? validScores.reduce((sum: number, score: number) => sum + score, 0)
         : 0;
 
       teams.push({
         playerName,
         picks: playerPicks,
-        averageScore,
+        totalScore,
         completedPicks: validScores.length,
         totalPicks: playerPicks.length
       });
     });
 
-    // Sort by average score (descending)
-    return teams.sort((a, b) => b.averageScore - a.averageScore);
+    // Sort by total score (descending)
+    return teams.sort((a, b) => b.totalScore - a.totalScore);
   };
 
   if (loading || loadingData) {
@@ -335,11 +335,11 @@ const FinalScores = () => {
                     </div>
                     
                     <div className="text-right">
-                      <div className={`text-xl font-bold ${getScoreColor(team.averageScore)}`}>
-                        {team.averageScore.toFixed(1)}
+                      <div className="text-xl font-bold text-yellow-400">
+                        {team.totalScore.toFixed(1)}
                       </div>
                       <div className="text-gray-400 text-sm">
-                        {getScoreGrade(team.averageScore)}
+                        Total Score
                       </div>
                     </div>
                   </div>
