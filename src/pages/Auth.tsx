@@ -13,6 +13,7 @@ const Auth = () => {
   const [isResetMode, setIsResetMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -60,7 +61,10 @@ const Auth = () => {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`
+            emailRedirectTo: `${window.location.origin}/`,
+            data: {
+              name: name.trim()
+            }
           }
         });
         
@@ -117,6 +121,7 @@ const Auth = () => {
     setError('');
     setEmail('');
     setPassword('');
+    setName('');
     setIsResetMode(false);
   };
 
@@ -199,6 +204,23 @@ const Auth = () => {
                 </div>
               </div>
 
+              {!isLogin && (
+                <div className="space-y-2">
+                  <label className="text-gray-300 text-sm font-medium">Name</label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Enter your name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                      required={!isLogin}
+                    />
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <label className="text-gray-300 text-sm font-medium">Password</label>
                 <div className="relative">
@@ -250,6 +272,7 @@ const Auth = () => {
                   setError('');
                   setEmail('');
                   setPassword('');
+                  setName('');
                 }}
                 className="text-yellow-400 hover:text-yellow-300 hover:bg-transparent"
               >

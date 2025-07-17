@@ -1,10 +1,11 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Calendar, Users, Trophy, Trash2, User } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Calendar, Users, Trophy, Trash2, User, Edit3, Save, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDrafts } from '@/hooks/useDrafts';
@@ -16,12 +17,34 @@ const Profile = () => {
   const { user, loading, signOut } = useAuth();
   const { drafts, loading: draftsLoading, refetch } = useDrafts();
   const { toast } = useToast();
+  const [profile, setProfile] = useState<any>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newName, setNewName] = useState('');
 
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .maybeSingle();
+        
+        if (!error && data) {
+          setProfile(data);
+          setNewName(data.name || '');
+        }
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -63,6 +86,36 @@ const Profile = () => {
         variant: "destructive",
       });
     }
+  };
+
+  const handleSaveName = async () => {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ name: newName.trim() })
+        .eq('id', user?.id);
+
+      if (error) throw error;
+
+      setProfile({ ...profile, name: newName.trim() });
+      setIsEditingName(false);
+
+      toast({
+        title: "Name updated",
+        description: "Your display name has been successfully updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update name. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setNewName(profile?.name || '');
+    setIsEditingName(false);
   };
 
   if (loading || draftsLoading) {
@@ -108,7 +161,54 @@ const Profile = () => {
           <CardHeader>
             <CardTitle className="text-white">Account Information</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-gray-300 mb-2">
+                  <strong>Name:</strong>
+                </p>
+                {isEditingName ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      className="bg-gray-700 border-gray-600 text-white"
+                      placeholder="Enter your name"
+                    />
+                    <Button
+                      onClick={handleSaveName}
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Save size={16} />
+                    </Button>
+                    <Button
+                      onClick={handleCancelEdit}
+                      size="sm"
+                      variant="outline"
+                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                    >
+                      <X size={16} />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-300">
+                      {profile?.name || 'No name set'}
+                    </span>
+                    <Button
+                      onClick={() => setIsEditingName(true)}
+                      size="sm"
+                      variant="ghost"
+                      className="text-gray-400 hover:text-gray-300"
+                    >
+                      <Edit3 size={16} />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+            
             <p className="text-gray-300">
               <strong>Email:</strong> {user.email}
             </p>

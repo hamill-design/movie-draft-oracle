@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useToast } from '@/hooks/use-toast';
+import { useProfile } from '@/hooks/useProfile';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,9 +15,16 @@ export const JoinDraftForm = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { joinDraftByCode, loading } = useMultiplayerDraft();
+  const { getDisplayName, profile, loading: profileLoading } = useProfile();
 
   const [inviteCode, setInviteCode] = useState('');
-  const [participantName, setParticipantName] = useState(user?.email || '');
+  const [participantName, setParticipantName] = useState('');
+
+  useEffect(() => {
+    if (!profileLoading) {
+      setParticipantName(getDisplayName());
+    }
+  }, [getDisplayName, profileLoading]);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
