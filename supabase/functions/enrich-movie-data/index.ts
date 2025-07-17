@@ -50,7 +50,8 @@ Deno.serve(async (req) => {
       metacriticScore: null,
       imdbRating: null,
       oscarStatus: 'none',
-      posterPath: null
+      posterPath: null,
+      movieGenre: null
     }
 
     // Simple timeout helper
@@ -156,6 +157,15 @@ Deno.serve(async (req) => {
               console.log('No poster_path found in TMDB data')
               console.log('TMDB response keys:', Object.keys(tmdbData))
             }
+
+            // Extract genre information
+            if (tmdbData.genres && tmdbData.genres.length > 0) {
+              enrichmentData.movieGenre = tmdbData.genres[0].name
+              console.log(`Genre: ${enrichmentData.movieGenre}`)
+            } else if (tmdbData.genre_ids && tmdbData.genre_ids.length > 0) {
+              enrichmentData.movieGenre = getGenreName(tmdbData.genre_ids[0])
+              console.log(`Genre (from ID): ${enrichmentData.movieGenre}`)
+            }
           }
         }
       } catch (error) {
@@ -168,20 +178,27 @@ Deno.serve(async (req) => {
     console.log(`Final score: ${finalScore}`)
 
     // Update database
+    const updateData: any = {
+      movie_budget: enrichmentData.budget,
+      movie_revenue: enrichmentData.revenue,
+      rt_critics_score: enrichmentData.rtCriticsScore,
+      rt_audience_score: null,
+      metacritic_score: enrichmentData.metacriticScore,
+      imdb_rating: enrichmentData.imdbRating,
+      oscar_status: enrichmentData.oscarStatus,
+      poster_path: enrichmentData.posterPath,
+      calculated_score: finalScore,
+      scoring_data_complete: true
+    }
+
+    // Only update movie_genre if we found one
+    if (enrichmentData.movieGenre) {
+      updateData.movie_genre = enrichmentData.movieGenre
+    }
+
     const { error: updateError } = await supabaseClient
       .from('draft_picks')
-      .update({
-        movie_budget: enrichmentData.budget,
-        movie_revenue: enrichmentData.revenue,
-        rt_critics_score: enrichmentData.rtCriticsScore,
-        rt_audience_score: null,
-        metacritic_score: enrichmentData.metacriticScore,
-        imdb_rating: enrichmentData.imdbRating,
-        oscar_status: enrichmentData.oscarStatus,
-        poster_path: enrichmentData.posterPath,
-        calculated_score: finalScore,
-        scoring_data_complete: true
-      })
+      .update(updateData)
       .eq('movie_id', movieId)
 
     if (updateError) {
@@ -261,4 +278,30 @@ function calculateScore(data: any): number {
 
   const finalScore = totalWeight > 0 ? (totalScore / totalWeight) : 0
   return Math.round(finalScore * 100) / 100
+}
+
+// Helper function to map genre IDs to names
+function getGenreName(genreId: number): string {
+  const genres: { [key: number]: string } = {
+    28: 'Action',
+    12: 'Adventure',
+    16: 'Animation',
+    35: 'Comedy',
+    80: 'Crime',
+    99: 'Documentary',
+    18: 'Drama',
+    10751: 'Family',
+    14: 'Fantasy',
+    36: 'History',
+    27: 'Horror',
+    10402: 'Music',
+    9648: 'Mystery',
+    10749: 'Romance',
+    878: 'Sci-Fi',
+    10770: 'TV Movie',
+    53: 'Thriller',
+    10752: 'War',
+    37: 'Western'
+  };
+  return genres[genreId] || 'Unknown';
 }
