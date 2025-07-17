@@ -48,7 +48,7 @@ const TeamRoster: React.FC<TeamRosterProps> = ({
                   <span className="text-gray-400 text-sm">Rank #{teamRank}</span>
                 </div>
               )}
-              <div className={`text-2xl font-bold ${getScoreColor(teamTotal)}`}>
+              <div className="text-2xl font-bold text-yellow-400">
                 {teamTotal.toFixed(1)}
               </div>
               <div className="text-gray-400 text-sm">

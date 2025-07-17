@@ -107,7 +107,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
               )}
             </div>
             <div className="text-right">
-              <div className={`text-3xl font-bold ${getScoreColor(scoreBreakdown.finalScore)}`}>
+              <div className="text-3xl font-bold text-yellow-400">
                 {scoreBreakdown.finalScore}
               </div>
               <div className="text-gray-400 text-sm">
