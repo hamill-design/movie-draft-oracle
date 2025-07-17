@@ -105,11 +105,6 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
               {movieYear && (
                 <p className="text-gray-400 text-sm">({movieYear})</p>
               )}
-              {movieGenre && (
-                <Badge variant="secondary" className="mt-1">
-                  {movieGenre}
-                </Badge>
-              )}
             </div>
             <div className="text-right">
               <div className={`text-3xl font-bold ${getScoreColor(scoreBreakdown.finalScore)}`}>
