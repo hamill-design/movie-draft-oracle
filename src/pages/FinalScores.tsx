@@ -310,7 +310,12 @@ const FinalScores = () => {
                 {teamScores.map((team, index) => (
                   <div
                     key={team.playerName}
-                    className="flex items-center justify-between p-4 bg-gray-700 rounded-lg border border-gray-600"
+                    onClick={() => setSelectedTeam(team.playerName)}
+                    className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                      selectedTeam === team.playerName 
+                        ? 'bg-yellow-400/20 border-yellow-400/50' 
+                        : 'bg-gray-700 border-gray-600 hover:bg-gray-600/50'
+                    }`}
                   >
                     <div className="flex items-center gap-4">
                       <div
@@ -347,24 +352,6 @@ const FinalScores = () => {
               </div>
             </CardContent>
           </Card>
-
-          {/* Team Selection */}
-          <div className="flex gap-2 flex-wrap">
-            {teamScores.map((team, index) => (
-              <Button
-                key={team.playerName}
-                onClick={() => setSelectedTeam(team.playerName)}
-                variant={selectedTeam === team.playerName ? "default" : "outline"}
-                className={
-                  selectedTeam === team.playerName
-                    ? "bg-yellow-400 text-black hover:bg-yellow-500"
-                    : "border-gray-600 text-gray-300 hover:bg-gray-700"
-                }
-              >
-                #{index + 1} {team.playerName}
-              </Button>
-            ))}
-          </div>
 
           {/* Selected Team Roster */}
           {selectedTeam && teamScores.find(t => t.playerName === selectedTeam) && (
