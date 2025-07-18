@@ -51,8 +51,7 @@ Deno.serve(async (req) => {
       imdbRating: null,
       oscarStatus: 'none',
       posterPath: null,
-      movieGenre: null,
-      extractedYear: null
+      movieGenre: null
     }
 
     // Simple timeout helper
@@ -159,15 +158,6 @@ Deno.serve(async (req) => {
               console.log('TMDB response keys:', Object.keys(tmdbData))
             }
 
-            // Extract year from release_date
-            if (tmdbData.release_date) {
-              const releaseYear = new Date(tmdbData.release_date).getFullYear()
-              if (!isNaN(releaseYear) && releaseYear > 1800) {
-                enrichmentData.extractedYear = releaseYear
-                console.log(`Year: ${enrichmentData.extractedYear}`)
-              }
-            }
-
             // Extract genre information
             if (tmdbData.genres && tmdbData.genres.length > 0) {
               enrichmentData.movieGenre = tmdbData.genres[0].name
@@ -204,11 +194,6 @@ Deno.serve(async (req) => {
     // Only update movie_genre if we found one
     if (enrichmentData.movieGenre) {
       updateData.movie_genre = enrichmentData.movieGenre
-    }
-
-    // Only update movie_year if we found one
-    if (enrichmentData.extractedYear) {
-      updateData.movie_year = enrichmentData.extractedYear
     }
 
     const { error: updateError } = await supabaseClient

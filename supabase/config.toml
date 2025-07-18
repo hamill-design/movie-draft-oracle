@@ -2,6 +2,3 @@ project_id = "zduruulowyopdstihfwk"
 
 [functions.share-page]
 verify_jwt = false
-
-[functions.backfill-movie-years]
-verify_jwt = false

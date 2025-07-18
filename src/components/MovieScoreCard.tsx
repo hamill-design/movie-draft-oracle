@@ -102,14 +102,9 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
           <div className="flex items-center justify-between flex-1">
             <div>
               <CardTitle className="text-white text-lg">{movieTitle}</CardTitle>
-              <div className="text-gray-400 text-sm">
-                {(movieYear || movieGenre) && (
-                  <p>
-                    {movieYear && `(${movieYear})`}
-                    {movieYear && movieGenre && ' • '}
-                    {movieGenre}
-                  </p>
-                )}
+              <div className="text-gray-400 text-sm space-y-0.5">
+                {movieYear && <p>({movieYear})</p>}
+                {movieGenre && <p>{movieGenre}</p>}
               </div>
             </div>
             <div className="text-right">
