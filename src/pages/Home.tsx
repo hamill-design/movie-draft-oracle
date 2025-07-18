@@ -309,7 +309,7 @@ const Home = () => {
                     }`}
                   >
                     <Users className="mr-3" size={20} />
-                    Multiplayer
+                    Online Multiplayer
                   </Button>
                 </div>
                 {draftMode === 'multiplayer' && (
