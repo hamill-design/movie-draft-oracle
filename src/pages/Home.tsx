@@ -296,7 +296,7 @@ const Home = () => {
                     }`}
                   >
                     <Users className="mr-3" size={20} />
-                    Single Player
+                    Local Draft
                   </Button>
                   <Button
                     type="button"
