@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDrafts } from '@/hooks/useDrafts';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import BannerAd from '@/components/ads/BannerAd';
+import InlineAd from '@/components/ads/InlineAd';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -156,6 +157,9 @@ const Profile = () => {
           </Button>
         </div>
 
+        {/* Banner Ad */}
+        <BannerAd className="mb-8" />
+
         {/* User Info */}
         <Card className="bg-gray-800 border-gray-600 mb-8">
           <CardHeader>
@@ -230,17 +234,18 @@ const Profile = () => {
               </p>
             ) : (
               <div className="grid gap-4">
-                {drafts.map((draft) => (
-                   <Card key={draft.id} className="bg-gray-700 border-gray-600 relative">
-                     <Button
-                       onClick={() => handleDeleteDraft(draft.id)}
-                       variant="ghost"
-                       size="sm"
-                       className="absolute top-2 right-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 p-1 h-8 w-8"
-                     >
-                       <Trash2 size={14} />
-                     </Button>
-                     <CardContent className="pt-6">
+                {drafts.map((draft, index) => (
+                  <React.Fragment key={draft.id}>
+                    <Card className="bg-gray-700 border-gray-600 relative">
+                      <Button
+                        onClick={() => handleDeleteDraft(draft.id)}
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 p-1 h-8 w-8"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                      <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                           <div>
                             <div className="flex items-center gap-2 mb-2">
@@ -277,16 +282,20 @@ const Profile = () => {
                                 {draft.categories.length} categories
                               </div>
                             </div>
-                         </div>
-                         <Button
-                           onClick={() => handleViewDraft(draft)}
-                           className="bg-yellow-400 text-black hover:bg-yellow-500"
-                         >
-                           {draft.is_complete ? 'View Draft' : 'Continue Draft'}
-                         </Button>
-                       </div>
-                     </CardContent>
-                   </Card>
+                          </div>
+                          <Button
+                            onClick={() => handleViewDraft(draft)}
+                            className="bg-yellow-400 text-black hover:bg-yellow-500"
+                          >
+                            {draft.is_complete ? 'View Draft' : 'Continue Draft'}
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Inline Ad after every 3 drafts */}
+                    {index > 0 && (index + 1) % 3 === 0 && <InlineAd />}
+                  </React.Fragment>
                 ))}
               </div>
             )}
