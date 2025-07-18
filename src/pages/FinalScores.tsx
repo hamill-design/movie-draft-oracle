@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { DraftPick } from '@/hooks/useDrafts';
 import TeamRoster from '@/components/TeamRoster';
+import ShareResultsButton from '@/components/ShareResultsButton';
 import { getScoreColor, getScoreGrade } from '@/utils/scoreCalculator';
 
 interface TeamScore {
@@ -281,6 +282,15 @@ const FinalScores = () => {
               )}
             </div>
           </div>
+          
+          {/* Share Results Button */}
+          {teamScores.length > 0 && !enrichingData && (
+            <ShareResultsButton
+              draftTitle={draft.title}
+              teamScores={teamScores}
+              picks={picks}
+            />
+          )}
         </div>
 
         {/* Show loading state while enriching */}
