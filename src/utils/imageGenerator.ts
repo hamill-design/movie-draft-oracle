@@ -25,9 +25,9 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
     throw new Error('Canvas not supported');
   }
 
-  // Set canvas dimensions (1920x1080)
-  canvas.width = 1920;
-  canvas.height = 1080;
+  // Set canvas dimensions (1080x1920)
+  canvas.width = 1080;
+  canvas.height = 1920;
 
   // Draw background gradient
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
