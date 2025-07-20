@@ -157,8 +157,8 @@ const Profile = () => {
           </Button>
         </div>
 
-        {/* Banner Ad */}
-        <BannerAd className="mb-8" />
+        {/* Banner Ad - Hidden for now */}
+        {/* <BannerAd className="mb-8" /> */}
 
         {/* User Info */}
         <Card className="bg-gray-800 border-gray-600 mb-8">
@@ -293,8 +293,8 @@ const Profile = () => {
                       </CardContent>
                     </Card>
                     
-                    {/* Inline Ad after every 3 drafts */}
-                    {index > 0 && (index + 1) % 3 === 0 && <InlineAd />}
+                    {/* Inline Ad after every 3 drafts - Hidden for now */}
+                    {/* {index > 0 && (index + 1) % 3 === 0 && <InlineAd />} */}
                   </React.Fragment>
                 ))}
               </div>
