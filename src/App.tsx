@@ -19,6 +19,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 import { JoinDraft } from "./pages/JoinDraft";
+import LearnMore from "./pages/LearnMore";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/final-scores/:draftId" element={<FinalScores />} />
             <Route path="/join-draft/:draftId" element={<JoinDraft />} />
             <Route path="/join-draft" element={<JoinDraft />} />
+            <Route path="/learn-more" element={<LearnMore />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
