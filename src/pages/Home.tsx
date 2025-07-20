@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Users, Calendar, Film, Search, Mail } from 'lucide-react';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { useAuth } from '@/contexts/AuthContext';
+import { ActorPortrait } from '@/components/ActorPortrait';
 import { useDraftCategories } from '@/hooks/useDraftCategories';
 import CategoriesForm from '@/components/CategoriesForm';
 import { JoinDraftForm } from '@/components/JoinDraftForm';
@@ -107,9 +108,13 @@ const Home = () => {
     });
   };
 
-  const handleOptionSelect = (option: string | { title: string }) => {
-    const optionValue = typeof option === 'string' ? option : option.title;
-    setSelectedOption(optionValue);
+  const handleOptionSelect = (option: string | { title: string; profile_path?: string }) => {
+    if (typeof option === 'string') {
+      setSelectedOption(option);
+    } else {
+      // For people, store both name and profile_path
+      setSelectedOption(theme === 'people' ? `${option.title}|${option.profile_path || ''}` : option.title);
+    }
     setSearchQuery('');
   };
 
@@ -210,9 +215,16 @@ const Home = () => {
                     
                     {selectedOption && (
                       <div className="mb-4">
-                        <Badge variant="secondary" className="bg-yellow-400 text-black">
-                          Selected: {selectedOption}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <ActorPortrait 
+                            profilePath={selectedOption.split('|')[1] || null}
+                            name={selectedOption.split('|')[0]}
+                            size="sm"
+                          />
+                          <Badge variant="secondary" className="bg-yellow-400 text-black">
+                            Selected: {selectedOption.split('|')[0]}
+                          </Badge>
+                        </div>
                       </div>
                     )}
 
@@ -226,16 +238,23 @@ const Home = () => {
                           people.slice(0, 10).map((person) => (
                             <div
                               key={person.id}
-                              onClick={() => handleOptionSelect(person.name)}
-                              className={`p-3 rounded cursor-pointer transition-colors ${
-                                selectedOption === person.name
+                              onClick={() => handleOptionSelect({ title: person.name, profile_path: person.profile_path })}
+                              className={`p-3 rounded cursor-pointer transition-colors flex items-center gap-3 ${
+                                selectedOption.startsWith(person.name)
                                   ? 'bg-yellow-400 text-black'
                                   : 'bg-gray-700 hover:bg-gray-600 text-white'
                               }`}
                             >
-                              <div className="font-medium">{person.name}</div>
-                              <div className="text-sm opacity-75">
-                                {person.known_for_department} • Known for: {person.known_for.slice(0, 2).map(item => item.title).join(', ')}
+                              <ActorPortrait 
+                                profilePath={person.profile_path}
+                                name={person.name}
+                                size="sm"
+                              />
+                              <div>
+                                <div className="font-medium">{person.name}</div>
+                                <div className="text-sm opacity-75">
+                                  {person.known_for_department} • Known for: {person.known_for.slice(0, 2).map(item => item.title).join(', ')}
+                                </div>
                               </div>
                             </div>
                           ))

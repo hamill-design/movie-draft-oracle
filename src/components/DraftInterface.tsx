@@ -12,6 +12,7 @@ import CategorySelection from './CategorySelection';
 import PickConfirmation from './PickConfirmation';
 import DraftComplete from './DraftComplete';
 import { MultiplayerDraftInterface } from './MultiplayerDraftInterface';
+import { ActorPortrait } from './ActorPortrait';
 
 interface DraftInterfaceProps {
   draftState: {

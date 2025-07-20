@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ActorPortrait } from './ActorPortrait';
 
 interface DraftHeaderProps {
   draftOption: string;
+  theme?: string;
   currentPlayer?: {
     name: string;
     pick: number;
@@ -14,7 +16,7 @@ interface DraftHeaderProps {
   isComplete: boolean;
 }
 
-const DraftHeader = ({ draftOption, currentPlayer, isComplete }: DraftHeaderProps) => {
+const DraftHeader = ({ draftOption, theme, currentPlayer, isComplete }: DraftHeaderProps) => {
   const navigate = useNavigate();
 
   return (
@@ -37,8 +39,19 @@ const DraftHeader = ({ draftOption, currentPlayer, isComplete }: DraftHeaderProp
       <Card className="bg-gray-800 border-gray-600 mb-6">
         <CardContent className="pt-6">
           <div className="flex items-center justify-center gap-6 text-center">
-            <div>
-              <p className="text-gray-300">Theme: <span className="text-yellow-400 font-bold">{draftOption}</span></p>
+            <div className="flex items-center gap-3">
+              {theme === 'people' && (
+                <ActorPortrait 
+                  profilePath={draftOption.split('|')[1] || null}
+                  name={draftOption.split('|')[0]}
+                  size="md"
+                />
+              )}
+              <p className="text-gray-300">
+                Theme: <span className="text-yellow-400 font-bold">
+                  {theme === 'people' ? draftOption.split('|')[0] : draftOption}
+                </span>
+              </p>
             </div>
             {!isComplete && currentPlayer && (
               <div className="flex items-center gap-2">

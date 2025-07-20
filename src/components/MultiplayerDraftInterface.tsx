@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Copy, Check, Users, Clock, Film, User, Calendar } from 'lucide-react';
 import MovieSearch from '@/components/MovieSearch';
+import { ActorPortrait } from '@/components/ActorPortrait';
 import CategorySelection from '@/components/CategorySelection';
 import PickConfirmation from '@/components/PickConfirmation';
 import DraftBoard from '@/components/DraftBoard';
@@ -207,11 +208,17 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
               <div>
                 <div className="flex items-center gap-3 mb-2">
                   {draft.theme === 'people' ? (
-                    <User size={24} className="text-yellow-400" />
+                    <ActorPortrait 
+                      profilePath={draft.option.split('|')[1] || null}
+                      name={draft.option.split('|')[0]}
+                      size="md"
+                    />
                   ) : (
                     <Calendar size={24} className="text-yellow-400" />
                   )}
-                  <CardTitle className="text-2xl">{draft.option}</CardTitle>
+                  <CardTitle className="text-2xl">
+                    {draft.theme === 'people' ? draft.option.split('|')[0] : draft.option}
+                  </CardTitle>
                 </div>
                 <Badge variant="secondary" className="w-fit">
                   Multiplayer

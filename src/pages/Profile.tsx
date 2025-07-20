@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import BannerAd from '@/components/ads/BannerAd';
 import InlineAd from '@/components/ads/InlineAd';
+import { ActorPortrait } from '@/components/ActorPortrait';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -248,14 +249,23 @@ const Profile = () => {
                       <CardContent className="pt-6">
                         <div className="flex items-center justify-between">
                           <div>
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-3 mb-2">
                               {draft.theme === 'year' ? (
                                 <Calendar size={20} className="text-yellow-400" />
                               ) : (
-                                <User size={20} className="text-yellow-400" />
+                                <>
+                                  <ActorPortrait 
+                                    profilePath={draft.theme === 'people' ? draft.option.split('|')[1] : null}
+                                    name={draft.theme === 'people' ? draft.option.split('|')[0] : draft.option}
+                                    size="md"
+                                  />
+                                  {draft.theme !== 'people' && (
+                                    <User size={20} className="text-yellow-400" />
+                                  )}
+                                </>
                               )}
                               <h3 className="text-white font-semibold text-lg">
-                                {draft.option}
+                                {draft.theme === 'people' ? draft.option.split('|')[0] : draft.option}
                               </h3>
                             </div>
                             <div className="mb-2">

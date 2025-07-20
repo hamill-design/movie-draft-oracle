@@ -103,6 +103,7 @@ const Index = () => {
       <div className="container mx-auto px-4 py-8">
         <DraftHeader
           draftOption={draftState.option}
+          theme={draftState.theme}
           currentPlayer={undefined} // Will be handled by DraftInterface
           isComplete={false} // Will be handled by DraftInterface
         />
