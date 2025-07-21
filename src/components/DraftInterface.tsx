@@ -186,6 +186,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
         categories={draftState.categories}
         picks={picks}
         theme={draftState.theme}
+        draftOption={draftState.option}
         currentPlayer={currentPlayer}
       />
 

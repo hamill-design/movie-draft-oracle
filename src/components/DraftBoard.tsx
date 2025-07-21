@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { User } from 'lucide-react';
+import { DraftActorPortrait } from './DraftActorPortrait';
 
 interface Pick {
   playerId: number;
@@ -21,21 +22,33 @@ interface DraftBoardProps {
   categories: string[];
   picks: Pick[];
   theme: string;
+  draftOption: string;
   currentPlayer?: {
     id: number;
     name: string;
   };
 }
 
-const DraftBoard = ({ players, categories, picks, theme, currentPlayer }: DraftBoardProps) => {
+const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPlayer }: DraftBoardProps) => {
   // Debug logging
   console.log('DraftBoard - Current player:', currentPlayer);
   console.log('DraftBoard - Players:', players);
 
+  // Extract actor name for people theme
+  const actorName = theme === 'people' ? draftOption.split('|')[0] : '';
+
   return (
     <Card className="bg-gray-800 border-gray-600 mb-6">
       <CardHeader>
-        <CardTitle className="text-white">Draft Board</CardTitle>
+        <CardTitle className="text-white flex items-center gap-3">
+          Draft Board
+          {theme === 'people' && (
+            <DraftActorPortrait 
+              actorName={actorName}
+              size="sm"
+            />
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
