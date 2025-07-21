@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User } from 'lucide-react';
@@ -15,7 +16,7 @@ const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/';
 const sizeClasses = {
   sm: 'h-8 w-8',
   md: 'h-12 w-12', 
-  lg: 'h-16 w-16'
+  lg: 'h-20 w-20'
 };
 
 const sizeImagePath = {
@@ -48,7 +49,7 @@ export const ActorPortrait: React.FC<ActorPortraitProps> = ({
         />
       )}
       <AvatarFallback className="bg-muted text-muted-foreground">
-        {initials || <User size={size === 'sm' ? 12 : size === 'md' ? 16 : 20} />}
+        {initials || <User size={size === 'sm' ? 12 : size === 'md' ? 16 : 24} />}
       </AvatarFallback>
     </Avatar>
   );
