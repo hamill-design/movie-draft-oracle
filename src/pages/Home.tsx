@@ -219,7 +219,7 @@ const Home = () => {
                           <ActorPortrait 
                             profilePath={selectedOption.split('|')[1] || null}
                             name={selectedOption.split('|')[0]}
-                            size="sm"
+                            size="md"
                           />
                           <Badge variant="secondary" className="bg-yellow-400 text-black">
                             Selected: {selectedOption.split('|')[0]}
@@ -248,7 +248,7 @@ const Home = () => {
                               <ActorPortrait 
                                 profilePath={person.profile_path}
                                 name={person.name}
-                                size="sm"
+                                size="md"
                               />
                               <div>
                                 <div className="font-medium">{person.name}</div>
