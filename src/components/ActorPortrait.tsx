@@ -16,7 +16,7 @@ const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/';
 const sizeClasses = {
   sm: 'h-8 w-8',
   md: 'h-12 w-12', 
-  lg: 'h-20 w-20'
+  lg: 'h-24 w-24'
 };
 
 const sizeImagePath = {
