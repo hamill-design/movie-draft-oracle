@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import BannerAd from '@/components/ads/BannerAd';
 import InlineAd from '@/components/ads/InlineAd';
-import { ActorPortrait } from '@/components/ActorPortrait';
+import { DraftActorPortrait } from '@/components/DraftActorPortrait';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -253,9 +253,8 @@ const Profile = () => {
                               {draft.theme === 'year' ? (
                                 <Calendar size={20} className="text-yellow-400" />
                               ) : draft.theme === 'people' ? (
-                                <ActorPortrait 
-                                  profilePath={null}
-                                  name={draft.option}
+                                <DraftActorPortrait 
+                                  actorName={draft.option}
                                   size="md"
                                 />
                               ) : (

@@ -1,0 +1,43 @@
+
+import React from 'react';
+import { usePeopleSearch } from '@/hooks/usePeopleSearch';
+import { ActorPortrait } from './ActorPortrait';
+import { User } from 'lucide-react';
+
+interface DraftActorPortraitProps {
+  actorName: string;
+  size?: 'sm' | 'md' | 'lg';
+  className?: string;
+}
+
+export const DraftActorPortrait: React.FC<DraftActorPortraitProps> = ({
+  actorName,
+  size = 'md',
+  className
+}) => {
+  const { people, loading } = usePeopleSearch(actorName);
+  
+  // Find the exact match for the actor name
+  const actor = people.find(person => 
+    person.name.toLowerCase() === actorName.toLowerCase()
+  );
+
+  if (loading) {
+    return (
+      <div className={`bg-gray-600 rounded-full flex items-center justify-center ${
+        size === 'sm' ? 'h-8 w-8' : size === 'md' ? 'h-12 w-12' : 'h-16 w-16'
+      } ${className}`}>
+        <User size={size === 'sm' ? 12 : size === 'md' ? 16 : 20} className="text-gray-400" />
+      </div>
+    );
+  }
+
+  return (
+    <ActorPortrait
+      profilePath={actor?.profile_path || null}
+      name={actorName}
+      size={size}
+      className={className}
+    />
+  );
+};

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useDraftGame } from '@/hooks/useDraftGame';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
@@ -12,7 +11,7 @@ import CategorySelection from './CategorySelection';
 import PickConfirmation from './PickConfirmation';
 import DraftComplete from './DraftComplete';
 import { MultiplayerDraftInterface } from './MultiplayerDraftInterface';
-import { ActorPortrait } from './ActorPortrait';
+import { DraftActorPortrait } from './DraftActorPortrait';
 
 interface DraftInterfaceProps {
   draftState: {
