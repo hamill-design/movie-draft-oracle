@@ -252,26 +252,17 @@ const Profile = () => {
                             <div className="flex items-center gap-3 mb-2">
                               {draft.theme === 'year' ? (
                                 <Calendar size={20} className="text-yellow-400" />
+                              ) : draft.theme === 'people' ? (
+                                <ActorPortrait 
+                                  profilePath={null}
+                                  name={draft.option}
+                                  size="md"
+                                />
                               ) : (
-                                <>
-                              <ActorPortrait 
-                                profilePath={draft.theme === 'people' ? (() => {
-                                  console.log('Draft option:', draft.option);
-                                  const parts = draft.option.split('|');
-                                  console.log('Split parts:', parts);
-                                  console.log('Profile path:', parts[1]);
-                                  return parts[1];
-                                })() : null}
-                                name={draft.theme === 'people' ? draft.option.split('|')[0] : draft.option}
-                                size="md"
-                              />
-                                  {draft.theme !== 'people' && (
-                                    <User size={20} className="text-yellow-400" />
-                                  )}
-                                </>
+                                <User size={20} className="text-yellow-400" />
                               )}
                               <h3 className="text-white font-semibold text-lg">
-                                {draft.theme === 'people' ? draft.option.split('|')[0] : draft.option}
+                                {draft.option}
                               </h3>
                             </div>
                             <div className="mb-2">
