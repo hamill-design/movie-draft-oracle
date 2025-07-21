@@ -40,15 +40,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
   return (
     <Card className="bg-gray-800 border-gray-600 mb-6">
       <CardHeader>
-        <CardTitle className="text-white flex items-center gap-3">
-          Draft Board
-          {theme === 'people' && (
-            <DraftActorPortrait 
-              actorName={actorName}
-              size="sm"
-            />
-          )}
-        </CardTitle>
+        <CardTitle className="text-white">Draft Board</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
