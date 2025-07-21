@@ -47,7 +47,7 @@ export const ActorPortrait: React.FC<ActorPortraitProps> = ({
           className="object-cover"
         />
       )}
-      <AvatarFallback className="bg-gray-600 text-gray-300">
+      <AvatarFallback className="bg-muted text-muted-foreground">
         {initials || <User size={size === 'sm' ? 12 : size === 'md' ? 16 : 20} />}
       </AvatarFallback>
     </Avatar>
