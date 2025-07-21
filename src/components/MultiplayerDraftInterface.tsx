@@ -381,6 +381,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
               players={participants.map((p, index) => ({ id: index + 1, name: p.participant_name }))}
               categories={draft.categories}
               theme={draft.theme}
+              draftOption={draft.option}
               currentPlayer={currentTurnPlayer ? { 
                 id: participants.findIndex(p => p.user_id === currentTurnPlayer.user_id) + 1, 
                 name: currentTurnPlayer.participant_name 
