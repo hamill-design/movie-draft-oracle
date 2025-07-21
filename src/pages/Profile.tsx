@@ -254,11 +254,17 @@ const Profile = () => {
                                 <Calendar size={20} className="text-yellow-400" />
                               ) : (
                                 <>
-                                  <ActorPortrait 
-                                    profilePath={draft.theme === 'people' ? draft.option.split('|')[1] : null}
-                                    name={draft.theme === 'people' ? draft.option.split('|')[0] : draft.option}
-                                    size="md"
-                                  />
+                              <ActorPortrait 
+                                profilePath={draft.theme === 'people' ? (() => {
+                                  console.log('Draft option:', draft.option);
+                                  const parts = draft.option.split('|');
+                                  console.log('Split parts:', parts);
+                                  console.log('Profile path:', parts[1]);
+                                  return parts[1];
+                                })() : null}
+                                name={draft.theme === 'people' ? draft.option.split('|')[0] : draft.option}
+                                size="md"
+                              />
                                   {draft.theme !== 'people' && (
                                     <User size={20} className="text-yellow-400" />
                                   )}
