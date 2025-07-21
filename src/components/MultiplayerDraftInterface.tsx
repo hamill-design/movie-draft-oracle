@@ -210,7 +210,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
                   {draft.theme === 'people' ? (
                     <DraftActorPortrait 
                       actorName={draft.option}
-                      size="lg"
+                      size="md"
                     />
                   ) : (
                     <Calendar size={24} className="text-yellow-400" />
