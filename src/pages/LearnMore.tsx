@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -25,7 +26,7 @@ const LearnMore = () => {
         <div className="container mx-auto max-w-4xl">
           <h2 className="text-3xl font-bold text-yellow-400 mb-12 text-center">How to Play Movie Draft</h2>
           
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 gap-8">
             {/* What is Movie Draft */}
             <Card className="bg-gray-800 border-gray-600">
               <CardHeader>
