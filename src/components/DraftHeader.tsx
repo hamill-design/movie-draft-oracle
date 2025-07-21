@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { ActorPortrait } from './ActorPortrait';
+import { DraftActorPortrait } from './DraftActorPortrait';
 
 interface DraftHeaderProps {
   draftOption: string;
@@ -41,15 +41,14 @@ const DraftHeader = ({ draftOption, theme, currentPlayer, isComplete }: DraftHea
           <div className="flex items-center justify-center gap-6 text-center">
             <div className="flex items-center gap-3">
               {theme === 'people' && (
-                <ActorPortrait 
-                  profilePath={draftOption.split('|')[1] || null}
-                  name={draftOption.split('|')[0]}
+                <DraftActorPortrait 
+                  actorName={draftOption}
                   size="md"
                 />
               )}
               <p className="text-gray-300">
                 Theme: <span className="text-yellow-400 font-bold">
-                  {theme === 'people' ? draftOption.split('|')[0] : draftOption}
+                  {theme === 'people' ? draftOption : draftOption}
                 </span>
               </p>
             </div>
