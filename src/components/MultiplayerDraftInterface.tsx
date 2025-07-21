@@ -210,7 +210,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
                   {draft.theme === 'people' ? (
                     <DraftActorPortrait 
                       actorName={draft.option}
-                      size="md"
+                      size="lg"
                     />
                   ) : (
                     <Calendar size={24} className="text-yellow-400" />
@@ -465,7 +465,6 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
           </div>
         </div>
       </div>
-
 
       {/* Diagnostic Info - Only show in development or when debugging */}
       <DiagnosticInfo

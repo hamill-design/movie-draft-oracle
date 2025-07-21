@@ -43,7 +43,7 @@ const DraftHeader = ({ draftOption, theme, currentPlayer, isComplete }: DraftHea
               {theme === 'people' && (
                 <DraftActorPortrait 
                   actorName={draftOption}
-                  size="md"
+                  size="lg"
                 />
               )}
               <p className="text-gray-300">

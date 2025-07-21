@@ -255,7 +255,7 @@ const Profile = () => {
                               ) : draft.theme === 'people' ? (
                                 <DraftActorPortrait 
                                   actorName={draft.option}
-                                  size="md"
+                                  size="lg"
                                 />
                               ) : (
                                 <User size={20} className="text-yellow-400" />
