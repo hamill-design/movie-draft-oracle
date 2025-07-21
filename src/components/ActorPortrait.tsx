@@ -20,9 +20,9 @@ const sizeClasses = {
 };
 
 const sizeImagePath = {
-  sm: 'w45',
-  md: 'w185',
-  lg: 'w185'
+  sm: 'w185',
+  md: 'w500',
+  lg: 'w500'
 };
 
 export const ActorPortrait: React.FC<ActorPortraitProps> = ({
