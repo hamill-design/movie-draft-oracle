@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Movie } from '@/data/movies';
+import { getCleanActorName } from '@/lib/utils';
 
 export const useMovies = (category?: string, searchQuery?: string) => {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -19,9 +20,16 @@ export const useMovies = (category?: string, searchQuery?: string) => {
       
       // For theme-based categories (year, person), we need to pass the theme parameter 
       // as the searchQuery to the backend to constrain the initial dataset
+      // Clean the actor name if it's a person search to remove corrupted data
+      let cleanedSearchQuery = searchQuery || '';
+      if (category === 'person' && searchQuery) {
+        cleanedSearchQuery = getCleanActorName(searchQuery);
+        console.log('useMovies - Cleaned actor name from:', searchQuery, 'to:', cleanedSearchQuery);
+      }
+      
       const requestBody = {
         category,
-        searchQuery: searchQuery || '',
+        searchQuery: cleanedSearchQuery,
         fetchAll: true // Always fetch all within the theme constraint
       };
       

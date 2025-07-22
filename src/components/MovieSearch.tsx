@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -28,11 +29,20 @@ const MovieSearch = ({
   onMovieSelect,
   themeParameter
 }: MovieSearchProps) => {
+  console.log('MovieSearch - Props received:', {
+    theme,
+    option,
+    movies: movies.length,
+    loading,
+    searchQuery,
+    themeParameter
+  });
+
   const getPlaceholderText = () => {
     if (theme === 'year') {
       return `Search within ${option} movies...`;
     } else if (theme === 'people') {
-      return `Search within ${option} movies...`;
+      return `Search within ${getCleanActorName(option)} movies...`;
     } else {
       return `Search for movies...`;
     }
@@ -46,6 +56,8 @@ const MovieSearch = ({
         movie.title.toLowerCase().includes(searchQuery.toLowerCase().trim())
       )
     : [];
+
+  console.log('MovieSearch - Filtered movies:', filteredMovies.length, 'from total:', movies.length);
 
   // Only show results if user has started typing
   const shouldShowResults = searchQuery.trim().length > 0;
@@ -76,6 +88,10 @@ const MovieSearch = ({
           <div className="mt-4 max-h-60 overflow-y-auto space-y-2">
             {loading ? (
               <div className="text-gray-400">Loading movies...</div>
+            ) : movies.length === 0 ? (
+              <div className="text-gray-400">
+                No movies available for {theme === 'year' ? `${option}` : theme === 'people' ? `${getCleanActorName(option)}` : 'this search'}
+              </div>
             ) : filteredMovies.length === 0 ? (
               <div className="text-gray-400">
                 No movies found matching "{searchQuery}" {theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${getCleanActorName(option)}` : ''}
