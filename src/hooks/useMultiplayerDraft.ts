@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useProfile } from '@/hooks/useProfile';
+import { useProfileFixer } from '@/hooks/useProfileFixer';
 
 interface DraftParticipant {
   id: string;
@@ -33,6 +34,7 @@ interface MultiplayerDraft {
 export const useMultiplayerDraft = (draftId?: string) => {
   const { user } = useAuth();
   const { getDisplayName, profile, loading: profileLoading } = useProfile();
+  const { fixMyParticipantNames } = useProfileFixer();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -671,5 +673,6 @@ export const useMultiplayerDraft = (draftId?: string) => {
     makePick,
     loadDraft,
     startDraft,
+    fixMyParticipantNames,
   };
 };

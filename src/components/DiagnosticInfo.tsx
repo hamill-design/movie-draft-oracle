@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { useProfileFixer } from '@/hooks/useProfileFixer';
 
 interface DiagnosticInfoProps {
   draft: any;
@@ -21,6 +22,7 @@ export const DiagnosticInfo: React.FC<DiagnosticInfoProps> = ({
 }) => {
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [dbState, setDbState] = useState<any>(null);
+  const { fixMyParticipantNames } = useProfileFixer();
 
   const fetchCurrentDbState = async () => {
     console.log('🔍 DIAGNOSTIC v1.0 - Fetching current DB state...');
@@ -119,6 +121,15 @@ export const DiagnosticInfo: React.FC<DiagnosticInfoProps> = ({
               className="w-full text-xs"
             >
               🔄 Fetch DB State
+            </Button>
+            
+            <Button
+              onClick={fixMyParticipantNames}
+              variant="outline"
+              size="sm"
+              className="w-full text-xs bg-blue-50 hover:bg-blue-100"
+            >
+              🔧 Fix My Name in Past Drafts
             </Button>
             
             {dbState && (
