@@ -23,6 +23,12 @@ const Profile = () => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState('');
 
+  // Helper function to extract clean actor name from option field
+  const getCleanActorName = (option: string) => {
+    // If the option contains a pipe character, it's corrupted data - extract just the name
+    return option.includes('|') ? option.split('|')[0] : option;
+  };
+
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
@@ -254,14 +260,14 @@ const Profile = () => {
                                 <Calendar size={20} className="text-yellow-400" />
                               ) : draft.theme === 'people' ? (
                                 <DraftActorPortrait 
-                                  actorName={draft.option}
+                                  actorName={getCleanActorName(draft.option)}
                                   size="md"
                                 />
                               ) : (
                                 <User size={20} className="text-yellow-400" />
                               )}
                               <h3 className="text-white font-semibold text-lg">
-                                {draft.option}
+                                {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
                               </h3>
                             </div>
                             <div className="mb-2">
