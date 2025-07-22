@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useProfile } from '@/hooks/useProfile';
 
 interface DraftParticipant {
   id: string;
@@ -31,6 +32,7 @@ interface MultiplayerDraft {
 
 export const useMultiplayerDraft = (draftId?: string) => {
   const { user } = useAuth();
+  const { getDisplayName } = useProfile();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -78,7 +80,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
         .insert({
           draft_id: newDraft.id,
           user_id: user.id,
-          participant_name: user.email || 'Host',
+          participant_name: getDisplayName(),
           status: 'joined',
           is_host: true,
           joined_at: new Date().toISOString(),
@@ -102,7 +104,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
         const invitePayload = {
           draftId: newDraft.id,
           draftTitle: draftData.title,
-          hostName: user.email || 'Unknown Host',
+          hostName: getDisplayName(),
           participantEmails: draftData.participantEmails,
           theme: draftData.theme,
           option: draftData.option,
