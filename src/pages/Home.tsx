@@ -112,8 +112,8 @@ const Home = () => {
     if (typeof option === 'string') {
       setSelectedOption(option);
     } else {
-      // For people, store both name and profile_path
-      setSelectedOption(theme === 'people' ? `${option.title}|${option.profile_path || ''}` : option.title);
+      // For people, store only the name (not the profile path)
+      setSelectedOption(option.title);
     }
     setSearchQuery('');
   };

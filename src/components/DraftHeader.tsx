@@ -19,6 +19,12 @@ interface DraftHeaderProps {
 const DraftHeader = ({ draftOption, theme, currentPlayer, isComplete }: DraftHeaderProps) => {
   const navigate = useNavigate();
 
+  // Helper function to extract clean actor name from option field
+  const getCleanActorName = (option: string) => {
+    // If the option contains a pipe character, it's corrupted data - extract just the name
+    return option.includes('|') ? option.split('|')[0] : option;
+  };
+
   return (
     <>
       {/* Header */}
@@ -42,13 +48,13 @@ const DraftHeader = ({ draftOption, theme, currentPlayer, isComplete }: DraftHea
             <div className="flex items-center gap-3">
               {theme === 'people' && (
                 <DraftActorPortrait 
-                  actorName={draftOption}
+                  actorName={getCleanActorName(draftOption)}
                   size="lg"
                 />
               )}
               <p className="text-gray-300">
                 Theme: <span className="text-yellow-400 font-bold">
-                  {theme === 'people' ? draftOption : draftOption}
+                  {theme === 'people' ? getCleanActorName(draftOption) : draftOption}
                 </span>
               </p>
             </div>

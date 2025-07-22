@@ -52,6 +52,12 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
   const [searchQuery, setSearchQuery] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
 
+  // Helper function to extract clean actor name from option field
+  const getCleanActorName = (option: string) => {
+    // If the option contains a pipe character, it's corrupted data - extract just the name
+    return option.includes('|') ? option.split('|')[0] : option;
+  };
+
   // Get base category for movie search
   const getBaseCategory = () => {
     if (!draft) return '';
@@ -209,14 +215,14 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
                 <div className="flex items-center gap-3 mb-2">
                   {draft.theme === 'people' ? (
                     <DraftActorPortrait 
-                      actorName={draft.option}
+                      actorName={getCleanActorName(draft.option)}
                       size="md"
                     />
                   ) : (
                     <Calendar size={24} className="text-yellow-400" />
                   )}
                   <CardTitle className="text-2xl">
-                    {draft.theme === 'people' ? draft.option : draft.option}
+                    {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
                   </CardTitle>
                 </div>
                 <Badge variant="secondary" className="w-fit">
@@ -380,7 +386,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
               players={participants.map((p, index) => ({ id: index + 1, name: p.participant_name }))}
               categories={draft.categories}
               theme={draft.theme}
-              draftOption={draft.option}
+              draftOption={getCleanActorName(draft.option)}
               currentPlayer={currentTurnPlayer ? { 
                 id: participants.findIndex(p => p.user_id === currentTurnPlayer.user_id) + 1, 
                 name: currentTurnPlayer.participant_name 
