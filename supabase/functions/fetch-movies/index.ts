@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -92,6 +93,31 @@ async function getOscarStatus(tmdbId: number, title: string, year: number): Prom
   }
 }
 
+// Helper function to extract year from various date formats
+function getYearFromDate(dateString: string): number {
+  if (!dateString) return 0;
+  
+  // Handle different date formats
+  const year = parseInt(dateString.substring(0, 4));
+  return isNaN(year) ? 0 : year;
+}
+
+// Helper function to validate if a movie matches the requested year
+function movieMatchesYear(movie: any, requestedYear: number): boolean {
+  if (!movie || !requestedYear) return false;
+  
+  // Check multiple date fields for better accuracy
+  const releaseYear = movie.release_date ? getYearFromDate(movie.release_date) : 0;
+  
+  const matches = releaseYear === requestedYear;
+  
+  if (!matches) {
+    console.log(`Filtering out "${movie.title}" - release year: ${releaseYear}, requested: ${requestedYear}`);
+  }
+  
+  return matches;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -141,10 +167,13 @@ serve(async (req) => {
           });
         }
         
-        baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${yearNum}&sort_by=popularity.desc`;
+        // Use multiple TMDB parameters for more precise filtering
+        const startDate = `${yearNum}-01-01`;
+        const endDate = `${yearNum}-12-31`;
+        baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${yearNum}&year=${yearNum}&release_date.gte=${startDate}&release_date.lte=${endDate}&sort_by=popularity.desc`;
         url = `${baseUrl}&page=${page}`;
-        console.log('Year search URL:', url);
-        console.log('Searching for movies from year:', yearNum, 'using primary_release_year filter');
+        console.log('Enhanced year search URL:', url);
+        console.log('Using multiple year filters: primary_release_year, year, and release_date range for:', yearNum);
         break;
       case 'person':
         // First, search for the person to get their ID
@@ -289,8 +318,16 @@ serve(async (req) => {
               const pageData = await response.json();
               
               if (pageData.results && pageData.results.length > 0) {
+                // For year category, apply strict filtering on each page
+                let pagesToAdd = pageData.results;
+                if (category === 'year') {
+                  const requestedYear = parseInt(searchQuery);
+                  pagesToAdd = pageData.results.filter((movie: any) => movieMatchesYear(movie, requestedYear));
+                  console.log(`Page ${currentPage}: ${pageData.results.length} total movies, ${pagesToAdd.length} matching year ${requestedYear}`);
+                }
+                
                 // Filter out duplicates based on movie ID
-                const newMovies = pageData.results.filter((movie: any) => {
+                const newMovies = pagesToAdd.filter((movie: any) => {
                   if (seenMovieIds.has(movie.id)) {
                     return false;
                   }
@@ -298,7 +335,7 @@ serve(async (req) => {
                   return true;
                 });
                 allResults.push(...newMovies);
-                console.log(`Page ${currentPage}: Added ${newMovies.length} new movies (${pageData.results.length - newMovies.length} duplicates filtered). Total unique: ${allResults.length}`);
+                console.log(`Page ${currentPage}: Added ${newMovies.length} new movies (${pagesToAdd.length - newMovies.length} duplicates filtered). Total unique: ${allResults.length}`);
               } else {
                 console.log(`Page ${currentPage}: No results, stopping fetch`);
                 break;
@@ -361,27 +398,30 @@ serve(async (req) => {
       }
     }
 
-    console.log('TMDB API response:', data);
+    console.log('TMDB API response received with', (data.results || []).length, 'movies');
     
-    // For year category, add additional logging to verify year filtering is working
+    // Apply robust year filtering for year category
     if (category === 'year') {
-      const years = (data.results || []).map((movie: any) => 
-        movie.release_date ? new Date(movie.release_date).getFullYear() : 'unknown'
-      );
-      console.log('Year filtering check - requested year:', searchQuery, 'movies returned:', years);
-      
-      // Filter out any movies that don't match the requested year
       const requestedYear = parseInt(searchQuery);
-      data.results = (data.results || []).filter((movie: any) => {
-        const movieYear = movie.release_date ? new Date(movie.release_date).getFullYear() : 0;
-        const matches = movieYear === requestedYear;
-        if (!matches) {
-          console.log(`Filtering out movie "${movie.title}" (${movieYear}) - doesn't match requested year ${requestedYear}`);
-        }
-        return matches;
-      });
+      const originalCount = (data.results || []).length;
       
-      console.log(`After year filtering: ${data.results.length} movies remaining`);
+      // Log all years before filtering for debugging
+      const allYears = (data.results || []).map((movie: any) => ({
+        title: movie.title,
+        releaseDate: movie.release_date,
+        year: getYearFromDate(movie.release_date || '')
+      }));
+      console.log('Pre-filtering year analysis:', allYears.slice(0, 10)); // Log first 10 for debugging
+      
+      // Apply strict year filtering
+      data.results = (data.results || []).filter((movie: any) => movieMatchesYear(movie, requestedYear));
+      
+      const filteredCount = data.results.length;
+      console.log(`Year filtering complete: ${originalCount} → ${filteredCount} movies (removed ${originalCount - filteredCount} movies that didn't match year ${requestedYear})`);
+      
+      // Update pagination info after filtering
+      data.total_results = filteredCount;
+      data.total_pages = Math.ceil(filteredCount / 20);
     }
 
     // Enhanced movie data transformation with proper Oscar and blockbuster detection
@@ -405,7 +445,7 @@ serve(async (req) => {
         }
 
         // Get accurate Oscar status from OMDb API with caching
-        const movieYear = detailedMovie.release_date ? new Date(detailedMovie.release_date).getFullYear() : movie.release_date ? new Date(movie.release_date).getFullYear() : 0;
+        const movieYear = detailedMovie.release_date ? getYearFromDate(detailedMovie.release_date) : movie.release_date ? getYearFromDate(movie.release_date) : 0;
         const oscarStatus = await getOscarStatus(movie.id, movie.title, movieYear);
         hasOscar = oscarStatus !== 'none';
         
@@ -416,7 +456,7 @@ serve(async (req) => {
       return {
         id: movie.id,
         title: movie.title,
-        year: movie.release_date ? new Date(movie.release_date).getFullYear() : 0,
+        year: movie.release_date ? getYearFromDate(movie.release_date) : 0,
         genre: movie.genre_ids?.[0] ? getGenreName(movie.genre_ids[0]) : 'Unknown',
         director: 'Unknown',
         runtime: detailedMovie.runtime || 120,

@@ -48,16 +48,32 @@ const MovieSearch = ({
     }
   };
 
-  // Filter movies based on search query if provided
-  // The movies array already contains only movies constrained by the theme (year/person)
-  // Here we just filter by title within those constrained results
+  // Apply frontend filtering as a safety net for year-based drafts
+  let filteredMoviesByTheme = movies;
+  if (theme === 'year') {
+    const requestedYear = parseInt(option);
+    filteredMoviesByTheme = movies.filter(movie => {
+      const movieYear = movie.year;
+      const matches = movieYear === requestedYear;
+      if (!matches) {
+        console.log(`Frontend safety filter: Removing "${movie.title}" (${movieYear}) - doesn't match requested year ${requestedYear}`);
+      }
+      return matches;
+    });
+    
+    if (filteredMoviesByTheme.length !== movies.length) {
+      console.log(`Frontend safety filter: ${movies.length} → ${filteredMoviesByTheme.length} movies after year filtering`);
+    }
+  }
+
+  // Filter by search query within the theme-constrained results
   const filteredMovies = searchQuery.trim() 
-    ? movies.filter(movie => 
+    ? filteredMoviesByTheme.filter(movie => 
         movie.title.toLowerCase().includes(searchQuery.toLowerCase().trim())
       )
     : [];
 
-  console.log('MovieSearch - Filtered movies:', filteredMovies.length, 'from total:', movies.length);
+  console.log('MovieSearch - Final filtered movies:', filteredMovies.length, 'from theme-filtered:', filteredMoviesByTheme.length, 'from total:', movies.length);
 
   // Only show results if user has started typing
   const shouldShowResults = searchQuery.trim().length > 0;
@@ -88,7 +104,7 @@ const MovieSearch = ({
           <div className="mt-4 max-h-60 overflow-y-auto space-y-2">
             {loading ? (
               <div className="text-gray-400">Loading movies...</div>
-            ) : movies.length === 0 ? (
+            ) : filteredMoviesByTheme.length === 0 ? (
               <div className="text-gray-400">
                 No movies available for {theme === 'year' ? `${option}` : theme === 'people' ? `${getCleanActorName(option)}` : 'this search'}
               </div>
@@ -110,6 +126,9 @@ const MovieSearch = ({
                   <div className="font-medium">{movie.title}</div>
                   <div className="text-sm opacity-75">
                     {movie.year} • {movie.genre}
+                    {theme === 'year' && movie.year !== parseInt(option) && (
+                      <span className="text-red-400 ml-2">[YEAR MISMATCH: {movie.year}]</span>
+                    )}
                   </div>
                 </div>
               ))
