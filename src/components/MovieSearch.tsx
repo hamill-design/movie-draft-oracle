@@ -28,6 +28,11 @@ const MovieSearch = ({
   onMovieSelect,
   themeParameter
 }: MovieSearchProps) => {
+  // Helper function to extract clean actor name from option field
+  const getCleanActorName = (option: string) => {
+    // If the option contains a pipe character, it's corrupted data - extract just the name
+    return option.includes('|') ? option.split('|')[0] : option;
+  };
   const getPlaceholderText = () => {
     if (theme === 'year') {
       return `Search within ${option} movies...`;
@@ -56,7 +61,7 @@ const MovieSearch = ({
         <CardTitle className="text-white flex items-center gap-2">
           <Search className="text-yellow-400" size={24} />
           Search Movies
-          {theme === 'year' ? ` from ${option}` : theme === 'people' ? ` featuring ${option}` : ''}
+          {theme === 'year' ? ` from ${option}` : theme === 'people' ? ` featuring ${getCleanActorName(option)}` : ''}
           {!loading && shouldShowResults && filteredMovies.length > 0 && (
             <span className="text-sm text-gray-400 ml-2">
               ({filteredMovies.length} movies found)
@@ -78,7 +83,7 @@ const MovieSearch = ({
               <div className="text-gray-400">Loading movies...</div>
             ) : filteredMovies.length === 0 ? (
               <div className="text-gray-400">
-                No movies found matching "{searchQuery}" {theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${option}` : ''}
+                No movies found matching "{searchQuery}" {theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${getCleanActorName(option)}` : ''}
               </div>
             ) : (
               filteredMovies.slice(0, 50).map((movie) => (
