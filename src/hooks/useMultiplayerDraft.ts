@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useProfile } from '@/hooks/useProfile';
 import { useProfileFixer } from '@/hooks/useProfileFixer';
 
 interface DraftParticipant {
@@ -31,9 +30,14 @@ interface MultiplayerDraft {
   turn_order: any;
 }
 
-export const useMultiplayerDraft = (draftId?: string) => {
+interface ProfileData {
+  profile: any;
+  getDisplayName: () => string;
+  loading: boolean;
+}
+
+export const useMultiplayerDraft = (draftId?: string, profileData?: ProfileData) => {
   const { user } = useAuth();
-  const { getDisplayName, profile, loading: profileLoading } = useProfile();
   const { fixMyParticipantNames } = useProfileFixer();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -54,38 +58,10 @@ export const useMultiplayerDraft = (draftId?: string) => {
   }) => {
     if (!user) throw new Error('User not authenticated');
 
-    // Strengthen the profile loading check - ensure we have actual profile data
-    if (profileLoading) {
-      console.log('🚫 PROFILE DEBUG - Profile still loading, cannot proceed');
-      throw new Error('Profile still loading, please wait...');
-    }
-
-    // Additional check: ensure we have actual profile data
-    if (!profile) {
-      console.log('🚫 PROFILE DEBUG - No profile data available, attempting to fetch...');
-      
-      // Try to fetch profile data directly as fallback
-      try {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        if (profileError) {
-          console.error('🚫 PROFILE DEBUG - Failed to fetch profile directly:', profileError);
-          throw new Error('Unable to load profile data. Please refresh and try again.');
-        }
-        
-        console.log('🔍 PROFILE DEBUG - Direct profile fetch result:', profileData);
-        
-        if (!profileData?.name) {
-          console.log('⚠️ PROFILE DEBUG - Profile has no name, will use email fallback');
-        }
-      } catch (error) {
-        console.error('🚫 PROFILE DEBUG - Direct profile fetch failed:', error);
-        throw new Error('Unable to load profile data. Please refresh and try again.');
-      }
+    // Use the passed profile data instead of local hook
+    if (!profileData || profileData.loading) {
+      console.log('🚫 PROFILE FIX v1.0 - Profile data not ready, cannot proceed');
+      throw new Error('Profile data not ready, please wait...');
     }
 
     try {
@@ -110,49 +86,25 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
       if (draftError) throw draftError;
 
-      // Get the host's actual profile name with detailed debugging
-      const hostDisplayName = getDisplayName();
+      // Get the host's actual profile name using passed profile data
+      const hostDisplayName = profileData.getDisplayName();
       
-      console.log('🔍 HOST NAME DEBUG - Comprehensive profile state:');
-      console.log('  - Profile loading state:', profileLoading);
-      console.log('  - Profile object:', profile);
-      console.log('  - Profile name:', profile?.name);
+      console.log('🎯 PROFILE FIX v1.0 - Using passed profile data:');
+      console.log('  - Profile object:', profileData.profile);
+      console.log('  - Profile name:', profileData.profile?.name);
       console.log('  - User email:', user.email);
       console.log('  - getDisplayName() result:', hostDisplayName);
-      console.log('  - Type of getDisplayName() result:', typeof hostDisplayName);
       
       // Determine the best name to use for the host
       let hostParticipantName = hostDisplayName;
       
       // If getDisplayName() returned an email, try to use profile.name directly
-      if (hostDisplayName === user.email && profile?.name) {
-        console.log('🔧 HOST NAME DEBUG - getDisplayName() returned email, using profile.name instead:', profile.name);
-        hostParticipantName = profile.name;
+      if (hostDisplayName === user.email && profileData.profile?.name) {
+        console.log('🔧 PROFILE FIX v1.0 - getDisplayName() returned email, using profile.name instead:', profileData.profile.name);
+        hostParticipantName = profileData.profile.name;
       }
       
-      // If we still don't have a proper name, make one final attempt to get it
-      if (hostParticipantName === user.email) {
-        console.log('⚠️ HOST NAME DEBUG - Still using email, making final attempt to get profile name...');
-        
-        try {
-          const { data: freshProfile } = await supabase
-            .from('profiles')
-            .select('name')
-            .eq('id', user.id)
-            .single();
-          
-          if (freshProfile?.name) {
-            console.log('✅ HOST NAME DEBUG - Got fresh profile name:', freshProfile.name);
-            hostParticipantName = freshProfile.name;
-          } else {
-            console.log('🚫 HOST NAME DEBUG - Fresh profile fetch returned no name');
-          }
-        } catch (error) {
-          console.error('🚫 HOST NAME DEBUG - Fresh profile fetch failed:', error);
-        }
-      }
-      
-      console.log('🎯 HOST NAME DEBUG - Final participant name to use:', hostParticipantName);
+      console.log('🎯 PROFILE FIX v1.0 - Final participant name to use:', hostParticipantName);
       
       // Create a participant record for the host using the determined name
       const { error: hostParticipantError } = await supabase
@@ -170,10 +122,10 @@ export const useMultiplayerDraft = (draftId?: string) => {
         console.error('Failed to create host participant:', hostParticipantError);
         // Don't fail the draft creation if this fails
       } else {
-        console.log('✅ HOST NAME DEBUG - Successfully created host participant with name:', hostParticipantName);
+        console.log('✅ PROFILE FIX v1.0 - Successfully created host participant with name:', hostParticipantName);
       }
 
-      // Send email invitations to participants with detailed debugging
+      // Send email invitations to participants
       console.log('📧 EMAIL DEBUG - Starting email invitation process:', {
         draftId: newDraft.id,
         hostEmail: user.email,
@@ -186,7 +138,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
         const invitePayload = {
           draftId: newDraft.id,
           draftTitle: draftData.title,
-          hostName: getDisplayName(),
+          hostName: hostParticipantName, // Use the corrected name
           participantEmails: draftData.participantEmails,
           theme: draftData.theme,
           option: draftData.option,
@@ -262,7 +214,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [user, getDisplayName, profile, profileLoading]);
+  }, [user, profileData]);
 
   // Start the draft with pre-calculated snake draft turn order
   const startDraft = useCallback(async (draftId: string) => {
@@ -666,7 +618,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
     draft,
     participants,
     picks,
-    loading: loading || profileLoading,
+    loading: loading || (profileData?.loading ?? false),
     isMyTurn,
     createMultiplayerDraft,
     joinDraftByCode,

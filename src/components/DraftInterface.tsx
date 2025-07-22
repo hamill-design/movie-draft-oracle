@@ -30,7 +30,7 @@ interface DraftInterfaceProps {
 
 const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const { toast } = useToast();
-  const { loading: profileLoading } = useProfile();
+  const { profile, loading: profileLoading, getDisplayName } = useProfile();
   
   // If this is a multiplayer draft, use the multiplayer interface
   if (draftState.isMultiplayer) {
@@ -65,6 +65,11 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
           participants: draftState.participants,
           categories: draftState.categories,
           isHost: true
+        }}
+        profileData={{
+          profile,
+          getDisplayName,
+          loading: profileLoading
         }}
       />
     );
