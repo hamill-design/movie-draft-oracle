@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { Movie } from '@/data/movies';
+import { getCleanActorName } from '@/lib/utils';
 
 interface MovieSearchProps {
   theme: string;
@@ -28,11 +28,6 @@ const MovieSearch = ({
   onMovieSelect,
   themeParameter
 }: MovieSearchProps) => {
-  // Helper function to extract clean actor name from option field
-  const getCleanActorName = (option: string) => {
-    // If the option contains a pipe character, it's corrupted data - extract just the name
-    return option.includes('|') ? option.split('|')[0] : option;
-  };
   const getPlaceholderText = () => {
     if (theme === 'year') {
       return `Search within ${option} movies...`;

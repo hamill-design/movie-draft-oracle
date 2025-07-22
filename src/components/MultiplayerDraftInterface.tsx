@@ -17,7 +17,7 @@ import PickConfirmation from '@/components/PickConfirmation';
 import DraftBoard from '@/components/DraftBoard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DiagnosticInfo } from '@/components/DiagnosticInfo';
-
+import { getCleanActorName } from '@/lib/utils';
 
 interface MultiplayerDraftInterfaceProps {
   draftId?: string;
@@ -51,12 +51,6 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
-
-  // Helper function to extract clean actor name from option field
-  const getCleanActorName = (option: string) => {
-    // If the option contains a pipe character, it's corrupted data - extract just the name
-    return option.includes('|') ? option.split('|')[0] : option;
-  };
 
   // Get base category for movie search
   const getBaseCategory = () => {
@@ -408,7 +402,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
                   <CardContent className="space-y-4">
                     <MovieSearch
                       theme={draft.theme}
-                      option={draft.option}
+                      option={getCleanActorName(draft.option)}
                       searchQuery={searchQuery}
                       onSearchChange={setSearchQuery}
                       movies={movies}

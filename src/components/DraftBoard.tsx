@@ -1,9 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { User } from 'lucide-react';
 import { DraftActorPortrait } from './DraftActorPortrait';
+import { getCleanActorName } from '@/lib/utils';
 
 interface Pick {
   playerId: number;
@@ -34,8 +34,8 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
   console.log('DraftBoard - Current player:', currentPlayer);
   console.log('DraftBoard - Players:', players);
 
-  // Extract actor name for people theme
-  const actorName = theme === 'people' ? draftOption.split('|')[0] : '';
+  // Extract actor name for people theme using standardized function
+  const actorName = theme === 'people' ? getCleanActorName(draftOption) : '';
 
   return (
     <Card className="bg-gray-800 border-gray-600 mb-6">

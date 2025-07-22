@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DraftActorPortrait } from './DraftActorPortrait';
+import { getCleanActorName } from '@/lib/utils';
 
 interface DraftHeaderProps {
   draftOption: string;
@@ -18,12 +18,6 @@ interface DraftHeaderProps {
 
 const DraftHeader = ({ draftOption, theme, currentPlayer, isComplete }: DraftHeaderProps) => {
   const navigate = useNavigate();
-
-  // Helper function to extract clean actor name from option field
-  const getCleanActorName = (option: string) => {
-    // If the option contains a pipe character, it's corrupted data - extract just the name
-    return option.includes('|') ? option.split('|')[0] : option;
-  };
 
   return (
     <>

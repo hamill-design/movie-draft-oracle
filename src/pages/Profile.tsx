@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import BannerAd from '@/components/ads/BannerAd';
 import InlineAd from '@/components/ads/InlineAd';
 import { DraftActorPortrait } from '@/components/DraftActorPortrait';
+import { getCleanActorName } from '@/lib/utils';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -22,12 +23,6 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState('');
-
-  // Helper function to extract clean actor name from option field
-  const getCleanActorName = (option: string) => {
-    // If the option contains a pipe character, it's corrupted data - extract just the name
-    return option.includes('|') ? option.split('|')[0] : option;
-  };
 
   useEffect(() => {
     if (!loading && !user) {
