@@ -144,6 +144,7 @@ serve(async (req) => {
         baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${yearNum}&sort_by=popularity.desc`;
         url = `${baseUrl}&page=${page}`;
         console.log('Year search URL:', url);
+        console.log('Searching for movies from year:', yearNum, 'using primary_release_year filter');
         break;
       case 'person':
         // First, search for the person to get their ID
@@ -361,6 +362,27 @@ serve(async (req) => {
     }
 
     console.log('TMDB API response:', data);
+    
+    // For year category, add additional logging to verify year filtering is working
+    if (category === 'year') {
+      const years = (data.results || []).map((movie: any) => 
+        movie.release_date ? new Date(movie.release_date).getFullYear() : 'unknown'
+      );
+      console.log('Year filtering check - requested year:', searchQuery, 'movies returned:', years);
+      
+      // Filter out any movies that don't match the requested year
+      const requestedYear = parseInt(searchQuery);
+      data.results = (data.results || []).filter((movie: any) => {
+        const movieYear = movie.release_date ? new Date(movie.release_date).getFullYear() : 0;
+        const matches = movieYear === requestedYear;
+        if (!matches) {
+          console.log(`Filtering out movie "${movie.title}" (${movieYear}) - doesn't match requested year ${requestedYear}`);
+        }
+        return matches;
+      });
+      
+      console.log(`After year filtering: ${data.results.length} movies remaining`);
+    }
 
     // Enhanced movie data transformation with proper Oscar and blockbuster detection
     const transformedMovies = await Promise.all((data.results || []).map(async (movie: any) => {
