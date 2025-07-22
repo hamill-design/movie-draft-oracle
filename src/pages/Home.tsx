@@ -217,12 +217,12 @@ const Home = () => {
                       <div className="mb-4">
                         <div className="flex items-center gap-2">
                           <ActorPortrait 
-                            profilePath={selectedOption.split('|')[1] || null}
-                            name={selectedOption.split('|')[0]}
+                            profilePath={null}
+                            name={selectedOption}
                             size="md"
                           />
                           <Badge variant="secondary" className="bg-yellow-400 text-black">
-                            Selected: {selectedOption.split('|')[0]}
+                            Selected: {selectedOption}
                           </Badge>
                         </div>
                       </div>
@@ -240,7 +240,7 @@ const Home = () => {
                               key={person.id}
                               onClick={() => handleOptionSelect({ title: person.name, profile_path: person.profile_path })}
                               className={`p-3 rounded cursor-pointer transition-colors flex items-center gap-3 ${
-                                selectedOption.startsWith(person.name)
+                                selectedOption === person.name
                                   ? 'bg-yellow-400 text-black'
                                   : 'bg-gray-700 hover:bg-gray-600 text-white'
                               }`}
