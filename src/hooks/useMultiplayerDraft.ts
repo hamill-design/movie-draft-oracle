@@ -32,7 +32,7 @@ interface MultiplayerDraft {
 
 export const useMultiplayerDraft = (draftId?: string) => {
   const { user } = useAuth();
-  const { getDisplayName } = useProfile();
+  const { getDisplayName, loading: profileLoading } = useProfile();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -51,6 +51,11 @@ export const useMultiplayerDraft = (draftId?: string) => {
     participantEmails: string[];  // Changed from participantNames to participantEmails
   }) => {
     if (!user) throw new Error('User not authenticated');
+
+    // Wait for profile to load before proceeding
+    if (profileLoading) {
+      throw new Error('Profile still loading, please wait...');
+    }
 
     try {
       setLoading(true);
@@ -74,8 +79,12 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
       if (draftError) throw draftError;
 
-      // Get the host's actual profile name instead of using email
+      // Get the host's actual profile name (now that we've waited for it to load)
       const hostDisplayName = getDisplayName();
+      
+      console.log('🔍 HOST NAME DEBUG - Profile loading state:', profileLoading);
+      console.log('🔍 HOST NAME DEBUG - Host display name:', hostDisplayName);
+      console.log('🔍 HOST NAME DEBUG - User email:', user.email);
       
       // Create a participant record for the host using their profile name
       const { error: hostParticipantError } = await supabase
@@ -183,7 +192,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [user, getDisplayName]);
+  }, [user, getDisplayName, profileLoading]);
 
   // Start the draft with pre-calculated snake draft turn order
   const startDraft = useCallback(async (draftId: string) => {
@@ -587,7 +596,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
     draft,
     participants,
     picks,
-    loading,
+    loading: loading || profileLoading,
     isMyTurn,
     createMultiplayerDraft,
     joinDraftByCode,
