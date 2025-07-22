@@ -1,8 +1,8 @@
+
 import React from 'react';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { ActorPortrait } from './ActorPortrait';
 import { User } from 'lucide-react';
-import { getCleanActorName } from '@/lib/utils';
 
 interface DraftActorPortraitProps {
   actorName: string;
@@ -15,17 +15,15 @@ export const DraftActorPortrait: React.FC<DraftActorPortraitProps> = ({
   size = 'md',
   className
 }) => {
-  const cleanActorName = getCleanActorName(actorName);
-  const { people, loading } = usePeopleSearch(cleanActorName);
+  const { people, loading } = usePeopleSearch(actorName);
   
   console.log('DraftActorPortrait - Actor name:', actorName);
-  console.log('DraftActorPortrait - Clean actor name:', cleanActorName);
   console.log('DraftActorPortrait - People found:', people);
   console.log('DraftActorPortrait - Loading:', loading);
   
   // Find the exact match for the actor name
   const actor = people.find(person => 
-    person.name.toLowerCase() === cleanActorName.toLowerCase()
+    person.name.toLowerCase() === actorName.toLowerCase()
   );
 
   console.log('DraftActorPortrait - Matched actor:', actor);
@@ -43,7 +41,7 @@ export const DraftActorPortrait: React.FC<DraftActorPortraitProps> = ({
   return (
     <ActorPortrait
       profilePath={actor?.profile_path || null}
-      name={cleanActorName}
+      name={actorName}
       size={size}
       className={className}
     />

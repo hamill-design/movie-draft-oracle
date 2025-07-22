@@ -112,8 +112,8 @@ const Home = () => {
     if (typeof option === 'string') {
       setSelectedOption(option);
     } else {
-      // For people, store only the name (not the profile path)
-      setSelectedOption(option.title);
+      // For people, store both name and profile_path
+      setSelectedOption(theme === 'people' ? `${option.title}|${option.profile_path || ''}` : option.title);
     }
     setSearchQuery('');
   };
@@ -217,12 +217,12 @@ const Home = () => {
                       <div className="mb-4">
                         <div className="flex items-center gap-2">
                           <ActorPortrait 
-                            profilePath={null}
-                            name={selectedOption}
+                            profilePath={selectedOption.split('|')[1] || null}
+                            name={selectedOption.split('|')[0]}
                             size="md"
                           />
                           <Badge variant="secondary" className="bg-yellow-400 text-black">
-                            Selected: {selectedOption}
+                            Selected: {selectedOption.split('|')[0]}
                           </Badge>
                         </div>
                       </div>
@@ -240,7 +240,7 @@ const Home = () => {
                               key={person.id}
                               onClick={() => handleOptionSelect({ title: person.name, profile_path: person.profile_path })}
                               className={`p-3 rounded cursor-pointer transition-colors flex items-center gap-3 ${
-                                selectedOption === person.name
+                                selectedOption.startsWith(person.name)
                                   ? 'bg-yellow-400 text-black'
                                   : 'bg-gray-700 hover:bg-gray-600 text-white'
                               }`}

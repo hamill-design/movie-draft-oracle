@@ -17,7 +17,7 @@ import PickConfirmation from '@/components/PickConfirmation';
 import DraftBoard from '@/components/DraftBoard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DiagnosticInfo } from '@/components/DiagnosticInfo';
-import { getCleanActorName } from '@/lib/utils';
+
 
 interface MultiplayerDraftInterfaceProps {
   draftId?: string;
@@ -209,14 +209,14 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
                 <div className="flex items-center gap-3 mb-2">
                   {draft.theme === 'people' ? (
                     <DraftActorPortrait 
-                      actorName={getCleanActorName(draft.option)}
+                      actorName={draft.option}
                       size="md"
                     />
                   ) : (
                     <Calendar size={24} className="text-yellow-400" />
                   )}
                   <CardTitle className="text-2xl">
-                    {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
+                    {draft.theme === 'people' ? draft.option : draft.option}
                   </CardTitle>
                 </div>
                 <Badge variant="secondary" className="w-fit">
@@ -380,7 +380,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
               players={participants.map((p, index) => ({ id: index + 1, name: p.participant_name }))}
               categories={draft.categories}
               theme={draft.theme}
-              draftOption={getCleanActorName(draft.option)}
+              draftOption={draft.option}
               currentPlayer={currentTurnPlayer ? { 
                 id: participants.findIndex(p => p.user_id === currentTurnPlayer.user_id) + 1, 
                 name: currentTurnPlayer.participant_name 
@@ -402,7 +402,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
                   <CardContent className="space-y-4">
                     <MovieSearch
                       theme={draft.theme}
-                      option={getCleanActorName(draft.option)}
+                      option={draft.option}
                       searchQuery={searchQuery}
                       onSearchChange={setSearchQuery}
                       movies={movies}

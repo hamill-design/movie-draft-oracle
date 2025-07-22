@@ -1,9 +1,9 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { Movie } from '@/data/movies';
-import { getCleanActorName } from '@/lib/utils';
 
 interface MovieSearchProps {
   theme: string;
@@ -56,7 +56,7 @@ const MovieSearch = ({
         <CardTitle className="text-white flex items-center gap-2">
           <Search className="text-yellow-400" size={24} />
           Search Movies
-          {theme === 'year' ? ` from ${option}` : theme === 'people' ? ` featuring ${getCleanActorName(option)}` : ''}
+          {theme === 'year' ? ` from ${option}` : theme === 'people' ? ` featuring ${option}` : ''}
           {!loading && shouldShowResults && filteredMovies.length > 0 && (
             <span className="text-sm text-gray-400 ml-2">
               ({filteredMovies.length} movies found)
@@ -78,7 +78,7 @@ const MovieSearch = ({
               <div className="text-gray-400">Loading movies...</div>
             ) : filteredMovies.length === 0 ? (
               <div className="text-gray-400">
-                No movies found matching "{searchQuery}" {theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${getCleanActorName(option)}` : ''}
+                No movies found matching "{searchQuery}" {theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${option}` : ''}
               </div>
             ) : (
               filteredMovies.slice(0, 50).map((movie) => (

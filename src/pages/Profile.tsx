@@ -13,7 +13,6 @@ import { useToast } from '@/hooks/use-toast';
 import BannerAd from '@/components/ads/BannerAd';
 import InlineAd from '@/components/ads/InlineAd';
 import { DraftActorPortrait } from '@/components/DraftActorPortrait';
-import { getCleanActorName } from '@/lib/utils';
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -255,14 +254,14 @@ const Profile = () => {
                                 <Calendar size={20} className="text-yellow-400" />
                               ) : draft.theme === 'people' ? (
                                 <DraftActorPortrait 
-                                  actorName={getCleanActorName(draft.option)}
+                                  actorName={draft.option}
                                   size="md"
                                 />
                               ) : (
                                 <User size={20} className="text-yellow-400" />
                               )}
                               <h3 className="text-white font-semibold text-lg">
-                                {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
+                                {draft.option}
                               </h3>
                             </div>
                             <div className="mb-2">
