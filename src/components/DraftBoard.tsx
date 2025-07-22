@@ -47,7 +47,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="text-gray-300">Player</TableHead>
+                <TableHead className="text-gray-300 min-w-[180px]">Player</TableHead>
                 {categories.map((category) => (
                   <TableHead key={category} className="text-gray-300 text-center min-w-[150px]">
                     {category}
@@ -65,7 +65,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
                     key={player.id}
                     className={isCurrentPlayer ? "bg-yellow-400/20 border-yellow-400/50" : ""}
                   >
-                    <TableCell className={`font-medium ${isCurrentPlayer ? 'text-yellow-400 font-bold' : 'text-white'}`}>
+                    <TableCell className={`font-medium min-w-[180px] ${isCurrentPlayer ? 'text-yellow-400 font-bold' : 'text-white'}`}>
                       <div className="flex items-center gap-2">
                         <User 
                           size={16} 
