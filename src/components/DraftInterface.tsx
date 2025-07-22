@@ -6,7 +6,7 @@ import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useMovies } from '@/hooks/useMovies';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProfile } from '@/hooks/useProfile';
+
 import DraftBoard from './DraftBoard';
 import MovieSearch from './MovieSearch';
 import CategorySelection from './CategorySelection';
@@ -30,31 +30,18 @@ interface DraftInterfaceProps {
 
 const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const { toast } = useToast();
-  const { profile, loading: profileLoading, getDisplayName } = useProfile();
   
   // If this is a multiplayer draft, use the multiplayer interface
   if (draftState.isMultiplayer) {
     // Show success message for multiplayer draft creation
     useEffect(() => {
-      if (!draftState.existingDraftId && !profileLoading) {
+      if (!draftState.existingDraftId) {
         toast({
           title: "Multiplayer Draft Created!",
           description: `Email invitations have been sent to ${draftState.participants.length} participant(s)`,
         });
       }
-    }, [profileLoading]);
-
-    // Show loading while profile loads for new drafts
-    if (!draftState.existingDraftId && profileLoading) {
-      return (
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center space-y-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground">Loading your profile...</p>
-          </div>
-        </div>
-      );
-    }
+    }, []);
 
     return (
       <MultiplayerDraftInterface 
@@ -65,11 +52,6 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
           participants: draftState.participants,
           categories: draftState.categories,
           isHost: true
-        }}
-        profileData={{
-          profile,
-          getDisplayName,
-          loading: profileLoading
         }}
       />
     );

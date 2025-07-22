@@ -28,14 +28,9 @@ interface MultiplayerDraftInterfaceProps {
     categories: string[];
     isHost?: boolean;
   };
-  profileData?: {
-    profile: any;
-    getDisplayName: () => string;
-    loading: boolean;
-  };
 }
 
-export const MultiplayerDraftInterface = ({ draftId, initialData, profileData }: MultiplayerDraftInterfaceProps) => {
+export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerDraftInterfaceProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -50,7 +45,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, profileData }:
     joinDraftByCode,
     makePick,
     startDraft,
-  } = useMultiplayerDraft(draftId, profileData);
+  } = useMultiplayerDraft(draftId);
 
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -76,15 +71,9 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, profileData }:
 
   // Create draft if this is a new multiplayer draft
   useEffect(() => {
-    if (initialData && !draftId && user && profileData && !profileData.loading) {
+    if (initialData && !draftId && user) {
       const createDraft = async () => {
         try {
-          console.log('🎯 PROFILE FIX v1.0 - Creating draft with profile data:', {
-            profile: profileData.profile,
-            displayName: profileData.getDisplayName(),
-            loading: profileData.loading
-          });
-
           const newDraft = await createMultiplayerDraft({
             title: initialData.option,
             theme: initialData.theme,
@@ -117,7 +106,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, profileData }:
 
       createDraft();
     }
-  }, [initialData, draftId, user, createMultiplayerDraft, navigate, toast, profileData]);
+  }, [initialData, draftId, user, createMultiplayerDraft, navigate, toast]);
 
   const handleMovieSelect = (movie: any) => {
     setSelectedMovie(movie);
@@ -173,7 +162,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, profileData }:
     return participants.find(p => p.user_id === draft?.current_turn_user_id);
   };
 
-  if (loading || (profileData?.loading && !draftId)) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background p-4">
         <div className="max-w-6xl mx-auto space-y-6">

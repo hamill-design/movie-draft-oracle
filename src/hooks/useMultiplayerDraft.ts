@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useProfileFixer } from '@/hooks/useProfileFixer';
+
 
 interface DraftParticipant {
   id: string;
@@ -30,15 +30,9 @@ interface MultiplayerDraft {
   turn_order: any;
 }
 
-interface ProfileData {
-  profile: any;
-  getDisplayName: () => string;
-  loading: boolean;
-}
-
-export const useMultiplayerDraft = (draftId?: string, profileData?: ProfileData) => {
+export const useMultiplayerDraft = (draftId?: string) => {
   const { user } = useAuth();
-  const { fixMyParticipantNames } = useProfileFixer();
+  
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -58,11 +52,6 @@ export const useMultiplayerDraft = (draftId?: string, profileData?: ProfileData)
   }) => {
     if (!user) throw new Error('User not authenticated');
 
-    // Use the passed profile data instead of local hook
-    if (!profileData || profileData.loading) {
-      console.log('🚫 PROFILE FIX v1.0 - Profile data not ready, cannot proceed');
-      throw new Error('Profile data not ready, please wait...');
-    }
 
     try {
       setLoading(true);
@@ -86,33 +75,13 @@ export const useMultiplayerDraft = (draftId?: string, profileData?: ProfileData)
 
       if (draftError) throw draftError;
 
-      // Get the host's actual profile name using passed profile data
-      const hostDisplayName = profileData.getDisplayName();
-      
-      console.log('🎯 PROFILE FIX v1.0 - Using passed profile data:');
-      console.log('  - Profile object:', profileData.profile);
-      console.log('  - Profile name:', profileData.profile?.name);
-      console.log('  - User email:', user.email);
-      console.log('  - getDisplayName() result:', hostDisplayName);
-      
-      // Determine the best name to use for the host
-      let hostParticipantName = hostDisplayName;
-      
-      // If getDisplayName() returned an email, try to use profile.name directly
-      if (hostDisplayName === user.email && profileData.profile?.name) {
-        console.log('🔧 PROFILE FIX v1.0 - getDisplayName() returned email, using profile.name instead:', profileData.profile.name);
-        hostParticipantName = profileData.profile.name;
-      }
-      
-      console.log('🎯 PROFILE FIX v1.0 - Final participant name to use:', hostParticipantName);
-      
-      // Create a participant record for the host using the determined name
+      // Create a participant record for the host (database trigger will handle the name)
       const { error: hostParticipantError } = await supabase
         .from('draft_participants')
         .insert({
           draft_id: newDraft.id,
           user_id: user.id,
-          participant_name: hostParticipantName, // Use the determined name
+          participant_name: 'Host', // Required field, but trigger will override this
           status: 'joined',
           is_host: true,
           joined_at: new Date().toISOString(),
@@ -121,8 +90,6 @@ export const useMultiplayerDraft = (draftId?: string, profileData?: ProfileData)
       if (hostParticipantError) {
         console.error('Failed to create host participant:', hostParticipantError);
         // Don't fail the draft creation if this fails
-      } else {
-        console.log('✅ PROFILE FIX v1.0 - Successfully created host participant with name:', hostParticipantName);
       }
 
       // Send email invitations to participants
@@ -138,7 +105,7 @@ export const useMultiplayerDraft = (draftId?: string, profileData?: ProfileData)
         const invitePayload = {
           draftId: newDraft.id,
           draftTitle: draftData.title,
-          hostName: hostParticipantName, // Use the corrected name
+          hostName: 'Host', // Simple fallback since DB handles the actual name
           participantEmails: draftData.participantEmails,
           theme: draftData.theme,
           option: draftData.option,
@@ -214,7 +181,7 @@ export const useMultiplayerDraft = (draftId?: string, profileData?: ProfileData)
     } finally {
       setLoading(false);
     }
-  }, [user, profileData]);
+  }, [user]);
 
   // Start the draft with pre-calculated snake draft turn order
   const startDraft = useCallback(async (draftId: string) => {
@@ -618,13 +585,12 @@ export const useMultiplayerDraft = (draftId?: string, profileData?: ProfileData)
     draft,
     participants,
     picks,
-    loading: loading || (profileData?.loading ?? false),
+    loading,
     isMyTurn,
     createMultiplayerDraft,
     joinDraftByCode,
     makePick,
     loadDraft,
     startDraft,
-    fixMyParticipantNames,
   };
 };
