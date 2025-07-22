@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
@@ -377,7 +378,10 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
                 },
                 category: pick.category
               }))}
-              players={participants.map((p, index) => ({ id: index + 1, name: p.participant_name }))}
+              players={participants.map((p, index) => ({ 
+                id: index + 1, 
+                name: p.participant_name 
+              }))}
               categories={draft.categories}
               theme={draft.theme}
               draftOption={getCleanActorName(draft.option)}
