@@ -11,9 +11,7 @@ import Home from "./pages/Home";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
-import DraftSetup from "./pages/DraftSetup";
 import Profile from "./pages/Profile";
-import DraftResults from "./pages/DraftResults";
 import FinalScores from "./pages/FinalScores";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -35,10 +33,8 @@ const App = () => (
             <Route path="/" element={<Home />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/draft-setup" element={<DraftSetup />} />
             <Route path="/draft" element={<Index />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/draft-results" element={<DraftResults />} />
             <Route path="/final-scores/:draftId" element={<FinalScores />} />
             <Route path="/join-draft/:draftId" element={<JoinDraft />} />
             <Route path="/join-draft" element={<JoinDraft />} />
