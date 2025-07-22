@@ -74,13 +74,16 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
       if (draftError) throw draftError;
 
-      // Create a participant record for the host
+      // Get the host's actual profile name instead of using email
+      const hostDisplayName = getDisplayName();
+      
+      // Create a participant record for the host using their profile name
       const { error: hostParticipantError } = await supabase
         .from('draft_participants')
         .insert({
           draft_id: newDraft.id,
           user_id: user.id,
-          participant_name: getDisplayName(),
+          participant_name: hostDisplayName, // Use actual profile name instead of email
           status: 'joined',
           is_host: true,
           joined_at: new Date().toISOString(),
@@ -180,7 +183,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, getDisplayName]);
 
   // Start the draft with pre-calculated snake draft turn order
   const startDraft = useCallback(async (draftId: string) => {
