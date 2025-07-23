@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -237,7 +238,7 @@ const Profile = () => {
             ) : (
               <div className="grid gap-4">
                 {drafts.map((draft, index) => (
-                  <React.Fragment key={draft.id}>
+                  <div key={draft.id}>
                     <Card className="bg-gray-700 border-gray-600 relative">
                       <Button
                         onClick={() => handleDeleteDraft(draft.id)}
@@ -302,7 +303,7 @@ const Profile = () => {
                     
                     {/* Inline Ad after every 3 drafts - Hidden for now */}
                     {/* {index > 0 && (index + 1) % 3 === 0 && <InlineAd />} */}
-                  </React.Fragment>
+                  </div>
                 ))}
               </div>
             )}

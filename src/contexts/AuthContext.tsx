@@ -74,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => subscription.unsubscribe();
-  }, [guestSession, migrateGuestDraftsToUser]);
+  }, [guestSession]); // Remove migrateGuestDraftsToUser from dependencies
 
   const signOut = async () => {
     await supabase.auth.signOut();

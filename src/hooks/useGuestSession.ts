@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 
@@ -64,12 +64,12 @@ export const useGuestSession = (user: User | null = null) => {
     return await createGuestSession();
   };
 
-  const clearGuestSession = () => {
+  const clearGuestSession = useCallback(() => {
     localStorage.removeItem('guest_session_id');
     setGuestSession(null);
-  };
+  }, []);
 
-  const migrateGuestDraftsToUser = async () => {
+  const migrateGuestDraftsToUser = useCallback(async () => {
     if (!guestSession) return;
 
     try {
@@ -88,7 +88,7 @@ export const useGuestSession = (user: User | null = null) => {
       console.error('Failed to migrate guest drafts:', error);
       throw error;
     }
-  };
+  }, [guestSession, clearGuestSession]);
 
   useEffect(() => {
     const initializeGuestSession = async () => {
