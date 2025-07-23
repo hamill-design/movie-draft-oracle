@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           draft_id: string
+          guest_participant_id: string | null
           id: string
           is_host: boolean
           joined_at: string | null
@@ -28,6 +29,7 @@ export type Database = {
         Insert: {
           created_at?: string
           draft_id: string
+          guest_participant_id?: string | null
           id?: string
           is_host?: boolean
           joined_at?: string | null
@@ -38,6 +40,7 @@ export type Database = {
         Update: {
           created_at?: string
           draft_id?: string
+          guest_participant_id?: string | null
           id?: string
           is_host?: boolean
           joined_at?: string | null
@@ -142,6 +145,7 @@ export type Database = {
           current_pick_number: number | null
           current_turn_user_id: string | null
           draft_order: string[] | null
+          guest_session_id: string | null
           id: string
           invite_code: string | null
           is_complete: boolean | null
@@ -160,6 +164,7 @@ export type Database = {
           current_pick_number?: number | null
           current_turn_user_id?: string | null
           draft_order?: string[] | null
+          guest_session_id?: string | null
           id?: string
           invite_code?: string | null
           is_complete?: boolean | null
@@ -178,6 +183,7 @@ export type Database = {
           current_pick_number?: number | null
           current_turn_user_id?: string | null
           draft_order?: string[] | null
+          guest_session_id?: string | null
           id?: string
           invite_code?: string | null
           is_complete?: boolean | null
@@ -189,6 +195,35 @@ export type Database = {
           turn_order?: Json | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drafts_guest_session_id_fkey"
+            columns: ["guest_session_id"]
+            isOneToOne: false
+            referencedRelation: "guest_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      guest_sessions: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          last_active: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          last_active?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          last_active?: string | null
         }
         Relationships: []
       }
@@ -254,6 +289,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_guest_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      current_guest_session: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       generate_invite_code: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -282,6 +325,10 @@ export type Database = {
           new_pick_number: number
           next_turn_user_id: string
         }[]
+      }
+      migrate_guest_drafts_to_user: {
+        Args: { p_guest_session_id: string }
+        Returns: undefined
       }
     }
     Enums: {

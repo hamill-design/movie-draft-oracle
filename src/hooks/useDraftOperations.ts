@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const useDraftOperations = () => {
-  const { user } = useAuth();
+  const { user, guestSession, isGuest } = useAuth();
 
   const autoSaveDraft = useCallback(async (draftData: {
     theme: string;
@@ -14,7 +14,7 @@ export const useDraftOperations = () => {
     picks: any[];
     isComplete: boolean;
   }, existingDraftId?: string) => {
-    if (!user) throw new Error('User not authenticated');
+    if (!user && !guestSession) throw new Error('No session available');
 
     // Generate a simple title (just the option)
     const title = draftData.option;
@@ -61,17 +61,25 @@ export const useDraftOperations = () => {
       return existingDraftId;
     } else {
       // Create new draft
+      const draftInsert: any = {
+        title,
+        theme: draftData.theme,
+        option: draftData.option,
+        participants: draftData.participants,
+        categories: draftData.categories,
+        is_complete: draftData.isComplete,
+      };
+
+      if (user) {
+        draftInsert.user_id = user.id;
+      } else if (guestSession) {
+        draftInsert.guest_session_id = guestSession.id;
+        draftInsert.user_id = '00000000-0000-0000-0000-000000000000'; // Placeholder UUID for guest drafts
+      }
+
       const { data: draft, error: draftError } = await supabase
         .from('drafts')
-        .insert({
-          title,
-          theme: draftData.theme,
-          option: draftData.option,
-          participants: draftData.participants,
-          categories: draftData.categories,
-          is_complete: draftData.isComplete,
-          user_id: user.id
-        })
+        .insert(draftInsert)
         .select()
         .single();
 
@@ -101,7 +109,7 @@ export const useDraftOperations = () => {
 
       return draft.id;
     }
-  }, [user]);
+  }, [user, guestSession]);
 
   const saveDraft = useCallback(async (draftData: {
     title: string;
@@ -112,7 +120,7 @@ export const useDraftOperations = () => {
     picks: any[];
     isComplete: boolean;
   }) => {
-    if (!user) throw new Error('User not authenticated');
+    if (!user) throw new Error('User not authenticated for permanent save');
 
     const { data: draft, error: draftError } = await supabase
       .from('drafts')

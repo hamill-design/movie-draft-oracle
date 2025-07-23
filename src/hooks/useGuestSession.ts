@@ -1,0 +1,114 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+export interface GuestSession {
+  id: string;
+  created_at: string;
+  expires_at: string;
+  last_active: string;
+}
+
+export const useGuestSession = () => {
+  const [guestSession, setGuestSession] = useState<GuestSession | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const createGuestSession = async (): Promise<GuestSession> => {
+    const { data, error } = await supabase
+      .from('guest_sessions')
+      .insert({})
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating guest session:', error);
+      throw error;
+    }
+
+    const session = data as GuestSession;
+    localStorage.setItem('guest_session_id', session.id);
+    setGuestSession(session);
+    return session;
+  };
+
+  const updateGuestSessionActivity = async (sessionId: string) => {
+    await supabase
+      .from('guest_sessions')
+      .update({ last_active: new Date().toISOString() })
+      .eq('id', sessionId);
+  };
+
+  const getOrCreateGuestSession = async (): Promise<GuestSession> => {
+    const storedSessionId = localStorage.getItem('guest_session_id');
+    
+    if (storedSessionId) {
+      // Check if session still exists and is valid
+      const { data, error } = await supabase
+        .from('guest_sessions')
+        .select('*')
+        .eq('id', storedSessionId)
+        .gt('expires_at', new Date().toISOString())
+        .single();
+
+      if (!error && data) {
+        const session = data as GuestSession;
+        setGuestSession(session);
+        // Update activity
+        await updateGuestSessionActivity(session.id);
+        return session;
+      }
+    }
+
+    // Create new session if none exists or expired
+    return await createGuestSession();
+  };
+
+  const clearGuestSession = () => {
+    localStorage.removeItem('guest_session_id');
+    setGuestSession(null);
+  };
+
+  const migrateGuestDraftsToUser = async () => {
+    if (!guestSession) return;
+
+    try {
+      const { error } = await supabase.rpc('migrate_guest_drafts_to_user', {
+        p_guest_session_id: guestSession.id
+      });
+
+      if (error) {
+        console.error('Error migrating guest drafts:', error);
+        throw error;
+      }
+
+      // Clear guest session after successful migration
+      clearGuestSession();
+    } catch (error) {
+      console.error('Failed to migrate guest drafts:', error);
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    const initializeGuestSession = async () => {
+      try {
+        await getOrCreateGuestSession();
+      } catch (error) {
+        console.error('Failed to initialize guest session:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeGuestSession();
+  }, []);
+
+  return {
+    guestSession,
+    loading,
+    createGuestSession,
+    getOrCreateGuestSession,
+    clearGuestSession,
+    migrateGuestDraftsToUser,
+    updateGuestSessionActivity
+  };
+};

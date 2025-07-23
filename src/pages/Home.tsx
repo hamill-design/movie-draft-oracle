@@ -16,10 +16,11 @@ import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useDraftForm, DraftSetupForm } from '@/hooks/useDraftForm';
+import { SaveDraftPrompt } from '@/components/SaveDraftPrompt';
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, isGuest } = useAuth();
   const { toast } = useToast();
   
   const {
@@ -46,12 +47,7 @@ const Home = () => {
     }
   });
 
-  // Redirect to auth if not logged in
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
+  // No auth redirect needed - guests can use the app
 
   // Only search for people when theme is 'people'
   const { people, loading: peopleLoading } = usePeopleSearch(
@@ -129,18 +125,13 @@ const Home = () => {
 
   const shouldShowResults = theme === 'people' && searchQuery.trim().length > 0;
 
-  // Show loading state while checking auth
+  // Show loading state while initializing
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
         <div className="text-white text-xl">Loading...</div>
       </div>
     );
-  }
-
-  // Don't render anything if not authenticated (redirect will happen)
-  if (!user) {
-    return null;
   }
 
   return (

@@ -2,19 +2,26 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useGuestSession, GuestSession } from '@/hooks/useGuestSession';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  guestSession: GuestSession | null;
+  isGuest: boolean;
   loading: boolean;
   signOut: () => Promise<void>;
+  migrateGuestDraftsToUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
+  guestSession: null,
+  isGuest: false,
   loading: true,
   signOut: async () => {},
+  migrateGuestDraftsToUser: async () => {},
 });
 
 export const useAuth = () => {
@@ -28,15 +35,33 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
+  
+  const {
+    guestSession,
+    loading: guestLoading,
+    migrateGuestDraftsToUser
+  } = useGuestSession();
+
+  const loading = authLoading || guestLoading;
+  const isGuest = !user && !!guestSession;
 
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
+        setAuthLoading(false);
+
+        // If user just signed in and we have a guest session, migrate drafts
+        if (event === 'SIGNED_IN' && session?.user && guestSession) {
+          try {
+            await migrateGuestDraftsToUser();
+          } catch (error) {
+            console.error('Failed to migrate guest drafts on sign in:', error);
+          }
+        }
       }
     );
 
@@ -44,11 +69,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
+      setAuthLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [guestSession, migrateGuestDraftsToUser]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -57,8 +82,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     user,
     session,
+    guestSession,
+    isGuest,
     loading,
     signOut,
+    migrateGuestDraftsToUser,
   };
 
   return (

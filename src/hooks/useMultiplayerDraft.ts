@@ -31,7 +31,7 @@ interface MultiplayerDraft {
 }
 
 export const useMultiplayerDraft = (draftId?: string) => {
-  const { user } = useAuth();
+  const { user, guestSession, isGuest } = useAuth();
   
   const { toast } = useToast();
   const navigate = useNavigate();
