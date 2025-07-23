@@ -17,8 +17,8 @@ const DraftComplete = () => {
     if (draftId) {
       navigate(`/final-scores/${draftId}`);
     } else {
-      // Fallback to profile if no draft ID
-      navigate('/profile');
+      // Fallback to home if no draft ID
+      navigate('/');
     }
   };
 

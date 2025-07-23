@@ -11,6 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { DraftPick } from '@/hooks/useDrafts';
 import TeamRoster from '@/components/TeamRoster';
 import ShareResultsButton from '@/components/ShareResultsButton';
+import SaveDraftButton from '@/components/SaveDraftButton';
+import { SaveDraftPrompt } from '@/components/SaveDraftPrompt';
 import { getScoreColor, getScoreGrade } from '@/utils/scoreCalculator';
 
 interface TeamScore {
@@ -24,7 +26,7 @@ interface TeamScore {
 const FinalScores = () => {
   const { draftId } = useParams<{ draftId: string; }>();
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, isGuest } = useAuth();
   const { getDraftWithPicks } = useDraftOperations();
   const { toast } = useToast();
   
@@ -35,6 +37,7 @@ const FinalScores = () => {
   const [enrichingData, setEnrichingData] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
 
   useEffect(() => {
     if (!draftId) {
@@ -235,6 +238,34 @@ const FinalScores = () => {
     return teams.sort((a, b) => b.totalScore - a.totalScore);
   };
 
+  const handleSignUp = () => {
+    navigate('/auth');
+  };
+
+  const getDraftDataForSave = () => {
+    if (!draft) return null;
+    
+    return {
+      theme: draft.theme,
+      option: draft.option,
+      participants: draft.participants,
+      categories: draft.categories,
+      picks: picks.map(pick => ({
+        playerId: pick.player_id,
+        playerName: pick.player_name,
+        movie: {
+          id: pick.movie_id,
+          title: pick.movie_title,
+          year: pick.movie_year,
+          genre: pick.movie_genre,
+          posterPath: pick.poster_path
+        },
+        category: pick.category
+      })),
+      isComplete: draft.is_complete
+    };
+  };
+
   if (loading || loadingData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
@@ -283,15 +314,35 @@ const FinalScores = () => {
             </div>
           </div>
           
-          {/* Share Results Button */}
-          {teamScores.length > 0 && !enrichingData && (
-            <ShareResultsButton
-              draftTitle={draft.title}
-              teamScores={teamScores}
-              picks={picks}
-            />
-          )}
+          <div className="flex gap-3">
+            {/* Save Draft Button for Guest Users */}
+            {isGuest && (
+              <Button
+                onClick={() => setShowSavePrompt(true)}
+                className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+              >
+                Save Draft
+              </Button>
+            )}
+            
+            {/* Share Results Button */}
+            {teamScores.length > 0 && !enrichingData && (
+              <ShareResultsButton
+                draftTitle={draft.title}
+                teamScores={teamScores}
+                picks={picks}
+              />
+            )}
+          </div>
         </div>
+
+        {/* Save Draft Prompt */}
+        <SaveDraftPrompt
+          isOpen={showSavePrompt}
+          onClose={() => setShowSavePrompt(false)}
+          onSignUp={handleSignUp}
+          draftTitle={draft.title}
+        />
 
         {/* Show loading state while enriching */}
         {enrichingData && (

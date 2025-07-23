@@ -28,13 +28,6 @@ const Index = () => {
   const [loadingExistingDraft, setLoadingExistingDraft] = useState(false);
   const [existingPicks, setExistingPicks] = useState<any[]>([]);
   
-  // Check authentication
-  useEffect(() => {
-    if (!loading && !user) {
-      navigate('/auth');
-    }
-  }, [user, loading, navigate]);
-
   useEffect(() => {
     if (!draftState) {
       navigate('/');
@@ -44,7 +37,7 @@ const Index = () => {
   // Load existing draft data if editing an existing draft
   useEffect(() => {
     const loadExistingDraft = async () => {
-      if (!draftState?.existingDraftId || !user || hasLoadedDraft.current) return;
+      if (!draftState?.existingDraftId || hasLoadedDraft.current) return;
 
       hasLoadedDraft.current = true;
       setLoadingExistingDraft(true);
@@ -67,12 +60,12 @@ const Index = () => {
       }
     };
 
-    if (draftState?.existingDraftId && user && !hasLoadedDraft.current) {
+    if (draftState?.existingDraftId && !hasLoadedDraft.current) {
       loadExistingDraft();
     }
-  }, [draftState?.existingDraftId, user, getDraftWithPicks]);
+  }, [draftState?.existingDraftId, getDraftWithPicks]);
 
-  // Show loading state while checking auth or loading existing draft
+  // Show loading state while loading existing draft
   if (loading || loadingExistingDraft) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
@@ -83,8 +76,8 @@ const Index = () => {
     );
   }
 
-  // Don't render anything if not authenticated (redirect will happen)
-  if (!user || !draftState) {
+  // Don't render anything if no draft state
+  if (!draftState) {
     return null;
   }
 
