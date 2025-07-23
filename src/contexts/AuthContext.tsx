@@ -41,9 +41,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     guestSession,
     loading: guestLoading,
     migrateGuestDraftsToUser
-  } = useGuestSession();
+  } = useGuestSession(user);
 
-  const loading = authLoading || guestLoading;
+  // Only include guest loading if user is not authenticated
+  const loading = authLoading || (!user && guestLoading);
   const isGuest = !user && !!guestSession;
 
   useEffect(() => {

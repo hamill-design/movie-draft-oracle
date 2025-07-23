@@ -1,5 +1,7 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 export interface GuestSession {
   id: string;
@@ -8,7 +10,7 @@ export interface GuestSession {
   last_active: string;
 }
 
-export const useGuestSession = () => {
+export const useGuestSession = (user: User | null = null) => {
   const [guestSession, setGuestSession] = useState<GuestSession | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -91,6 +93,12 @@ export const useGuestSession = () => {
   useEffect(() => {
     const initializeGuestSession = async () => {
       try {
+        // Skip guest session initialization if user is authenticated
+        if (user) {
+          setLoading(false);
+          return;
+        }
+
         await getOrCreateGuestSession();
       } catch (error) {
         console.error('Failed to initialize guest session:', error);
@@ -100,7 +108,7 @@ export const useGuestSession = () => {
     };
 
     initializeGuestSession();
-  }, []);
+  }, [user]);
 
   return {
     guestSession,
