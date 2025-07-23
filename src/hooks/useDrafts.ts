@@ -27,6 +27,7 @@ export interface DraftPick {
   movie_genre: string | null;
   category: string;
   pick_order: number;
+  poster_path?: string | null;
 }
 
 export const useDrafts = () => {
