@@ -638,6 +638,20 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       setParticipants(participantsArray);
       setPicks(picksArray);
       
+      // Calculate if it's the current user's turn
+      const currentUserIdForTurn = user?.id || guestSession?.id;
+      const isCurrentUsersTurn = draftData.current_turn_user_id === currentUserIdForTurn;
+      
+      console.log('Turn calculation:', {
+        currentUserIdForTurn,
+        draftCurrentTurnUserId: draftData.current_turn_user_id,
+        isCurrentUsersTurn,
+        currentPickNumber: draftData.current_pick_number,
+        isDraftComplete: draftData.is_complete
+      });
+      
+      setIsMyTurn(isCurrentUsersTurn && !draftData.is_complete);
+      
     } catch (error) {
       console.error('Error loading draft:', error);
       throw error;
