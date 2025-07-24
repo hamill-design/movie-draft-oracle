@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -63,6 +64,9 @@ export const JoinDraftForm = () => {
     }
   };
 
+  const isFormValid = inviteCode.trim() && participantName.trim();
+  const isButtonDisabled = loading || !isFormValid;
+
   return (
     <Card>
       <CardHeader>
@@ -103,23 +107,35 @@ export const JoinDraftForm = () => {
           
           <Button 
             type="submit"
-            disabled={loading || !inviteCode.trim() || !participantName.trim() || !user}
+            disabled={isButtonDisabled}
             className="w-full"
           >
             {loading ? 'Joining...' : 'Join Draft'}
           </Button>
           
           {!user && (
-            <p className="text-xs text-muted-foreground text-center">
-              <Button 
-                variant="link" 
-                size="sm" 
-                onClick={() => navigate('/auth')}
-                className="p-0 h-auto"
-              >
-                Sign in
-              </Button> to join drafts
-            </p>
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
+              <p className="text-sm text-amber-800 text-center">
+                You need to{' '}
+                <Button 
+                  variant="link" 
+                  size="sm" 
+                  onClick={() => navigate('/auth')}
+                  className="p-0 h-auto text-amber-600 hover:text-amber-800"
+                >
+                  sign in
+                </Button>{' '}
+                to join drafts
+              </p>
+            </div>
+          )}
+
+          {/* Debug info for development */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="text-xs text-muted-foreground space-y-1">
+              <div>Debug: Code: "{inviteCode}", Name: "{participantName}", User: {user ? 'Yes' : 'No'}</div>
+              <div>Form valid: {isFormValid ? 'Yes' : 'No'}, Button disabled: {isButtonDisabled ? 'Yes' : 'No'}</div>
+            </div>
           )}
         </form>
       </CardContent>
