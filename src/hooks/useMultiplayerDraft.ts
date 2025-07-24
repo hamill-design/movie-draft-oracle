@@ -406,6 +406,23 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         description: `Successfully joined ${draftData.title}!`,
       });
 
+      // Load existing participants and picks after joining
+      const [participantsData, picksData] = await Promise.all([
+        supabase
+          .from('draft_participants')
+          .select('*')
+          .eq('draft_id', draftData.id)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('draft_picks')
+          .select('*')
+          .eq('draft_id', draftData.id)
+          .order('pick_order', { ascending: true })
+      ]);
+
+      const existingParticipants = participantsData.data || [];
+      const existingPicks = picksData.data || [];
+
       // Navigate to the draft page with complete draft data to avoid RLS issues
       navigate('/draft', {
         state: {
@@ -417,8 +434,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           isMultiplayer: true,
           initialDraftData: {
             draft: draftData,
-            participants: [/* participants will be loaded via real-time */],
-            picks: [/* picks will be loaded via real-time */]
+            participants: existingParticipants,
+            picks: existingPicks
           }
         }
       });
