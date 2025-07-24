@@ -164,7 +164,10 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
   };
 
   const getCurrentTurnPlayer = () => {
-    return participants.find(p => p.user_id === draft?.current_turn_user_id);
+    return participants.find(p => 
+      p.user_id === draft?.current_turn_user_id || 
+      p.guest_participant_id === draft?.current_turn_user_id
+    );
   };
 
   if (loading) {

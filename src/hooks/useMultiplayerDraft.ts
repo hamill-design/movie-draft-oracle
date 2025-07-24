@@ -6,7 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 
 interface DraftParticipant {
   id: string;
-  user_id: string;
+  user_id: string | null;
+  guest_participant_id: string | null;
   participant_name: string;
   status: 'invited' | 'joined' | 'left';
   is_host: boolean;
@@ -279,6 +280,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           for (let i = 0; i < numPlayers; i++) {
             turnOrder.push({
               user_id: shuffledParticipants[i].user_id,
+              guest_participant_id: shuffledParticipants[i].guest_participant_id,
               participant_name: shuffledParticipants[i].participant_name,
               round,
               pick_number: turnOrder.length + 1
@@ -289,6 +291,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           for (let i = numPlayers - 1; i >= 0; i--) {
             turnOrder.push({
               user_id: shuffledParticipants[i].user_id,
+              guest_participant_id: shuffledParticipants[i].guest_participant_id,
               participant_name: shuffledParticipants[i].participant_name,
               round,
               pick_number: turnOrder.length + 1
@@ -300,13 +303,16 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       // Start the draft with the first turn
       const firstTurn = turnOrder[0];
       
+      // Use the appropriate ID for the current turn (user_id for authenticated, guest_participant_id for guests)
+      const currentTurnId = firstTurn.user_id || firstTurn.guest_participant_id;
+      
       console.log('Generated complete turn order:', turnOrder);
-      console.log('First player:', firstTurn.participant_name);
+      console.log('First player:', firstTurn.participant_name, 'ID:', currentTurnId);
 
       const { error: updateError } = await supabase
         .from('drafts')
         .update({
-          current_turn_user_id: firstTurn.user_id,
+          current_turn_user_id: currentTurnId,
           current_pick_number: 1,
           turn_order: turnOrder
         })
