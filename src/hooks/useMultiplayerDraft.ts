@@ -359,26 +359,53 @@ export const useMultiplayerDraft = (draftId?: string) => {
         current_turn_user_id: joinResult.draft_current_turn_user_id,
         is_complete: joinResult.draft_is_complete,
         turn_order: joinResult.draft_turn_order,
+        draft_order: null,
         created_at: joinResult.draft_created_at,
         updated_at: joinResult.draft_updated_at
       };
+
+      // Set the draft and participants state directly from the returned data
+      setDraft(draftData);
+      
+      // Load participants and picks separately since they weren't returned by the function
+      try {
+        const { data: participantsData, error: participantsError } = await supabase
+          .from('draft_participants')
+          .select('*')
+          .eq('draft_id', draftData.id)
+          .order('created_at');
+
+        if (!participantsError) {
+          setParticipants(participantsData);
+        }
+
+        const { data: picksData, error: picksError } = await supabase
+          .from('draft_picks')
+          .select('*')
+          .eq('draft_id', draftData.id)
+          .order('pick_order');
+
+        if (!picksError) {
+          setPicks(picksData);
+        }
+
+        // Check if it's the current user's turn
+        const currentUserId = user?.id || guestSession?.id;
+        const isMyTurn = draftData.current_turn_user_id === currentUserId;
+        setIsMyTurn(isMyTurn);
+
+      } catch (loadError) {
+        console.warn('Error loading additional draft data:', loadError);
+        // Continue even if we can't load participants/picks - the main draft data is set
+      }
 
       toast({
         title: "Joined Draft",
         description: `Successfully joined ${draftData.title}!`,
       });
 
-      // Navigate to the draft page with multiplayer flag
-      navigate('/draft', {
-        state: {
-          theme: draftData.theme,
-          option: draftData.option,
-          participants: draftData.participants,
-          categories: draftData.categories,
-          existingDraftId: draftData.id,
-          isMultiplayer: true
-        }
-      });
+      // Navigate to the draft page with the existing draft ID so it uses the multiplayer interface
+      navigate(`/draft/${draftData.id}`);
 
       return joinResult.participant_id;
     } catch (error: any) {
