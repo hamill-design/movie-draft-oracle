@@ -350,9 +350,10 @@ export const useMultiplayerDraft = (draftId?: string) => {
         .from('drafts')
         .select('*')
         .eq('invite_code', inviteCode)
-        .single();
+        .maybeSingle();
 
       if (draftError) throw draftError;
+      if (!draftData) throw new Error('Draft not found with this invite code');
 
       toast({
         title: "Joined Draft",

@@ -23,6 +23,7 @@ export const JoinDraftForm = () => {
   const [inviteCode, setInviteCode] = useState('');
   const [participantName, setParticipantName] = useState('');
   const [hasSetInitialName, setHasSetInitialName] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
 
   // Memoize the display name to prevent unnecessary re-renders
   const displayName = useMemo(() => {
@@ -39,6 +40,9 @@ export const JoinDraftForm = () => {
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent multiple simultaneous join attempts
+    if (isJoining) return;
     
     if (!inviteCode.trim() || !participantName.trim()) {
       toast({
@@ -59,14 +63,32 @@ export const JoinDraftForm = () => {
     }
 
     try {
+      setIsJoining(true);
       await joinDraftByCode(inviteCode.trim().toUpperCase(), participantName.trim());
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to join draft:', error);
+      
+      // Provide more specific error messages
+      if (error.message?.includes('duplicate key')) {
+        toast({
+          title: "Already Joined",
+          description: "You're already a participant in this draft",
+          variant: "default",
+        });
+      } else if (error.message?.includes('Draft not found')) {
+        toast({
+          title: "Invalid Code",
+          description: "No draft found with this invite code",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsJoining(false);
     }
   };
 
   const isFormValid = inviteCode.trim() && participantName.trim();
-  const isButtonDisabled = loading || !isFormValid;
+  const isButtonDisabled = loading || !isFormValid || isJoining;
 
   return (
     <Card>
@@ -111,7 +133,7 @@ export const JoinDraftForm = () => {
             disabled={isButtonDisabled}
             className="w-full"
           >
-            {loading ? 'Joining...' : 'Join Draft'}
+            {(loading || isJoining) ? 'Joining...' : 'Join Draft'}
           </Button>
         </form>
       </CardContent>
