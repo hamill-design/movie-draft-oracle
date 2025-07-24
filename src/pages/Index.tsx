@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import DraftHeader from '@/components/DraftHeader';
 import DraftInterface from '@/components/DraftInterface';
 import { MultiplayerDraftInterface } from '@/components/MultiplayerDraftInterface';
@@ -20,6 +20,7 @@ interface DraftState {
 const Index = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { draftId: urlDraftId } = useParams();
   const { user, loading } = useAuth();
   const { getDraftWithPicks } = useDraftOperations();
   const draftState = location.state as DraftState;
@@ -29,10 +30,10 @@ const Index = () => {
   const [existingPicks, setExistingPicks] = useState<any[]>([]);
   
   useEffect(() => {
-    if (!draftState) {
+    if (!draftState && !urlDraftId) {
       navigate('/');
     }
-  }, [draftState, navigate]);
+  }, [draftState, urlDraftId, navigate]);
 
   // Load existing draft data only for non-multiplayer drafts
   useEffect(() => {
@@ -76,17 +77,17 @@ const Index = () => {
     );
   }
 
-  // Don't render anything if no draft state
-  if (!draftState) {
+  // Don't render anything if no draft state and no URL draft ID
+  if (!draftState && !urlDraftId) {
     return null;
   }
 
-  // Render multiplayer interface if this is a multiplayer draft
-  if (draftState.isMultiplayer) {
+  // Render multiplayer interface if this is a multiplayer draft or if we have a URL draft ID
+  if (draftState?.isMultiplayer || urlDraftId) {
     return (
       <MultiplayerDraftInterface 
-        draftId={draftState.existingDraftId}
-        initialData={!draftState.existingDraftId ? draftState : undefined}
+        draftId={urlDraftId || draftState?.existingDraftId}
+        initialData={!urlDraftId && !draftState?.existingDraftId ? draftState : undefined}
         initialDraftData={(location.state as any)?.initialDraftData}
       />
     );

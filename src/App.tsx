@@ -34,6 +34,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/draft" element={<Index />} />
+            <Route path="/draft/:draftId" element={<Index />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/final-scores/:draftId" element={<FinalScores />} />
             <Route path="/join-draft/:draftId" element={<JoinDraft />} />
