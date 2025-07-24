@@ -582,76 +582,61 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       console.log('Current user ID:', currentUserId);
       console.log('Current guest session ID:', currentGuestId);
 
-      // Set guest session context if needed
-      if (guestSession?.id) {
-        console.log('Setting guest session context:', guestSession.id);
-        const { error: contextError } = await supabase.rpc('set_guest_session_context', {
-          session_id: guestSession.id
-        });
-        if (contextError) {
-          console.error('Error setting guest context:', contextError);
-        }
-        
-        // Verify the context was set
-        const { data: currentSessionCheck, error: checkError } = await supabase.rpc('current_guest_session');
-        console.log('Current guest session after setting context:', currentSessionCheck);
-        if (checkError) {
-          console.error('Error checking current guest session:', checkError);
-        }
-      }
-
-      // Fetch draft data with better error handling
-      console.log('Fetching draft with ID:', id);
-      const { data: draftData, error: draftError } = await supabase
-        .from('drafts')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle(); // Use maybeSingle instead of single to avoid PGRST116 error
+      // Use the new database function to load draft with guest session support
+      console.log('Loading draft with guest access function:', id);
+      const { data: draftResult, error: draftError } = await supabase.rpc('load_draft_with_guest_access', {
+        p_draft_id: id,
+        p_guest_session_id: guestSession?.id || null
+      });
 
       if (draftError) {
         console.error('Draft fetch error:', draftError);
         throw draftError;
       }
 
-      if (!draftData) {
+      if (!draftResult || draftResult.length === 0) {
         console.error('Draft not found or no access');
         throw new Error('Draft not found or you do not have access to this draft');
       }
 
+      const draftRecord = draftResult[0];
+      const draftData = {
+        id: draftRecord.draft_id,
+        user_id: draftRecord.draft_user_id,
+        guest_session_id: draftRecord.draft_guest_session_id,
+        title: draftRecord.draft_title,
+        theme: draftRecord.draft_theme,
+        option: draftRecord.draft_option,
+        categories: draftRecord.draft_categories,
+        participants: draftRecord.draft_participants,
+        is_multiplayer: draftRecord.draft_is_multiplayer,
+        invite_code: draftRecord.draft_invite_code,
+        current_pick_number: draftRecord.draft_current_pick_number,
+        current_turn_user_id: draftRecord.draft_current_turn_user_id,
+        is_complete: draftRecord.draft_is_complete,
+        turn_order: draftRecord.draft_turn_order,
+        draft_order: draftRecord.draft_draft_order,
+        created_at: draftRecord.draft_created_at,
+        updated_at: draftRecord.draft_updated_at
+      };
+
       console.log('Draft data loaded:', draftData);
 
-      // Fetch participants
-      const { data: participantsData, error: participantsError } = await supabase
-        .from('draft_participants')
-        .select('*')
-        .eq('draft_id', id)
-        .order('created_at', { ascending: true });
+      // Extract participants and picks from the function result
+      const participantsArray = Array.isArray(draftRecord.participants_data) 
+        ? (draftRecord.participants_data as unknown as DraftParticipant[])
+        : [];
+      
+      const picksArray = Array.isArray(draftRecord.picks_data) 
+        ? draftRecord.picks_data 
+        : [];
 
-      if (participantsError) {
-        console.error('Participants fetch error:', participantsError);
-        throw participantsError;
-      }
-
-      console.log('Participants loaded:', participantsData);
-
-      // Fetch picks
-      const { data: picksData, error: picksError } = await supabase
-        .from('draft_picks')
-        .select('*')
-        .eq('draft_id', id)
-        .order('pick_order', { ascending: true });
-
-      if (picksError) {
-        console.error('Picks fetch error:', picksError);
-        // Don't throw error for picks - they might not exist yet
-        console.warn('No picks found yet, continuing...');
-      }
-
-      console.log('Picks loaded:', picksData);
+      console.log('Participants loaded from function:', participantsArray.length);
+      console.log('Picks loaded from function:', picksArray.length);
       
       setDraft(draftData);
-      setParticipants(participantsData || []);
-      setPicks(picksData || []);
+      setParticipants(participantsArray);
+      setPicks(picksArray);
       
     } catch (error) {
       console.error('Error loading draft:', error);
