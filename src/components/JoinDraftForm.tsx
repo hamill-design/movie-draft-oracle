@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +14,7 @@ import { Hash, Users } from 'lucide-react';
 
 export const JoinDraftForm = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, guestSession } = useAuth();
   const { toast } = useToast();
   const { joinDraftByCode, loading } = useMultiplayerDraft();
   const { getDisplayName, profile, loading: profileLoading } = useProfile();
@@ -47,13 +48,12 @@ export const JoinDraftForm = () => {
       return;
     }
 
-    if (!user) {
+    if (!user && !guestSession) {
       toast({
-        title: "Sign In Required",
-        description: "Please sign in to join a draft",
+        title: "Session Required",
+        description: "Please refresh the page and try again",
         variant: "destructive",
       });
-      navigate('/auth');
       return;
     }
 
@@ -112,28 +112,11 @@ export const JoinDraftForm = () => {
           >
             {loading ? 'Joining...' : 'Join Draft'}
           </Button>
-          
-          {!user && (
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-3">
-              <p className="text-sm text-amber-800 text-center">
-                You need to{' '}
-                <Button 
-                  variant="link" 
-                  size="sm" 
-                  onClick={() => navigate('/auth')}
-                  className="p-0 h-auto text-amber-600 hover:text-amber-800"
-                >
-                  sign in
-                </Button>{' '}
-                to join drafts
-              </p>
-            </div>
-          )}
 
           {/* Debug info for development */}
           {process.env.NODE_ENV === 'development' && (
             <div className="text-xs text-muted-foreground space-y-1">
-              <div>Debug: Code: "{inviteCode}", Name: "{participantName}", User: {user ? 'Yes' : 'No'}</div>
+              <div>Debug: Code: "{inviteCode}", Name: "{participantName}", User: {user ? 'Yes' : 'No'}, Guest: {guestSession ? 'Yes' : 'No'}</div>
               <div>Form valid: {isFormValid ? 'Yes' : 'No'}, Button disabled: {isButtonDisabled ? 'Yes' : 'No'}</div>
             </div>
           )}
@@ -142,3 +125,4 @@ export const JoinDraftForm = () => {
     </Card>
   );
 };
+
