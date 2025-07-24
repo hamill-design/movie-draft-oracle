@@ -6,56 +6,12 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://zduruulowyopdstihfwk.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkdXJ1dWxvd3lvcGRzdGloZndrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzMTU1NTYsImV4cCI6MjA2Njg5MTU1Nn0.MzDpL-_nYR0jNEO-qcAf37tPz-b5DZpDCVrpy1F_saY";
 
-// Create base client
-const baseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+// Create base client with standard configuration
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
-  }
-});
-
-// Function to get current guest session ID
-const getGuestSessionId = () => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('guest_session_id');
-  }
-  return null;
-};
-
-// Enhanced client that properly transmits guest session ID
-export const supabase = new Proxy(baseClient, {
-  get(target: any, prop: string) {
-    const originalMethod = target[prop];
-    
-    // Intercept database query methods to add guest session context
-    if (prop === 'from' || prop === 'rpc') {
-      return function(...args: any[]) {
-        const result = originalMethod.apply(target, args);
-        
-        // Add guest session ID to the query context if available
-        const guestSessionId = getGuestSessionId();
-        if (guestSessionId && result && typeof result.select === 'function') {
-          // For queries, set a custom header that will be accessible in SQL
-          const originalSelect = result.select.bind(result);
-          result.select = function(...selectArgs: any[]) {
-            const selectResult = originalSelect(...selectArgs);
-            // Add headers to the request
-            if (selectResult && typeof selectResult.then === 'function') {
-              selectResult.headers = {
-                ...selectResult.headers,
-                'x-guest-session-id': guestSessionId
-              };
-            }
-            return selectResult;
-          };
-        }
-        
-        return result;
-      };
-    }
-    
-    return originalMethod;
   }
 });
 

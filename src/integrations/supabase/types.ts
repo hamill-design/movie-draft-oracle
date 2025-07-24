@@ -366,6 +366,10 @@ export type Database = {
         Args: { p_guest_session_id: string }
         Returns: undefined
       }
+      set_guest_session_context: {
+        Args: { session_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       participant_status: "invited" | "joined" | "left"
