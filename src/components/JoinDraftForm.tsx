@@ -1,5 +1,6 @@
 
 
+
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -112,17 +113,10 @@ export const JoinDraftForm = () => {
           >
             {loading ? 'Joining...' : 'Join Draft'}
           </Button>
-
-          {/* Debug info for development */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="text-xs text-muted-foreground space-y-1">
-              <div>Debug: Code: "{inviteCode}", Name: "{participantName}", User: {user ? 'Yes' : 'No'}, Guest: {guestSession ? 'Yes' : 'No'}</div>
-              <div>Form valid: {isFormValid ? 'Yes' : 'No'}, Button disabled: {isButtonDisabled ? 'Yes' : 'No'}</div>
-            </div>
-          )}
         </form>
       </CardContent>
     </Card>
   );
 };
+
 
