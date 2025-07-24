@@ -1,6 +1,4 @@
 
-
-
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -41,10 +39,24 @@ export const JoinDraftForm = () => {
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Add debugging logs
+    console.log('🔍 JOIN DEBUG - Button clicked, form data:', {
+      inviteCode: inviteCode.trim(),
+      participantName: participantName.trim(),
+      isJoining,
+      loading,
+      user: !!user,
+      guestSession: !!guestSession
+    });
+    
     // Prevent multiple simultaneous join attempts
-    if (isJoining) return;
+    if (isJoining) {
+      console.log('🔍 JOIN DEBUG - Already joining, preventing duplicate request');
+      return;
+    }
     
     if (!inviteCode.trim() || !participantName.trim()) {
+      console.log('🔍 JOIN DEBUG - Validation failed');
       toast({
         title: "Missing Information",
         description: "Please enter both invite code and your name",
@@ -54,6 +66,7 @@ export const JoinDraftForm = () => {
     }
 
     if (!user && !guestSession) {
+      console.log('🔍 JOIN DEBUG - No user or guest session');
       toast({
         title: "Session Required",
         description: "Please refresh the page and try again",
@@ -63,10 +76,12 @@ export const JoinDraftForm = () => {
     }
 
     try {
+      console.log('🔍 JOIN DEBUG - Starting join process...');
       setIsJoining(true);
       await joinDraftByCode(inviteCode.trim().toUpperCase(), participantName.trim());
+      console.log('🔍 JOIN DEBUG - Join completed successfully');
     } catch (error: any) {
-      console.error('Failed to join draft:', error);
+      console.error('🔍 JOIN DEBUG - Join failed:', error);
       
       // Provide more specific error messages
       if (error.message?.includes('duplicate key')) {
@@ -83,12 +98,23 @@ export const JoinDraftForm = () => {
         });
       }
     } finally {
+      console.log('🔍 JOIN DEBUG - Cleaning up join state');
       setIsJoining(false);
     }
   };
 
   const isFormValid = inviteCode.trim() && participantName.trim();
   const isButtonDisabled = loading || !isFormValid || isJoining;
+
+  // Add debugging for button state
+  console.log('🔍 JOIN DEBUG - Button state:', {
+    loading,
+    isFormValid,
+    isJoining,
+    isButtonDisabled,
+    inviteCode: inviteCode.length,
+    participantName: participantName.length
+  });
 
   return (
     <Card>
@@ -132,6 +158,10 @@ export const JoinDraftForm = () => {
             type="submit"
             disabled={isButtonDisabled}
             className="w-full"
+            onClick={(e) => {
+              console.log('🔍 JOIN DEBUG - Button onClick triggered');
+              // Don't prevent default here since we want the form submission to work
+            }}
           >
             {(loading || isJoining) ? 'Joining...' : 'Join Draft'}
           </Button>
@@ -140,5 +170,3 @@ export const JoinDraftForm = () => {
     </Card>
   );
 };
-
-
