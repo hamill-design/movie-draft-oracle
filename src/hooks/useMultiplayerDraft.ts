@@ -142,85 +142,87 @@ export const useMultiplayerDraft = (draftId?: string) => {
         newDraft = createdDraft;
       }
 
-      // Send email invitations to participants
-      console.log('📧 EMAIL DEBUG - Starting email invitation process:', {
-        draftId: newDraft.id,
-        hostEmail: user?.email || 'Guest User',
-        participantEmails: draftData.participantEmails,
-        inviteCode: newDraft.invite_code
-      });
-
-      let emailResults = null;
-      try {
-        const invitePayload = {
+      // Only send email invitations if there are participants to invite
+      if (draftData.participantEmails && draftData.participantEmails.length > 0) {
+        console.log('📧 EMAIL DEBUG - Starting email invitation process:', {
           draftId: newDraft.id,
-          draftTitle: draftData.title,
-          hostName: 'Host',
+          hostEmail: user?.email || 'Guest User',
           participantEmails: draftData.participantEmails,
-          theme: draftData.theme,
-          option: draftData.option,
-        };
-
-        console.log('📧 EMAIL DEBUG - Calling edge function with payload:', invitePayload);
-
-        const inviteResponse = await supabase.functions.invoke('send-draft-invitations', {
-          body: invitePayload
+          inviteCode: newDraft.invite_code
         });
 
-        console.log('📧 EMAIL DEBUG - Edge function response:', {
-          data: inviteResponse.data,
-          error: inviteResponse.error
-        });
+        let emailResults = null;
+        try {
+          const invitePayload = {
+            draftId: newDraft.id,
+            draftTitle: draftData.title,
+            hostName: 'Host',
+            participantEmails: draftData.participantEmails,
+            theme: draftData.theme,
+            option: draftData.option,
+          };
 
-        if (inviteResponse.error) {
-          console.error('📧 EMAIL DEBUG - Edge function error:', inviteResponse.error);
-          emailResults = { success: false, error: inviteResponse.error };
-        } else {
-          console.log('📧 EMAIL DEBUG - Invitations processed:', inviteResponse.data);
-          emailResults = inviteResponse.data;
+          console.log('📧 EMAIL DEBUG - Calling edge function with payload:', invitePayload);
+
+          const inviteResponse = await supabase.functions.invoke('send-draft-invitations', {
+            body: invitePayload
+          });
+
+          console.log('📧 EMAIL DEBUG - Edge function response:', {
+            data: inviteResponse.data,
+            error: inviteResponse.error
+          });
+
+          if (inviteResponse.error) {
+            console.error('📧 EMAIL DEBUG - Edge function error:', inviteResponse.error);
+            emailResults = { success: false, error: inviteResponse.error };
+          } else {
+            console.log('📧 EMAIL DEBUG - Invitations processed:', inviteResponse.data);
+            emailResults = inviteResponse.data;
+          }
+        } catch (emailError) {
+          console.error('📧 EMAIL DEBUG - Exception during email call:', emailError);
+          emailResults = { success: false, error: emailError.message };
         }
-      } catch (emailError) {
-        console.error('📧 EMAIL DEBUG - Exception during email call:', emailError);
-        emailResults = { success: false, error: emailError.message };
-      }
 
-      // Show detailed results to user
-      if (emailResults) {
-        if (emailResults.success && emailResults.invitations) {
-          const successful = emailResults.invitations.filter(inv => inv.status === 'sent').length;
-          const failed = emailResults.invitations.filter(inv => inv.status === 'failed').length;
-          const simulated = emailResults.invitations.filter(inv => inv.status === 'simulated').length;
-          
-          if (simulated > 0) {
-            toast({
-              title: "⚠️ Email Setup Required",
-              description: `Draft created! ${simulated} invitations were simulated. Set up Resend API key for actual emails.`,
-              variant: "default",
-            });
-          } else if (successful > 0 && failed === 0) {
-            toast({
-              title: "✅ All Invitations Sent",
-              description: `Successfully sent ${successful} email invitations!`,
-            });
-          } else if (successful > 0) {
-            toast({
-              title: "⚠️ Partial Success",
-              description: `${successful} emails sent, ${failed} failed. Check console for details.`,
-              variant: "default",
-            });
+        // Show detailed results to user
+        if (emailResults) {
+          if (emailResults.success && emailResults.invitations) {
+            const successful = emailResults.invitations.filter(inv => inv.status === 'sent').length;
+            const failed = emailResults.invitations.filter(inv => inv.status === 'failed').length;
+            const simulated = emailResults.invitations.filter(inv => inv.status === 'simulated').length;
+            
+            if (simulated > 0) {
+              toast({
+                title: "⚠️ Email Setup Required",
+                description: `Draft created! ${simulated} invitations were simulated. Set up Resend API key for actual emails.`,
+                variant: "default",
+              });
+            } else if (successful > 0 && failed === 0) {
+              toast({
+                title: "✅ All Invitations Sent",
+                description: `Successfully sent ${successful} email invitations!`,
+              });
+            } else if (successful > 0) {
+              toast({
+                title: "⚠️ Partial Success",
+                description: `${successful} emails sent, ${failed} failed. Check console for details.`,
+                variant: "default",
+              });
+            } else {
+              toast({
+                title: "❌ Email Sending Failed",
+                description: "All email invitations failed. Use invite code: " + newDraft.invite_code,
+                variant: "destructive",
+              });
+            }
           } else {
             toast({
-              title: "❌ Email Sending Failed",
-              description: "All email invitations failed. Use invite code: " + newDraft.invite_code,
+              title: "❌ Email System Error",
+              description: "Email service failed. Share invite code: " + newDraft.invite_code,
               variant: "destructive",
             });
           }
-        } else {
-          toast({
-            title: "❌ Email System Error",
-            description: "Email service failed. Share invite code: " + newDraft.invite_code,
-            variant: "destructive",
-          });
         }
       }
 
