@@ -156,7 +156,7 @@ export type Database = {
           title: string
           turn_order: Json | null
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           categories: string[]
@@ -175,7 +175,7 @@ export type Database = {
           title: string
           turn_order?: Json | null
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           categories?: string[]
@@ -194,7 +194,7 @@ export type Database = {
           title?: string
           turn_order?: Json | null
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
