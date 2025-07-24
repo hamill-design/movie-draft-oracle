@@ -339,7 +339,7 @@ const Home = () => {
             <CardContent className="pt-6">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                 <Users className="text-yellow-400" />
-                Add Participants
+                {draftMode === 'multiplayer' ? 'Invite Participants' : 'Add Participants'}
               </h3>
               
               <div className="flex gap-2 mb-4">
