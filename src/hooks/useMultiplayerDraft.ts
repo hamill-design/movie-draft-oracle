@@ -407,7 +407,16 @@ export const useMultiplayerDraft = (draftId?: string) => {
       });
 
       // Navigate to the draft page with the existing draft ID so it uses the multiplayer interface
-      navigate(`/draft/${draftData.id}`);
+      navigate('/draft', {
+        state: {
+          theme: draftData.theme,
+          option: draftData.option,
+          participants: draftData.participants,
+          categories: draftData.categories,
+          existingDraftId: draftData.id,
+          isMultiplayer: true
+        }
+      });
 
       return joinResult.participant_id;
     } catch (error: any) {
