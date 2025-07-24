@@ -337,27 +337,35 @@ export const useMultiplayerDraft = (draftId?: string) => {
     try {
       setLoading(true);
 
-      const { data, error } = await supabase.rpc('join_draft_by_invite_code_guest', {
+      const { data: joinResult, error } = await supabase.rpc('join_draft_by_invite_code_guest', {
         invite_code_param: inviteCode,
         participant_name_param: participantName,
         p_guest_session_id: guestSession?.id || null,
-      });
+      }).single();
 
       if (error) throw error;
 
-      // Find the draft by invite code to get its details
-      const { data: draftData, error: draftError } = await supabase
-        .from('drafts')
-        .select('*')
-        .eq('invite_code', inviteCode)
-        .maybeSingle();
-
-      if (draftError) throw draftError;
-      if (!draftData) throw new Error('Draft not found with this invite code');
+      // The function now returns complete draft details, so we can use them directly
+      const draftData = {
+        id: joinResult.draft_id,
+        title: joinResult.draft_title,
+        theme: joinResult.draft_theme,
+        option: joinResult.draft_option,
+        categories: joinResult.draft_categories,
+        participants: joinResult.draft_participants,
+        is_multiplayer: joinResult.draft_is_multiplayer,
+        invite_code: joinResult.draft_invite_code,
+        current_pick_number: joinResult.draft_current_pick_number,
+        current_turn_user_id: joinResult.draft_current_turn_user_id,
+        is_complete: joinResult.draft_is_complete,
+        turn_order: joinResult.draft_turn_order,
+        created_at: joinResult.draft_created_at,
+        updated_at: joinResult.draft_updated_at
+      };
 
       toast({
         title: "Joined Draft",
-        description: "Successfully joined the draft!",
+        description: `Successfully joined ${draftData.title}!`,
       });
 
       // Navigate to the draft page with multiplayer flag
@@ -372,7 +380,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
         }
       });
 
-      return data;
+      return joinResult.participant_id;
     } catch (error: any) {
       console.error('Error joining draft:', error);
       toast({

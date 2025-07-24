@@ -327,7 +327,23 @@ export type Database = {
           participant_name_param: string
           p_guest_session_id?: string
         }
-        Returns: string
+        Returns: {
+          participant_id: string
+          draft_id: string
+          draft_title: string
+          draft_theme: string
+          draft_option: string
+          draft_categories: string[]
+          draft_participants: string[]
+          draft_is_multiplayer: boolean
+          draft_invite_code: string
+          draft_current_pick_number: number
+          draft_current_turn_user_id: string
+          draft_is_complete: boolean
+          draft_turn_order: Json
+          draft_created_at: string
+          draft_updated_at: string
+        }[]
       }
       make_multiplayer_pick: {
         Args: {
