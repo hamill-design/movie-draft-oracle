@@ -37,7 +37,7 @@ export const useDraftForm = () => {
     if (!state.theme) return 'theme';
     if (!state.selectedOption) return 'option';
     if (!state.draftMode) return 'mode';
-    if (state.participants.length === 0) return 'participants';
+    // Participants are now optional - go to categories after mode selection
     return 'categories';
   }, [state]);
 
@@ -51,7 +51,7 @@ export const useDraftForm = () => {
       case 'mode':
         return Boolean(state.draftMode);
       case 'participants':
-        return state.participants.length > 0;
+        return true; // Participants are now optional
       case 'categories':
         return true; // Categories are handled by the form component
       case 'ready':
@@ -153,7 +153,6 @@ export const useDraftForm = () => {
   const canStartDraft = useCallback((formData: DraftSetupForm): boolean => {
     return Boolean(
       state.selectedOption && 
-      state.participants.length > 0 && 
       formData.categories.length > 0
     );
   }, [state]);

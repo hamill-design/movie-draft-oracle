@@ -76,7 +76,7 @@ const Home = () => {
   };
 
   const handleStartDraft = (data: DraftSetupForm) => {
-    if (!selectedOption || participants.length === 0 || !data.categories.length) return;
+    if (!selectedOption || !data.categories.length) return;
 
     // For multiplayer, validate that all participants are valid emails
     if (draftMode === 'multiplayer') {
@@ -403,7 +403,7 @@ const Home = () => {
           )}
 
           {/* Categories Selection */}
-          {isStepVisible('categories') && participants.length > 0 && (
+          {isStepVisible('categories') && (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleStartDraft)} className="space-y-8">
                 <CategoriesForm form={form} categories={categories} />
