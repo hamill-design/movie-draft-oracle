@@ -70,18 +70,39 @@ export const useMultiplayerDraft = (draftId?: string) => {
       let newDraft: any;
 
       if (!user && guestSession) {
-        // Use RPC function for guest users
-        const { data: draftId, error: guestError } = await supabase.rpc('create_guest_multiplayer_draft', {
-          p_guest_session_id: guestSession.id,
-          p_title: draftData.title,
-          p_theme: draftData.theme,
-          p_option: draftData.option,
-          p_categories: draftData.categories,
-          p_participants: draftData.participantEmails,
-          p_participant_name: 'Host',
+        // Add extensive logging for debugging
+        console.log('Creating guest multiplayer draft with data:', {
+          guestSessionId: guestSession.id,
+          title: draftData.title,
+          theme: draftData.theme,
+          option: draftData.option,
+          categories: draftData.categories,
+          participantEmails: draftData.participantEmails
         });
+        
+        // Validate and add fallbacks for parameters
+        const validatedData = {
+          p_guest_session_id: guestSession.id,
+          p_title: draftData.title || 'Movie Draft',
+          p_theme: draftData.theme || 'year',
+          p_option: draftData.option || '2024',
+          p_categories: draftData.categories?.length > 0 ? draftData.categories : ['Action/Adventure'],
+          p_participants: draftData.participantEmails?.length > 0 ? draftData.participantEmails : [],
+          p_participant_name: 'Host'
+        };
+        
+        console.log('Calling create_guest_multiplayer_draft with validated data:', validatedData);
+        
+        // Use RPC function for guest users
+        const { data: draftId, error: guestError } = await supabase.rpc('create_guest_multiplayer_draft', validatedData);
 
-        if (guestError) throw guestError;
+        if (guestError) {
+          console.error('Error creating guest multiplayer draft:', guestError);
+          console.error('Error details:', JSON.stringify(guestError, null, 2));
+          throw guestError;
+        }
+        
+        console.log('Successfully created draft with ID:', draftId);
 
         // Fetch the created draft to get all details including invite_code
         const { data: draftDetails, error: fetchError } = await supabase
