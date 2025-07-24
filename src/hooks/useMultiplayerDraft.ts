@@ -84,31 +84,22 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         
         console.log('Calling create_guest_multiplayer_draft with validated data:', validatedData);
         
-        // Use RPC function for guest users
-        const { data: draftId, error: guestError } = await supabase.rpc('create_guest_multiplayer_draft', validatedData);
+        // Use RPC function for guest users - now returns complete draft object
+        const { data: draftArray, error: guestError } = await supabase.rpc('create_guest_multiplayer_draft', validatedData);
 
         if (guestError) {
           console.error('Error creating guest multiplayer draft:', guestError);
           console.error('Error details:', JSON.stringify(guestError, null, 2));
           throw guestError;
         }
+
+        if (!draftArray || draftArray.length === 0) {
+          throw new Error('No draft returned from function');
+        }
         
-        console.log('Successfully created draft with ID:', draftId);
-
-        // Set guest session context before fetching
-        await supabase.rpc('set_guest_session_context', {
-          session_id: guestSession.id
-        });
-
-        // Fetch the created draft to get all details including invite_code
-        const { data: draftDetails, error: fetchError } = await supabase
-          .from('drafts')
-          .select('*')
-          .eq('id', draftId)
-          .maybeSingle();
-
-        if (fetchError) throw fetchError;
-        newDraft = draftDetails;
+        // The function now returns the complete draft object directly
+        newDraft = draftArray[0];
+        console.log('Successfully created draft with ID:', newDraft.id);
       } else {
         // Regular authenticated user flow
         const draftInsert: any = {

@@ -303,7 +303,25 @@ export type Database = {
           p_participants: string[]
           p_participant_name: string
         }
-        Returns: string
+        Returns: {
+          id: string
+          user_id: string
+          guest_session_id: string
+          title: string
+          theme: string
+          option: string
+          categories: string[]
+          participants: string[]
+          is_multiplayer: boolean
+          invite_code: string
+          current_pick_number: number
+          current_turn_user_id: string
+          is_complete: boolean
+          turn_order: Json
+          draft_order: string[]
+          created_at: string
+          updated_at: string
+        }[]
       }
       current_guest_session: {
         Args: Record<PropertyKey, never>
