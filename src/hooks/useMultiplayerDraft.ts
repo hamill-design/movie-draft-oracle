@@ -584,9 +584,20 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
 
       // Set guest session context if needed
       if (guestSession?.id) {
-        await supabase.rpc('set_guest_session_context', {
+        console.log('Setting guest session context:', guestSession.id);
+        const { error: contextError } = await supabase.rpc('set_guest_session_context', {
           session_id: guestSession.id
         });
+        if (contextError) {
+          console.error('Error setting guest context:', contextError);
+        }
+        
+        // Verify the context was set
+        const { data: currentSessionCheck, error: checkError } = await supabase.rpc('current_guest_session');
+        console.log('Current guest session after setting context:', currentSessionCheck);
+        if (checkError) {
+          console.error('Error checking current guest session:', checkError);
+        }
       }
 
       // Fetch draft data with better error handling
