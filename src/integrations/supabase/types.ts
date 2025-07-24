@@ -321,6 +321,14 @@ export type Database = {
         Args: { invite_code_param: string; participant_name_param: string }
         Returns: string
       }
+      join_draft_by_invite_code_guest: {
+        Args: {
+          invite_code_param: string
+          participant_name_param: string
+          p_guest_session_id?: string
+        }
+        Returns: string
+      }
       make_multiplayer_pick: {
         Args: {
           p_draft_id: string

@@ -41,18 +41,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
   const [loading, setLoading] = useState(false);
   const [isMyTurn, setIsMyTurn] = useState(false);
 
-  // Helper function to set guest session context before operations
-  const setGuestContext = async () => {
-    if (guestSession && !user) {
-      try {
-        await supabase.rpc('set_guest_session_context', {
-          session_id: guestSession.id
-        });
-      } catch (error) {
-        console.error('Failed to set guest session context:', error);
-      }
-    }
-  };
+  // Remove unused setGuestContext function
 
   // Create a multiplayer draft with email invitations
   const createMultiplayerDraft = useCallback(async (draftData: {
@@ -250,7 +239,6 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
     try {
       setLoading(true);
-      await setGuestContext();
 
       // Get all joined participants
       const { data: participants, error: participantsError } = await supabase
@@ -348,11 +336,11 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
     try {
       setLoading(true);
-      await setGuestContext();
 
-      const { data, error } = await supabase.rpc('join_draft_by_invite_code', {
+      const { data, error } = await supabase.rpc('join_draft_by_invite_code_guest', {
         invite_code_param: inviteCode,
         participant_name_param: participantName,
+        p_guest_session_id: guestSession?.id || null,
       });
 
       if (error) throw error;
@@ -407,7 +395,6 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
     try {
       setLoading(true);
-      await setGuestContext();
       console.log('🔍 DIAGNOSTIC v1.0 - Loading draft data...');
 
       // Load draft
@@ -495,7 +482,6 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
     try {
       setLoading(true);
-      await setGuestContext();
       
       console.log('🔍 ATOMIC v1.0 - Making pick with atomic function:', {
         draftId: draft.id,
