@@ -95,12 +95,17 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         
         console.log('Successfully created draft with ID:', draftId);
 
+        // Set guest session context before fetching
+        await supabase.rpc('set_guest_session_context', {
+          session_id: guestSession.id
+        });
+
         // Fetch the created draft to get all details including invite_code
         const { data: draftDetails, error: fetchError } = await supabase
           .from('drafts')
           .select('*')
           .eq('id', draftId)
-          .single();
+          .maybeSingle();
 
         if (fetchError) throw fetchError;
         newDraft = draftDetails;
@@ -244,6 +249,13 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     try {
       setLoading(true);
 
+      // Set guest session context if needed
+      if (guestSession?.id) {
+        await supabase.rpc('set_guest_session_context', {
+          session_id: guestSession.id
+        });
+      }
+
       // Get all joined participants
       const { data: participants, error: participantsError } = await supabase
         .from('draft_participants')
@@ -263,7 +275,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         .from('drafts')
         .select('categories')
         .eq('id', draftId)
-        .single();
+        .maybeSingle();
 
       if (draftError) throw draftError;
 
@@ -377,7 +389,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           .from('drafts')
           .select('*')
           .eq('invite_code', inviteCode)
-          .single();
+          .maybeSingle();
 
         if (draftError) throw draftError;
 
@@ -430,6 +442,13 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       const draftId = user ? (draft?.id || joinResult?.draft_id) : joinResult?.draft_id;
       
       if (draftId) {
+        // Set guest session context if needed for subsequent queries
+        if (guestSession?.id) {
+          await supabase.rpc('set_guest_session_context', {
+            session_id: guestSession.id
+          });
+        }
+
         // Load participants
         const { data: participantsData, error: participantsError } = await supabase
           .from('draft_participants')
@@ -525,6 +544,13 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       const currentGuestId = guestSession?.id;
       console.log('Current user ID:', currentUserId);
       console.log('Current guest session ID:', currentGuestId);
+
+      // Set guest session context if needed
+      if (guestSession?.id) {
+        await supabase.rpc('set_guest_session_context', {
+          session_id: guestSession.id
+        });
+      }
 
       // Fetch draft data with better error handling
       console.log('Fetching draft with ID:', id);
