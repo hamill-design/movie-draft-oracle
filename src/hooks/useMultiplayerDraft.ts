@@ -30,7 +30,7 @@ interface MultiplayerDraft {
   turn_order: any;
 }
 
-export const useMultiplayerDraft = (draftId?: string) => {
+export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft: any; participants: any[]; picks: any[] }) => {
   const { user, guestSession, isGuest } = useAuth();
   
   const { toast } = useToast();
@@ -428,7 +428,24 @@ export const useMultiplayerDraft = (draftId?: string) => {
         description: `Successfully joined ${draftData.title}!`,
       });
 
-      // Navigate to the draft page - let the component load fresh data from database
+      // Load existing participants and picks after joining
+      const [participantsData, picksData] = await Promise.all([
+        supabase
+          .from('draft_participants')
+          .select('*')
+          .eq('draft_id', draftData.id)
+          .order('created_at', { ascending: true }),
+        supabase
+          .from('draft_picks')
+          .select('*')
+          .eq('draft_id', draftData.id)
+          .order('pick_order', { ascending: true })
+      ]);
+
+      const existingParticipants = participantsData.data || [];
+      const existingPicks = picksData.data || [];
+
+      // Navigate to the draft page with complete draft data to avoid RLS issues
       navigate('/draft', {
         state: {
           theme: draftData.theme,
@@ -436,7 +453,12 @@ export const useMultiplayerDraft = (draftId?: string) => {
           participants: draftData.participants,
           categories: draftData.categories,
           existingDraftId: draftData.id,
-          isMultiplayer: true
+          isMultiplayer: true,
+          initialDraftData: {
+            draft: draftData,
+            participants: existingParticipants,
+            picks: existingPicks
+          }
         }
       });
 
