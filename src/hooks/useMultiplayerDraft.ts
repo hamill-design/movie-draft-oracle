@@ -50,42 +50,57 @@ export const useMultiplayerDraft = (draftId?: string) => {
     categories: string[];
     participantEmails: string[];  // Changed from participantNames to participantEmails
   }) => {
-    if (!user) throw new Error('User not authenticated');
+    if (!user && !guestSession) throw new Error('No user or guest session found');
 
 
     try {
       setLoading(true);
 
       // Create the draft (without setting current_turn_user_id yet - draft hasn't started)
+      const draftInsert: any = {
+        title: draftData.title,
+        theme: draftData.theme,
+        option: draftData.option,
+        categories: draftData.categories,
+        participants: draftData.participantEmails, // Store emails as participants
+        is_multiplayer: true,
+        current_pick_number: 1,
+      };
+
+      // Add either user_id or guest_session_id
+      if (user) {
+        draftInsert.user_id = user.id;
+      } else if (guestSession) {
+        draftInsert.guest_session_id = guestSession.id;
+      }
+
       const { data: newDraft, error: draftError } = await supabase
         .from('drafts')
-        .insert({
-          title: draftData.title,
-          theme: draftData.theme,
-          option: draftData.option,
-          categories: draftData.categories,
-          participants: draftData.participantEmails, // Store emails as participants
-          user_id: user.id,
-          is_multiplayer: true,
-          current_pick_number: 1,
-          // Don't set current_turn_user_id yet - draft hasn't started
-        })
+        .insert(draftInsert)
         .select()
         .single();
 
       if (draftError) throw draftError;
 
       // Create a participant record for the host (database trigger will handle the name)
+      const participantInsert: any = {
+        draft_id: newDraft.id,
+        participant_name: 'Host', // Required field, but trigger will override this
+        status: 'joined',
+        is_host: true,
+        joined_at: new Date().toISOString(),
+      };
+
+      // Add either user_id or guest_participant_id
+      if (user) {
+        participantInsert.user_id = user.id;
+      } else if (guestSession) {
+        participantInsert.guest_participant_id = guestSession.id;
+      }
+
       const { error: hostParticipantError } = await supabase
         .from('draft_participants')
-        .insert({
-          draft_id: newDraft.id,
-          user_id: user.id,
-          participant_name: 'Host', // Required field, but trigger will override this
-          status: 'joined',
-          is_host: true,
-          joined_at: new Date().toISOString(),
-        });
+        .insert(participantInsert);
 
       if (hostParticipantError) {
         console.error('Failed to create host participant:', hostParticipantError);
@@ -185,7 +200,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
   // Start the draft with pre-calculated snake draft turn order
   const startDraft = useCallback(async (draftId: string) => {
-    if (!user) throw new Error('User not authenticated');
+    if (!user && !guestSession) throw new Error('No user or guest session found');
 
     try {
       setLoading(true);
@@ -282,7 +297,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
 
   // Join a draft by invite code
   const joinDraftByCode = useCallback(async (inviteCode: string, participantName: string) => {
-    if (!user) throw new Error('User not authenticated');
+    if (!user && !guestSession) throw new Error('No user or guest session found');
 
     try {
       setLoading(true);
@@ -337,8 +352,8 @@ export const useMultiplayerDraft = (draftId?: string) => {
   // Load draft data
   const loadDraft = useCallback(async (id: string) => {
     console.log('🔍 DIAGNOSTIC v1.0 - Loading draft:', id);
-    if (!user) {
-      console.log('🚫 DIAGNOSTIC v1.0 - No user, skipping loadDraft');
+    if (!user && !guestSession) {
+      console.log('🚫 DIAGNOSTIC v1.0 - No user or guest session, skipping loadDraft');
       return;
     }
 
@@ -396,10 +411,11 @@ export const useMultiplayerDraft = (draftId?: string) => {
       setPicks(picksData);
 
       // Check if it's the current user's turn
-      const isMyTurn = draftData.current_turn_user_id === user.id;
+      const currentUserId = user?.id || guestSession?.id;
+      const isMyTurn = draftData.current_turn_user_id === currentUserId;
       console.log('🔍 DIAGNOSTIC v1.0 - Setting isMyTurn:', isMyTurn);
       console.log('🔍 DIAGNOSTIC v1.0 - Current turn user ID:', draftData.current_turn_user_id);
-      console.log('🔍 DIAGNOSTIC v1.0 - My user ID:', user.id);
+      console.log('🔍 DIAGNOSTIC v1.0 - My user ID:', currentUserId);
       setIsMyTurn(isMyTurn);
 
     } catch (error) {
@@ -413,16 +429,17 @@ export const useMultiplayerDraft = (draftId?: string) => {
       setLoading(false);
       console.log('🔍 DIAGNOSTIC v1.0 - Load draft completed');
     }
-  }, [user, toast]);
+  }, [user, guestSession, toast]);
 
   // Make a pick using atomic database function
   const makePick = useCallback(async (movie: any, category: string) => {
-    if (!user || !draft || !isMyTurn) {
+    if ((!user && !guestSession) || !draft || !isMyTurn) {
       console.log('🚫 ATOMIC v1.0 - Validation failed:', {
         hasUser: !!user,
+        hasGuestSession: !!guestSession,
         hasDraft: !!draft,
         isMyTurn,
-        userId: user?.id,
+        userId: user?.id || guestSession?.id,
         draftCurrentTurnUserId: draft?.current_turn_user_id
       });
       toast({
@@ -442,7 +459,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
         movieTitle: movie.title,
         category,
         currentPickNumber: draft.current_pick_number,
-        userId: user.id
+        userId: user?.id || guestSession?.id
       });
 
       // Check if this movie has already been drafted
@@ -503,11 +520,11 @@ export const useMultiplayerDraft = (draftId?: string) => {
     } finally {
       setLoading(false);
     }
-  }, [user, draft, isMyTurn, toast]);
+  }, [user, guestSession, draft, isMyTurn, toast]);
 
   // Set up real-time subscriptions
   useEffect(() => {
-    if (!draftId || !user) return;
+    if (!draftId || (!user && !guestSession)) return;
 
     const channel = supabase
       .channel(`draft-${draftId}`)
@@ -532,9 +549,10 @@ export const useMultiplayerDraft = (draftId?: string) => {
             
             setDraft(payload.new as MultiplayerDraft);
             
-            const newIsMyTurn = payload.new.current_turn_user_id === user.id;
+            const currentUserId = user?.id || guestSession?.id;
+            const newIsMyTurn = payload.new.current_turn_user_id === currentUserId;
             console.log('🔄 DIAGNOSTIC v1.0 - Setting isMyTurn to:', newIsMyTurn);
-            console.log('🔄 DIAGNOSTIC v1.0 - Because current_turn_user_id:', payload.new.current_turn_user_id, 'vs my ID:', user.id);
+            console.log('🔄 DIAGNOSTIC v1.0 - Because current_turn_user_id:', payload.new.current_turn_user_id, 'vs my ID:', currentUserId);
             setIsMyTurn(newIsMyTurn);
           }
         }
@@ -579,7 +597,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [draftId, user, loadDraft]);
+  }, [draftId, user, guestSession, loadDraft]);
 
   return {
     draft,
