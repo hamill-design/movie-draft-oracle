@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
@@ -19,12 +19,20 @@ export const JoinDraftForm = () => {
 
   const [inviteCode, setInviteCode] = useState('');
   const [participantName, setParticipantName] = useState('');
+  const [hasSetInitialName, setHasSetInitialName] = useState(false);
+
+  // Memoize the display name to prevent unnecessary re-renders
+  const displayName = useMemo(() => {
+    return profileLoading ? '' : getDisplayName();
+  }, [getDisplayName, profileLoading]);
 
   useEffect(() => {
-    if (!profileLoading) {
-      setParticipantName(getDisplayName());
+    // Only set the initial name once when profile loads
+    if (!profileLoading && !hasSetInitialName && displayName) {
+      setParticipantName(displayName);
+      setHasSetInitialName(true);
     }
-  }, [getDisplayName, profileLoading]);
+  }, [displayName, profileLoading, hasSetInitialName]);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
