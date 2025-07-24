@@ -67,57 +67,69 @@ export const useMultiplayerDraft = (draftId?: string) => {
     try {
       setLoading(true);
 
-      // Set guest session context if needed
-      await setGuestContext();
+      let newDraft: any;
 
-      // Create the draft (without setting current_turn_user_id yet - draft hasn't started)
-      const draftInsert: any = {
-        title: draftData.title,
-        theme: draftData.theme,
-        option: draftData.option,
-        categories: draftData.categories,
-        participants: draftData.participantEmails,
-        is_multiplayer: true,
-        current_pick_number: 1,
-      };
+      if (!user && guestSession) {
+        // Use RPC function for guest users
+        const { data: draftId, error: guestError } = await supabase.rpc('create_guest_multiplayer_draft', {
+          p_guest_session_id: guestSession.id,
+          p_title: draftData.title,
+          p_theme: draftData.theme,
+          p_option: draftData.option,
+          p_categories: draftData.categories,
+          p_participants: draftData.participantEmails,
+          p_participant_name: 'Host',
+        });
 
-      // Add either user_id or guest_session_id
-      if (user) {
-        draftInsert.user_id = user.id;
-      } else if (guestSession) {
-        draftInsert.guest_session_id = guestSession.id;
-      }
+        if (guestError) throw guestError;
 
-      const { data: newDraft, error: draftError } = await supabase
-        .from('drafts')
-        .insert(draftInsert)
-        .select()
-        .single();
+        // Fetch the created draft to get all details including invite_code
+        const { data: draftDetails, error: fetchError } = await supabase
+          .from('drafts')
+          .select('*')
+          .eq('id', draftId)
+          .single();
 
-      if (draftError) throw draftError;
+        if (fetchError) throw fetchError;
+        newDraft = draftDetails;
+      } else {
+        // Regular authenticated user flow
+        const draftInsert: any = {
+          title: draftData.title,
+          theme: draftData.theme,
+          option: draftData.option,
+          categories: draftData.categories,
+          participants: draftData.participantEmails,
+          is_multiplayer: true,
+          current_pick_number: 1,
+          user_id: user.id,
+        };
 
-      // Create a participant record for the host
-      const participantInsert: any = {
-        draft_id: newDraft.id,
-        participant_name: 'Host',
-        status: 'joined',
-        is_host: true,
-        joined_at: new Date().toISOString(),
-      };
+        const { data: createdDraft, error: draftError } = await supabase
+          .from('drafts')
+          .insert(draftInsert)
+          .select()
+          .single();
 
-      // Add either user_id or guest_participant_id
-      if (user) {
-        participantInsert.user_id = user.id;
-      } else if (guestSession) {
-        participantInsert.guest_participant_id = guestSession.id;
-      }
+        if (draftError) throw draftError;
 
-      const { error: hostParticipantError } = await supabase
-        .from('draft_participants')
-        .insert(participantInsert);
+        // Create a participant record for the host
+        const { error: hostParticipantError } = await supabase
+          .from('draft_participants')
+          .insert({
+            draft_id: createdDraft.id,
+            user_id: user.id,
+            participant_name: user.email || 'Host',
+            status: 'joined',
+            is_host: true,
+            joined_at: new Date().toISOString(),
+          });
 
-      if (hostParticipantError) {
-        console.error('Failed to create host participant:', hostParticipantError);
+        if (hostParticipantError) {
+          console.error('Failed to create host participant:', hostParticipantError);
+        }
+
+        newDraft = createdDraft;
       }
 
       // Send email invitations to participants

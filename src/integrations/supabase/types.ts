@@ -293,6 +293,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_guest_multiplayer_draft: {
+        Args: {
+          p_guest_session_id: string
+          p_title: string
+          p_theme: string
+          p_option: string
+          p_categories: string[]
+          p_participants: string[]
+          p_participant_name: string
+        }
+        Returns: string
+      }
       current_guest_session: {
         Args: Record<PropertyKey, never>
         Returns: string
