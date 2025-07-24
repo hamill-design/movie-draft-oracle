@@ -14,16 +14,7 @@ export const useGuestSession = (user: User | null = null) => {
   const [guestSession, setGuestSession] = useState<GuestSession | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const setGuestSessionContext = async (sessionId: string) => {
-    try {
-      // Set the guest session context in the database
-      await supabase.rpc('set_guest_session_context', {
-        session_id: sessionId
-      });
-    } catch (error) {
-      console.error('Failed to set guest session context:', error);
-    }
-  };
+  // Remove the setGuestSessionContext function as it's not needed
 
   const createGuestSession = async (): Promise<GuestSession> => {
     const { data, error } = await supabase
@@ -40,9 +31,6 @@ export const useGuestSession = (user: User | null = null) => {
     const session = data as GuestSession;
     localStorage.setItem('guest_session_id', session.id);
     setGuestSession(session);
-    
-    // Set the session context for database operations
-    await setGuestSessionContext(session.id);
     
     return session;
   };
@@ -69,9 +57,6 @@ export const useGuestSession = (user: User | null = null) => {
       if (!error && data) {
         const session = data as GuestSession;
         setGuestSession(session);
-        
-        // Set the session context for database operations
-        await setGuestSessionContext(session.id);
         
         // Update activity
         await updateGuestSessionActivity(session.id);
