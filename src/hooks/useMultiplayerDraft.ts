@@ -315,6 +315,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         .maybeSingle();
 
       if (draftError) throw draftError;
+      if (!draftData) throw new Error('Draft not found');
 
       // Randomize the participant order
       const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);

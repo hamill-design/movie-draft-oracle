@@ -164,7 +164,8 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
   };
 
   const getCurrentTurnPlayer = () => {
-    if (!draft?.current_turn_user_id || !participants.length) return null;
+    // Only show current turn player if draft has actually started
+    if (!draft?.current_turn_user_id || !participants.length || !draftHasStarted) return null;
     
     return participants.find(p => 
       p.user_id === draft.current_turn_user_id || 
@@ -333,7 +334,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
                         {participant.is_host && (
                           <Badge variant="outline" className="text-xs">Host</Badge>
                         )}
-                        {participant.user_id === draft.current_turn_user_id && !isComplete && (
+                        {(participant.user_id === draft.current_turn_user_id || participant.guest_participant_id === draft.current_turn_user_id) && !isComplete && draftHasStarted && (
                           <Badge variant="default" className="text-xs">Current Turn</Badge>
                         )}
                       </div>
