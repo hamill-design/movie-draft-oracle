@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
-import { useAuth } from '@/contexts/AuthContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMovies } from '@/hooks/useMovies';
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -36,7 +36,7 @@ interface MultiplayerDraftInterfaceProps {
 }
 
 export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftData }: MultiplayerDraftInterfaceProps) => {
-  const { user, guestSession } = useAuth();
+  const { participantId, isAuthenticated, user } = useCurrentUser();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -50,7 +50,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
     joinDraftByCode,
     makePick,
     startDraft,
-  } = useMultiplayerDraft(draftId); // Remove initialDraftData
+  } = useMultiplayerDraft(draftId);
 
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -76,7 +76,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
 
   // Create draft if this is a new multiplayer draft
   useEffect(() => {
-    if (initialData && !draftId && (user || guestSession)) {
+    if (initialData && !draftId && participantId) {
       const createDraft = async () => {
         try {
           const newDraft = await createMultiplayerDraft({
@@ -111,7 +111,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
 
       createDraft();
     }
-  }, [initialData, draftId, user, guestSession, createMultiplayerDraft, navigate, toast]);
+  }, [initialData, draftId, participantId, createMultiplayerDraft, navigate, toast]);
 
   const handleMovieSelect = (movie: any) => {
     setSelectedMovie(movie);
@@ -122,28 +122,24 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
   };
 
   const confirmPick = async () => {
-    console.log('🔍 DIAGNOSTIC v1.0 - confirmPick called in MultiplayerDraftInterface');
-    console.log('🔍 Selected movie:', selectedMovie);
-    console.log('🔍 Selected category:', selectedCategory);
-    console.log('🔍 Draft state:', draft);
-    console.log('🔍 IsMyTurn:', isMyTurn);
-    console.log('🔍 User:', user);
-    console.log('🔍 Participants:', participants);
-    
     if (!selectedMovie || !selectedCategory) {
-      console.log('🚫 DIAGNOSTIC v1.0 - Missing movie or category');
       return;
     }
 
     try {
-      console.log('🔍 DIAGNOSTIC v1.0 - Calling makePick...');
-      await makePick(selectedMovie, selectedCategory);
-      console.log('✅ DIAGNOSTIC v1.0 - makePick completed successfully');
+      await makePick(
+        selectedMovie.id,
+        selectedMovie.title,
+        selectedMovie.release_date ? new Date(selectedMovie.release_date).getFullYear() : new Date().getFullYear(),
+        selectedMovie.genre_names?.[0] || 'Unknown',
+        selectedCategory,
+        selectedMovie.poster_path
+      );
       setSelectedMovie(null);
       setSelectedCategory('');
       setSearchQuery('');
     } catch (error) {
-      console.error('🚫 DIAGNOSTIC v1.0 - Failed to make pick in interface:', error);
+      console.error('Failed to make pick in interface:', error);
     }
   };
 
@@ -164,22 +160,30 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
   };
 
   const getCurrentTurnPlayer = () => {
-    // Only show current turn player if draft has actually started
-    if (!draft?.current_turn_user_id || !participants.length || !draftHasStarted) return null;
+    if (!draft || !participants.length) return null;
     
-    return participants.find(p => 
-      p.user_id === draft.current_turn_user_id || 
-      p.guest_participant_id === draft.current_turn_user_id
-    );
+    // Use unified field if available, fallback to legacy field
+    const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
+    if (!currentTurnId) return null;
+    
+    return participants.find(p => {
+      const participantId = p.user_id || p.guest_participant_id;
+      return participantId === currentTurnId;
+    });
   };
 
   // Check if current user is the host
-  const isHost = participants.some(p => 
-    p.is_host && (
-      (user && p.user_id === user.id) || 
-      (guestSession && p.guest_participant_id === guestSession.id)
-    )
-  );
+  const isHost = useMemo(() => {
+    if (!participants.length || !participantId) return false;
+    
+    return participants.some(p => {
+      if (p.is_host) {
+        const pId = p.user_id || p.guest_participant_id;
+        return pId === participantId;
+      }
+      return false;
+    });
+  }, [participants, participantId]);
 
   // Check if draft has been started (has turn order)
   const draftHasStarted = draft?.turn_order && draft.turn_order.length > 0;
@@ -195,6 +199,21 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
             <Skeleton className="h-96" />
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (!participantId) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Authentication Required</CardTitle>
+            <CardDescription>
+              Loading your session to participate in the draft...
+            </CardDescription>
+          </CardHeader>
+        </Card>
       </div>
     );
   }
@@ -321,29 +340,35 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {participants.map((participant) => (
-                  <div key={participant.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>
-                        {participant.participant_name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{participant.participant_name}</span>
-                        {participant.is_host && (
-                          <Badge variant="outline" className="text-xs">Host</Badge>
-                        )}
-                        {(participant.user_id === draft.current_turn_user_id || participant.guest_participant_id === draft.current_turn_user_id) && !isComplete && draftHasStarted && (
-                          <Badge variant="default" className="text-xs">Current Turn</Badge>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {participant.status === 'joined' ? 'Joined' : participant.status}
+                {participants.map((participant) => {
+                  const pId = participant.user_id || participant.guest_participant_id;
+                  const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
+                  const isCurrentTurn = pId === currentTurnId;
+                  
+                  return (
+                    <div key={participant.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {participant.participant_name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{participant.participant_name}</span>
+                          {participant.is_host && (
+                            <Badge variant="outline" className="text-xs">Host</Badge>
+                          )}
+                          {isCurrentTurn && !isComplete && draftHasStarted && (
+                            <Badge variant="default" className="text-xs">Current Turn</Badge>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {participant.status === 'joined' ? 'Joined' : participant.status}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -411,7 +436,9 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
               theme={draft.theme}
               draftOption={getCleanActorName(draft.option)}
               currentPlayer={currentTurnPlayer ? { 
-                id: participants.findIndex(p => p.user_id === currentTurnPlayer.user_id) + 1, 
+                id: participants.findIndex(p => 
+                  (p.user_id || p.guest_participant_id) === (currentTurnPlayer.user_id || currentTurnPlayer.guest_participant_id)
+                ) + 1, 
                 name: currentTurnPlayer.participant_name 
               } : undefined}
             />
@@ -459,33 +486,32 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
                         },
                         category: pick.category
                       }))}
-                      currentPlayerId={participants.findIndex(p => p.user_id === (user?.id || guestSession?.id)) + 1}
+                      currentPlayerId={participants.findIndex(p => 
+                        (p.user_id || p.guest_participant_id) === participantId
+                      ) + 1}
                     />
 
-                    {selectedMovie && selectedCategory && (
-                      <>
-                        <Separator />
-                        <PickConfirmation
-                          currentPlayerName={currentTurnPlayer?.participant_name || 'Unknown'}
-                          selectedMovie={selectedMovie}
-                          selectedCategory={selectedCategory}
-                          onConfirm={confirmPick}
-                        />
-                      </>
-                    )}
+                    <Separator />
+
+                    <PickConfirmation
+                      currentPlayerName={currentTurnPlayer?.participant_name || 'You'}
+                      selectedMovie={selectedMovie}
+                      selectedCategory={selectedCategory}
+                      onConfirm={confirmPick}
+                    />
                   </CardContent>
                 </Card>
               </>
             )}
 
-            {!isComplete && !isMyTurn && (
+            {!isComplete && !isMyTurn && draftHasStarted && (
               <Card>
                 <CardContent className="p-6 text-center">
                   <div className="space-y-2">
                     <Clock className="h-8 w-8 mx-auto text-muted-foreground" />
                     <h3 className="font-semibold">Waiting for {currentTurnPlayer?.participant_name}</h3>
                     <p className="text-sm text-muted-foreground">
-                      It's their turn to make a pick
+                      It's their turn to pick a movie. You'll be notified when it's your turn!
                     </p>
                   </div>
                 </CardContent>
@@ -493,16 +519,16 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
             )}
           </div>
         </div>
-      </div>
 
-      {/* Diagnostic Info - Only show in development or when debugging */}
-      <DiagnosticInfo
-        draft={draft}
-        participants={participants}
-        picks={picks}
-        user={user}
-        isMyTurn={isMyTurn}
-      />
+        {/* Diagnostic Info */}
+        <DiagnosticInfo 
+          draft={draft}
+          participants={participants}
+          picks={picks}
+          user={user}
+          isMyTurn={isMyTurn}
+        />
+      </div>
     </div>
   );
 };
