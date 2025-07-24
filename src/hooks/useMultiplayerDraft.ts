@@ -40,7 +40,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   const [draft, setDraft] = useState<MultiplayerDraft | null>(null);
   const [participants, setParticipants] = useState<DraftParticipant[]>([]);
   const [picks, setPicks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true); // Start with loading true
+  const [loading, setLoading] = useState(false); // Start with loading false, set true only during operations
   const [isMyTurn, setIsMyTurn] = useState(false);
 
   // Remove unused setGuestContext function
@@ -645,6 +645,9 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   // Set up real-time subscriptions
   useEffect(() => {
     if (!draftId || (!user && !guestSession)) return;
+
+    // Set loading to true when we have a draftId to load
+    setLoading(true);
 
     const channel = supabase
       .channel(`draft-${draftId}`)
