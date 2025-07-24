@@ -28,9 +28,14 @@ interface MultiplayerDraftInterfaceProps {
     categories: string[];
     isHost?: boolean;
   };
+  initialDraftData?: {
+    draft: any;
+    participants: any[];
+    picks: any[];
+  };
 }
 
-export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerDraftInterfaceProps) => {
+export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftData }: MultiplayerDraftInterfaceProps) => {
   const { user, guestSession } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -45,7 +50,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
     joinDraftByCode,
     makePick,
     startDraft,
-  } = useMultiplayerDraft(draftId);
+  } = useMultiplayerDraft(draftId, initialDraftData);
 
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');

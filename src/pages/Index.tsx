@@ -87,6 +87,7 @@ const Index = () => {
       <MultiplayerDraftInterface 
         draftId={draftState.existingDraftId}
         initialData={!draftState.existingDraftId ? draftState : undefined}
+        initialDraftData={(location.state as any)?.initialDraftData}
       />
     );
   }

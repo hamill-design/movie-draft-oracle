@@ -29,15 +29,15 @@ interface MultiplayerDraft {
   turn_order: any;
 }
 
-export const useMultiplayerDraft = (draftId?: string) => {
+export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft: any; participants: any[]; picks: any[] }) => {
   const { user, guestSession, isGuest } = useAuth();
   
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const [draft, setDraft] = useState<MultiplayerDraft | null>(null);
-  const [participants, setParticipants] = useState<DraftParticipant[]>([]);
-  const [picks, setPicks] = useState<any[]>([]);
+  const [draft, setDraft] = useState<MultiplayerDraft | null>(initialDraftData?.draft || null);
+  const [participants, setParticipants] = useState<DraftParticipant[]>(initialDraftData?.participants || []);
+  const [picks, setPicks] = useState<any[]>(initialDraftData?.picks || []);
   const [loading, setLoading] = useState(false);
   const [isMyTurn, setIsMyTurn] = useState(false);
 
@@ -406,7 +406,7 @@ export const useMultiplayerDraft = (draftId?: string) => {
         description: `Successfully joined ${draftData.title}!`,
       });
 
-      // Navigate to the draft page with the existing draft ID so it uses the multiplayer interface
+      // Navigate to the draft page with complete draft data to avoid RLS issues
       navigate('/draft', {
         state: {
           theme: draftData.theme,
@@ -414,7 +414,12 @@ export const useMultiplayerDraft = (draftId?: string) => {
           participants: draftData.participants,
           categories: draftData.categories,
           existingDraftId: draftData.id,
-          isMultiplayer: true
+          isMultiplayer: true,
+          initialDraftData: {
+            draft: draftData,
+            participants: [/* participants will be loaded via real-time */],
+            picks: [/* picks will be loaded via real-time */]
+          }
         }
       });
 
@@ -661,12 +666,23 @@ export const useMultiplayerDraft = (draftId?: string) => {
       )
       .subscribe();
 
-    loadDraft(draftId);
+    // Only load draft if we don't have initial data
+    if (!initialDraftData) {
+      loadDraft(draftId);
+    } else {
+      console.log('🔍 DIAGNOSTIC v1.0 - Using initial draft data, skipping load');
+      // Set isMyTurn based on initial data
+      if (initialDraftData.draft && (user || guestSession)) {
+        const currentUserId = user?.id || guestSession?.id;
+        const isMyTurnValue = initialDraftData.draft.current_turn_user_id === currentUserId;
+        setIsMyTurn(isMyTurnValue);
+      }
+    }
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [draftId, user, guestSession, loadDraft]);
+  }, [draftId, user, guestSession, loadDraft, initialDraftData]);
 
   return {
     draft,
