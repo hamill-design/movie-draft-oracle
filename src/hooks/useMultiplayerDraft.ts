@@ -286,109 +286,39 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     try {
       setLoading(true);
 
-      // Set guest session context if needed
-      if (guestSession?.id) {
-        await supabase.rpc('set_guest_session_context', {
-          session_id: guestSession.id
-        });
-      }
+      console.log('Starting draft with ID:', draftId);
+      console.log('Guest session ID:', guestSession?.id);
 
-      // Get all joined participants
-      const { data: participants, error: participantsError } = await supabase
-        .from('draft_participants')
-        .select('*')
-        .eq('draft_id', draftId)
-        .eq('status', 'joined')
-        .order('joined_at');
+      // Call the database function to start the draft
+      const { data, error } = await supabase.rpc('start_multiplayer_draft', {
+        p_draft_id: draftId,
+        p_guest_session_id: guestSession?.id || null
+      });
 
-      if (participantsError) throw participantsError;
-      
-      if (participants.length < 2) {
-        throw new Error('Need at least 2 players to start the draft');
-      }
+      if (error) throw error;
+      if (!data || data.length === 0) throw new Error('Failed to start draft');
 
-      // Get draft details to know categories
-      const { data: draftData, error: draftError } = await supabase
-        .from('drafts')
-        .select('categories')
-        .eq('id', draftId)
-        .maybeSingle();
+      const updatedDraft = data[0];
+      console.log('Draft started successfully:', updatedDraft);
 
-      if (draftError) throw draftError;
-      if (!draftData) throw new Error('Draft not found');
+      // Update local state
+      setDraft(prev => prev ? {
+        ...prev,
+        turn_order: updatedDraft.draft_turn_order,
+        current_turn_user_id: updatedDraft.draft_current_turn_user_id,
+        current_pick_number: updatedDraft.draft_current_pick_number
+      } : prev);
 
-      // Randomize the participant order
-      const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
-      
-      // Generate complete snake draft turn order (like single-player draftOrder)
-      const numPlayers = shuffledParticipants.length;
-      const numCategories = draftData.categories.length;
-      const turnOrder = [];
-      
-      for (let round = 0; round < numCategories; round++) {
-        if (round % 2 === 0) {
-          // Forward order
-          for (let i = 0; i < numPlayers; i++) {
-            turnOrder.push({
-              user_id: shuffledParticipants[i].user_id,
-              guest_participant_id: shuffledParticipants[i].guest_participant_id,
-              participant_name: shuffledParticipants[i].participant_name,
-              round,
-              pick_number: turnOrder.length + 1
-            });
-          }
-        } else {
-          // Reverse order (snake draft)
-          for (let i = numPlayers - 1; i >= 0; i--) {
-            turnOrder.push({
-              user_id: shuffledParticipants[i].user_id,
-              guest_participant_id: shuffledParticipants[i].guest_participant_id,
-              participant_name: shuffledParticipants[i].participant_name,
-              round,
-              pick_number: turnOrder.length + 1
-            });
-          }
-        }
-      }
+      // Check if it's the current user's turn
+      const currentUser = user?.id || guestSession?.id;
+      setIsMyTurn(updatedDraft.draft_current_turn_user_id === currentUser);
 
-      // Start the draft with the first turn
-      const firstTurn = turnOrder[0];
-      
-      // Use the appropriate ID for the current turn (user_id for authenticated, guest_participant_id for guests)
-      const currentTurnId = firstTurn.user_id || firstTurn.guest_participant_id;
-      
-      console.log('Generated complete turn order:', turnOrder);
-      console.log('First player:', firstTurn.participant_name, 'ID:', currentTurnId);
+      // Get first player name from turn order
+      const firstPlayerName = updatedDraft.draft_turn_order?.[0]?.participant_name || 'Unknown';
 
-      const { data: updatedDraft, error: updateError } = await supabase
-        .from('drafts')
-        .update({
-          current_turn_user_id: currentTurnId,
-          current_pick_number: 1,
-          turn_order: turnOrder
-        })
-        .eq('id', draftId)
-        .select()
-        .single();
-
-      if (updateError) {
-        console.error('Error starting draft:', updateError);
-        throw updateError;
-      }
-
-      console.log('Draft started successfully with data:', updatedDraft);
-      
-      // Update local state immediately instead of reloading
-      setDraft(prevDraft => ({
-        ...prevDraft!,
-        current_turn_user_id: currentTurnId,
-        current_pick_number: 1,
-        turn_order: turnOrder
-      }));
-      
       toast({
         title: "Draft Started!",
-        description: `${firstTurn.participant_name} goes first!`,
+        description: `${firstPlayerName} goes first!`,
       });
 
     } catch (error) {
