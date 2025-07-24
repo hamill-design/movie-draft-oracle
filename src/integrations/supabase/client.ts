@@ -15,28 +15,40 @@ const baseClient = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY
   }
 });
 
-// Create a proxy to add guest session headers
-const supabaseHandler = {
+// Function to get current guest session ID
+const getGuestSessionId = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('guest_session_id');
+  }
+  return null;
+};
+
+// Enhanced client that properly transmits guest session ID
+export const supabase = new Proxy(baseClient, {
   get(target: any, prop: string) {
     const originalMethod = target[prop];
     
-    // For methods that make requests, add guest session header
+    // Intercept database query methods to add guest session context
     if (prop === 'from' || prop === 'rpc') {
       return function(...args: any[]) {
         const result = originalMethod.apply(target, args);
         
-        // Add guest session header if available
-        const guestSessionId = localStorage.getItem('guest_session_id');
-        if (guestSessionId && result && typeof result === 'object') {
-          // Add custom header for guest session
-          if (result.headers) {
-            result.headers['x-guest-session-id'] = guestSessionId;
-          } else {
-            Object.defineProperty(result, 'headers', {
-              value: { 'x-guest-session-id': guestSessionId },
-              writable: true
-            });
-          }
+        // Add guest session ID to the query context if available
+        const guestSessionId = getGuestSessionId();
+        if (guestSessionId && result && typeof result.select === 'function') {
+          // For queries, set a custom header that will be accessible in SQL
+          const originalSelect = result.select.bind(result);
+          result.select = function(...selectArgs: any[]) {
+            const selectResult = originalSelect(...selectArgs);
+            // Add headers to the request
+            if (selectResult && typeof selectResult.then === 'function') {
+              selectResult.headers = {
+                ...selectResult.headers,
+                'x-guest-session-id': guestSessionId
+              };
+            }
+            return selectResult;
+          };
         }
         
         return result;
@@ -45,10 +57,7 @@ const supabaseHandler = {
     
     return originalMethod;
   }
-};
-
-// Export proxied client
-export const supabase = new Proxy(baseClient, supabaseHandler);
+});
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
