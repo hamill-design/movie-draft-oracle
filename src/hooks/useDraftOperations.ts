@@ -171,11 +171,15 @@ export const useDraftOperations = () => {
         .from('drafts')
         .select('*')
         .eq('id', draftId)
-        .single();
+        .maybeSingle();
 
       if (draftError) {
         console.error('Draft fetch error:', draftError);
         throw draftError;
+      }
+
+      if (!draft) {
+        throw new Error('Draft not found or you do not have access to this draft');
       }
 
       console.log('Draft fetched successfully:', draft);

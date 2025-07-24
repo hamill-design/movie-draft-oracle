@@ -34,10 +34,10 @@ const Index = () => {
     }
   }, [draftState, navigate]);
 
-  // Load existing draft data if editing an existing draft
+  // Load existing draft data only for non-multiplayer drafts
   useEffect(() => {
     const loadExistingDraft = async () => {
-      if (!draftState?.existingDraftId || hasLoadedDraft.current) return;
+      if (!draftState?.existingDraftId || hasLoadedDraft.current || draftState.isMultiplayer) return;
 
       hasLoadedDraft.current = true;
       setLoadingExistingDraft(true);
@@ -60,13 +60,13 @@ const Index = () => {
       }
     };
 
-    if (draftState?.existingDraftId && !hasLoadedDraft.current) {
+    if (draftState?.existingDraftId && !hasLoadedDraft.current && !draftState.isMultiplayer) {
       loadExistingDraft();
     }
-  }, [draftState?.existingDraftId, getDraftWithPicks]);
+  }, [draftState?.existingDraftId, draftState?.isMultiplayer, getDraftWithPicks]);
 
-  // Show loading state while loading existing draft
-  if (loading || loadingExistingDraft) {
+  // Show loading state while loading existing draft (only for non-multiplayer drafts)
+  if (loading || (loadingExistingDraft && !draftState?.isMultiplayer)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center">
         <div className="text-white text-xl">

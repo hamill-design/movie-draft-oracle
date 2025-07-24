@@ -304,23 +304,25 @@ export type Database = {
           p_participant_name: string
         }
         Returns: {
-          id: string
-          user_id: string
-          guest_session_id: string
-          title: string
-          theme: string
-          option: string
-          categories: string[]
-          participants: string[]
-          is_multiplayer: boolean
-          invite_code: string
-          current_pick_number: number
-          current_turn_user_id: string
-          is_complete: boolean
-          turn_order: Json
-          draft_order: string[]
-          created_at: string
-          updated_at: string
+          draft_id: string
+          draft_user_id: string
+          draft_guest_session_id: string
+          draft_title: string
+          draft_theme: string
+          draft_option: string
+          draft_categories: string[]
+          draft_participants: string[]
+          draft_is_multiplayer: boolean
+          draft_invite_code: string
+          draft_current_pick_number: number
+          draft_current_turn_user_id: string
+          draft_is_complete: boolean
+          draft_turn_order: Json
+          draft_draft_order: string[]
+          draft_created_at: string
+          draft_updated_at: string
+          participants_data: Json
+          picks_data: Json
         }[]
       }
       current_guest_session: {

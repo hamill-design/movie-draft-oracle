@@ -97,9 +97,47 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           throw new Error('No draft returned from function');
         }
         
-        // The function now returns the complete draft object directly
-        newDraft = draftArray[0];
+        // The function now returns the complete draft object with participants and picks
+        const functionResult = draftArray[0];
+        
+        // Set the complete draft data from the function response
+        newDraft = {
+          id: functionResult.draft_id,
+          user_id: functionResult.draft_user_id,
+          guest_session_id: functionResult.draft_guest_session_id,
+          title: functionResult.draft_title,
+          theme: functionResult.draft_theme,
+          option: functionResult.draft_option,
+          categories: functionResult.draft_categories,
+          participants: functionResult.draft_participants,
+          is_multiplayer: functionResult.draft_is_multiplayer,
+          invite_code: functionResult.draft_invite_code,
+          current_pick_number: functionResult.draft_current_pick_number,
+          current_turn_user_id: functionResult.draft_current_turn_user_id,
+          is_complete: functionResult.draft_is_complete,
+          turn_order: functionResult.draft_turn_order,
+          draft_order: functionResult.draft_draft_order,
+          created_at: functionResult.draft_created_at,
+          updated_at: functionResult.draft_updated_at
+        };
+
+        // Set participants and picks from the function response
+        const participantsArray = Array.isArray(functionResult.participants_data) 
+          ? (functionResult.participants_data as unknown as DraftParticipant[])
+          : [];
+        setParticipants(participantsArray);
+
+        const picksArray = Array.isArray(functionResult.picks_data) 
+          ? functionResult.picks_data 
+          : [];
+        setPicks(picksArray);
+
+        // Update the draft state with complete data
+        setDraft(newDraft);
+
         console.log('Successfully created draft with ID:', newDraft.id);
+        console.log('Participants loaded from creation:', participantsArray.length);
+        console.log('Picks loaded from creation:', picksArray.length);
       } else {
         // Regular authenticated user flow
         const draftInsert: any = {
@@ -138,6 +176,14 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         }
 
         newDraft = createdDraft;
+      }
+
+      // Don't load draft again for guest users - we already have complete data
+      if (!user && guestSession) {
+        console.log('Skipping additional loadDraft for guest user - data already loaded from function');
+      } else {
+        // Load the draft data for authenticated users
+        await loadDraft(newDraft.id);
       }
 
       // Only send email invitations if there are participants to invite
