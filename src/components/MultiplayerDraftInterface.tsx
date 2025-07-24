@@ -50,7 +50,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
     joinDraftByCode,
     makePick,
     startDraft,
-  } = useMultiplayerDraft(draftId, initialDraftData);
+  } = useMultiplayerDraft(draftId); // Remove initialDraftData
 
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -164,11 +164,24 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
   };
 
   const getCurrentTurnPlayer = () => {
+    if (!draft?.current_turn_user_id || !participants.length) return null;
+    
     return participants.find(p => 
-      p.user_id === draft?.current_turn_user_id || 
-      p.guest_participant_id === draft?.current_turn_user_id
+      p.user_id === draft.current_turn_user_id || 
+      p.guest_participant_id === draft.current_turn_user_id
     );
   };
+
+  // Check if current user is the host
+  const isHost = participants.some(p => 
+    p.is_host && (
+      (user && p.user_id === user.id) || 
+      (guestSession && p.guest_participant_id === guestSession.id)
+    )
+  );
+
+  // Check if draft has been started (has turn order)
+  const draftHasStarted = draft?.turn_order && draft.turn_order.length > 0;
 
   if (loading) {
     return (
@@ -335,8 +348,8 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
           </Card>
         </div>
 
-        {/* Start Draft Button - Show when draft hasn't started */}
-        {!draft.current_turn_user_id && participants.length >= 2 && !isComplete && (
+        {/* Start Draft Button - Show only to host when conditions are met */}
+        {!draftHasStarted && participants.length >= 2 && !isComplete && isHost && (
           <Card>
             <CardContent className="p-6 text-center">
               <div className="space-y-4">
@@ -346,8 +359,12 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
                     {participants.length} players have joined. Click below to randomize turn order and start the draft!
                   </p>
                 </div>
-                <Button onClick={() => startDraft(draft.id)} className="w-full md:w-auto">
-                  🎲 Start Draft (Random Turn Order)
+                <Button 
+                  onClick={() => startDraft(draft.id)} 
+                  className="w-full md:w-auto"
+                  disabled={loading}
+                >
+                  {loading ? 'Starting...' : '🎲 Start Draft (Random Turn Order)'}
                 </Button>
               </div>
             </CardContent>
@@ -355,7 +372,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData, initialDraftDa
         )}
 
         {/* Waiting for Players - Show when not enough players */}
-        {!draft.current_turn_user_id && participants.length < 2 && (
+        {!draftHasStarted && participants.length < 2 && (
           <Card>
             <CardContent className="p-6 text-center">
               <div className="space-y-2">

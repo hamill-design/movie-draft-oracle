@@ -1,100 +1,122 @@
-# Movie Draft Game - Knowledgebase
+# Movie Draft App - Knowledgebase
 
 ## Overview
-The Movie Draft Game is a web application that allows users to create and participate in movie drafting games. Users can draft movies based on different themes (actor/director or year) and categories, then compete to see whose picks perform best.
+A React-based movie drafting application that allows users to create fantasy drafts with different themes (years, actors, general movies) and categories. Users can draft movies competitively in single-player or multiplayer formats.
 
-## Key Features
-
-### Guest Access
-- Users can create and join drafts without an account
-- Guest sessions are temporary (7 days)
-- All draft functionality available to guests
-- Account creation prompts for permanent saving
+## Core Features
 
 ### Draft Types
-1. **Solo/Local Drafts**: Single-player experience with AI-controlled opponents
-2. **Multiplayer Drafts**: Real-time collaborative drafts with friends via invite codes
+1. **Single Player Drafts**: Quick drafts with AI/simulated opponents
+2. **Multiplayer Drafts**: Real-time drafts with multiple human participants
 
 ### Draft Themes
-1. **By Person**: Draft movies featuring a specific actor or director
-2. **By Year**: Draft movies released in a specific year
+1. **Year-based**: Draft movies from specific years (e.g., 2020, 1990s)
+2. **Actor-based**: Draft movies featuring specific actors (e.g., "Tom Hanks movies")
+3. **General**: Draft from popular movie collections
 
-### Categories
-Dynamic categories based on theme:
-- **Person-based**: Actor roles, director films, genre variety, etc.
-- **Year-based**: Box office performance, critical acclaim, awards, etc.
+### Draft Categories
+Players draft movies to fill specific categories like:
+- Action/Adventure
+- Drama/Romance
+- Comedy
+- Blockbusters (minimum $50M budget)
+- Academy Award nominees/winners
+- Decade-specific (2010s, 2020s, etc.)
 
 ## Technical Architecture
 
-### Frontend
+### Frontend Stack
 - **React 18** with TypeScript
+- **Vite** for build tooling
 - **Tailwind CSS** for styling with custom design system
+- **Shadcn/ui** components for consistent UI
 - **React Router** for navigation
-- **React Hook Form** for form management
-- **Zustand** for state management
+- **React Hook Form** with Zod validation
 
-### Backend
-- **Supabase** for database, authentication, and real-time features
-- **PostgreSQL** database with Row Level Security (RLS)
-- **Edge Functions** for server-side logic
-- **Real-time subscriptions** for multiplayer features
+### Backend & Database
+- **Supabase** for backend services
+  - PostgreSQL database with Row Level Security (RLS)
+  - Real-time subscriptions for multiplayer features
+  - Authentication (email/password + guest sessions)
+  - Edge Functions for external API integrations
 
-### External APIs
-- **TMDB (The Movie Database)** for movie data
-- **OMDB** for additional movie metadata
-- **Resend** for email invitations
+### Data Sources
+- **TMDB (The Movie Database)** API for movie data
+- **OMDB** API for additional movie metadata
+- Custom caching layer for performance
 
 ## Database Schema
 
 ### Core Tables
+- `drafts`: Draft configurations and state
+- `draft_participants`: Multiplayer draft participants 
+- `draft_picks`: Individual movie selections
+- `guest_sessions`: Anonymous user sessions
 - `profiles`: User profile data
-- `guest_sessions`: Temporary guest session tracking
-- `drafts`: Draft game instances
-- `draft_participants`: Players in each draft
-- `draft_picks`: Movie selections made during drafts
-- `oscar_cache`: Cached Oscar nomination/win data
+- `oscar_cache`: Cached awards data
 
-### Security
-- Row Level Security (RLS) policies protect data
-- Guest sessions have isolated access
-- User data migration on account creation
+### Authentication Model
+- Supports both authenticated users and guest sessions
+- Guest sessions allow anonymous participation with optional account creation
+- RLS policies ensure data access control
 
-## Authentication System
-
-### Dual Authentication
-1. **Authenticated Users**: Full account with permanent data
-2. **Guest Sessions**: Temporary access with migration capability
-
-### Guest Session Flow
-1. Auto-generate guest session on first visit
-2. Allow full draft functionality
-3. Prompt for account creation at strategic points
-4. Migrate guest data to user account on signup
-
-## Multiplayer System
-
-### Real-time Features
-- Live draft updates via Supabase real-time
-- Turn-based picking system
-- Participant status tracking
-- Invite code sharing
+## Key Components
 
 ### Draft Flow
-1. Host creates draft with theme/categories
-2. Sends invitations via email or invite code
-3. Players join and wait for draft start
-4. Turn-based picking begins
-5. Real-time updates for all participants
+1. **Draft Creation**: Configure theme, categories, participants
+2. **Participant Joining**: Email invites or invite codes
+3. **Turn Management**: Randomized turn order, real-time updates
+4. **Movie Selection**: Search, filter, and pick movies
+5. **Draft Completion**: Final results and scoring
 
-## Scoring System
-- Dynamic scoring based on movie metadata
-- Box office performance
-- Critical acclaim (IMDB, Rotten Tomatoes, Metacritic)
-- Awards recognition (Oscars)
-- Audience scores
+### Real-time Features
+- Live participant status updates
+- Turn notifications
+- Pick broadcasts
+- Draft state synchronization
 
-## Design System
-- Custom HSL color tokens
-- Semantic theming for light/dark modes
-- Consistent component variants
-- Responsive design patterns
+## Guest Session System
+Allows anonymous users to:
+- Create and join drafts without registration
+- Maintain session state across browser sessions
+- Optionally convert to full accounts later
+- Automatic data migration upon account creation
+
+## External Integrations
+
+### Movie Data APIs
+- TMDB for core movie information, cast, crew
+- OMDB for additional metadata and ratings
+- Custom edge functions handle API rate limiting
+
+### Email Services
+- Draft invitation emails
+- Participant notifications
+- Account verification (optional)
+
+## Deployment & Hosting
+- Frontend deployed on modern hosting platforms
+- Supabase manages backend infrastructure
+- Environment-specific configurations
+- Automatic CI/CD pipeline integration
+
+## Performance Optimizations
+- Movie data caching
+- Lazy loading for large datasets
+- Optimistic UI updates
+- Real-time subscription management
+- Image optimization and CDN usage
+
+## Security Considerations
+- Row Level Security for data access
+- Guest session expiration and cleanup
+- API rate limiting and abuse prevention
+- Input validation and sanitization
+- CORS and CSP headers
+
+## Future Enhancements
+- Advanced scoring algorithms
+- Tournament bracket systems
+- Social features and leaderboards
+- Mobile app development
+- AI-powered movie recommendations

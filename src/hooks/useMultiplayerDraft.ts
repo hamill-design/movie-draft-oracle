@@ -36,10 +36,11 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   const { toast } = useToast();
   const navigate = useNavigate();
   
-  const [draft, setDraft] = useState<MultiplayerDraft | null>(initialDraftData?.draft || null);
-  const [participants, setParticipants] = useState<DraftParticipant[]>(initialDraftData?.participants || []);
-  const [picks, setPicks] = useState<any[]>(initialDraftData?.picks || []);
-  const [loading, setLoading] = useState(false);
+  // Remove initialDraftData optimization - always load fresh from database
+  const [draft, setDraft] = useState<MultiplayerDraft | null>(null);
+  const [participants, setParticipants] = useState<DraftParticipant[]>([]);
+  const [picks, setPicks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true); // Start with loading true
   const [isMyTurn, setIsMyTurn] = useState(false);
 
   // Remove unused setGuestContext function
@@ -309,17 +310,32 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       console.log('Generated complete turn order:', turnOrder);
       console.log('First player:', firstTurn.participant_name, 'ID:', currentTurnId);
 
-      const { error: updateError } = await supabase
+      const { data: updatedDraft, error: updateError } = await supabase
         .from('drafts')
         .update({
           current_turn_user_id: currentTurnId,
           current_pick_number: 1,
           turn_order: turnOrder
         })
-        .eq('id', draftId);
+        .eq('id', draftId)
+        .select()
+        .single();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error starting draft:', updateError);
+        throw updateError;
+      }
 
+      console.log('Draft started successfully with data:', updatedDraft);
+      
+      // Update local state immediately instead of reloading
+      setDraft(prevDraft => ({
+        ...prevDraft!,
+        current_turn_user_id: currentTurnId,
+        current_pick_number: 1,
+        turn_order: turnOrder
+      }));
+      
       toast({
         title: "Draft Started!",
         description: `${firstTurn.participant_name} goes first!`,
@@ -460,81 +476,80 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     }
   }, [user, guestSession, toast, navigate]);
 
-  // Load draft data
+  // Load draft data - ALWAYS from database with better error handling
   const loadDraft = useCallback(async (id: string) => {
-    console.log('🔍 DIAGNOSTIC v1.0 - Loading draft:', id);
-    if (!user && !guestSession) {
-      console.log('🚫 DIAGNOSTIC v1.0 - No user or guest session, skipping loadDraft');
-      return;
-    }
-
+    if (!id) return;
+    
     try {
       setLoading(true);
-      console.log('🔍 DIAGNOSTIC v1.0 - Loading draft data...');
+      console.log(`Loading draft from database: ${id}`);
+      
+      // Get current user context for debugging
+      const currentUserId = user?.id;
+      const currentGuestId = guestSession?.id;
+      console.log('Current user ID:', currentUserId);
+      console.log('Current guest session ID:', currentGuestId);
 
-      // Load draft
+      // Fetch draft data with better error handling
+      console.log('Fetching draft with ID:', id);
       const { data: draftData, error: draftError } = await supabase
         .from('drafts')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle(); // Use maybeSingle instead of single to avoid PGRST116 error
 
       if (draftError) {
-        console.log('🚫 DIAGNOSTIC v1.0 - Draft load error:', draftError);
+        console.error('Draft fetch error:', draftError);
         throw draftError;
       }
-      
-      console.log('🔍 DIAGNOSTIC v1.0 - Draft data loaded:', draftData);
-      setDraft(draftData);
 
-      // Load participants
+      if (!draftData) {
+        console.error('Draft not found or no access');
+        throw new Error('Draft not found or you do not have access to this draft');
+      }
+
+      console.log('Draft data loaded:', draftData);
+
+      // Fetch participants
       const { data: participantsData, error: participantsError } = await supabase
         .from('draft_participants')
         .select('*')
         .eq('draft_id', id)
-        .order('created_at');
+        .order('created_at', { ascending: true });
 
       if (participantsError) {
-        console.log('🚫 DIAGNOSTIC v1.0 - Participants load error:', participantsError);
+        console.error('Participants fetch error:', participantsError);
         throw participantsError;
       }
-      
-      console.log('🔍 DIAGNOSTIC v1.0 - Participants loaded:', participantsData);
-      setParticipants(participantsData);
 
-      // Load picks
+      console.log('Participants loaded:', participantsData);
+
+      // Fetch picks
       const { data: picksData, error: picksError } = await supabase
         .from('draft_picks')
         .select('*')
         .eq('draft_id', id)
-        .order('pick_order');
+        .order('pick_order', { ascending: true });
 
       if (picksError) {
-        console.log('🚫 DIAGNOSTIC v1.0 - Picks load error:', picksError);
-        throw picksError;
+        console.error('Picks fetch error:', picksError);
+        // Don't throw error for picks - they might not exist yet
+        console.warn('No picks found yet, continuing...');
       }
+
+      console.log('Picks loaded:', picksData);
       
-      console.log('🔍 DIAGNOSTIC v1.0 - Picks loaded:', picksData);
-      setPicks(picksData);
-
-      // Check if it's the current user's turn
-      const currentUserId = user?.id || guestSession?.id;
-      const isMyTurn = draftData.current_turn_user_id === currentUserId;
-      console.log('🔍 DIAGNOSTIC v1.0 - Setting isMyTurn:', isMyTurn);
-      setIsMyTurn(isMyTurn);
-
+      setDraft(draftData);
+      setParticipants(participantsData || []);
+      setPicks(picksData || []);
+      
     } catch (error) {
-      console.error('🚫 DIAGNOSTIC v1.0 - Error loading draft:', error);
-      toast({
-        title: "Error",
-        description: "DIAGNOSTIC v1.0 - Failed to load draft",
-        variant: "destructive",
-      });
+      console.error('Error loading draft:', error);
+      throw error;
     } finally {
       setLoading(false);
-      console.log('🔍 DIAGNOSTIC v1.0 - Load draft completed');
     }
-  }, [user, guestSession, toast]);
+  }, [user, guestSession]);
 
   // Make a pick using atomic database function
   const makePick = useCallback(async (movie: any, category: string) => {
@@ -689,23 +704,13 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       )
       .subscribe();
 
-    // Only load draft if we don't have initial data
-    if (!initialDraftData) {
-      loadDraft(draftId);
-    } else {
-      console.log('🔍 DIAGNOSTIC v1.0 - Using initial draft data, skipping load');
-      // Set isMyTurn based on initial data
-      if (initialDraftData.draft && (user || guestSession)) {
-        const currentUserId = user?.id || guestSession?.id;
-        const isMyTurnValue = initialDraftData.draft.current_turn_user_id === currentUserId;
-        setIsMyTurn(isMyTurnValue);
-      }
-    }
+    // Always load fresh data from database - no more initialDraftData optimization
+    loadDraft(draftId);
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [draftId, user, guestSession, loadDraft, initialDraftData]);
+  }, [draftId, user, guestSession, loadDraft]);
 
   return {
     draft,
