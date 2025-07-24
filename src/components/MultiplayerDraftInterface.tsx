@@ -31,7 +31,7 @@ interface MultiplayerDraftInterfaceProps {
 }
 
 export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerDraftInterfaceProps) => {
-  const { user } = useAuth();
+  const { user, guestSession } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
@@ -71,7 +71,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
 
   // Create draft if this is a new multiplayer draft
   useEffect(() => {
-    if (initialData && !draftId && user) {
+    if (initialData && !draftId && (user || guestSession)) {
       const createDraft = async () => {
         try {
           const newDraft = await createMultiplayerDraft({
@@ -106,7 +106,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
 
       createDraft();
     }
-  }, [initialData, draftId, user, createMultiplayerDraft, navigate, toast]);
+  }, [initialData, draftId, user, guestSession, createMultiplayerDraft, navigate, toast]);
 
   const handleMovieSelect = (movie: any) => {
     setSelectedMovie(movie);
@@ -433,7 +433,7 @@ export const MultiplayerDraftInterface = ({ draftId, initialData }: MultiplayerD
                         },
                         category: pick.category
                       }))}
-                      currentPlayerId={participants.findIndex(p => p.user_id === user?.id) + 1}
+                      currentPlayerId={participants.findIndex(p => p.user_id === (user?.id || guestSession?.id)) + 1}
                     />
 
                     {selectedMovie && selectedCategory && (
