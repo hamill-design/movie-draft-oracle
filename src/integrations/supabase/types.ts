@@ -332,6 +332,39 @@ export type Database = {
           picks_data: Json
         }[]
       }
+      create_multiplayer_draft_unified: {
+        Args: {
+          p_participant_id: string
+          p_title: string
+          p_theme: string
+          p_option: string
+          p_categories: string[]
+          p_participants: string[]
+          p_participant_name: string
+        }
+        Returns: {
+          draft_id: string
+          draft_user_id: string
+          draft_guest_session_id: string
+          draft_title: string
+          draft_theme: string
+          draft_option: string
+          draft_categories: string[]
+          draft_participants: string[]
+          draft_is_multiplayer: boolean
+          draft_invite_code: string
+          draft_current_pick_number: number
+          draft_current_turn_user_id: string
+          draft_current_turn_participant_id: string
+          draft_is_complete: boolean
+          draft_turn_order: Json
+          draft_draft_order: string[]
+          draft_created_at: string
+          draft_updated_at: string
+          participants_data: Json
+          picks_data: Json
+        }[]
+      }
       current_guest_session: {
         Args: Record<PropertyKey, never>
         Returns: string

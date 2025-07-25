@@ -58,9 +58,9 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     try {
       setLoading(true);
 
-      // Use unified function for both authenticated and guest users
-      const result = await supabase.rpc('create_guest_multiplayer_draft', {
-        p_guest_session_id: participantId,
+      // Use the new unified function for both authenticated and guest users
+      const result = await supabase.rpc('create_multiplayer_draft_unified', {
+        p_participant_id: participantId,
         p_title: draftData.title,
         p_theme: draftData.theme,
         p_option: draftData.option,
