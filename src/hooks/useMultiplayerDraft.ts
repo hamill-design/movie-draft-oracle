@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from './useCurrentUser';
@@ -38,12 +38,20 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   const { toast } = useToast();
   const navigate = useNavigate();
   
+  // Use ref to track current participantId for real-time subscriptions
+  const participantIdRef = useRef(participantId);
+  
   // Remove initialDraftData optimization - always load fresh from database
   const [draft, setDraft] = useState<MultiplayerDraft | null>(null);
   const [participants, setParticipants] = useState<DraftParticipant[]>([]);
   const [picks, setPicks] = useState<any[]>([]);
   const [loading, setLoading] = useState(false); // Start with loading false, set true only during operations
   const [isMyTurn, setIsMyTurn] = useState(false);
+
+  // Update ref when participantId changes
+  useEffect(() => {
+    participantIdRef.current = participantId;
+  }, [participantId]);
 
   // Create a multiplayer draft with email invitations
   const createMultiplayerDraft = useCallback(async (draftData: {
@@ -451,34 +459,24 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     }
   }, [draftId, participantId, draft, loadDraft]);
 
-  // Set up real-time subscriptions with retry mechanism for guest sessions
+  // Set up real-time subscriptions using ref for stable participantId access
   useEffect(() => {
     if (!draftId) return;
-
-    let retryAttempts = 0;
-    const maxRetries = 5;
 
     const handleDraftUpdate = async (payload: any) => {
       console.log('Draft updated:', payload);
       
-      const attemptReload = async () => {
-        const currentParticipantId = participantId;
-        if (currentParticipantId) {
-          try {
-            await loadDraft(draftId);
-            retryAttempts = 0; // Reset retry count on success
-          } catch (error) {
-            console.log('Failed to load draft on real-time update:', error);
-          }
-        } else if (retryAttempts < maxRetries) {
-          // If no participantId, retry after a short delay
-          retryAttempts++;
-          console.log(`No participantId available, retrying in 200ms (attempt ${retryAttempts}/${maxRetries})`);
-          setTimeout(attemptReload, 200);
+      // Use ref to get current participantId value
+      const currentParticipantId = participantIdRef.current;
+      if (currentParticipantId) {
+        try {
+          await loadDraft(draftId);
+        } catch (error) {
+          console.log('Failed to load draft on real-time update:', error);
         }
-      };
-
-      await attemptReload();
+      } else {
+        console.log('No participantId available for real-time update');
+      }
     };
 
     const draftChannel = supabase
@@ -518,7 +516,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     return () => {
       supabase.removeChannel(draftChannel);
     };
-  }, [draftId, participantId, loadDraft]);
+  }, [draftId, loadDraft]); // Removed participantId from dependency array
 
   return {
     draft,
