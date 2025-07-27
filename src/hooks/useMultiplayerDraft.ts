@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from './useCurrentUser';
+import { useGuestSession } from './useGuestSession';
 import { useToast } from '@/hooks/use-toast';
 
 interface DraftParticipant {
@@ -33,7 +34,8 @@ interface MultiplayerDraft {
 }
 
 export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft: any; participants: any[]; picks: any[] }) => {
-  const { participantId } = useCurrentUser();
+  const { participantId, isGuest } = useCurrentUser();
+  const { guestSession } = useGuestSession();
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -470,6 +472,17 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       const currentParticipantId = participantIdRef.current;
       if (currentParticipantId) {
         try {
+          // For guest sessions, set the guest session context before loading
+          if (isGuest && guestSession?.id) {
+            console.log('Setting guest session context for real-time update:', guestSession.id);
+            const { error: contextError } = await supabase.rpc('set_guest_session_context', {
+              session_id: guestSession.id
+            });
+            if (contextError) {
+              console.error('Failed to set guest session context:', contextError);
+            }
+          }
+          
           await loadDraft(draftId);
         } catch (error) {
           console.log('Failed to load draft on real-time update:', error);
