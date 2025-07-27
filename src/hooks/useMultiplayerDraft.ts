@@ -444,9 +444,42 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     }
   }, [draftId, participantId, loadDraft]);
 
-  // Set up real-time subscriptions
+  // Separate effect to reload draft when participantId becomes available
+  useEffect(() => {
+    if (draftId && participantId && !draft) {
+      loadDraft(draftId);
+    }
+  }, [draftId, participantId, draft, loadDraft]);
+
+  // Set up real-time subscriptions with retry mechanism for guest sessions
   useEffect(() => {
     if (!draftId) return;
+
+    let retryAttempts = 0;
+    const maxRetries = 5;
+
+    const handleDraftUpdate = async (payload: any) => {
+      console.log('Draft updated:', payload);
+      
+      const attemptReload = async () => {
+        const currentParticipantId = participantId;
+        if (currentParticipantId) {
+          try {
+            await loadDraft(draftId);
+            retryAttempts = 0; // Reset retry count on success
+          } catch (error) {
+            console.log('Failed to load draft on real-time update:', error);
+          }
+        } else if (retryAttempts < maxRetries) {
+          // If no participantId, retry after a short delay
+          retryAttempts++;
+          console.log(`No participantId available, retrying in 200ms (attempt ${retryAttempts}/${maxRetries})`);
+          setTimeout(attemptReload, 200);
+        }
+      };
+
+      await attemptReload();
+    };
 
     const draftChannel = supabase
       .channel('schema-db-changes')
@@ -458,12 +491,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           table: 'drafts',
           filter: `id=eq.${draftId}`,
         },
-        (payload) => {
-          console.log('Draft updated:', payload);
-          if (participantId) {
-            loadDraft(draftId);
-          }
-        }
+        handleDraftUpdate
       )
       .on(
         'postgres_changes',
@@ -473,12 +501,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           table: 'draft_participants',
           filter: `draft_id=eq.${draftId}`,
         },
-        (payload) => {
-          console.log('Participants updated:', payload);
-          if (participantId) {
-            loadDraft(draftId);
-          }
-        }
+        handleDraftUpdate
       )
       .on(
         'postgres_changes',
@@ -488,12 +511,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           table: 'draft_picks',
           filter: `draft_id=eq.${draftId}`,
         },
-        (payload) => {
-          console.log('Picks updated:', payload);
-          if (participantId) {
-            loadDraft(draftId);
-          }
-        }
+        handleDraftUpdate
       )
       .subscribe();
 
