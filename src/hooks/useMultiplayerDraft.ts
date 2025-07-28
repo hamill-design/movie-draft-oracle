@@ -58,6 +58,9 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   // Presence channel for real-time updates
   const presenceChannelRef = useRef<any>(null);
 
+  // Broadcast throttling to prevent spam
+  const lastBroadcastRef = useRef<{ [key: string]: number }>({});
+
   // Get current participant name
   const getCurrentParticipantName = useCallback(() => {
     const currentParticipant = participants.find(p => 
@@ -68,13 +71,26 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     return currentParticipant?.participant_name || 'Unknown Player';
   }, [participants, participantId]);
 
-  // Broadcast draft change to all participants
-  const broadcastDraftChange = useCallback((type: string, payload: any = {}, participantName?: string) => {
+  // Broadcast draft change to all participants with throttling
+  const broadcastDraftChange = useCallback((type: string, payload: any = {}, participantName?: string, forceThrottle = false) => {
     console.log('Broadcasting:', type, 'Channel ready:', !!presenceChannelRef.current, 'ParticipantId:', participantId);
     
     if (!presenceChannelRef.current || !participantId) {
       console.warn('Cannot broadcast: missing channel or participantId');
       return;
+    }
+
+    // Throttle PARTICIPANT_ACTIVE broadcasts to prevent spam (5 second cooldown)
+    if (forceThrottle && type === 'PARTICIPANT_ACTIVE') {
+      const now = Date.now();
+      const lastBroadcast = lastBroadcastRef.current[type] || 0;
+      const throttleTime = 5000; // 5 seconds
+      
+      if (now - lastBroadcast < throttleTime) {
+        console.log('Throttling broadcast:', type);
+        return;
+      }
+      lastBroadcastRef.current[type] = now;
     }
 
     const message = {
@@ -324,6 +340,19 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       const currentTurnId = mappedDraft.current_turn_participant_id || mappedDraft.current_turn_user_id;
       setIsMyTurn(currentTurnId === participantId);
 
+      // Broadcast that this participant is now active (with throttling)
+      // Only broadcast if we're an existing participant (found in participants list)
+      const isExistingParticipant = participantsArray.some(p => 
+        p.participant_id === participantId || 
+        p.user_id === participantId || 
+        p.guest_participant_id === participantId
+      );
+      
+      if (isExistingParticipant && presenceChannelRef.current) {
+        console.log('🟡 Broadcasting PARTICIPANT_ACTIVE for existing participant');
+        broadcastDraftChange('PARTICIPANT_ACTIVE', {}, undefined, true);
+      }
+
     } catch (error) {
       console.error('Error loading draft:', error);
       toast({
@@ -557,6 +586,12 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
               description: `${participantName} joined the draft`,
             });
             break;
+          case 'PARTICIPANT_ACTIVE':
+            toast({
+              title: "Player Active",
+              description: `${participantName} is now active in the draft`,
+            });
+            break;
         }
 
         // Reload draft data
@@ -568,6 +603,23 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         console.log('Presence channel status:', status);
         if (status === 'SUBSCRIBED') {
           console.log('Presence channel ready for broadcasting');
+          
+          // When channel is ready, broadcast that this participant is active (with throttling)
+          // Only if we have a draft and we're a participant
+          if (draft && participants.length > 0) {
+            const isParticipant = participants.some(p => 
+              p.participant_id === participantId || 
+              p.user_id === participantId || 
+              p.guest_participant_id === participantId
+            );
+            
+            if (isParticipant) {
+              console.log('🟡 Channel ready - broadcasting PARTICIPANT_ACTIVE');
+              setTimeout(() => {
+                broadcastDraftChange('PARTICIPANT_ACTIVE', {}, undefined, true);
+              }, 500); // Small delay to ensure channel is fully ready
+            }
+          }
         }
       });
 
