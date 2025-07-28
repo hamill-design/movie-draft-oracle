@@ -58,8 +58,9 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   // Presence channel for real-time updates
   const presenceChannelRef = useRef<any>(null);
 
-  // Broadcast throttling to prevent spam
-  const lastBroadcastRef = useRef<{ [key: string]: number }>({});
+  // Broadcast queue for messages sent before channel is ready
+  const broadcastQueueRef = useRef<Array<{type: string, payload: any, participantName?: string}>>([]);
+  const channelReadyRef = useRef(false);
 
   // Get current participant name
   const getCurrentParticipantName = useCallback(() => {
@@ -71,26 +72,53 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     return currentParticipant?.participant_name || 'Unknown Player';
   }, [participants, participantId]);
 
-  // Broadcast draft change to all participants with throttling
-  const broadcastDraftChange = useCallback((type: string, payload: any = {}, participantName?: string, forceThrottle = false) => {
-    console.log('Broadcasting:', type, 'Channel ready:', !!presenceChannelRef.current, 'ParticipantId:', participantId);
-    
-    if (!presenceChannelRef.current || !participantId) {
-      console.warn('Cannot broadcast: missing channel or participantId');
+  // Process queued broadcasts when channel becomes ready
+  const processQueuedBroadcasts = useCallback(() => {
+    if (!channelReadyRef.current || !presenceChannelRef.current || broadcastQueueRef.current.length === 0) {
       return;
     }
 
-    // Throttle PARTICIPANT_ACTIVE broadcasts to prevent spam (5 second cooldown)
-    if (forceThrottle && type === 'PARTICIPANT_ACTIVE') {
-      const now = Date.now();
-      const lastBroadcast = lastBroadcastRef.current[type] || 0;
-      const throttleTime = 5000; // 5 seconds
-      
-      if (now - lastBroadcast < throttleTime) {
-        console.log('Throttling broadcast:', type);
-        return;
+    console.log('Processing queued broadcasts:', broadcastQueueRef.current.length);
+    
+    broadcastQueueRef.current.forEach(({ type, payload, participantName }) => {
+      const message = {
+        type,
+        participantId,
+        participantName: participantName || getCurrentParticipantName(),
+        draftId: draft?.id,
+        timestamp: new Date().toISOString(),
+        ...payload
+      };
+
+      try {
+        presenceChannelRef.current.send({
+          type: 'broadcast',
+          event: 'draft-change',
+          payload: message
+        });
+        console.log('Sent queued broadcast:', type);
+      } catch (error) {
+        console.error('Failed to send queued broadcast:', error);
       }
-      lastBroadcastRef.current[type] = now;
+    });
+
+    broadcastQueueRef.current = [];
+  }, [participantId, draft?.id, getCurrentParticipantName]);
+
+  // Broadcast draft change to all participants with queue system
+  const broadcastDraftChange = useCallback((type: string, payload: any = {}, participantName?: string) => {
+    console.log('Broadcasting:', type, 'Channel ready:', channelReadyRef.current, 'ParticipantId:', participantId);
+    
+    if (!participantId) {
+      console.warn('Cannot broadcast: missing participantId');
+      return;
+    }
+
+    // If channel is not ready, queue the message
+    if (!channelReadyRef.current || !presenceChannelRef.current) {
+      console.log('Queueing broadcast until channel is ready:', type);
+      broadcastQueueRef.current.push({ type, payload, participantName });
+      return;
     }
 
     const message = {
@@ -112,6 +140,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       });
     } catch (error) {
       console.error('Failed to broadcast:', error);
+      // Re-queue the message if it failed
+      broadcastQueueRef.current.push({ type, payload, participantName });
     }
   }, [participantId, draft?.id, getCurrentParticipantName]);
 
@@ -348,9 +378,9 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         p.guest_participant_id === participantId
       );
       
-      if (isExistingParticipant && presenceChannelRef.current) {
+      if (isExistingParticipant) {
         console.log('🟡 Broadcasting PARTICIPANT_ACTIVE for existing participant');
-        broadcastDraftChange('PARTICIPANT_ACTIVE', {}, undefined, true);
+        broadcastDraftChange('PARTICIPANT_ACTIVE');
       }
 
     } catch (error) {
@@ -615,8 +645,10 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
             
             if (isParticipant) {
               console.log('🟡 Channel ready - broadcasting PARTICIPANT_ACTIVE');
+              channelReadyRef.current = true;
               setTimeout(() => {
-                broadcastDraftChange('PARTICIPANT_ACTIVE', {}, undefined, true);
+                processQueuedBroadcasts();
+                broadcastDraftChange('PARTICIPANT_ACTIVE');
               }, 500); // Small delay to ensure channel is fully ready
             }
           }
