@@ -578,63 +578,88 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   }, [draftId, participantId, draft, loadDraft]);
 
 
-  // Set up real-time presence channel
+  // Set up real-time presence channel with fixed communication
   useEffect(() => {
     if (!draftId || !participantId) return;
 
     console.log(`🔴 Setting up presence channel for draft: ${draftId}, participant: ${participantId}`);
 
+    // Use consistent channel naming between all participants
+    const channelName = `multiplayer-draft-${draftId}`;
     const presenceChannel = supabase
-      .channel(`draft-${draftId}`)
+      .channel(channelName, {
+        config: { 
+          broadcast: { self: false }, // Don't receive our own broadcasts
+          presence: { key: participantId }
+        }
+      })
       .on('broadcast', { event: 'draft-change' }, (payload) => {
-        console.log('Received broadcast:', payload);
+        console.log('📥 Received broadcast:', payload);
+        console.log('📥 Payload structure:', JSON.stringify(payload, null, 2));
         
-        // Don't reload for our own actions
-        if (payload.payload?.participantId === participantId) {
-          console.log('Ignoring own broadcast');
+        // Extract the actual message - handle both nested and direct payload structures
+        const message = payload?.payload || payload;
+        console.log('📥 Message:', JSON.stringify(message, null, 2));
+        
+        // Don't process our own broadcasts (double check)
+        if (message.participantId === participantId) {
+          console.log('🔄 Ignoring own broadcast');
           return;
         }
 
-        // Show toast notification for other users' actions
-        const { type, participantName } = payload.payload;
+        const { type, participantName } = message;
+        console.log(`📨 Processing broadcast: ${type} from ${participantName}`);
+        
+        // Handle different broadcast types with immediate data reload
         switch (type) {
-          case 'PICK_MADE':
-            toast({
-              title: "Pick Made",
-              description: `${participantName} made a pick`,
-            });
-            break;
-          case 'DRAFT_STARTED':
-            toast({
-              title: "Draft Started",
-              description: `${participantName} started the draft`,
-            });
-            break;
           case 'PARTICIPANT_JOINED':
+            console.log('👋 New participant joined:', participantName);
             toast({
               title: "Player Joined",
               description: `${participantName} joined the draft`,
             });
+            // Immediate reload for participant changes
+            setTimeout(() => loadDraft(draftId), 200);
             break;
-          case 'PARTICIPANT_ACTIVE':
+            
+          case 'PICK_MADE':
+            console.log('🎬 Pick made by:', participantName);
             toast({
-              title: "Player Active",
-              description: `${participantName} is now active in the draft`,
+              title: "Pick Made",
+              description: `${participantName} made a pick`,
             });
+            setTimeout(() => loadDraft(draftId), 200);
             break;
+            
+          case 'DRAFT_STARTED':
+            console.log('🚀 Draft started by:', participantName);
+            toast({
+              title: "Draft Started",
+              description: "The draft has begun!",
+            });
+            setTimeout(() => loadDraft(draftId), 200);
+            break;
+            
+          case 'PARTICIPANT_ACTIVE':
+            console.log('✅ Participant active:', participantName);
+            // No toast for active pings to reduce noise
+            break;
+            
+          default:
+            console.log('❓ Unknown broadcast type:', type);
         }
-
-        // Reload draft data
-        loadDraft(draftId).catch(error => {
-          console.error('Failed to reload draft after broadcast:', error);
-        });
       })
       .subscribe((status) => {
         console.log('Presence channel status:', status);
+        
         if (status === 'SUBSCRIBED') {
           console.log('Presence channel ready for broadcasting');
+          channelReadyRef.current = true;
           
-          // When channel is ready, broadcast that this participant is active (with throttling)
+          // Process any queued broadcasts first
+          processQueuedBroadcasts();
+          
+          // Then broadcast that this participant is active
           // Only if we have a draft and we're a participant
           if (draft && participants.length > 0) {
             const isParticipant = participants.some(p => 
@@ -645,13 +670,18 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
             
             if (isParticipant) {
               console.log('🟡 Channel ready - broadcasting PARTICIPANT_ACTIVE');
-              channelReadyRef.current = true;
+              // Small delay to ensure all participants' channels are ready
               setTimeout(() => {
-                processQueuedBroadcasts();
                 broadcastDraftChange('PARTICIPANT_ACTIVE');
-              }, 500); // Small delay to ensure channel is fully ready
+              }, 1000);
             }
           }
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Channel error occurred');
+          channelReadyRef.current = false;
+        } else if (status === 'CLOSED') {
+          console.log('📪 Channel closed');
+          channelReadyRef.current = false;
         }
       });
 
@@ -659,11 +689,13 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
 
     return () => {
       if (presenceChannelRef.current) {
+        console.log('🧹 Cleaning up presence channel');
+        channelReadyRef.current = false;
         supabase.removeChannel(presenceChannelRef.current);
         presenceChannelRef.current = null;
       }
     };
-  }, [draftId, participantId, loadDraft, toast]);
+  }, [draftId, participantId, loadDraft, toast, processQueuedBroadcasts, broadcastDraftChange, draft, participants]);
 
   return {
     draft,
