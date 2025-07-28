@@ -21,18 +21,22 @@ interface SaveDraftPromptProps {
   onClose: () => void;
   onSignUp: () => void;
   draftTitle?: string;
+  isPublicView?: boolean;
 }
 
 export const SaveDraftPrompt: React.FC<SaveDraftPromptProps> = ({
   isOpen,
   onClose,
   onSignUp,
-  draftTitle = "your draft"
+  draftTitle = "your draft",
+  isPublicView = false
 }) => {
-  const { isGuest } = useAuth();
+  const { isGuest, user } = useAuth();
   const navigate = useNavigate();
 
-  if (!isGuest) return null;
+  // Show for guests or anonymous users viewing public drafts
+  if (!isGuest && !isPublicView) return null;
+  if (user && !isPublicView) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -43,7 +47,10 @@ export const SaveDraftPrompt: React.FC<SaveDraftPromptProps> = ({
             Save Your Draft
           </DialogTitle>
           <DialogDescription>
-            Create an account to save {draftTitle} permanently and access it from any device.
+            {isPublicView 
+              ? `Create an account to save a copy of "${draftTitle}" to your profile and create your own drafts.`
+              : `Create an account to save ${draftTitle} permanently and access it from any device.`
+            }
           </DialogDescription>
         </DialogHeader>
 
@@ -51,7 +58,10 @@ export const SaveDraftPrompt: React.FC<SaveDraftPromptProps> = ({
           <Alert>
             <Calendar className="h-4 w-4" />
             <AlertDescription>
-              Guest drafts are temporary and will be lost after 7 days of inactivity.
+              {isPublicView 
+                ? "Creating an account will allow you to save and manage your own drafts permanently."
+                : "Guest drafts are temporary and will be lost after 7 days of inactivity."
+              }
             </AlertDescription>
           </Alert>
 
@@ -61,7 +71,10 @@ export const SaveDraftPrompt: React.FC<SaveDraftPromptProps> = ({
               <div>
                 <p className="text-sm font-medium">Create Account</p>
                 <p className="text-xs text-muted-foreground">
-                  Save drafts permanently, access from anywhere
+                  {isPublicView 
+                    ? "Start creating and saving your own movie drafts"
+                    : "Save drafts permanently, access from anywhere"
+                  }
                 </p>
               </div>
             </div>
@@ -70,7 +83,7 @@ export const SaveDraftPrompt: React.FC<SaveDraftPromptProps> = ({
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={onClose}>
-            Continue as Guest
+            {isPublicView ? "Close" : "Continue as Guest"}
           </Button>
           <Button onClick={onSignUp} className="w-full sm:w-auto">
             <User className="h-4 w-4 mr-2" />

@@ -38,12 +38,19 @@ const FinalScores = () => {
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [showSavePrompt, setShowSavePrompt] = useState(false);
+  const [isPublicView, setIsPublicView] = useState(false);
 
   useEffect(() => {
     if (!draftId) {
-      navigate('/profile');
+      navigate('/');
       return;
     }
+    
+    // Check if this is a public share view
+    const urlParams = new URLSearchParams(window.location.search);
+    const isPublic = urlParams.get('public') === 'true';
+    setIsPublicView(isPublic);
+    
     fetchDraftData();
   }, [draftId]);
 
@@ -71,9 +78,37 @@ const FinalScores = () => {
   const fetchDraftData = async () => {
     try {
       setLoadingData(true);
-      const { draft: draftData, picks: picksData } = await getDraftWithPicks(draftId!);
+      let draftData: any;
+      let picksData: any[] = [];
+      
+      // For public views, try to load draft without authentication checks
+      if (isPublicView) {
+        const { data: publicDraft, error: draftError } = await supabase
+          .from('drafts')
+          .select('*')
+          .eq('id', draftId!)
+          .single();
+          
+        const { data: publicPicks, error: picksError } = await supabase
+          .from('draft_picks')
+          .select('*')
+          .eq('draft_id', draftId!)
+          .order('pick_order');
+          
+        if (draftError || picksError) {
+          throw new Error('Failed to load public draft data');
+        }
+        
+        draftData = publicDraft;
+        picksData = publicPicks || [];
+      } else {
+        const { draft: fetchedDraft, picks: fetchedPicks } = await getDraftWithPicks(draftId!);
+        draftData = fetchedDraft;
+        picksData = fetchedPicks || [];
+      }
+      
       setDraft(draftData);
-      setPicks(picksData || []);
+      setPicks(picksData);
       
       console.log('Fetched picks with scoring data:', picksData?.map(p => ({
         title: p.movie_title,
@@ -109,10 +144,10 @@ const FinalScores = () => {
       console.error('Error fetching draft data:', error);
       toast({
         title: "Error",
-        description: "Failed to load draft data",
+        description: isPublicView ? "This draft is no longer available for public viewing" : "Failed to load draft data",
         variant: "destructive"
       });
-      navigate('/profile');
+      navigate(isPublicView ? '/' : '/profile');
     } finally {
       setLoadingData(false);
     }
@@ -315,8 +350,8 @@ const FinalScores = () => {
           </div>
           
           <div className="flex gap-3">
-            {/* Save Draft Button for Guest Users */}
-            {isGuest && (
+            {/* Save Draft Button for Guest Users and Anonymous Viewers */}
+            {(isGuest || isPublicView) && !user && (
               <Button
                 onClick={() => setShowSavePrompt(true)}
                 className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
@@ -331,6 +366,8 @@ const FinalScores = () => {
                 draftTitle={draft.title}
                 teamScores={teamScores}
                 picks={picks}
+                draftId={draftId!}
+                isPublicView={isPublicView}
               />
             )}
           </div>
@@ -342,6 +379,7 @@ const FinalScores = () => {
           onClose={() => setShowSavePrompt(false)}
           onSignUp={handleSignUp}
           draftTitle={draft.title}
+          isPublicView={isPublicView}
         />
 
         {/* Show loading state while enriching */}

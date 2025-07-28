@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Share, Download, RefreshCw } from 'lucide-react';
+import { Share, Download, RefreshCw, Copy, Link } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { generateShareImage, downloadImage } from '@/utils/imageGenerator';
 
@@ -22,14 +23,19 @@ interface ShareResultsButtonProps {
   draftTitle: string;
   teamScores: TeamScore[];
   picks: Pick[];
+  draftId: string;
+  isPublicView?: boolean;
 }
 
 const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
   draftTitle,
   teamScores,
-  picks
+  picks,
+  draftId,
+  isPublicView = false
 }) => {
   const [generating, setGenerating] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
   const { toast } = useToast();
 
   const handleShareResults = async () => {
@@ -79,25 +85,60 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
     }
   };
 
+  const handleCopyPublicLink = () => {
+    const publicUrl = `${window.location.origin}/final-scores/${draftId}?public=true`;
+    navigator.clipboard.writeText(publicUrl);
+    toast({
+      title: "Link Copied!",
+      description: "Public link copied to clipboard"
+    });
+    setShowShareMenu(false);
+  };
+
   return (
-    <Button
-      onClick={handleShareResults}
-      disabled={generating || teamScores.length === 0}
-      className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
-      size="lg"
-    >
-      {generating ? (
-        <>
-          <RefreshCw size={20} className="animate-spin" />
-          Generating...
-        </>
-      ) : (
-        <>
-          <Share size={20} />
-          Share Results
-        </>
-      )}
-    </Button>
+    <Popover open={showShareMenu} onOpenChange={setShowShareMenu}>
+      <PopoverTrigger asChild>
+        <Button
+          disabled={generating || teamScores.length === 0}
+          className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+          size="lg"
+        >
+          {generating ? (
+            <>
+              <RefreshCw size={20} className="animate-spin" />
+              Generating...
+            </>
+          ) : (
+            <>
+              <Share size={20} />
+              Share Results
+            </>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-60 p-3" align="end">
+        <div className="space-y-2">
+          <Button
+            onClick={handleShareResults}
+            disabled={generating}
+            variant="outline"
+            className="w-full justify-start"
+          >
+            <Download size={16} className="mr-2" />
+            Download Image
+          </Button>
+          
+          <Button
+            onClick={handleCopyPublicLink}
+            variant="outline"
+            className="w-full justify-start"
+          >
+            <Link size={16} className="mr-2" />
+            Copy Public Link
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 
