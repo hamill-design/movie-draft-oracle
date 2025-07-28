@@ -5,6 +5,7 @@ import { Share, Download, RefreshCw, Copy, Link } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { generateShareImage, downloadImage } from '@/utils/imageGenerator';
+import { useDraftOperations } from '@/hooks/useDraftOperations';
 
 interface TeamScore {
   playerName: string;
@@ -37,6 +38,7 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
   const [generating, setGenerating] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const { toast } = useToast();
+  const { makeDraftPublic } = useDraftOperations();
 
   const handleShareResults = async () => {
     try {
@@ -85,13 +87,25 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
     }
   };
 
-  const handleCopyPublicLink = () => {
-    const publicUrl = `${window.location.origin}/final-scores/${draftId}?public=true`;
-    navigator.clipboard.writeText(publicUrl);
-    toast({
-      title: "Link Copied!",
-      description: "Public link copied to clipboard"
-    });
+  const handleCopyPublicLink = async () => {
+    try {
+      // First make the draft public
+      await makeDraftPublic(draftId);
+      
+      const publicUrl = `${window.location.origin}/final-scores/${draftId}?public=true`;
+      navigator.clipboard.writeText(publicUrl);
+      toast({
+        title: "Link Copied!",
+        description: "Public link copied to clipboard"
+      });
+    } catch (error) {
+      console.error('Error making draft public:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create public link",
+        variant: "destructive"
+      });
+    }
     setShowShareMenu(false);
   };
 

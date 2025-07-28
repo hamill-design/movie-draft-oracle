@@ -102,7 +102,7 @@ const FinalScores = () => {
         draftData = publicDraft;
         picksData = publicPicks || [];
       } else {
-        const { draft: fetchedDraft, picks: fetchedPicks } = await getDraftWithPicks(draftId!);
+        const { draft: fetchedDraft, picks: fetchedPicks } = await getDraftWithPicks(draftId!, isPublicView);
         draftData = fetchedDraft;
         picksData = fetchedPicks || [];
       }

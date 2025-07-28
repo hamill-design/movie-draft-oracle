@@ -163,9 +163,9 @@ export const useDraftOperations = () => {
     return draft;
   }, [user]);
 
-  const getDraftWithPicks = useCallback(async (draftId: string) => {
+  const getDraftWithPicks = useCallback(async (draftId: string, isPublicAccess: boolean = false) => {
     try {
-      console.log('Fetching draft with ID:', draftId);
+      console.log('Fetching draft with ID:', draftId, 'Public access:', isPublicAccess);
       
       const { data: draft, error: draftError } = await supabase
         .from('drafts')
@@ -204,9 +204,21 @@ export const useDraftOperations = () => {
     }
   }, []);
 
+  const makeDraftPublic = useCallback(async (draftId: string) => {
+    if (!user && !guestSession) throw new Error('No session available');
+
+    const { error } = await supabase
+      .from('drafts')
+      .update({ is_public: true })
+      .eq('id', draftId);
+
+    if (error) throw error;
+  }, [user, guestSession]);
+
   return {
     autoSaveDraft,
     saveDraft,
-    getDraftWithPicks
+    getDraftWithPicks,
+    makeDraftPublic
   };
 };

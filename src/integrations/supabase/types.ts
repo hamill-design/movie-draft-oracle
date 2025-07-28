@@ -151,6 +151,7 @@ export type Database = {
           invite_code: string | null
           is_complete: boolean | null
           is_multiplayer: boolean | null
+          is_public: boolean
           option: string
           participants: string[]
           theme: string
@@ -171,6 +172,7 @@ export type Database = {
           invite_code?: string | null
           is_complete?: boolean | null
           is_multiplayer?: boolean | null
+          is_public?: boolean
           option: string
           participants: string[]
           theme: string
@@ -191,6 +193,7 @@ export type Database = {
           invite_code?: string | null
           is_complete?: boolean | null
           is_multiplayer?: boolean | null
+          is_public?: boolean
           option?: string
           participants?: string[]
           theme?: string
