@@ -212,24 +212,47 @@ Deno.serve(async (req) => {
     
     console.log(`Scoring completeness: IMDB=${!!enrichmentData.imdbRating}, RT=${!!enrichmentData.rtCriticsScore}, Meta=${!!enrichmentData.metacriticScore}, BoxOffice=${!!(enrichmentData.budget && enrichmentData.revenue)}`)
 
-    // Update database
-    const updateData: any = {
-      movie_budget: enrichmentData.budget,
-      movie_revenue: enrichmentData.revenue,
-      rt_critics_score: enrichmentData.rtCriticsScore,
-      rt_audience_score: null,
-      metacritic_score: enrichmentData.metacriticScore,
-      imdb_rating: enrichmentData.imdbRating,
-      oscar_status: enrichmentData.oscarStatus,
-      poster_path: enrichmentData.posterPath,
-      calculated_score: finalScore,
-      scoring_data_complete: scoringComplete
+    // Update database with explicit type validation
+    const updateData: any = {}
+    
+    // Only add fields that have actual values and validate types
+    if (enrichmentData.budget !== null && typeof enrichmentData.budget === 'number') {
+      updateData.movie_budget = enrichmentData.budget
     }
-
-    // Only update movie_genre if we found one
-    if (enrichmentData.movieGenre) {
+    
+    if (enrichmentData.revenue !== null && typeof enrichmentData.revenue === 'number') {
+      updateData.movie_revenue = enrichmentData.revenue
+    }
+    
+    if (enrichmentData.rtCriticsScore !== null && typeof enrichmentData.rtCriticsScore === 'number') {
+      updateData.rt_critics_score = enrichmentData.rtCriticsScore
+    }
+    
+    if (enrichmentData.metacriticScore !== null && typeof enrichmentData.metacriticScore === 'number') {
+      updateData.metacritic_score = enrichmentData.metacriticScore
+    }
+    
+    if (enrichmentData.imdbRating !== null && typeof enrichmentData.imdbRating === 'number') {
+      updateData.imdb_rating = enrichmentData.imdbRating
+    }
+    
+    if (enrichmentData.oscarStatus && typeof enrichmentData.oscarStatus === 'string') {
+      updateData.oscar_status = enrichmentData.oscarStatus
+    }
+    
+    if (enrichmentData.posterPath && typeof enrichmentData.posterPath === 'string') {
+      updateData.poster_path = enrichmentData.posterPath
+    }
+    
+    if (enrichmentData.movieGenre && typeof enrichmentData.movieGenre === 'string') {
       updateData.movie_genre = enrichmentData.movieGenre
     }
+    
+    // Always update calculated score and completion status
+    updateData.calculated_score = typeof finalScore === 'number' ? finalScore : null
+    updateData.scoring_data_complete = typeof scoringComplete === 'boolean' ? scoringComplete : false
+    
+    console.log('Update data to be sent:', JSON.stringify(updateData, null, 2))
 
     const { error: updateError } = await supabaseClient
       .from('draft_picks')
