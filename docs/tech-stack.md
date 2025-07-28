@@ -1,152 +1,100 @@
-# Technology Stack - Movie Draft Game
+# Technology Stack
 
 ## Frontend Technologies
 
 ### Core Framework
-- **React 18**: Modern React with hooks and concurrent features
-- **TypeScript**: Type safety and enhanced developer experience
-- **Vite**: Fast build tool and development server
-- **React Router DOM**: Client-side routing and navigation
+- **React 18.3.1** - Component-based UI library
+- **TypeScript** - Type-safe JavaScript development
+- **Vite** - Fast build tool and development server
 
-### UI & Styling
-- **Tailwind CSS**: Utility-first CSS framework
-- **shadcn/ui**: High-quality React components
-- **Radix UI**: Unstyled, accessible UI primitives
-- **Lucide React**: Beautiful, customizable icons
-- **Vaul**: Drawer component for mobile interfaces
+### Styling & UI
+- **Tailwind CSS** - Utility-first CSS framework
+- **shadcn/ui** - Reusable component library
+- **Radix UI** - Accessible component primitives
+- **Lucide React** - Icon library
+- **Custom Design System** - Semantic tokens and theming
 
-### State Management & Data Fetching
-- **TanStack Query**: Powerful data synchronization
-- **React Hooks**: Built-in state management
-- **Zustand** (if needed): Lightweight state management
+### State Management
+- **React Hooks** - Built-in state management
+- **Custom Hooks** - Encapsulated business logic
 
-### Form Handling
-- **React Hook Form**: Performant forms with minimal re-renders
-- **Zod**: TypeScript-first schema validation
-- **@hookform/resolvers**: Integration between RHF and Zod
+### Routing
+- **React Router DOM 6.26.2** - Client-side routing
+- **Nested routes** for complex navigation
+- **Protected routes** for authenticated sections
 
 ## Backend Technologies
 
-### Database & Authentication
-- **Supabase**: Backend-as-a-Service platform
-- **PostgreSQL**: Robust relational database
-- **Row Level Security (RLS)**: Database-level access control
-- **Supabase Auth**: Authentication and user management
+### Database & Backend
+- **Supabase** - Backend-as-a-Service platform
+- **PostgreSQL** - Relational database
+- **Row Level Security (RLS)** - Database-level authorization
+- **Database Functions** - Custom PostgreSQL functions
+
+### Authentication
+- **Supabase Auth** - User authentication system
+- **Guest Sessions** - Anonymous user support
+- **Email Invitations** - Participant recruitment
 
 ### Real-time Features
-- **Supabase Realtime**: WebSocket-based real-time subscriptions
-- **Database Triggers**: Automatic data synchronization
-- **Live Queries**: Reactive data updates
+- **Supabase Realtime** - WebSocket connections
+- **Presence API** - User presence tracking
+- **Broadcasting** - Real-time message delivery
 
-### Edge Functions
-- **Deno**: Runtime for edge functions
-- **TypeScript**: Server-side TypeScript support
-- **External API Integration**: TMDB and OMDB API calls
-
-## External APIs & Services
+## External APIs
 
 ### Movie Data
-- **TMDB API**: Primary movie database
-  - Movie details and metadata
-  - Cast and crew information
-  - Images and posters
-  - Search functionality
+- **TMDB (The Movie Database)** - Movie information and metadata
+- **Person Search API** - Actor/actress lookup
+- **Movie Search API** - Theme-based movie filtering
 
-- **OMDB API**: Additional movie information
-  - Box office data
-  - Awards information
-  - Additional ratings
-
-### Communication
-- **Resend**: Email service for invitations
-- **Custom SMTP**: Backup email delivery
-
-### Analytics & Monitoring
-- **Vercel Analytics**: Performance monitoring
-- **Error Tracking**: Built-in error boundaries
-- **Console Logging**: Development debugging
+### Other Services
+- **Email Service** - Draft invitations (via Supabase)
 
 ## Development Tools
 
+### Build & Development
+- **Vite** - Build tool and dev server
+- **ESLint** - Code linting
+- **TypeScript Compiler** - Type checking
+- **PostCSS** - CSS processing
+
+### Package Management
+- **npm/yarn** - Dependency management
+- **Package.json** - Project configuration
+
 ### Code Quality
-- **ESLint**: Code linting and style enforcement
-- **Prettier**: Code formatting
-- **TypeScript**: Static type checking
-- **Husky**: Git hooks for quality gates
+- **TypeScript** - Type safety
+- **ESLint Config** - Code style enforcement
+- **Component Architecture** - Modular design
 
-### Build & Deployment
-- **Vite**: Development server and build tool
-- **Vercel**: Hosting and deployment platform
-- **Lovable**: Development and deployment environment
-- **Git**: Version control
+## Key Dependencies
 
-### Testing
-- **React Testing Library**: Component testing
-- **Jest**: Unit testing framework
-- **Playwright** (future): End-to-end testing
+### UI & Styling
+```json
+{
+  "@radix-ui/*": "Various versions",
+  "tailwindcss": "Latest",
+  "class-variance-authority": "^0.7.1",
+  "clsx": "^2.1.1",
+  "tailwind-merge": "^2.5.2"
+}
+```
 
-## Database Schema
+### Backend Integration
+```json
+{
+  "@supabase/supabase-js": "^2.50.2",
+  "@tanstack/react-query": "^5.56.2"
+}
+```
 
-### Core Tables
-- **drafts**: Draft configurations and state
-- **draft_participants**: Players in each draft
-- **draft_picks**: Individual movie selections
-- **profiles**: User profile information
-- **guest_sessions**: Anonymous user sessions
-- **oscar_cache**: Movie awards data cache
-
-### Database Functions
-- **Guest Session Management**: Session creation and migration
-- **Draft Operations**: Join, create, and manage drafts
-- **Real-time Triggers**: Automatic data updates
-- **Security Functions**: RLS policy helpers
-
-## Security Considerations
-
-### Authentication
-- **JWT Tokens**: Secure session management
-- **Row Level Security**: Database-level access control
-- **Guest Sessions**: Secure anonymous access
-- **CORS Configuration**: Proper API security
-
-### Data Protection
-- **SQL Injection Prevention**: Parameterized queries
-- **XSS Protection**: Input sanitization
-- **CSRF Protection**: Secure state management
-- **Rate Limiting**: API abuse prevention
-
-## Performance Optimizations
-
-### Frontend
-- **Code Splitting**: Dynamic imports for routes
-- **Lazy Loading**: Components loaded on demand
-- **Memoization**: Prevent unnecessary re-renders
-- **Virtual Scrolling**: Handle large lists efficiently
-
-### Backend
-- **Database Indexing**: Optimized query performance
-- **Caching**: API response caching
-- **Connection Pooling**: Efficient database connections
-- **CDN**: Static asset delivery
-
-### Real-time
-- **Efficient Subscriptions**: Targeted data updates
-- **Debounced Updates**: Prevent excessive re-renders
-- **Optimistic Updates**: Immediate UI feedback
-
-## Scalability Considerations
-
-### Database
-- **Horizontal Scaling**: Supabase managed scaling
-- **Read Replicas**: Distributed read operations
-- **Connection Limits**: Proper connection management
-
-### Application
-- **Stateless Design**: Scalable server architecture
-- **Edge Functions**: Global distribution
-- **CDN Integration**: Fast asset delivery
-
-### Monitoring
-- **Performance Metrics**: Response times and throughput
-- **Error Tracking**: Application health monitoring
-- **User Analytics**: Usage patterns and optimization
+### Utilities
+```json
+{
+  "react-router-dom": "^6.26.2",
+  "react-hook-form": "^7.53.0",
+  "zod": "^3.23.8",
+  "date-fns": "^3.6.0"
+}
+```

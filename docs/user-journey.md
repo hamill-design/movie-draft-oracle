@@ -1,130 +1,108 @@
-# User Journey - Movie Draft Game
+# User Journey Documentation
 
-## New User Experience
+## Single Player Journey
 
-### Option 1: Guest User (No Registration)
-1. **Landing**: User visits the homepage
-2. **Quick Start**: Clicks "Start Draft" without signing up
-3. **Draft Setup**: Selects theme, categories, and participants
-4. **Multiplayer Option**: Can create/join multiplayer drafts as guest
-5. **Session**: Gets automatic 7-day guest session
-6. **Upgrade Path**: Prompted to create account to save progress
+### 1. Home Page
+- User lands on the home page
+- Sees options to create a draft or join an existing one
+- Can choose between single player practice or multiplayer
 
-### Option 2: Registered User
-1. **Landing**: User visits homepage
-2. **Sign Up**: Creates account with email/password
-3. **Profile**: Sets up display name and preferences
-4. **Full Access**: Can save drafts, view history, and manage settings
+### 2. Draft Setup
+- Select theme (Year, People, Genre)
+- Choose specific options (e.g., "2019" for year theme)
+- Select categories for the draft
+- Set number of participants for single player
 
-## Core User Flows
+### 3. Drafting Process
+- Players take turns in snake draft order
+- Search for movies based on theme
+- Select category for the chosen movie
+- Confirm picks
 
-### Creating a Draft
+### 4. Results
+- View completed draft board
+- See final scores based on various metrics
+- Compare player performance
 
-#### Single Player Draft
-1. **Theme Selection**: Choose year, person, or genre-based theme
-2. **Configuration**: Set specific parameters (year range, actor name, etc.)
-3. **Category Setup**: Select 5-8 categories for drafting
-4. **Draft Start**: Begin selecting movies immediately
-5. **Movie Selection**: Search and pick movies for each category
-6. **Completion**: View final roster and scores
+## Multiplayer Journey
 
-#### Multiplayer Draft
-1. **Setup**: Choose theme and categories
-2. **Invitation**: Add participant emails or share invite code
-3. **Lobby**: Wait for participants to join
-4. **Start**: Host initiates the draft when ready
-5. **Turn-based**: Players take turns picking movies
-6. **Real-time**: See picks and updates instantly
-7. **Completion**: View final leaderboard
+### Host Experience
 
-### Joining a Draft
+#### 1. Create Multiplayer Draft
+- Set up draft parameters (theme, options, categories)
+- Invite participants via email
+- Get shareable invite code
 
-#### Via Invite Code
-1. **Code Entry**: Enter 8-character invite code
-2. **Name Setup**: Provide display name
-3. **Join**: Automatically added to draft
-4. **Wait**: Lobby until draft starts
-5. **Participate**: Take turns when it's your pick
+#### 2. Lobby Management
+- See participants as they join
+- Wait for minimum 2 players
+- Start the draft when ready
 
-#### Via Email Invitation
-1. **Email Link**: Click link from email invitation
-2. **Automatic Join**: Pre-filled invite code
-3. **Name Confirmation**: Verify display name
-4. **Join**: Enter draft lobby
-5. **Ready to Play**: Wait for draft to start
+#### 3. Live Drafting
+- Follow turn order
+- Make picks on their turn
+- See other players' picks in real-time
+- Receive notifications for turn changes
 
-## User States and Permissions
+### Participant Experience
 
-### Guest Users
-- **Can Do**:
-  - Create and join multiplayer drafts
-  - Complete single player drafts
-  - Search and select movies
-  - View draft results
-  - Use all core features
+#### 1. Joining
+- Receive invite email or code
+- Join via invite code
+- Choose display name
+- Enter draft lobby
 
-- **Cannot Do**:
-  - Save drafts permanently
-  - View draft history
-  - Access profile settings
-  - Manage saved preferences
+#### 2. Waiting Phase
+- See other participants
+- Wait for host to start draft
+- Receive notification when draft begins
 
-- **Limitations**:
-  - 7-day session expiration
-  - Data loss if browser cleared
-  - No cross-device access
+#### 3. Drafting
+- Wait for turn indicator
+- Make picks when it's their turn
+- Watch other players' selections
+- See real-time updates
 
-### Authenticated Users
-- **Full Access**: All guest features plus:
-  - Permanent draft storage
-  - Draft history and statistics
-  - Profile customization
-  - Cross-device synchronization
-  - Account settings management
+## Guest User Journey
 
-## Conversion Funnel
+### 1. Anonymous Access
+- Access drafts without creating account
+- Automatic guest session creation
+- Temporary participation with full features
 
-### Guest to Registered User
-1. **Engagement**: Guest completes their first draft
-2. **Value Recognition**: Sees their results and wants to save them
-3. **Prompt**: System offers account creation with benefits
-4. **Migration**: All guest data transfers to new account
-5. **Retention**: User continues with full features
+### 2. Participation
+- Join multiplayer drafts with invite codes
+- Full drafting capabilities
+- Real-time synchronization with other players
 
-### Drop-off Points and Solutions
-- **Complex Setup**: Simplified theme selection with presets
-- **Long Wait Times**: Real-time updates and progress indicators
-- **Technical Issues**: Comprehensive error handling and recovery
-- **Confusion**: Clear instructions and tooltips throughout
+### 3. Session Management
+- 7-day session expiration
+- Can upgrade to full account later
+- Data migration on account creation
 
-## Success Metrics
+## Key Interaction Points
 
-### Engagement
-- Draft completion rate
-- Time spent in drafts
-- Return user rate
-- Multiplayer participation
+### Draft Creation Flow
+1. Theme selection
+2. Option specification (year, actor name, etc.)
+3. Category selection
+4. Participant invitation (multiplayer only)
+5. Draft initialization
 
-### Conversion
-- Guest to registered user rate
-- Draft completion before conversion
-- Feature usage after registration
-- Long-term retention
+### Turn Management
+1. Snake draft turn order generation
+2. Turn notifications and indicators
+3. Pick validation and confirmation
+4. Automatic turn advancement
 
-## Pain Points and Mitigations
+### Real-time Updates
+1. Participant join/leave notifications
+2. Pick announcements
+3. Turn change notifications
+4. Draft completion alerts
 
-### Technical Issues
-- **Problem**: Complex multiplayer synchronization
-- **Solution**: Robust real-time updates and conflict resolution
-
-### User Experience
-- **Problem**: Movie selection can be overwhelming
-- **Solution**: Smart filtering and recommendations
-
-### Social Features
-- **Problem**: Difficulty coordinating with friends
-- **Solution**: Multiple invitation methods and flexible scheduling
-
-### Performance
-- **Problem**: Large movie database queries
-- **Solution**: Efficient caching and pagination
+## Error Handling
+- Connection loss recovery
+- Invalid pick prevention
+- Turn order synchronization
+- Guest session expiration management

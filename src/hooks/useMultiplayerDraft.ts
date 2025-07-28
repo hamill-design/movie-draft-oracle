@@ -273,6 +273,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
 
     try {
       setLoading(true);
+      console.log('🚀 Starting draft with draftId:', draftId, 'participantId:', participantId);
 
       // Use unified function
       const result = await supabase.rpc('start_multiplayer_draft_unified', {
@@ -280,26 +281,35 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         p_participant_id: participantId
       });
 
+      console.log('📊 Start draft result:', result);
+
       if (result.error) throw result.error;
       if (!result.data || result.data.length === 0) throw new Error('Failed to start draft');
 
       const updatedDraft = result.data[0];
+      console.log('📋 Updated draft data:', updatedDraft);
 
       // Update local state
-      setDraft(prev => prev ? {
-        ...prev,
+      const newDraftState = {
+        ...draft,
         turn_order: updatedDraft.draft_turn_order,
         current_turn_user_id: updatedDraft.draft_current_turn_user_id,
         current_turn_participant_id: updatedDraft.draft_current_turn_participant_id,
         current_pick_number: updatedDraft.draft_current_pick_number
-      } : prev);
+      };
+      
+      console.log('🔄 Setting new draft state:', newDraftState);
+      setDraft(newDraftState);
 
       // Check if it's the current user's turn using unified ID
       const currentTurnId = updatedDraft.draft_current_turn_participant_id || updatedDraft.draft_current_turn_user_id;
-      setIsMyTurn(currentTurnId === participantId);
+      const isCurrentUserTurn = currentTurnId === participantId;
+      console.log('🎯 Current turn ID:', currentTurnId, 'ParticipantId:', participantId, 'Is my turn:', isCurrentUserTurn);
+      setIsMyTurn(isCurrentUserTurn);
 
       // Get first player name from turn order
       const firstPlayerName = updatedDraft.draft_turn_order?.[0]?.participant_name || 'Unknown';
+      console.log('👤 First player:', firstPlayerName, 'Turn order:', updatedDraft.draft_turn_order);
 
       // Broadcast the draft start
       broadcastDraftChange('DRAFT_STARTED');
@@ -320,7 +330,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     } finally {
       setLoading(false);
     }
-  }, [participantId, toast, broadcastDraftChange]);
+  }, [participantId, toast, broadcastDraftChange, draft]);
 
   // Load draft data
   const loadDraft = useCallback(async (id: string) => {
@@ -641,7 +651,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
               title: "Draft Started",
               description: "The draft has begun!",
             });
-            setTimeout(() => loadDraft(draftId), 200);
+            // Immediate reload to get the new turn order
+            loadDraft(draftId);
             break;
             
           case 'PARTICIPANT_ACTIVE':

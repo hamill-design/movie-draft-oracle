@@ -1,160 +1,75 @@
-# Implementation Plan - Guest Session Support
+# Implementation Plan
 
-## Phase 1: Database Foundation ✅ COMPLETED
-- [x] Create `guest_sessions` table
-- [x] Add `guest_session_id` to `drafts` table
-- [x] Add `guest_participant_id` to `draft_participants` table
-- [x] Create helper functions (`current_guest_session`, `migrate_guest_drafts_to_user`)
-- [x] Update all RLS policies for dual access (user_id OR guest_session_id)
-- [x] Create cleanup function for expired sessions
+## Current Status
+The Movie Draft Game is largely implemented with core functionality working. This document outlines completed features and remaining tasks.
 
-## Phase 2: Frontend Authentication System (IN PROGRESS)
-- [x] Create `useGuestSession` hook for guest session management
-- [x] Update `AuthContext` to support both user and guest sessions
-- [x] Create `SaveDraftPrompt` component for account creation prompts
-- [ ] Update `useDraftOperations` to handle guest sessions
-- [ ] Update `useMultiplayerDraft` to support guest participants
+## Completed Features ✅
 
-## Phase 3: Component Updates
-### Core Components
-- [ ] Remove auth requirements from `Home.tsx`
-- [ ] Update `DraftInterface` to work with guest sessions
-- [ ] Modify `MultiplayerDraftInterface` for guest support
-- [ ] Update `JoinDraftForm` to allow guest participation
+### Core Draft System
+- [x] Single-player draft creation and execution
+- [x] Multiplayer draft system with real-time updates
+- [x] Snake draft turn order implementation
+- [x] Movie selection and category assignment
+- [x] Draft completion and final scoring
 
-### UI Components
-- [ ] Add guest status indicators to headers
-- [ ] Create account upgrade prompts in strategic locations
-- [ ] Update navigation to show auth status
-- [ ] Add save prompts in `DraftComplete` component
+### Authentication & User Management
+- [x] Supabase authentication integration
+- [x] Guest session support for anonymous users
+- [x] User profile management
+- [x] Unified participant system (auth + guest users)
 
-## Phase 4: Multiplayer System Updates
-### Draft Creation
-- [ ] Allow guests to create multiplayer drafts
-- [ ] Support guest-to-guest draft invitations
-- [ ] Handle mixed user/guest participant lists
-- [ ] Update invite code generation for guests
+### Movie Data Integration
+- [x] TMDB API integration via edge functions
+- [x] Movie search by theme (year, person, genre)
+- [x] Actor/person search functionality
+- [x] Movie metadata retrieval and display
 
 ### Real-time Features
-- [ ] Ensure real-time updates work for guest sessions
-- [ ] Update participant display for guest users
-- [ ] Handle session conflicts and reconnection
-- [ ] Implement guest session activity tracking
+- [x] Live participant updates
+- [x] Turn-based picking system
+- [x] Draft state synchronization
+- [x] Presence tracking for active participants
 
-## Phase 5: Data Migration System
-### Migration Logic
-- [ ] Implement automatic migration on user signup
-- [ ] Handle edge cases (duplicate data, conflicting IDs)
-- [ ] Create migration status feedback
-- [ ] Test migration rollback scenarios
+### Database Architecture
+- [x] PostgreSQL schema with RLS policies
+- [x] Database functions for complex operations
+- [x] Guest session management
+- [x] Data migration for account upgrades
 
-### User Experience
-- [ ] Pre-signup migration preview
-- [ ] Post-migration confirmation
-- [ ] Migration failure recovery
-- [ ] Data loss prevention measures
+### UI/UX Implementation
+- [x] Responsive design with Tailwind CSS
+- [x] Dark/light mode theming
+- [x] Component library with shadcn/ui
+- [x] Real-time status indicators
 
-## Phase 6: Guest Session Management
-### Session Lifecycle
-- [ ] Auto-extend sessions on activity
-- [ ] Implement session expiration warnings
-- [ ] Create session recovery mechanisms
-- [ ] Handle multiple device access
+## Current Issues Being Resolved 🔧
 
-### Cleanup and Maintenance
-- [ ] Scheduled cleanup of expired sessions
-- [ ] Orphaned data detection and removal
-- [ ] Session analytics and monitoring
-- [ ] Performance optimization for large datasets
+### Turn Order System
+- **Issue**: Turn order not properly initializing when draft starts
+- **Status**: Under investigation and fixing
+- **Priority**: High - blocks multiplayer functionality
 
-## Phase 7: User Experience Enhancements
-### Onboarding
-- [ ] Guest user welcome flow
-- [ ] Feature introduction tour
-- [ ] Account benefits explanation
-- [ ] Social sharing capabilities
+### Guest User Synchronization
+- **Issue**: Guest participants not immediately visible to hosts
+- **Status**: Implementing improved broadcast queue processing
+- **Priority**: High - affects multiplayer UX
 
-### Conversion Optimization
-- [ ] Strategic save prompts timing
-- [ ] Progress loss warnings
-- [ ] Social pressure (friend invitations)
-- [ ] Success celebration moments
+## Immediate Next Steps
 
-## Phase 8: Testing and Quality Assurance
-### Unit Testing
-- [ ] Guest session hook tests
-- [ ] Authentication flow tests
-- [ ] Migration function tests
-- [ ] Component rendering tests
+### 1. Fix Turn Order System
+- [ ] Debug database function `start_multiplayer_draft_unified`
+- [ ] Ensure proper turn order JSON structure
+- [ ] Fix current player calculation and display
+- [ ] Add comprehensive logging for turn management
 
-### Integration Testing
-- [ ] End-to-end guest workflows
-- [ ] Multiplayer guest interactions
-- [ ] Data migration scenarios
-- [ ] Session management edge cases
+### 2. Improve Real-time Synchronization
+- [ ] Optimize broadcast queue processing
+- [ ] Enhance participant join/leave handling
+- [ ] Fix race conditions in data loading
+- [ ] Improve error recovery for network issues
 
-### Performance Testing
-- [ ] Large guest session loads
-- [ ] Real-time update performance
-- [ ] Database query optimization
-- [ ] Memory leak detection
-
-## Phase 9: Security and Privacy
-### Data Protection
-- [ ] Guest data isolation verification
-- [ ] Session hijacking prevention
-- [ ] Data encryption at rest
-- [ ] Privacy policy updates
-
-### Access Control
-- [ ] RLS policy testing
-- [ ] Permission boundary verification
-- [ ] Audit trail implementation
-- [ ] Compliance documentation
-
-## Phase 10: Monitoring and Analytics
-### User Behavior
-- [ ] Guest vs user conversion tracking
-- [ ] Feature usage analytics
-- [ ] Drop-off point identification
-- [ ] Success metric definitions
-
-### System Health
-- [ ] Guest session monitoring
-- [ ] Database performance tracking
-- [ ] Error rate monitoring
-- [ ] Capacity planning
-
-## Implementation Priority
-
-### High Priority (MVP)
-1. Complete frontend authentication system
-2. Update core components for guest support
-3. Basic multiplayer functionality for guests
-4. Simple data migration on signup
-
-### Medium Priority (Enhancement)
-1. Advanced guest session management
-2. Comprehensive testing suite
-3. User experience optimizations
-4. Performance improvements
-
-### Low Priority (Polish)
-1. Advanced analytics
-2. Social features
-3. Mobile app considerations
-4. Third-party integrations
-
-## Success Metrics
-- Guest user engagement rate
-- Guest to authenticated user conversion rate
-- Multiplayer participation from guests
-- Session duration and return visits
-- Draft completion rates by user type
-
-## Risk Mitigation
-- Data loss prevention through robust migration
-- Session conflicts through proper isolation
-- Performance degradation through optimization
-- Security vulnerabilities through thorough testing
-- User confusion through clear UX design
+### 3. UI Polish
+- [ ] Enhance loading states and transitions
+- [ ] Improve error messaging and user feedback
+- [ ] Add progress indicators for long operations
+- [ ] Optimize mobile responsive design

@@ -1,95 +1,62 @@
 # Movie Draft Game - Knowledge Base
 
-## Application Overview
-
-The Movie Draft Game is a multiplayer web application that allows users to draft movies based on different themes and categories. Players take turns selecting movies in a snake draft format, similar to fantasy sports drafts.
+## Overview
+This is a React-based web application for hosting movie drafting games where players take turns selecting movies based on different themes and categories.
 
 ## Core Features
 
 ### Draft Types
 - **Single Player**: Practice drafts for individual users
-- **Multiplayer**: Real-time drafts with multiple participants
-- **Guest Support**: Anonymous users can participate without registration
+- **Multiplayer**: Real-time collaborative drafts with multiple participants
 
-### Draft Themes
-- **Year-based**: Movies from specific years or year ranges
-- **Person-based**: Movies featuring specific actors/directors
-- **Genre-based**: Movies from specific genres
-- **Custom themes**: User-defined criteria
+### Themes
+- **Year**: Movies from a specific year
+- **People**: Movies featuring a specific actor/actress
+- **Genre**: Movies from specific genres
 
-### User Management
-- **Authenticated Users**: Full account features with profile management
-- **Guest Sessions**: Temporary sessions with 7-day expiration
-- **Session Migration**: Guest drafts can be migrated to user accounts
+### Categories
+Various movie categories like "Best Picture", "Action", "Comedy", etc.
 
 ## Technical Architecture
 
 ### Frontend
-- React 18 with TypeScript
-- Vite for build tooling
-- Tailwind CSS for styling
-- React Router for navigation
-- Real-time updates via Supabase subscriptions
+- **React 18** with TypeScript
+- **Tailwind CSS** for styling with custom design system
+- **Supabase** for backend services
+- **Real-time updates** using Supabase presence and broadcasting
 
 ### Backend
-- Supabase for database and authentication
-- PostgreSQL with Row Level Security (RLS)
-- Edge Functions for external API integrations
-- Real-time subscriptions for multiplayer features
+- **Supabase Database** with PostgreSQL
+- **Row Level Security (RLS)** for data protection
+- **Edge Functions** for API integrations
+- **Real-time subscriptions** for live updates
 
-### Data Sources
-- TMDB (The Movie Database) API for movie data
-- OMDB API for additional movie information
-- Custom movie scoring algorithms
+### Key Data Models
+- **Drafts**: Main draft configuration and state
+- **Draft Participants**: Users/guests in a draft
+- **Draft Picks**: Movie selections made by players
+- **Guest Sessions**: Temporary sessions for non-authenticated users
 
-## Key Components
+## Movie Data Integration
+- **TMDB API** for movie information
+- **People Search** for actor/actress lookup
+- **Movie Search** with theme-based filtering
+- **Poster Images** and metadata
 
-### Draft Management
-- Draft creation and configuration
-- Participant management
+## Real-time Features
+- Live participant joining/leaving
 - Turn-based picking system
-- Real-time synchronization
+- Snake draft turn order
+- Broadcast messaging for state updates
 
-### Movie Search
-- Advanced filtering by year, genre, person
-- Integration with multiple movie APIs
-- Caching for performance
+## Authentication
+- **Supabase Auth** for registered users
+- **Guest Sessions** for anonymous participation
+- **Unified participant system** supporting both user types
 
-### Scoring System
-- Multiple scoring criteria (box office, ratings, awards)
-- Automated score calculations
-- Leaderboards and statistics
-
-## Common Issues and Solutions
-
-### Guest Session Problems
-- **Issue**: Guest users can't join multiplayer drafts
-- **Solution**: Ensure guest session ID is properly transmitted and RLS policies allow guest access
-
-### Database Access Issues
-- **Issue**: Users can't see their data
-- **Solution**: Check RLS policies and ensure proper user/guest session context
-
-### Real-time Update Problems
-- **Issue**: Draft updates don't sync across users
-- **Solution**: Verify Supabase subscriptions and proper channel management
-
-## Best Practices
-
-### Development
-- Always test with both authenticated and guest users
-- Implement proper error handling for API failures
-- Use TypeScript for type safety
-- Follow React best practices for state management
-
-### Database
-- Use RLS policies for data security
-- Implement proper indexing for performance
-- Handle edge cases in database functions
-- Use security definer functions where appropriate
-
-### User Experience
-- Provide clear feedback for all user actions
-- Handle loading states gracefully
-- Implement proper error messages
-- Support both desktop and mobile interfaces
+## Scoring System
+- Oscar nominations and wins
+- IMDB ratings
+- Rotten Tomatoes scores
+- Box office performance
+- Metacritic scores
