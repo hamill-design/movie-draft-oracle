@@ -80,28 +80,32 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
 
     console.log('Processing queued broadcasts:', broadcastQueueRef.current.length);
     
-    broadcastQueueRef.current.forEach(({ type, payload, participantName }) => {
-      const message = {
-        type,
-        participantId,
-        participantName: participantName || getCurrentParticipantName(),
-        draftId: draft?.id,
-        timestamp: new Date().toISOString(),
-        ...payload
-      };
+    // Process each queued broadcast with small delays to prevent overwhelming
+    broadcastQueueRef.current.forEach(({ type, payload, participantName }, index) => {
+      setTimeout(() => {
+        const message = {
+          type,
+          participantId,
+          participantName: participantName || getCurrentParticipantName(),
+          draftId: draft?.id,
+          timestamp: new Date().toISOString(),
+          ...payload
+        };
 
-      try {
-        presenceChannelRef.current.send({
-          type: 'broadcast',
-          event: 'draft-change',
-          payload: message
-        });
-        console.log('Sent queued broadcast:', type);
-      } catch (error) {
-        console.error('Failed to send queued broadcast:', error);
-      }
+        try {
+          presenceChannelRef.current?.send({
+            type: 'broadcast',
+            event: 'draft-change',
+            payload: message
+          });
+          console.log('Sent queued broadcast:', type);
+        } catch (error) {
+          console.error('Failed to send queued broadcast:', error);
+        }
+      }, index * 100); // 100ms delay between broadcasts
     });
 
+    // Clear the queue
     broadcastQueueRef.current = [];
   }, [participantId, draft?.id, getCurrentParticipantName]);
 
@@ -642,7 +646,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
             
           case 'PARTICIPANT_ACTIVE':
             console.log('✅ Participant active:', participantName);
-            // No toast for active pings to reduce noise
+            // Reload data for active participants to catch any missed updates
+            setTimeout(() => loadDraft(draftId), 300);
             break;
             
           default:
@@ -657,7 +662,9 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           channelReadyRef.current = true;
           
           // Process any queued broadcasts first
-          processQueuedBroadcasts();
+          setTimeout(() => {
+            processQueuedBroadcasts();
+          }, 100);
           
           // Then broadcast that this participant is active
           // Only if we have a draft and we're a participant
@@ -673,7 +680,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
               // Small delay to ensure all participants' channels are ready
               setTimeout(() => {
                 broadcastDraftChange('PARTICIPANT_ACTIVE');
-              }, 1000);
+              }, 500);
             }
           }
         } else if (status === 'CHANNEL_ERROR') {
