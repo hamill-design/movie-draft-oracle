@@ -337,6 +337,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
 
   // Join a draft by invite code
   const joinDraftByCode = useCallback(async (inviteCode: string, participantName: string) => {
+    console.log('🔵 joinDraftByCode called with:', { inviteCode, participantName, participantId });
+    
     if (!participantId) throw new Error('No participant ID available');
 
     try {
@@ -380,7 +382,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       setDraft(draftData);
       
       // Broadcast the participant join immediately with the participant name
-      console.log('Broadcasting join for participant:', participantName);
+      console.log('🟢 About to broadcast join for participant:', participantName);
+      console.log('🟢 Channel exists:', !!presenceChannelRef.current);
       broadcastDraftChange('PARTICIPANT_JOINED', { participantName }, participantName);
 
       // Load additional data (participants and picks) after broadcast
@@ -520,7 +523,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   useEffect(() => {
     if (!draftId || !participantId) return;
 
-    console.log(`Setting up presence channel for draft: ${draftId}, participant: ${participantId}`);
+    console.log(`🔴 Setting up presence channel for draft: ${draftId}, participant: ${participantId}`);
 
     const presenceChannel = supabase
       .channel(`draft-${draftId}`)
