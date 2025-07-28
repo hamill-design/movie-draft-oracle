@@ -69,23 +69,34 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   }, [participants, participantId]);
 
   // Broadcast draft change to all participants
-  const broadcastDraftChange = useCallback((type: string, payload: any = {}) => {
-    if (!presenceChannelRef.current || !participantId || !draft?.id) return;
+  const broadcastDraftChange = useCallback((type: string, payload: any = {}, participantName?: string) => {
+    console.log('Broadcasting:', type, 'Channel ready:', !!presenceChannelRef.current, 'ParticipantId:', participantId);
+    
+    if (!presenceChannelRef.current || !participantId) {
+      console.warn('Cannot broadcast: missing channel or participantId');
+      return;
+    }
 
     const message = {
       type,
       participantId,
-      participantName: getCurrentParticipantName(),
-      draftId: draft.id,
+      participantName: participantName || getCurrentParticipantName(),
+      draftId: draft?.id,
       timestamp: new Date().toISOString(),
       ...payload
     };
 
-    presenceChannelRef.current.send({
-      type: 'broadcast',
-      event: 'draft-change',
-      payload: message
-    });
+    console.log('Sending broadcast message:', message);
+
+    try {
+      presenceChannelRef.current.send({
+        type: 'broadcast',
+        event: 'draft-change',
+        payload: message
+      });
+    } catch (error) {
+      console.error('Failed to broadcast:', error);
+    }
   }, [participantId, draft?.id, getCurrentParticipantName]);
 
   // Create a multiplayer draft with email invitations
@@ -368,11 +379,12 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       // Set the draft state
       setDraft(draftData);
       
-      // Load additional data (participants and picks)
-      await loadDraft(draftData.id);
+      // Broadcast the participant join immediately with the participant name
+      console.log('Broadcasting join for participant:', participantName);
+      broadcastDraftChange('PARTICIPANT_JOINED', { participantName }, participantName);
 
-      // Broadcast the participant join
-      broadcastDraftChange('PARTICIPANT_JOINED', { participantName });
+      // Load additional data (participants and picks) after broadcast
+      await loadDraft(draftData.id);
 
       toast({
         title: "Successfully Joined!",
@@ -549,7 +561,12 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           console.error('Failed to reload draft after broadcast:', error);
         });
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Presence channel status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('Presence channel ready for broadcasting');
+        }
+      });
 
     presenceChannelRef.current = presenceChannel;
 
