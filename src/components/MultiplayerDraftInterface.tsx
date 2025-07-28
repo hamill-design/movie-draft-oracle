@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Copy, Check, Users, Clock, Film, User, Calendar, Trophy, Loader2 } from 'lucide-react';
+import { Copy, Check, Users, Clock, Film, User, Calendar, Trophy } from 'lucide-react';
 import MovieSearch from '@/components/MovieSearch';
 import { DraftActorPortrait } from '@/components/DraftActorPortrait';
 import CategorySelection from '@/components/CategorySelection';
@@ -48,7 +48,6 @@ export const MultiplayerDraftInterface = ({
     toast
   } = useToast();
   const navigate = useNavigate();
-  const { makeDraftPublic } = useDraftOperations();
   const {
     draft,
     participants,
@@ -64,7 +63,6 @@ export const MultiplayerDraftInterface = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
-  const [makingPublic, setMakingPublic] = useState(false);
 
   // Get base category for movie search
   const getBaseCategory = () => {
@@ -267,31 +265,11 @@ export const MultiplayerDraftInterface = ({
                     <p className="text-muted-foreground">All picks have been made!</p>
                   </div>
                   <Button 
-                    onClick={async () => {
-                      try {
-                        setMakingPublic(true);
-                        await makeDraftPublic(draft.id);
-                        navigate(`/final-scores/${draft.id}?public=true`);
-                      } catch (error) {
-                        console.error('Error making draft public:', error);
-                        toast({
-                          title: "Error",
-                          description: "Failed to access final scores. Please try again.",
-                          variant: "destructive"
-                        });
-                      } finally {
-                        setMakingPublic(false);
-                      }
-                    }}
-                    disabled={makingPublic}
+                    onClick={() => navigate(`/final-scores/${draft.id}?public=true`)}
                     className="w-full md:w-auto"
                   >
-                    {makingPublic ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trophy className="mr-2 h-4 w-4 text-yellow-400" />
-                    )}
-                    {makingPublic ? 'Loading...' : 'View Final Scores'}
+                    <Trophy className="mr-2 h-4 w-4 text-yellow-400" />
+                    View Final Scores
                   </Button>
                 </div> : <div className="space-y-3">
                   <div className="flex items-center justify-between">

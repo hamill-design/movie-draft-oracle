@@ -1,39 +1,21 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Film, Trophy, Loader2 } from 'lucide-react';
+import { Film, Trophy } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useDraftOperations } from '@/hooks/useDraftOperations';
-import { useToast } from '@/hooks/use-toast';
 
 const DraftComplete = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { makeDraftPublic } = useDraftOperations();
-  const { toast } = useToast();
-  const [makingPublic, setMakingPublic] = useState(false);
   
   // Extract draft ID from the current state if available
   const draftState = location.state as any;
   const draftId = draftState?.existingDraftId;
 
-  const handleViewScores = async () => {
+  const handleViewScores = () => {
     if (draftId) {
-      try {
-        setMakingPublic(true);
-        await makeDraftPublic(draftId);
-        navigate(`/final-scores/${draftId}?public=true`);
-      } catch (error) {
-        console.error('Error making draft public:', error);
-        toast({
-          title: "Error",
-          description: "Failed to access final scores. Please try again.",
-          variant: "destructive"
-        });
-      } finally {
-        setMakingPublic(false);
-      }
+      navigate(`/final-scores/${draftId}?public=true`);
     } else {
       // Fallback to home if no draft ID
       navigate('/');
@@ -51,15 +33,10 @@ const DraftComplete = () => {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button
               onClick={handleViewScores}
-              disabled={makingPublic}
               className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
             >
-              {makingPublic ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Trophy className="mr-2" size={16} />
-              )}
-              {makingPublic ? 'Loading...' : 'View Final Scores'}
+              <Trophy className="mr-2" size={16} />
+              View Final Scores
             </Button>
             
             <Button
