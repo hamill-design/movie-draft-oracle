@@ -69,59 +69,88 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch OMDB data
+    // Fetch OMDB data with improved error handling and retry logic
     if (omdbApiKey) {
       try {
         console.log('Fetching OMDB data...')
-        const omdbUrl = `http://www.omdbapi.com/?t=${encodeURIComponent(movieTitle)}&y=${movieYear}&apikey=${omdbApiKey}`
         
-        const omdbResponse = await fetchWithTimeout(omdbUrl, 5000)
+        // Try multiple approaches for OMDB API
+        const omdbSearchAttempts = [
+          `http://www.omdbapi.com/?t=${encodeURIComponent(movieTitle)}&y=${movieYear}&apikey=${omdbApiKey}`,
+          `http://www.omdbapi.com/?t=${encodeURIComponent(movieTitle)}&apikey=${omdbApiKey}`, // Without year
+          `http://www.omdbapi.com/?i=tt${String(movieId).padStart(7, '0')}&apikey=${omdbApiKey}` // Try IMDB ID format
+        ]
         
-        if (omdbResponse.ok) {
-          const omdbData = await omdbResponse.json()
+        let omdbData = null
+        let foundData = false
+        
+        for (const url of omdbSearchAttempts) {
+          if (foundData) break
           
-          if (omdbData && omdbData.Response !== 'False') {
-            // IMDB Rating
-            if (omdbData.imdbRating && omdbData.imdbRating !== 'N/A') {
-              const rating = parseFloat(omdbData.imdbRating)
-              if (!isNaN(rating)) {
-                enrichmentData.imdbRating = rating
-                console.log(`IMDB: ${rating}`)
+          try {
+            console.log(`Trying OMDB URL: ${url}`)
+            const omdbResponse = await fetchWithTimeout(url, 8000)
+            
+            if (omdbResponse.ok) {
+              const responseData = await omdbResponse.json()
+              
+              if (responseData && responseData.Response !== 'False' && responseData.Title) {
+                omdbData = responseData
+                foundData = true
+                console.log(`OMDB: Found data for "${responseData.Title}" (${responseData.Year})`)
+                break
+              } else {
+                console.log(`OMDB: No valid data - ${responseData?.Error || 'Unknown error'}`)
               }
+            } else {
+              console.log(`OMDB: HTTP ${omdbResponse.status}`)
             }
+          } catch (attemptError) {
+            console.log(`OMDB attempt failed: ${attemptError.message}`)
+          }
+        }
+        
+        if (omdbData) {
+          // IMDB Rating
+          if (omdbData.imdbRating && omdbData.imdbRating !== 'N/A') {
+            const rating = parseFloat(omdbData.imdbRating)
+            if (!isNaN(rating)) {
+              enrichmentData.imdbRating = rating
+              console.log(`IMDB: ${rating}`)
+            }
+          }
 
-            // Rotten Tomatoes and Metacritic
-            if (omdbData.Ratings) {
-              for (const rating of omdbData.Ratings) {
-                if (rating.Source === 'Rotten Tomatoes') {
-                  const match = rating.Value.match(/(\d+)%/)
-                  if (match) {
-                    enrichmentData.rtCriticsScore = parseInt(match[1])
-                    console.log(`RT: ${enrichmentData.rtCriticsScore}%`)
-                  }
-                } else if (rating.Source === 'Metacritic') {
-                  const match = rating.Value.match(/(\d+)\/100/)
-                  if (match) {
-                    enrichmentData.metacriticScore = parseInt(match[1])
-                    console.log(`Metacritic: ${enrichmentData.metacriticScore}/100`)
-                  }
+          // Rotten Tomatoes and Metacritic
+          if (omdbData.Ratings && Array.isArray(omdbData.Ratings)) {
+            for (const rating of omdbData.Ratings) {
+              if (rating.Source === 'Rotten Tomatoes') {
+                const match = rating.Value.match(/(\d+)%/)
+                if (match) {
+                  enrichmentData.rtCriticsScore = parseInt(match[1])
+                  console.log(`RT: ${enrichmentData.rtCriticsScore}%`)
+                }
+              } else if (rating.Source === 'Metacritic') {
+                const match = rating.Value.match(/(\d+)\/100/)
+                if (match) {
+                  enrichmentData.metacriticScore = parseInt(match[1])
+                  console.log(`Metacritic: ${enrichmentData.metacriticScore}/100`)
                 }
               }
             }
-
-            // Oscar status
-            if (omdbData.Awards) {
-              const awards = omdbData.Awards.toLowerCase()
-              if (awards.includes('won') && (awards.includes('oscar') || awards.includes('academy award'))) {
-                enrichmentData.oscarStatus = 'winner'
-              } else if (awards.includes('nominated') && (awards.includes('oscar') || awards.includes('academy award'))) {
-                enrichmentData.oscarStatus = 'nominee'
-              }
-              console.log(`Oscar: ${enrichmentData.oscarStatus}`)
-            }
-          } else {
-            console.log('OMDB: No data found')
           }
+
+          // Oscar status
+          if (omdbData.Awards) {
+            const awards = omdbData.Awards.toLowerCase()
+            if (awards.includes('won') && (awards.includes('oscar') || awards.includes('academy award'))) {
+              enrichmentData.oscarStatus = 'winner'
+            } else if (awards.includes('nominated') && (awards.includes('oscar') || awards.includes('academy award'))) {
+              enrichmentData.oscarStatus = 'nominee'
+            }
+            console.log(`Oscar: ${enrichmentData.oscarStatus}`)
+          }
+        } else {
+          console.log('OMDB: No data found after all attempts')
         }
       } catch (error) {
         console.log(`OMDB error: ${error.message}`)
@@ -177,6 +206,12 @@ Deno.serve(async (req) => {
     const finalScore = calculateScore(enrichmentData)
     console.log(`Final score: ${finalScore}`)
 
+    // Determine if scoring data is actually complete
+    const hasMinimumData = enrichmentData.imdbRating || enrichmentData.rtCriticsScore || enrichmentData.metacriticScore
+    const scoringComplete = hasMinimumData && (enrichmentData.budget && enrichmentData.revenue)
+    
+    console.log(`Scoring completeness: IMDB=${!!enrichmentData.imdbRating}, RT=${!!enrichmentData.rtCriticsScore}, Meta=${!!enrichmentData.metacriticScore}, BoxOffice=${!!(enrichmentData.budget && enrichmentData.revenue)}`)
+
     // Update database
     const updateData: any = {
       movie_budget: enrichmentData.budget,
@@ -188,7 +223,7 @@ Deno.serve(async (req) => {
       oscar_status: enrichmentData.oscarStatus,
       poster_path: enrichmentData.posterPath,
       calculated_score: finalScore,
-      scoring_data_complete: true
+      scoring_data_complete: scoringComplete
     }
 
     // Only update movie_genre if we found one
