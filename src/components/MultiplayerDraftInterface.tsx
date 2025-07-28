@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Copy, Check, Users, Clock, Film, User, Calendar } from 'lucide-react';
+import { Copy, Check, Users, Clock, Film, User, Calendar, Trophy } from 'lucide-react';
 import MovieSearch from '@/components/MovieSearch';
 import { DraftActorPortrait } from '@/components/DraftActorPortrait';
 import CategorySelection from '@/components/CategorySelection';
@@ -264,7 +264,8 @@ export const MultiplayerDraftInterface = ({
                     <p className="text-muted-foreground">All picks have been made!</p>
                   </div>
                   <Button onClick={() => navigate(`/final-scores/${draft.id}`)} className="w-full md:w-auto">
-                    🏆 View Final Scores
+                    <Trophy className="mr-2 h-4 w-4 text-yellow-400" />
+                    View Final Scores
                   </Button>
                 </div> : <div className="space-y-3">
                   <div className="flex items-center justify-between">
