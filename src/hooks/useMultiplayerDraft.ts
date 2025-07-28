@@ -47,8 +47,9 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   const [draft, setDraft] = useState<MultiplayerDraft | null>(null);
   const [participants, setParticipants] = useState<DraftParticipant[]>([]);
   const [picks, setPicks] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false); // Start with loading false, set true only during operations
+  const [loading, setLoading] = useState(false);
   const [isMyTurn, setIsMyTurn] = useState(false);
+  const presenceChannelRef = useRef<any>(null);
 
   // Update ref when participantId changes
   useEffect(() => {
@@ -173,6 +174,22 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     }
   }, [participantId, toast]);
 
+  // Broadcast draft changes via presence
+  const broadcastDraftChange = useCallback(async (changeType: 'pick' | 'start' | 'join') => {
+    if (!presenceChannelRef.current || !draft?.id) return;
+    
+    try {
+      await presenceChannelRef.current.track({
+        draft_id: draft.id,
+        change_type: changeType,
+        timestamp: Date.now(),
+        participant_id: participantId
+      });
+    } catch (error) {
+      console.error('Failed to broadcast draft change:', error);
+    }
+  }, [draft?.id, participantId]);
+
   // Start the draft with pre-calculated snake draft turn order
   const startDraft = useCallback(async (draftId: string) => {
     if (!participantId) throw new Error('No participant ID available');
@@ -204,6 +221,9 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       const currentTurnId = updatedDraft.draft_current_turn_participant_id || updatedDraft.draft_current_turn_user_id;
       setIsMyTurn(currentTurnId === participantId);
 
+      // Broadcast the draft start via presence
+      await broadcastDraftChange('start');
+
       // Get first player name from turn order
       const firstPlayerName = updatedDraft.draft_turn_order?.[0]?.participant_name || 'Unknown';
 
@@ -223,7 +243,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     } finally {
       setLoading(false);
     }
-  }, [participantId, toast]);
+  }, [participantId, toast, broadcastDraftChange]);
 
   // Join a draft by invite code
   const joinDraftByCode = useCallback(async (inviteCode: string, participantName: string) => {
@@ -401,6 +421,9 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
 
       // Reload draft data to get updated state
       await loadDraft(draft.id);
+      
+      // Broadcast the change via presence
+      await broadcastDraftChange('pick');
 
       toast({
         title: "Pick Made!",
@@ -431,7 +454,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       }
       throw error;
     }
-  }, [draft?.id, participantId, loadDraft, toast]);
+  }, [draft?.id, participantId, loadDraft, toast, broadcastDraftChange]);
 
   // Compute isMyTurn using unified participant ID
   const computedIsMyTurn = useMemo(() => {
@@ -461,120 +484,101 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     }
   }, [draftId, participantId, draft, loadDraft]);
 
-  // Set up real-time subscriptions using ref for stable participantId access
+  // Set up presence-based real-time updates
   useEffect(() => {
-    if (!draftId) return;
+    if (!draftId || !participantId) return;
 
-    const handleDraftUpdate = async (payload: any) => {
-      console.log('Draft updated:', payload);
-      
-      // Use ref to get current participantId value
-      const currentParticipantId = participantIdRef.current;
-      if (currentParticipantId) {
-        try {
-          // For guest sessions, bypass RLS and use client-side ID directly
-          if (isGuest && guestSession?.id) {
-            console.log('Loading draft for guest using client-side ID:', guestSession.id);
-            // Directly call the unified load function with guest session ID
-            const { data, error } = await supabase.rpc('load_draft_unified', {
-              p_draft_id: draftId,
-              p_participant_id: guestSession.id
-            });
-            
-            if (error) {
-              console.error('Failed to load draft for guest:', error);
-              return;
-            }
-            
-            if (data && data.length > 0) {
-              const draftData = data[0];
-              
-              // Map the response to our draft structure
-              const mappedDraft = {
-                id: draftData.draft_id,
-                title: draftData.draft_title,
-                theme: draftData.draft_theme,
-                option: draftData.draft_option,
-                categories: draftData.draft_categories,
-                participants: draftData.draft_participants,
-                current_turn_user_id: draftData.draft_current_turn_user_id,
-                current_turn_participant_id: draftData.draft_current_turn_participant_id,
-                current_pick_number: draftData.draft_current_pick_number,
-                is_complete: draftData.draft_is_complete,
-                is_multiplayer: draftData.draft_is_multiplayer,
-                invite_code: draftData.draft_invite_code,
-                draft_order: draftData.draft_draft_order,
-                turn_order: draftData.draft_turn_order,
-              };
+    const channelName = `draft_${draftId}`;
+    console.log('Setting up presence channel:', channelName);
 
-              setDraft(mappedDraft);
+    const presenceChannel = supabase
+      .channel(channelName)
+      .on('presence', { event: 'sync' }, () => {
+        const newState = presenceChannel.presenceState();
+        console.log('Presence sync:', newState);
+        
+        // Check if there are any recent changes that require a reload
+        const allPresence = Object.values(newState).flat();
+        const recentChanges = allPresence.filter((presence: any) => {
+          const timestamp = presence.timestamp || 0;
+          return Date.now() - timestamp < 5000; // Changes within last 5 seconds
+        });
 
-              // Set participants with unified ID
-              const participantsArray = Array.isArray(draftData.participants_data) 
-                ? (draftData.participants_data as unknown as DraftParticipant[])
-                : [];
-              setParticipants(participantsArray);
-
-              // Set picks
-              const picksArray = Array.isArray(draftData.picks_data) 
-                ? draftData.picks_data 
-                : [];
-              setPicks(picksArray);
-
-              // Check if it's the current user's turn using unified ID
-              const currentTurnId = mappedDraft.current_turn_participant_id || mappedDraft.current_turn_user_id;
-              setIsMyTurn(currentTurnId === guestSession.id);
-            }
-          } else {
-            // For authenticated users, use the standard approach
-            await loadDraft(draftId);
-          }
-        } catch (error) {
-          console.log('Failed to load draft on real-time update:', error);
+        if (recentChanges.length > 0) {
+          console.log('Recent changes detected, reloading draft');
+          loadDraft(draftId).catch(console.error);
         }
-      } else {
-        console.log('No participantId available for real-time update');
-      }
-    };
+      })
+      .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        console.log('Presence join:', key, newPresences);
+        // Someone joined, reload draft to get updated participant list
+        loadDraft(draftId).catch(console.error);
+      })
+      .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        console.log('Presence leave:', key, leftPresences);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          // Track initial presence
+          await presenceChannel.track({
+            participant_id: participantId,
+            draft_id: draftId,
+            timestamp: Date.now(),
+            change_type: 'join'
+          });
+        }
+      });
 
-    const draftChannel = supabase
-      .channel('schema-db-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'drafts',
-          filter: `id=eq.${draftId}`,
-        },
-        handleDraftUpdate
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'draft_participants',
-          filter: `draft_id=eq.${draftId}`,
-        },
-        handleDraftUpdate
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'draft_picks',
-          filter: `draft_id=eq.${draftId}`,
-        },
-        handleDraftUpdate
-      )
-      .subscribe();
+    presenceChannelRef.current = presenceChannel;
+
+    // Fallback: also use database subscriptions for authenticated users
+    let draftChannel: any = null;
+    if (!isGuest) {
+      draftChannel = supabase
+        .channel('schema-db-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'drafts',
+            filter: `id=eq.${draftId}`,
+          },
+          () => loadDraft(draftId).catch(console.error)
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'draft_participants',
+            filter: `draft_id=eq.${draftId}`,
+          },
+          () => loadDraft(draftId).catch(console.error)
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'draft_picks',
+            filter: `draft_id=eq.${draftId}`,
+          },
+          () => loadDraft(draftId).catch(console.error)
+        )
+        .subscribe();
+    }
 
     return () => {
-      supabase.removeChannel(draftChannel);
+      if (presenceChannel) {
+        supabase.removeChannel(presenceChannel);
+      }
+      if (draftChannel) {
+        supabase.removeChannel(draftChannel);
+      }
+      presenceChannelRef.current = null;
     };
-  }, [draftId, loadDraft]); // Removed participantId from dependency array
+  }, [draftId, participantId, isGuest, loadDraft]);
 
   return {
     draft,
