@@ -16,7 +16,7 @@ import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useDraftForm, DraftSetupForm } from '@/hooks/useDraftForm';
-import { SaveDraftPrompt } from '@/components/SaveDraftPrompt';
+
 
 const Home = () => {
   const navigate = useNavigate();

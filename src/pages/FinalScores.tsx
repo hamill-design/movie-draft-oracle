@@ -12,7 +12,6 @@ import { DraftPick } from '@/hooks/useDrafts';
 import TeamRoster from '@/components/TeamRoster';
 import ShareResultsButton from '@/components/ShareResultsButton';
 import SaveDraftButton from '@/components/SaveDraftButton';
-import { SaveDraftPrompt } from '@/components/SaveDraftPrompt';
 import { getScoreColor, getScoreGrade } from '@/utils/scoreCalculator';
 
 interface TeamScore {
@@ -37,7 +36,7 @@ const FinalScores = () => {
   const [enrichingData, setEnrichingData] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
-  const [showSavePrompt, setShowSavePrompt] = useState(false);
+  
   const [isPublicView, setIsPublicView] = useState(false);
 
   useEffect(() => {
@@ -273,7 +272,11 @@ const FinalScores = () => {
     return teams.sort((a, b) => b.totalScore - a.totalScore);
   };
 
-  const handleSignUp = () => {
+  const handleAuthRedirect = () => {
+    toast({
+      title: "Create Account",
+      description: "Sign up to save drafts permanently and access them from any device."
+    });
     navigate('/auth');
   };
 
@@ -281,6 +284,7 @@ const FinalScores = () => {
     if (!draft) return null;
     
     return {
+      title: draft.title,
       theme: draft.theme,
       option: draft.option,
       participants: draft.participants,
@@ -353,11 +357,16 @@ const FinalScores = () => {
             {/* Save Draft Button for Guest Users and Anonymous Viewers */}
             {(isGuest || isPublicView) && !user && (
               <Button
-                onClick={() => setShowSavePrompt(true)}
+                onClick={handleAuthRedirect}
                 className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
               >
                 Save Draft
               </Button>
+            )}
+            
+            {/* Save Draft Button for Authenticated Users */}
+            {user && !isPublicView && getDraftDataForSave() && (
+              <SaveDraftButton draftData={getDraftDataForSave()!} />
             )}
             
             {/* Share Results Button */}
@@ -373,14 +382,6 @@ const FinalScores = () => {
           </div>
         </div>
 
-        {/* Save Draft Prompt */}
-        <SaveDraftPrompt
-          isOpen={showSavePrompt}
-          onClose={() => setShowSavePrompt(false)}
-          onSignUp={handleSignUp}
-          draftTitle={draft.title}
-          isPublicView={isPublicView}
-        />
 
         {/* Show loading state while enriching */}
         {enrichingData && (
