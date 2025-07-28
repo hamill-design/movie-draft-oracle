@@ -472,18 +472,63 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       const currentParticipantId = participantIdRef.current;
       if (currentParticipantId) {
         try {
-          // For guest sessions, set the guest session context before loading
+          // For guest sessions, bypass RLS and use client-side ID directly
           if (isGuest && guestSession?.id) {
-            console.log('Setting guest session context for real-time update:', guestSession.id);
-            const { error: contextError } = await supabase.rpc('set_guest_session_context', {
-              session_id: guestSession.id
+            console.log('Loading draft for guest using client-side ID:', guestSession.id);
+            // Directly call the unified load function with guest session ID
+            const { data, error } = await supabase.rpc('load_draft_unified', {
+              p_draft_id: draftId,
+              p_participant_id: guestSession.id
             });
-            if (contextError) {
-              console.error('Failed to set guest session context:', contextError);
+            
+            if (error) {
+              console.error('Failed to load draft for guest:', error);
+              return;
             }
+            
+            if (data && data.length > 0) {
+              const draftData = data[0];
+              
+              // Map the response to our draft structure
+              const mappedDraft = {
+                id: draftData.draft_id,
+                title: draftData.draft_title,
+                theme: draftData.draft_theme,
+                option: draftData.draft_option,
+                categories: draftData.draft_categories,
+                participants: draftData.draft_participants,
+                current_turn_user_id: draftData.draft_current_turn_user_id,
+                current_turn_participant_id: draftData.draft_current_turn_participant_id,
+                current_pick_number: draftData.draft_current_pick_number,
+                is_complete: draftData.draft_is_complete,
+                is_multiplayer: draftData.draft_is_multiplayer,
+                invite_code: draftData.draft_invite_code,
+                draft_order: draftData.draft_draft_order,
+                turn_order: draftData.draft_turn_order,
+              };
+
+              setDraft(mappedDraft);
+
+              // Set participants with unified ID
+              const participantsArray = Array.isArray(draftData.participants_data) 
+                ? (draftData.participants_data as unknown as DraftParticipant[])
+                : [];
+              setParticipants(participantsArray);
+
+              // Set picks
+              const picksArray = Array.isArray(draftData.picks_data) 
+                ? draftData.picks_data 
+                : [];
+              setPicks(picksArray);
+
+              // Check if it's the current user's turn using unified ID
+              const currentTurnId = mappedDraft.current_turn_participant_id || mappedDraft.current_turn_user_id;
+              setIsMyTurn(currentTurnId === guestSession.id);
+            }
+          } else {
+            // For authenticated users, use the standard approach
+            await loadDraft(draftId);
           }
-          
-          await loadDraft(draftId);
         } catch (error) {
           console.log('Failed to load draft on real-time update:', error);
         }
