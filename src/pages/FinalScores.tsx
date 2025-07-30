@@ -171,8 +171,27 @@ const FinalScores = () => {
     }
   };
 
+  const fixMovieYears = async () => {
+    console.log('Starting movie year fix...');
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('fix-movie-years');
+
+      if (error) {
+        console.error('Failed to fix movie years:', error);
+      } else {
+        console.log('Successfully fixed movie years:', data);
+      }
+    } catch (error) {
+      console.error('Error during year fix:', error);
+    }
+  };
+
   const autoEnrichMovieData = async (picksData: DraftPick[]) => {
-    // First, backfill any missing genres
+    // First, fix any incorrect movie years
+    await fixMovieYears();
+    
+    // Then, backfill any missing genres
     await backfillMovieGenres();
 
     // Check for movies that need RT/IMDB/Metacritic data or poster data
