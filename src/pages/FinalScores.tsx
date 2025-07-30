@@ -68,6 +68,9 @@ const FinalScores = () => {
         setPicks(refreshedPicks || []);
         const refreshedTeams = processTeamScores(refreshedPicks || []);
         setTeamScores(refreshedTeams);
+        if (refreshedTeams.length > 0) {
+          setSelectedTeam(refreshedTeams[0].playerName);
+        }
       }
     } catch (error) {
       console.error('Error calling fix-unknown-players function:', error);
