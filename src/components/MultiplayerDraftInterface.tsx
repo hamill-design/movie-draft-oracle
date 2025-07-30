@@ -129,7 +129,7 @@ export const MultiplayerDraftInterface = ({
       return;
     }
     try {
-      await makePick(selectedMovie.id, selectedMovie.title, selectedMovie.release_date ? new Date(selectedMovie.release_date).getFullYear() : new Date().getFullYear(), selectedMovie.genre_names?.[0] || 'Unknown', selectedCategory, selectedMovie.poster_path);
+      await makePick(selectedMovie.id, selectedMovie.title, selectedMovie.releaseDate ? new Date(selectedMovie.releaseDate).getFullYear() : new Date().getFullYear(), selectedMovie.genre_names?.[0] || 'Unknown', selectedCategory, selectedMovie.poster_path);
       setSelectedMovie(null);
       setSelectedCategory('');
       setSearchQuery('');
