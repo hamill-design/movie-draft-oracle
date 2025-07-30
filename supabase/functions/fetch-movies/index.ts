@@ -445,7 +445,10 @@ serve(async (req) => {
         }
 
         // Get accurate Oscar status from OMDb API with caching
+        // Use the actual movie release year, not the requested year
         const movieYear = detailedMovie.release_date ? getYearFromDate(detailedMovie.release_date) : movie.release_date ? getYearFromDate(movie.release_date) : 0;
+        console.log(`Movie: ${movie.title} - Release Date: ${movie.release_date}, Extracted Year: ${movieYear}`);
+        
         const oscarStatus = await getOscarStatus(movie.id, movie.title, movieYear);
         hasOscar = oscarStatus !== 'none';
         
@@ -453,10 +456,13 @@ serve(async (req) => {
         console.log(`Could not fetch detailed info for movie ${movie.id}:`, error);
       }
 
+      // Use the correct year from the movie data, not current year
+      const correctYear = detailedMovie.release_date ? getYearFromDate(detailedMovie.release_date) : movie.release_date ? getYearFromDate(movie.release_date) : 0;
+      
       return {
         id: movie.id,
         title: movie.title,
-        year: movie.release_date ? getYearFromDate(movie.release_date) : 0,
+        year: correctYear, // Use the actual release year
         genre: movie.genre_ids?.[0] ? getGenreName(movie.genre_ids[0]) : 'Unknown',
         director: 'Unknown',
         runtime: detailedMovie.runtime || 120,
