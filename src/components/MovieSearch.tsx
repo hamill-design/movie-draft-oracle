@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { Movie } from '@/data/movies';
 import { getCleanActorName } from '@/lib/utils';
+import { sanitizeHtml, INPUT_LIMITS } from '@/utils/inputValidation';
 
 interface MovieSearchProps {
   theme: string;
@@ -96,7 +97,13 @@ const MovieSearch = ({
         <Input
           placeholder={getPlaceholderText()}
           value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
+          onChange={(e) => {
+            const sanitizedValue = sanitizeHtml(e.target.value);
+            if (sanitizedValue.length <= INPUT_LIMITS.MAX_SEARCH_QUERY_LENGTH) {
+              onSearchChange(sanitizedValue);
+            }
+          }}
+          maxLength={INPUT_LIMITS.MAX_SEARCH_QUERY_LENGTH}
           className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
         />
         

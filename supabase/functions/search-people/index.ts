@@ -30,22 +30,29 @@ serve(async (req) => {
       )
     }
 
-    console.log('Searching for people with query:', searchQuery)
+    // Input validation and sanitization
+    const sanitizedQuery = searchQuery.trim().slice(0, 100); // Limit length
+    if (!sanitizedQuery) {
+      return new Response(
+        JSON.stringify({ error: 'Search query cannot be empty' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      )
+    }
+
+    console.log('Searching for people with query length:', sanitizedQuery.length)
 
     // Search for people using TMDB API
-    const tmdbUrl = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`
-    
-    console.log('TMDB URL:', tmdbUrl.replace(tmdbApiKey, '[API_KEY]'))
+    const tmdbUrl = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(sanitizedQuery)}`
 
     const response = await fetch(tmdbUrl)
     
     if (!response.ok) {
       console.error('TMDB API error:', response.status, response.statusText)
-      throw new Error(`TMDB API error: ${response.status}`)
+      throw new Error(`API request failed`)
     }
 
     const data = await response.json()
-    console.log('TMDB API response:', data)
+    console.log('TMDB API response - total results:', data.total_results, 'page:', data.page)
 
     // Transform the data to include relevant information
     const transformedResults = data.results?.map((person: any) => ({
@@ -74,9 +81,9 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Error in search-people function:', error)
+    console.error('Error in search-people function:', error instanceof Error ? error.message : 'Unknown error')
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: 'Search service temporarily unavailable' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     )
   }

@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Hash, Users } from 'lucide-react';
+import { validateInviteCode, validateParticipantName, sanitizeHtml } from '@/utils/inputValidation';
 
 export const JoinDraftForm = () => {
   const navigate = useNavigate();
@@ -42,10 +43,23 @@ export const JoinDraftForm = () => {
     // Prevent multiple simultaneous join attempts
     if (isJoining) return;
     
-    if (!inviteCode.trim() || !participantName.trim()) {
+    // Validate invite code
+    const inviteValidation = validateInviteCode(inviteCode);
+    if (!inviteValidation.isValid) {
       toast({
-        title: "Missing Information",
-        description: "Please enter both invite code and your name",
+        title: "Invalid Invite Code",
+        description: inviteValidation.error,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Validate participant name
+    const nameValidation = validateParticipantName(participantName);
+    if (!nameValidation.isValid) {
+      toast({
+        title: "Invalid Name",
+        description: nameValidation.error,
         variant: "destructive",
       });
       return;
