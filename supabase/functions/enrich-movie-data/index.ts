@@ -69,20 +69,95 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch OMDB data with enhanced matching logic
+    // Fetch TMDB data first to get IMDB ID for consistent matching
+    let tmdbData = null
+    let tmdbImdbId = null
+    
+    if (tmdbApiKey) {
+      try {
+        console.log('Fetching TMDB data...')
+        
+        tmdbData = await findBestTmdbMatch(movieTitle, movieYear, movieId, tmdbApiKey, fetchWithTimeout)
+        
+        if (tmdbData) {
+          console.log(`TMDB: Successfully found "${tmdbData.title}" (${tmdbData.release_date?.substring(0, 4)})`)
+          
+          // Extract IMDB ID for consistent OMDB lookup
+          if (tmdbData.imdb_id) {
+            tmdbImdbId = tmdbData.imdb_id
+            console.log(`TMDB: Found IMDB ID ${tmdbImdbId} for consistent OMDB lookup`)
+          }
+          
+          if (tmdbData.budget && tmdbData.budget > 0) {
+            enrichmentData.budget = tmdbData.budget
+            console.log(`Budget: $${enrichmentData.budget.toLocaleString()}`)
+          }
+          
+          if (tmdbData.revenue && tmdbData.revenue > 0) {
+            enrichmentData.revenue = tmdbData.revenue
+            console.log(`Revenue: $${enrichmentData.revenue.toLocaleString()}`)
+          }
+
+          if (tmdbData.poster_path) {
+            enrichmentData.posterPath = tmdbData.poster_path
+            console.log(`Poster: ${enrichmentData.posterPath}`)
+          }
+
+          // Extract genre information
+          if (tmdbData.genres && tmdbData.genres.length > 0) {
+            enrichmentData.movieGenre = tmdbData.genres[0].name
+            console.log(`Genre: ${enrichmentData.movieGenre}`)
+          } else if (tmdbData.genre_ids && tmdbData.genre_ids.length > 0) {
+            enrichmentData.movieGenre = getGenreName(tmdbData.genre_ids[0])
+            console.log(`Genre (from ID): ${enrichmentData.movieGenre}`)
+          }
+        } else {
+          console.log('TMDB: No suitable match found after enhanced search')
+        }
+      } catch (error) {
+        console.log(`TMDB error: ${error.message}`)
+      }
+    }
+
+    // Fetch OMDB data using TMDB's IMDB ID for consistency, or fallback to enhanced matching
     if (omdbApiKey) {
       try {
         console.log('Fetching OMDB data...')
         
-        const omdbData = await findBestOmdbMatch(movieTitle, movieYear, movieId, omdbApiKey, fetchWithTimeout)
+        let omdbData = null
         
-        if (omdbData) {
-          console.log(`OMDB: Successfully found "${omdbData.Title}" (${omdbData.Year}) with confidence score`)
-        } else {
-          console.log('OMDB: No suitable match found after enhanced search')
+        // First try using TMDB's IMDB ID if available
+        if (tmdbImdbId) {
+          console.log(`OMDB: Using TMDB IMDB ID ${tmdbImdbId} for consistent lookup`)
+          try {
+            const imdbUrl = `http://www.omdbapi.com/?i=${tmdbImdbId}&apikey=${omdbApiKey}`
+            const response = await fetchWithTimeout(imdbUrl, 8000)
+            
+            if (response.ok) {
+              const data = await response.json()
+              
+              if (data && data.Response !== 'False' && data.Title) {
+                omdbData = data
+                console.log(`OMDB: Successfully found "${data.Title}" (${data.Year}) using TMDB IMDB ID`)
+              } else {
+                console.log('OMDB: IMDB ID lookup failed, falling back to search')
+              }
+            }
+          } catch (error) {
+            console.log(`OMDB: IMDB ID lookup failed (${error.message}), falling back to search`)
+          }
+        }
+        
+        // Fallback to enhanced matching if IMDB ID lookup failed
+        if (!omdbData) {
+          console.log('OMDB: Using fallback search with enhanced matching')
+          omdbData = await findBestOmdbMatch(movieTitle, movieYear, movieId, omdbApiKey, fetchWithTimeout)
         }
         
         if (omdbData) {
+          const source = tmdbImdbId ? 'IMDB ID from TMDB' : 'enhanced search'
+          console.log(`OMDB: Successfully found "${omdbData.Title}" (${omdbData.Year}) via ${source}`)
+          
           // IMDB Rating
           if (omdbData.imdbRating && omdbData.imdbRating !== 'N/A') {
             const rating = parseFloat(omdbData.imdbRating)
@@ -126,47 +201,6 @@ Deno.serve(async (req) => {
         }
       } catch (error) {
         console.log(`OMDB error: ${error.message}`)
-      }
-    }
-
-    // Fetch TMDB data with enhanced matching
-    if (tmdbApiKey) {
-      try {
-        console.log('Fetching TMDB data...')
-        
-        const tmdbData = await findBestTmdbMatch(movieTitle, movieYear, movieId, tmdbApiKey, fetchWithTimeout)
-        
-        if (tmdbData) {
-          console.log(`TMDB: Successfully found "${tmdbData.title}" (${tmdbData.release_date?.substring(0, 4)})`)
-          
-          if (tmdbData.budget && tmdbData.budget > 0) {
-            enrichmentData.budget = tmdbData.budget
-            console.log(`Budget: $${enrichmentData.budget.toLocaleString()}`)
-          }
-          
-          if (tmdbData.revenue && tmdbData.revenue > 0) {
-            enrichmentData.revenue = tmdbData.revenue
-            console.log(`Revenue: $${enrichmentData.revenue.toLocaleString()}`)
-          }
-
-          if (tmdbData.poster_path) {
-            enrichmentData.posterPath = tmdbData.poster_path
-            console.log(`Poster: ${enrichmentData.posterPath}`)
-          }
-
-          // Extract genre information
-          if (tmdbData.genres && tmdbData.genres.length > 0) {
-            enrichmentData.movieGenre = tmdbData.genres[0].name
-            console.log(`Genre: ${enrichmentData.movieGenre}`)
-          } else if (tmdbData.genre_ids && tmdbData.genre_ids.length > 0) {
-            enrichmentData.movieGenre = getGenreName(tmdbData.genre_ids[0])
-            console.log(`Genre (from ID): ${enrichmentData.movieGenre}`)
-          }
-        } else {
-          console.log('TMDB: No suitable match found after enhanced search')
-        }
-      } catch (error) {
-        console.log(`TMDB error: ${error.message}`)
       }
     }
 
