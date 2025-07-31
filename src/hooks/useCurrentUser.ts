@@ -13,6 +13,7 @@ export const useCurrentUser = () => {
   const { guestSession, loading: guestLoading } = useGuestSession();
 
   const getCurrentUserId = (): string | null => {
+    // Always prioritize authenticated user ID over guest session
     if (user?.id) {
       return user.id;
     }
