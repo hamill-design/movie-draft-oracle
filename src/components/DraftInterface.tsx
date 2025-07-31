@@ -77,9 +77,9 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   // Load existing picks when component mounts
   useEffect(() => {
     if (existingPicks) {
-      loadExistingPicks(existingPicks);
+      loadExistingPicks(existingPicks, draftState.participants);
     }
-  }, [existingPicks]);
+  }, [existingPicks, draftState.participants]);
 
   // Get the base category for initial movie loading
   const getBaseCategory = () => {

@@ -69,22 +69,31 @@ export const useDraftGame = (participants: string[], categories: string[]) => {
     return updatedPicks;
   };
 
-  const loadExistingPicks = useCallback((existingPicks: any[]) => {
+  const loadExistingPicks = useCallback((existingPicks: any[], originalParticipants?: string[]) => {
     if (existingPicks && existingPicks.length > 0) {
-      // Extract player order from existing picks to maintain consistency
-      const playerNames = new Set<string>();
-      existingPicks.forEach(pick => playerNames.add(pick.player_name));
+      // Use original participants list if provided, otherwise fall back to extracting from picks
+      let playerOrder: Player[];
       
-      // Create player order based on the saved picks
-      const savedPlayerOrder = Array.from(playerNames).map((name, index) => ({
-        id: index,
-        name
-      }));
+      if (originalParticipants && originalParticipants.length > 0) {
+        // Preserve the original participants list to maintain all players
+        playerOrder = originalParticipants.map((name, index) => ({
+          id: index,
+          name
+        }));
+      } else {
+        // Fallback: Extract player order from existing picks (old behavior)
+        const playerNames = new Set<string>();
+        existingPicks.forEach(pick => playerNames.add(pick.player_name));
+        playerOrder = Array.from(playerNames).map((name, index) => ({
+          id: index,
+          name
+        }));
+      }
       
-      setInitialPlayerOrder(savedPlayerOrder);
+      setInitialPlayerOrder(playerOrder);
       
       const convertedPicks: Pick[] = existingPicks.map((pick) => ({
-        playerId: savedPlayerOrder.find(p => p.name === pick.player_name)?.id || 0,
+        playerId: playerOrder.find(p => p.name === pick.player_name)?.id || 0,
         playerName: pick.player_name,
         movie: {
           id: pick.movie_id,
