@@ -14,57 +14,74 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
+    /* Light theme gradient background */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background-gradient: linear-gradient(140deg, #FCFFFF 0%, #F0F1FF 50%, #FCFFFF 100%);
+    --foreground: 220 13% 17%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* Card and container backgrounds */
+    --card: 220 20% 99%;
+    --card-foreground: 220 13% 17%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 220 20% 99%;
+    --popover-foreground: 220 13% 17%;
 
-    /* Brand Colors from Figma */
-    --brand-primary: 262 100% 52%;
+    /* Brand Colors - Design System */
+    --brand-primary: 262 100% 52%; /* #680AFF */
     --brand-primary-foreground: 0 0% 100%;
-    --purple-200: 252 100% 85%;
-    --greyscale-blue-900: 240 8% 6%;
+    --purple-150: 255 100% 90%; /* #D3CFFF */
+    --purple-200: 252 100% 85%; /* #BCB2FF */
+    --purple-300: 245 100% 79%; /* #907AFF */
+    
+    /* Greyscale System */
+    --greyscale-blue-900: 210 26% 6%; /* #0E0F0F */
+    --greyscale-blue-800: 210 10% 17%; /* #2B2D2D */
+    --greyscale-blue-700: 210 8% 29%; /* #474B4B */
+    --greyscale-blue-600: 210 7% 40%; /* #646968 */
+    --greyscale-blue-500: 210 6% 52%; /* #828786 */
+    --greyscale-blue-200: 180 6% 85%; /* #D9E0DF */
+    --greyscale-blue-100: 220 20% 99%; /* #FCFFFF */
+    
+    /* UI Colors */
+    --ui-primary: 0 0% 100%; /* white */
+    --text-primary: 210 10% 17%; /* #2B2D2D */
+    
+    /* Accent Colors */
+    --yellow-500: 48 100% 52%; /* #FFD60A */
+    --teal-100: 165 100% 95%; /* #EBFFFA */
+    --teal-700: 166 97% 30%; /* #03946D */
 
+    /* Component tokens */
     --primary: 262 100% 52%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary-foreground: 220 13% 17%;
 
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted-foreground: 210 6% 52%;
 
     --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent-foreground: 220 13% 17%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 180 6% 85%;
+    --input: 180 6% 85%;
+    --ring: 262 100% 52%;
 
-    --radius: 0.5rem;
+    --radius: 0.25rem;
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Sidebar tokens */
+    --sidebar-background: 210 26% 6%;
+    --sidebar-foreground: 180 6% 85%;
+    --sidebar-primary: 262 100% 52%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 26% 12%;
+    --sidebar-accent-foreground: 180 6% 85%;
+    --sidebar-border: 210 26% 12%;
+    --sidebar-ring: 262 100% 52%;
   }
 
   .dark {

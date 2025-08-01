@@ -1,65 +1,57 @@
-# Movie Draft Knowledgebase
+# Movie Draft Oracle - Knowledge Base
 
-## Overview
-Movie Draft is a fantasy sports-style drafting game focused on movies and actors. Players create teams by drafting actors, and their team's performance is scored based on the real-world box office success and critical reception of movies featuring their drafted actors.
+## Project Overview
+Movie Draft Oracle is a web application that allows users to create and participate in movie drafts. Users can draft movies based on actors/directors or by year, either locally or in multiplayer mode with friends.
 
-## Core Concepts
-
-### Draft System
-- **Snake Draft**: Players alternate picking actors in rounds, with the order reversing each round
-- **Categories**: Actors are organized into different categories (Leading Men, Leading Ladies, Character Actors, etc.)
-- **Team Building**: Each player builds a roster of actors across different categories
-
-### Scoring System
-- **Box Office Performance**: Points awarded based on domestic and international box office earnings
-- **Critical Reception**: Bonus points for high Rotten Tomatoes scores and awards
-- **Release Timing**: Points accumulate as new movies are released featuring drafted actors
-
-### Multiplayer Features
-- **Draft Rooms**: Private rooms where friends can draft together
-- **Real-time Updates**: Live draft interface with pick notifications
-- **Leaderboards**: Track performance throughout the scoring period
+## Core Features
+- **Draft Creation**: Choose themes (person-based or year-based) and modes (local or multiplayer)
+- **Person Search**: Search for actors, directors, and other film personalities
+- **Multiplayer Drafts**: Invite friends via email to join draft sessions
+- **Category Selection**: Choose movie categories for drafts
+- **Real-time Collaboration**: Live multiplayer draft sessions
+- **User Profiles**: Manage user accounts and draft history
 
 ## Technical Architecture
+- **Frontend**: React 18 with TypeScript
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS with custom design system
+- **Backend**: Supabase (PostgreSQL database, authentication, real-time features)
+- **Routing**: React Router DOM
+- **State Management**: React hooks and context
+- **UI Components**: Custom atomic design system + shadcn/ui
 
-### Frontend
-- **React 18** with TypeScript for type safety
-- **Tailwind CSS** with custom design system
-- **Radix UI** components for accessibility
-- **React Router** for navigation
-- **React Query** for data fetching and caching
+## Design System
+- **Colors**: HSL-based color system with semantic tokens
+- **Typography**: Brockmann and Chaney font families
+- **Components**: Atomic design pattern (atoms, molecules, organisms)
+- **Theme**: Light theme with purple brand colors and gradient backgrounds
 
-### Backend
-- **Supabase** for authentication, database, and real-time features
-- **PostgreSQL** database with Row Level Security
-- **Edge Functions** for complex business logic
+## Authentication & Users
+- Supabase Auth for user management
+- Guest sessions for non-authenticated users
+- Profile management and customization
+- Email invitations for multiplayer drafts
 
-### Data Sources
-- **The Movie Database (TMDb)** API for movie and actor data
-- **Box office tracking** for scoring calculations
-- **Awards databases** for bonus point systems
+## Database Schema
+- Users and profiles
+- Drafts and draft sessions
+- Movies and people data
+- Participant management
+- Category definitions
 
-## Key Features
+## Key User Flows
+1. **Create Draft**: Theme selection → Person/Year selection → Mode selection → Participants (if multiplayer) → Categories → Start draft
+2. **Join Draft**: Enter invite code → Set display name → Join session
+3. **Draft Process**: Round-based selection with real-time updates
+4. **Scoring**: Calculate and display final scores
 
-### User Authentication
-- Email/password registration and login
-- Guest mode for trying the platform
-- User profiles with draft history
+## External Integrations
+- Movie/people data APIs
+- Email service for invitations
+- Image storage for profiles and assets
 
-### Draft Management
-- Create and join draft rooms
-- Configurable draft settings (number of rounds, categories, etc.)
-- Save and resume drafts
-- Share draft results
-
-### Scoring Engine
-- Real-time score updates
-- Historical performance tracking
-- Detailed scoring breakdowns
-- Comparative analysis tools
-
-## Business Model
-- **Freemium**: Basic drafts are free
-- **Premium Features**: Advanced analytics, private leagues, extended draft history
-- **Advertising**: Non-intrusive ads in free tier
-- **Partnerships**: Potential partnerships with streaming services and movie studios
+## Performance Considerations
+- Code splitting and lazy loading
+- Optimized component rendering
+- Efficient database queries
+- Real-time subscription management
