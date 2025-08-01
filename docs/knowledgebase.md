@@ -1,62 +1,65 @@
-# Movie Draft Game - Knowledge Base
+# Movie Draft Knowledgebase
 
 ## Overview
-This is a React-based web application for hosting movie drafting games where players take turns selecting movies based on different themes and categories.
+Movie Draft is a fantasy sports-style drafting game focused on movies and actors. Players create teams by drafting actors, and their team's performance is scored based on the real-world box office success and critical reception of movies featuring their drafted actors.
 
-## Core Features
+## Core Concepts
 
-### Draft Types
-- **Single Player**: Practice drafts for individual users
-- **Multiplayer**: Real-time collaborative drafts with multiple participants
+### Draft System
+- **Snake Draft**: Players alternate picking actors in rounds, with the order reversing each round
+- **Categories**: Actors are organized into different categories (Leading Men, Leading Ladies, Character Actors, etc.)
+- **Team Building**: Each player builds a roster of actors across different categories
 
-### Themes
-- **Year**: Movies from a specific year
-- **People**: Movies featuring a specific actor/actress
-- **Genre**: Movies from specific genres
+### Scoring System
+- **Box Office Performance**: Points awarded based on domestic and international box office earnings
+- **Critical Reception**: Bonus points for high Rotten Tomatoes scores and awards
+- **Release Timing**: Points accumulate as new movies are released featuring drafted actors
 
-### Categories
-Various movie categories like "Best Picture", "Action", "Comedy", etc.
+### Multiplayer Features
+- **Draft Rooms**: Private rooms where friends can draft together
+- **Real-time Updates**: Live draft interface with pick notifications
+- **Leaderboards**: Track performance throughout the scoring period
 
 ## Technical Architecture
 
 ### Frontend
-- **React 18** with TypeScript
-- **Tailwind CSS** for styling with custom design system
-- **Supabase** for backend services
-- **Real-time updates** using Supabase presence and broadcasting
+- **React 18** with TypeScript for type safety
+- **Tailwind CSS** with custom design system
+- **Radix UI** components for accessibility
+- **React Router** for navigation
+- **React Query** for data fetching and caching
 
 ### Backend
-- **Supabase Database** with PostgreSQL
-- **Row Level Security (RLS)** for data protection
-- **Edge Functions** for API integrations
-- **Real-time subscriptions** for live updates
+- **Supabase** for authentication, database, and real-time features
+- **PostgreSQL** database with Row Level Security
+- **Edge Functions** for complex business logic
 
-### Key Data Models
-- **Drafts**: Main draft configuration and state
-- **Draft Participants**: Users/guests in a draft
-- **Draft Picks**: Movie selections made by players
-- **Guest Sessions**: Temporary sessions for non-authenticated users
+### Data Sources
+- **The Movie Database (TMDb)** API for movie and actor data
+- **Box office tracking** for scoring calculations
+- **Awards databases** for bonus point systems
 
-## Movie Data Integration
-- **TMDB API** for movie information
-- **People Search** for actor/actress lookup
-- **Movie Search** with theme-based filtering
-- **Poster Images** and metadata
+## Key Features
 
-## Real-time Features
-- Live participant joining/leaving
-- Turn-based picking system
-- Snake draft turn order
-- Broadcast messaging for state updates
+### User Authentication
+- Email/password registration and login
+- Guest mode for trying the platform
+- User profiles with draft history
 
-## Authentication
-- **Supabase Auth** for registered users
-- **Guest Sessions** for anonymous participation
-- **Unified participant system** supporting both user types
+### Draft Management
+- Create and join draft rooms
+- Configurable draft settings (number of rounds, categories, etc.)
+- Save and resume drafts
+- Share draft results
 
-## Scoring System
-- Oscar nominations and wins
-- IMDB ratings
-- Rotten Tomatoes scores
-- Box office performance
-- Metacritic scores
+### Scoring Engine
+- Real-time score updates
+- Historical performance tracking
+- Detailed scoring breakdowns
+- Comparative analysis tools
+
+## Business Model
+- **Freemium**: Basic drafts are free
+- **Premium Features**: Advanced analytics, private leagues, extended draft history
+- **Advertising**: Non-intrusive ads in free tier
+- **Partnerships**: Potential partnerships with streaming services and movie studios
