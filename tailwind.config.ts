@@ -18,6 +18,16 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				'brockmann-regular': ['brockmann-regular', 'serif'],
+				'brockmann-medium': ['brockmann-medium', 'serif'],
+				'brockmann-semibold': ['brockmann-semibold', 'serif'],
+				'brockmann-bold': ['brockmann-bold', 'serif'],
+				'chaney-regular': ['chaneyregular', 'serif'],
+				'chaney-wide': ['chaneywide', 'serif'],
+				'chaney-extended': ['chaneyextended', 'serif'],
+				'chaney-ultra': ['chaneyultra_extended', 'serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
