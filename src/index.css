@@ -1,3 +1,9 @@
+@import url('./assets/fonts/Brockmann Complete Webfont/webfontkit/stylesheet.css');
+@import url('./assets/fonts/CHANEY-font-webfont/CHANEY-Regular-webfont/stylesheet.css');
+@import url('./assets/fonts/CHANEY-font-webfont/CHANEY-Wide-webfont/stylesheet.css');
+@import url('./assets/fonts/CHANEY-font-webfont/CHANEY-Extended-webfont/stylesheet.css');
+@import url('./assets/fonts/CHANEY-font-webfont/CHANEY-UltraExtended-webfont/stylesheet.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -17,8 +23,14 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Brand Colors from Figma */
+    --brand-primary: 262 100% 52%;
+    --brand-primary-foreground: 0 0% 100%;
+    --purple-200: 252 100% 85%;
+    --greyscale-blue-900: 240 8% 6%;
+
+    --primary: 262 100% 52%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -56,17 +68,23 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 240 8% 6%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 240 8% 6%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 240 8% 6%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Brand Colors for Dark Mode */
+    --brand-primary: 262 100% 52%;
+    --brand-primary-foreground: 0 0% 100%;
+    --purple-200: 252 100% 85%;
+    --greyscale-blue-900: 240 8% 6%;
+
+    --primary: 262 100% 52%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;

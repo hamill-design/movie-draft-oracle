@@ -1,10 +1,9 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { User, HelpCircle } from 'lucide-react';
+import { Button } from '@/components/atoms';
+import { HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import Logo from './Logo';
 
 const AppHeader = () => {
   const navigate = useNavigate();
@@ -12,52 +11,52 @@ const AppHeader = () => {
 
   return (
     <>
-      <header className="bg-gray-900/80 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            {/* Logo */}
-            <button
-              onClick={() => navigate('/')}
-              className="flex items-center gap-3 text-yellow-400 hover:text-yellow-300 transition-colors"
+      <header className="bg-greyscale-blue-900 p-5 sticky top-0 z-50">
+        <div className="w-full flex items-center justify-between">
+          {/* Brand/Logo Section */}
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-start gap-2.5 w-full max-w-[647px]"
+          >
+            <div className="flex-1 h-10 bg-brand-primary rounded-sm" />
+          </button>
+
+          {/* Right side buttons */}
+          <div className="flex items-center gap-3">
+            {/* Learn More Button */}
+            <Button 
+              onClick={() => navigate('/learn-more')}
+              variant="ghost" 
+              size="sm"
+              font="brockmann-medium"
+              className="text-purple-200 hover:text-purple-200/80 hover:bg-transparent px-3 py-2 text-sm"
             >
-              <Logo />
-            </button>
+              <HelpCircle size={16} className="mr-2" />
+              Learn More
+            </Button>
 
-            {/* Right side buttons */}
-            <div className="flex items-center gap-3">
-              {/* Learn More Button */}
-              <Button 
-                onClick={() => navigate('/learn-more')}
-                variant="ghost" 
+            {/* Profile/Login Button */}
+            {user ? (
+              <Button
+                onClick={() => navigate('/profile')}
+                variant="default"
                 size="sm"
-                className="text-gray-400 hover:text-white hover:bg-gray-800"
+                font="brockmann-medium"
+                className="bg-brand-primary hover:bg-brand-primary/90 text-white px-4 py-2 text-sm rounded-sm"
               >
-                <HelpCircle size={16} className="mr-1" />
-                Learn More
+                My Profile
               </Button>
-
-              {/* Profile/Login Button */}
-              {user ? (
-                <Button
-                  onClick={() => navigate('/profile')}
-                  variant="outline"
-                  size="sm"
-                  className="border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
-                >
-                  <User size={16} className="mr-1" />
-                  Profile
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => navigate('/auth')}
-                  variant="default"
-                  size="sm"
-                  className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium"
-                >
-                  Login
-                </Button>
-              )}
-            </div>
+            ) : (
+              <Button
+                onClick={() => navigate('/auth')}
+                variant="default"
+                size="sm"
+                font="brockmann-medium"
+                className="bg-brand-primary hover:bg-brand-primary/90 text-white px-4 py-2 text-sm rounded-sm"
+              >
+                Login
+              </Button>
+            )}
           </div>
         </div>
       </header>

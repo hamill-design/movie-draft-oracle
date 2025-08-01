@@ -18,12 +18,26 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				'brockmann-regular': ['brockmann-regular', 'serif'],
+				'brockmann-medium': ['brockmann-medium', 'serif'],
+				'brockmann-semibold': ['brockmann-semibold', 'serif'],
+				'brockmann-bold': ['brockmann-bold', 'serif'],
+				'chaney-regular': ['chaneyregular', 'serif'],
+				'chaney-wide': ['chaneywide', 'serif'],
+				'chaney-extended': ['chaneyextended', 'serif'],
+				'chaney-ultra': ['chaneyultra_extended', 'serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				'brand-primary': 'hsl(var(--brand-primary))',
+				'brand-primary-foreground': 'hsl(var(--brand-primary-foreground))',
+				'purple-200': 'hsl(var(--purple-200))',
+				'greyscale-blue-900': 'hsl(var(--greyscale-blue-900))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))'
