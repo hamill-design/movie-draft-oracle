@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/atoms';
 import { HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import LogoLong from '@/assets/logos/Property 1=Long, _hover=false.svg';
 
 const AppHeader = () => {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ const AppHeader = () => {
             onClick={() => navigate('/')}
             className="flex items-start gap-2.5 w-full max-w-[647px]"
           >
-            <div className="flex-1 h-10 bg-brand-primary rounded-sm" />
+            <img src={LogoLong} alt="Movie Draft" className="flex-1 h-10" />
           </button>
 
           {/* Right side buttons */}
