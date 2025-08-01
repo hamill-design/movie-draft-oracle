@@ -92,52 +92,67 @@ export const JoinDraftForm = () => {
   const isButtonDisabled = loading || !isFormValid || isJoining;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Users className="h-5 w-5" />
-          Join Existing Draft
-        </CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Have an invite code? Join a multiplayer draft session
-        </p>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleJoin} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="invite-code" className="flex items-center gap-2">
-              <Hash className="h-4 w-4" />
-              Invite Code
-            </Label>
-            <Input
-              id="invite-code"
-              value={inviteCode}
-              onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-              placeholder="Enter 8-character code"
-              maxLength={8}
-              className="font-mono tracking-wider text-center"
-            />
+    <div className="w-full h-full p-6 bg-background shadow-sm border border-border rounded flex flex-col items-start gap-6">
+      <div className="self-stretch flex flex-col items-start gap-1">
+        <div className="self-stretch h-7 flex items-center gap-2">
+          <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
+            <div className="w-5 h-5 bg-primary"></div>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="participant-name">Your Display Name</Label>
-            <Input
-              id="participant-name"
-              value={participantName}
-              onChange={(e) => setParticipantName(e.target.value)}
-              placeholder="Enter your name"
-            />
+          <div className="flex-1 flex flex-col justify-center text-foreground text-xl font-medium leading-7 font-brockmann">
+            Join A Draft
           </div>
-          
-          <Button 
-            type="submit"
-            disabled={isButtonDisabled}
-            className="w-full"
-          >
+        </div>
+        <div className="self-stretch flex flex-col items-start">
+          <div className="self-stretch flex flex-col justify-center text-muted-foreground text-sm font-normal leading-5 font-brockmann">
+            Have an invite code? Join a multiplayer draft session
+          </div>
+        </div>
+      </div>
+      <form onSubmit={handleJoin} className="self-stretch flex flex-col items-start gap-6">
+        <div className="self-stretch flex flex-col items-start gap-5">
+          <div className="self-stretch flex flex-col items-center">
+            <div className="self-stretch px-4 py-3 bg-background overflow-hidden rounded border border-border flex items-center gap-3">
+              <div className="flex-1 overflow-hidden flex flex-col items-center">
+                <input
+                  id="invite-code"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                  placeholder="Enter 8-digit Invite Code"
+                  maxLength={8}
+                  className="self-stretch text-center flex flex-col justify-center text-foreground text-lg font-normal leading-7 tracking-wide font-mono bg-transparent border-0 outline-none"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="self-stretch flex flex-col items-start gap-3">
+            <div className="flex flex-col justify-center text-foreground text-sm font-medium leading-5 font-brockmann">
+              Your Display Name
+            </div>
+            <div className="self-stretch flex flex-col items-start">
+              <div className="self-stretch px-4 py-3 bg-background overflow-hidden rounded border border-border flex items-center gap-3">
+                <div className="flex-1 overflow-hidden flex flex-col items-start">
+                  <input
+                    id="participant-name"
+                    value={participantName}
+                    onChange={(e) => setParticipantName(e.target.value)}
+                    placeholder="Enter Display Name"
+                    className="flex flex-col justify-center text-muted-foreground text-sm font-normal leading-4.5 font-brockmann bg-transparent border-0 outline-none w-full"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <button
+          type="submit"
+          disabled={isButtonDisabled}
+          className="self-stretch px-6 py-3 bg-primary rounded flex justify-center items-center disabled:opacity-50"
+        >
+          <div className="text-center flex flex-col justify-center text-primary-foreground text-base font-semibold leading-6 tracking-wide font-brockmann">
             {(loading || isJoining) ? 'Joining...' : 'Join Draft'}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+          </div>
+        </button>
+      </form>
+    </div>
   );
 };
