@@ -143,48 +143,59 @@ const Home = () => {
           <JoinDraftForm />
           
           {/* Theme Selection */}
-          <Card className="bg-gray-800 border-gray-600">
-            <CardContent className="pt-6">
-              <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                <Film className="text-yellow-400" />
-                Choose Your Draft Theme
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button
+          <div className="w-full bg-card shadow-sm border border-border rounded flex flex-wrap">
+            <div className="flex-1 p-6 flex flex-col items-start gap-6">
+              <div className="self-stretch flex flex-col justify-center items-center gap-2">
+                <div className="flex flex-col justify-center text-foreground text-2xl font-bold leading-8 tracking-wide font-brockmann">
+                  Choose Your Draft Theme
+                </div>
+              </div>
+              <div className="self-stretch flex items-start gap-4 flex-wrap">
+                <button
                   onClick={() => {
                     setTheme('people');
                     setSelectedOption('');
                     setSearchQuery('');
                   }}
-                  variant={theme === 'people' ? 'default' : 'outline'}
-                  className={`h-20 text-lg ${
+                  className={`flex-1 h-20 min-w-[294px] px-12 py-2 rounded-md flex justify-center items-center gap-4 ${
                     theme === 'people'
-                      ? 'bg-yellow-400 text-black hover:bg-yellow-500'
-                      : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                      ? 'bg-primary'
+                      : 'bg-card border border-border'
                   }`}
                 >
-                  <Users className="mr-3" size={24} />
-                  Draft by Person
-                </Button>
-                <Button
+                  <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
+                    <div className={`w-4 flex-1 ${theme === 'people' ? 'bg-primary-foreground' : 'bg-foreground'}`}></div>
+                  </div>
+                  <div className={`text-center flex flex-col justify-center text-lg font-medium leading-7 font-brockmann ${
+                    theme === 'people' ? 'text-primary-foreground' : 'text-foreground'
+                  }`}>
+                    Draft by Person
+                  </div>
+                </button>
+                <button
                   onClick={() => {
                     setTheme('year');
                     setSelectedOption('');
                     setSearchQuery('');
                   }}
-                  variant={theme === 'year' ? 'default' : 'outline'}
-                  className={`h-20 text-lg ${
+                  className={`flex-1 h-20 min-w-[294px] px-9 py-2.5 rounded-md flex justify-center items-center gap-4 ${
                     theme === 'year'
-                      ? 'bg-yellow-400 text-black hover:bg-yellow-500'
-                      : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                      ? 'bg-primary'
+                      : 'bg-card border border-border'
                   }`}
                 >
-                  <Calendar className="mr-3" size={24} />
-                  Draft by Year
-                </Button>
+                  <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
+                    <div className={`w-5 h-5.5 ${theme === 'year' ? 'bg-primary-foreground' : 'bg-foreground'}`}></div>
+                  </div>
+                  <div className={`text-center flex flex-col justify-center text-lg font-medium leading-7 font-brockmann ${
+                    theme === 'year' ? 'text-primary-foreground' : 'text-foreground'
+                  }`}>
+                    Draft by Year
+                  </div>
+                </button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Option Selection */}
           {isStepVisible('option') && (
