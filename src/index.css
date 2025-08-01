@@ -1,8 +1,67 @@
-@import url('./assets/fonts/Brockmann Complete Webfont/webfontkit/stylesheet.css');
-@import url('./assets/fonts/CHANEY-font-webfont/CHANEY-Regular-webfont/stylesheet.css');
-@import url('./assets/fonts/CHANEY-font-webfont/CHANEY-Wide-webfont/stylesheet.css');
-@import url('./assets/fonts/CHANEY-font-webfont/CHANEY-Extended-webfont/stylesheet.css');
-@import url('./assets/fonts/CHANEY-font-webfont/CHANEY-UltraExtended-webfont/stylesheet.css');
+/* Custom Fonts */
+@font-face {
+  font-family: 'Brockmann';
+  src: url('/fonts/brockmann/brockmann-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Brockmann';
+  src: url('/fonts/brockmann/brockmann-medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Brockmann';
+  src: url('/fonts/brockmann/brockmann-semibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Brockmann';
+  src: url('/fonts/brockmann/brockmann-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Chaney';
+  src: url('/fonts/chaney/chaney-regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Chaney Wide';
+  src: url('/fonts/chaney/chaney-wide.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Chaney Extended';
+  src: url('/fonts/chaney/chaney-extended.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Chaney Ultra Extended';
+  src: url('/fonts/chaney/chaney-ultraextended.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 
 @tailwind base;
 @tailwind components;

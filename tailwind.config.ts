@@ -19,14 +19,14 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'brockmann-regular': ['brockmannregular', 'serif'],
-				'brockmann-medium': ['brockmannmedium', 'serif'],
-				'brockmann-semibold': ['brockmannsemibold', 'serif'],
-				'brockmann-bold': ['brockmannbold', 'serif'],
-				'chaney-regular': ['chaneyregular', 'serif'],
-				'chaney-wide': ['chaneywide', 'serif'],
-				'chaney-extended': ['chaneyextended', 'serif'],
-				'chaney-ultra': ['chaneyultra_extended', 'serif'],
+				'brockmann-regular': ['Brockmann', 'serif'],
+				'brockmann-medium': ['Brockmann', 'serif'],
+				'brockmann-semibold': ['Brockmann', 'serif'],
+				'brockmann-bold': ['Brockmann', 'serif'],
+				'chaney-regular': ['Chaney', 'serif'],
+				'chaney-wide': ['Chaney Wide', 'serif'],
+				'chaney-extended': ['Chaney Extended', 'serif'],
+				'chaney-ultra': ['Chaney Ultra Extended', 'serif'],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
