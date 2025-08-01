@@ -27,6 +27,7 @@ const buttonVariants = cva(
       font: {
         default: "font-brockmann-medium",
         brockmann: "font-brockmann-regular",
+        "brockmann-medium": "font-brockmann-medium",
         "brockmann-semibold": "font-brockmann-semibold",
         "brockmann-bold": "font-brockmann-bold",
         chaney: "font-chaney-regular",
