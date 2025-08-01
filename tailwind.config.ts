@@ -19,10 +19,10 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				'brockmann-regular': ['brockmann-regular', 'serif'],
-				'brockmann-medium': ['brockmann-medium', 'serif'],
-				'brockmann-semibold': ['brockmann-semibold', 'serif'],
-				'brockmann-bold': ['brockmann-bold', 'serif'],
+				'brockmann-regular': ['brockmannregular', 'serif'],
+				'brockmann-medium': ['brockmannmedium', 'serif'],
+				'brockmann-semibold': ['brockmannsemibold', 'serif'],
+				'brockmann-bold': ['brockmannbold', 'serif'],
 				'chaney-regular': ['chaneyregular', 'serif'],
 				'chaney-wide': ['chaneywide', 'serif'],
 				'chaney-extended': ['chaneyextended', 'serif'],
