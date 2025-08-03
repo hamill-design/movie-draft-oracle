@@ -286,48 +286,55 @@ const Home = () => {
 
           {/* Draft Mode Selection */}
           {isStepVisible('mode') && (
-            <Card className="bg-background border-border">
-              <CardContent className="pt-6">
-                <h3 className="text-xl font-bold text-white mb-4">
-                  Draft Mode
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Button
-                    type="button"
-                    onClick={() => setDraftMode('single')}
-                    variant={draftMode === 'single' ? 'default' : 'outline'}
-                    className={`h-16 text-lg ${
-                      draftMode === 'single'
-                        ? 'bg-yellow-400 text-black hover:bg-yellow-500'
-                        : 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                    }`}
-                  >
-                    <Users className="mr-3" size={20} />
-                    Local Draft
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => setDraftMode('multiplayer')}
-                    variant={draftMode === 'multiplayer' ? 'default' : 'outline'}
-                    className={`h-16 text-lg ${
-                      draftMode === 'multiplayer'
-                        ? 'bg-yellow-400 text-black hover:bg-yellow-500'
-                        : 'border-gray-600 text-gray-300 hover:bg-gray-700'
-                    }`}
-                  >
-                    <Users className="mr-3" size={20} />
-                    Online Multiplayer
-                  </Button>
+            <div className="w-full p-6 bg-card shadow-sm rounded-lg flex flex-col gap-6">
+              <div className="self-stretch flex flex-col justify-center items-center gap-2">
+                <div className="text-foreground text-2xl font-bold leading-8 tracking-wide font-brockmann">
+                  Select A Mode
                 </div>
-                {draftMode === 'multiplayer' && (
-                  <div className="mt-4 p-4 bg-blue-900/20 border border-blue-600/30 rounded-lg">
-                    <p className="text-blue-300 text-sm">
-                      🌐 <strong>Multiplayer Mode:</strong> Create a collaborative draft where friends can join in real-time using an invite code. Each player takes turns picking from their own device!
-                    </p>
+              </div>
+              <div className="self-stretch flex items-start gap-4 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setDraftMode('single')}
+                  className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-md flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                    draftMode === 'single'
+                      ? 'bg-[#680AFF] text-white'
+                      : 'bg-white border border-[#D9E0DF] text-[#2B2D2D] hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="w-6 h-6 flex justify-center items-center">
+                    <Users className="w-4 h-4" />
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                  <span className="font-brockmann">Local Draft</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDraftMode('multiplayer')}
+                  className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-md flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                    draftMode === 'multiplayer'
+                      ? 'bg-[#680AFF] text-white'
+                      : 'bg-white border border-[#D9E0DF] text-[#2B2D2D] hover:bg-gray-50'
+                  }`}
+                >
+                  <div className="w-6 h-6 flex justify-center items-center">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <span className="font-brockmann">Online Multiplayer</span>
+                </button>
+              </div>
+              {draftMode === 'multiplayer' && (
+                <div className="self-stretch p-4 bg-[#EBFFFA] rounded border border-[#03946D] flex flex-col">
+                  <div className="self-stretch flex flex-col">
+                    <span className="text-[#03946D] text-sm font-bold leading-5 font-brockmann">
+                      Multiplayer Mode:
+                    </span>
+                    <span className="text-[#03946D] text-sm font-medium leading-5 font-brockmann">
+                      {" "}Enter email addresses of friends you want to invite. They'll receive an email invitation to join your draft.
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
           {/* Participants */}
