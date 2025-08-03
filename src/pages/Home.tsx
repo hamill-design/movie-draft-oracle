@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Users, Calendar, Film, Search, Mail } from 'lucide-react';
+import { FilmReelIcon, PersonIcon, CalendarIcon, SearchIcon, EmailIcon, CheckboxIcon } from '@/components/icons';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActorPortrait } from '@/components/ActorPortrait';
@@ -163,8 +163,8 @@ const Home = () => {
                       : 'bg-card border border-border'
                   }`}
                 >
-                  <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
-                    <div className={`w-4 flex-1 ${theme === 'people' ? 'bg-primary-foreground' : 'bg-foreground'}`}></div>
+                  <div className="w-6 h-6 flex flex-col justify-center items-center">
+                    <PersonIcon className={`w-6 h-6 ${theme === 'people' ? 'text-primary-foreground' : 'text-foreground'}`} />
                   </div>
                   <div className={`text-center flex flex-col justify-center text-lg font-medium leading-7 font-brockmann ${
                     theme === 'people' ? 'text-primary-foreground' : 'text-foreground'
@@ -184,8 +184,8 @@ const Home = () => {
                       : 'bg-card border border-border'
                   }`}
                 >
-                  <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
-                    <div className={`w-5 h-5.5 ${theme === 'year' ? 'bg-primary-foreground' : 'bg-foreground'}`}></div>
+                  <div className="w-6 h-6 flex flex-col justify-center items-center">
+                    <CalendarIcon className={`w-6 h-6 ${theme === 'year' ? 'text-primary-foreground' : 'text-foreground'}`} />
                   </div>
                   <div className={`text-center flex flex-col justify-center text-lg font-medium leading-7 font-brockmann ${
                     theme === 'year' ? 'text-primary-foreground' : 'text-foreground'
@@ -202,7 +202,7 @@ const Home = () => {
             <Card className="bg-gray-800 border-gray-600">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <Search className="text-yellow-400" />
+                  <SearchIcon className="w-6 h-6 text-yellow-400" />
                   {theme === 'people' ? 'Search for a Person' : 'Select a Year'}
                 </h3>
                 
@@ -369,7 +369,7 @@ const Home = () => {
               {draftMode === 'multiplayer' && (
                 <div className="mb-4 p-3 bg-orange-900/20 border border-orange-600/30 rounded-lg">
                   <p className="text-orange-300 text-sm flex items-center gap-2">
-                    <Mail size={16} />
+                    <EmailIcon className="w-4 h-4" />
                     <strong>Multiplayer Mode:</strong> Enter email addresses of friends you want to invite. They'll receive an email invitation to join your draft.
                   </p>
                 </div>
