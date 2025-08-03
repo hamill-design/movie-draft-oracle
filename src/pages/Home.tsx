@@ -136,7 +136,7 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #FCFFFF 0%, #F0F1FF 50%, #FCFFFF 100%)'}}>
       <div className="container mx-auto px-4 py-8">
 
         <div className="max-w-4xl mx-auto space-y-8">
