@@ -191,7 +191,7 @@ const Home = () => {
                       placeholder="Search for actors, directors..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="mb-4"
+                      className="mb-4 rounded-[2px]"
                     />
                     
                     {selectedOption && (
