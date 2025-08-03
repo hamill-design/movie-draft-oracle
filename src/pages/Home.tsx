@@ -306,10 +306,10 @@ const Home = () => {
                 <button
                   type="button"
                   onClick={() => setDraftMode('single')}
-                  className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-md flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                  className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                     draftMode === 'single'
                       ? 'bg-[#680AFF] text-white'
-                      : 'bg-white border border-[#D9E0DF] text-[#2B2D2D] hover:bg-gray-50'
+                      : 'bg-white border border-[#D9E0DF] text-[#2B2D2D] hover:bg-purple-100 hover:border-purple-200 active:bg-purple-200 active:border-purple-300'
                   }`}
                 >
                   <div className="w-6 h-6 flex justify-center items-center">
@@ -320,10 +320,10 @@ const Home = () => {
                 <button
                   type="button"
                   onClick={() => setDraftMode('multiplayer')}
-                  className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-md flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                  className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                     draftMode === 'multiplayer'
                       ? 'bg-[#680AFF] text-white'
-                      : 'bg-white border border-[#D9E0DF] text-[#2B2D2D] hover:bg-gray-50'
+                      : 'bg-white border border-[#D9E0DF] text-[#2B2D2D] hover:bg-purple-100 hover:border-purple-200 active:bg-purple-200 active:border-purple-300'
                   }`}
                 >
                   <div className="w-6 h-6 flex justify-center items-center">
