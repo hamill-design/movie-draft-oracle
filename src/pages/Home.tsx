@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { ThemeButton } from '@/components/ui/theme-button';
 import { Trash2, Users, Calendar, Film, Search, Mail } from 'lucide-react';
 import { FilmReelIcon, PersonIcon, CalendarIcon, SearchIcon, EmailIcon, CheckboxIcon } from '@/components/icons';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
@@ -151,34 +152,28 @@ const Home = () => {
                 </div>
               </div>
               <div className="self-stretch flex items-start gap-4 flex-wrap">
-                <Button
-                  variant={theme === 'people' ? 'default' : 'outline'}
+                <ThemeButton
+                  selected={theme === 'people'}
                   onClick={() => {
                     setTheme('people');
                     setSelectedOption('');
                     setSearchQuery('');
                   }}
-                  className="flex-1 h-20 min-w-[294px] gap-4 transition-all duration-200 active:scale-95"
                 >
                   <PersonIcon className="w-6 h-6" />
-                  <span className="text-lg font-medium font-brockmann">
-                    Draft by Person
-                  </span>
-                </Button>
-                <Button
-                  variant={theme === 'year' ? 'default' : 'outline'}
+                  <span>Draft by Person</span>
+                </ThemeButton>
+                <ThemeButton
+                  selected={theme === 'year'}
                   onClick={() => {
                     setTheme('year');
                     setSelectedOption('');
                     setSearchQuery('');
                   }}
-                  className="flex-1 h-20 min-w-[294px] gap-4 transition-all duration-200 active:scale-95"
                 >
                   <CalendarIcon className="w-6 h-6" />
-                  <span className="text-lg font-medium font-brockmann">
-                    Draft by Year
-                  </span>
-                </Button>
+                  <span>Draft by Year</span>
+                </ThemeButton>
               </div>
             </div>
           </div>
