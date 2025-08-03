@@ -151,48 +151,34 @@ const Home = () => {
                 </div>
               </div>
               <div className="self-stretch flex items-start gap-4 flex-wrap">
-                <button
+                <Button
+                  variant={theme === 'people' ? 'default' : 'outline'}
                   onClick={() => {
                     setTheme('people');
                     setSelectedOption('');
                     setSearchQuery('');
                   }}
-                  className={`flex-1 h-20 min-w-[294px] px-12 py-2 rounded-md flex justify-center items-center gap-4 ${
-                    theme === 'people'
-                      ? 'bg-primary'
-                      : 'bg-card border border-border'
-                  }`}
+                  className="flex-1 h-20 min-w-[294px] gap-4 transition-all duration-200 active:scale-95"
                 >
-                  <div className="w-6 h-6 flex flex-col justify-center items-center">
-                    <PersonIcon className={`w-6 h-6 ${theme === 'people' ? 'text-primary-foreground' : 'text-foreground'}`} />
-                  </div>
-                  <div className={`text-center flex flex-col justify-center text-lg font-medium leading-7 font-brockmann ${
-                    theme === 'people' ? 'text-primary-foreground' : 'text-foreground'
-                  }`}>
+                  <PersonIcon className="w-6 h-6" />
+                  <span className="text-lg font-medium font-brockmann">
                     Draft by Person
-                  </div>
-                </button>
-                <button
+                  </span>
+                </Button>
+                <Button
+                  variant={theme === 'year' ? 'default' : 'outline'}
                   onClick={() => {
                     setTheme('year');
                     setSelectedOption('');
                     setSearchQuery('');
                   }}
-                  className={`flex-1 h-20 min-w-[294px] px-9 py-2.5 rounded-md flex justify-center items-center gap-4 ${
-                    theme === 'year'
-                      ? 'bg-primary'
-                      : 'bg-card border border-border'
-                  }`}
+                  className="flex-1 h-20 min-w-[294px] gap-4 transition-all duration-200 active:scale-95"
                 >
-                  <div className="w-6 h-6 flex flex-col justify-center items-center">
-                    <CalendarIcon className={`w-6 h-6 ${theme === 'year' ? 'text-primary-foreground' : 'text-foreground'}`} />
-                  </div>
-                  <div className={`text-center flex flex-col justify-center text-lg font-medium leading-7 font-brockmann ${
-                    theme === 'year' ? 'text-primary-foreground' : 'text-foreground'
-                  }`}>
+                  <CalendarIcon className="w-6 h-6" />
+                  <span className="text-lg font-medium font-brockmann">
                     Draft by Year
-                  </div>
-                </button>
+                  </span>
+                </Button>
               </div>
             </div>
           </div>
