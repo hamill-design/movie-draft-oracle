@@ -1,6 +1,6 @@
 import { Heading } from "@/components/atoms/Typography/Heading";
 import { Button } from "@/components/ui/button";
-import { User, Calendar } from "lucide-react";
+import { PersonIcon, CalendarIcon } from "@/components/icons";
 
 interface ThemeSelectorProps {
   selectedTheme: "people" | "year" | null;
@@ -32,7 +32,7 @@ export function ThemeSelector({ selectedTheme, onThemeSelect }: ThemeSelectorPro
               : "bg-ui-primary text-text-primary border-greyscale-blue-200 hover:bg-accent"
           }`}
         >
-          <User size={24} />
+          <PersonIcon className="w-6 h-6" />
           <span className="text-lg font-medium font-brockmann-medium">Draft by Person</span>
         </Button>
         
@@ -46,7 +46,7 @@ export function ThemeSelector({ selectedTheme, onThemeSelect }: ThemeSelectorPro
               : "bg-ui-primary text-text-primary border-greyscale-blue-200 hover:bg-accent"
           }`}
         >
-          <Calendar size={24} />
+          <CalendarIcon className="w-6 h-6" />
           <span className="text-lg font-medium font-brockmann-medium">Draft by Year</span>
         </Button>
       </div>
