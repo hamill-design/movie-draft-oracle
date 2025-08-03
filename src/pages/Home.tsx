@@ -191,7 +191,7 @@ const Home = () => {
                       placeholder="Search for actors, directors..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 mb-4"
+                      className="mb-4"
                     />
                     
                     {selectedOption && (
@@ -338,7 +338,6 @@ const Home = () => {
                   value={newParticipant}
                   onChange={(e) => setNewParticipant(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddParticipant()}
-                  className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
                 />
                 <Button onClick={handleAddParticipant} className="bg-yellow-400 hover:bg-yellow-500 text-black">
                   Add
