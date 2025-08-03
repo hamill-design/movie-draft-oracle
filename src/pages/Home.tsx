@@ -194,19 +194,7 @@ const Home = () => {
                       className="mb-4 rounded-[2px]"
                     />
                     
-                    {selectedOption && (
-                      <div className="mb-4">
-                        <div className="w-full h-full flex-col justify-start items-center gap-1.5 inline-flex">
-                          <span className="text-muted-foreground text-sm font-medium leading-5 font-brockmann">
-                            You've Selected
-                          </span>
-                          <span className="text-primary text-lg font-semibold leading-6 font-brockmann">
-                            {selectedOption}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-
+                    
                     {shouldShowResults && (
                       <div className="max-h-60 overflow-y-auto space-y-2">
                         {peopleLoading ? (
@@ -238,6 +226,19 @@ const Home = () => {
                             </div>
                           ))
                         )}
+                      </div>
+                    )}
+
+                    {selectedOption && (
+                      <div className="mb-4">
+                        <div className="w-full h-full flex-col justify-start items-center gap-1.5 inline-flex">
+                          <span className="text-muted-foreground text-sm font-medium leading-5 font-brockmann">
+                            You've Selected
+                          </span>
+                          <span className="text-primary text-lg font-semibold leading-6 font-brockmann">
+                            {selectedOption}
+                          </span>
+                        </div>
                       </div>
                     )}
                   </>
