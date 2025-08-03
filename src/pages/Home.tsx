@@ -13,6 +13,7 @@ import { ActorPortrait } from '@/components/ActorPortrait';
 import { useDraftCategories } from '@/hooks/useDraftCategories';
 import CategoriesForm from '@/components/CategoriesForm';
 import { JoinDraftForm } from '@/components/JoinDraftForm';
+import { HeaderIcon3 } from '@/components/HeaderIcon3';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
@@ -180,12 +181,9 @@ const Home = () => {
 
           {/* Option Selection */}
           {isStepVisible('option') && (
-            <Card className="bg-gray-800 border-gray-600">
+            <Card className="bg-background border-border">
               <CardContent className="pt-6">
-                <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <SearchIcon className="w-6 h-6 text-yellow-400" />
-                  {theme === 'people' ? 'Search for a Person' : 'Select a Year'}
-                </h3>
+                <HeaderIcon3 title={theme === 'people' ? 'Search for a Person' : 'Select a Year'} />
                 
                 {theme === 'people' ? (
                   <>
@@ -281,7 +279,7 @@ const Home = () => {
 
           {/* Draft Mode Selection */}
           {isStepVisible('mode') && (
-            <Card className="bg-gray-800 border-gray-600">
+            <Card className="bg-background border-border">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-bold text-white mb-4">
                   Draft Mode
@@ -327,7 +325,7 @@ const Home = () => {
 
           {/* Participants */}
           {isStepVisible('participants') && (
-            <Card className="bg-gray-800 border-gray-600">
+            <Card className="bg-background border-border">
             <CardContent className="pt-6">
               <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                 <Users className="text-yellow-400" />
