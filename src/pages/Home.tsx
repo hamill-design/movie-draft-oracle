@@ -145,37 +145,47 @@ const Home = () => {
           <JoinDraftForm />
           
           {/* Theme Selection */}
-          <div className="w-full bg-card shadow-sm border border-border rounded flex flex-wrap">
-            <div className="flex-1 p-6 flex flex-col items-start gap-6">
-              <div className="self-stretch flex flex-col justify-center items-center gap-2">
-                <div className="flex flex-col justify-center text-foreground text-2xl font-bold leading-8 tracking-wide font-brockmann">
-                  Choose Your Draft Theme
+          <div className="w-full p-6 bg-card shadow-sm border border-border rounded flex flex-col gap-6">
+            <div className="self-stretch flex flex-col justify-center items-center gap-2">
+              <div className="text-foreground text-2xl font-bold leading-8 tracking-wide font-brockmann">
+                Choose Your Draft Theme
+              </div>
+            </div>
+            <div className="self-stretch flex items-start gap-4 flex-wrap">
+              <button
+                onClick={() => {
+                  setTheme('people');
+                  setSelectedOption('');
+                  setSearchQuery('');
+                }}
+                className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-md flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                  theme === 'people'
+                    ? 'bg-[#680AFF] text-white'
+                    : 'bg-white border border-[#D9E0DF] text-[#2B2D2D] hover:bg-gray-50'
+                }`}
+              >
+                <div className="w-6 h-6 flex justify-center items-center">
+                  <PersonIcon className="w-4 h-4" />
                 </div>
-              </div>
-              <div className="self-stretch flex items-start gap-4 flex-wrap">
-                <ThemeButton
-                  selected={theme === 'people'}
-                  onClick={() => {
-                    setTheme('people');
-                    setSelectedOption('');
-                    setSearchQuery('');
-                  }}
-                >
-                  <PersonIcon className="w-6 h-6" />
-                  <span>Draft by Person</span>
-                </ThemeButton>
-                <ThemeButton
-                  selected={theme === 'year'}
-                  onClick={() => {
-                    setTheme('year');
-                    setSelectedOption('');
-                    setSearchQuery('');
-                  }}
-                >
-                  <CalendarIcon className="w-6 h-6" />
-                  <span>Draft by Year</span>
-                </ThemeButton>
-              </div>
+                <span className="font-brockmann">Draft by Person</span>
+              </button>
+              <button
+                onClick={() => {
+                  setTheme('year');
+                  setSelectedOption('');
+                  setSearchQuery('');
+                }}
+                className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-md flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                  theme === 'year'
+                    ? 'bg-[#680AFF] text-white'
+                    : 'bg-white border border-[#D9E0DF] text-[#2B2D2D] hover:bg-gray-50'
+                }`}
+              >
+                <div className="w-6 h-6 flex justify-center items-center">
+                  <CalendarIcon className="w-4 h-4" />
+                </div>
+                <span className="font-brockmann">Draft by Year</span>
+              </button>
             </div>
           </div>
 
