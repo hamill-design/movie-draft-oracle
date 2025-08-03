@@ -97,7 +97,7 @@ export const JoinDraftForm = () => {
       <div className="self-stretch flex flex-col items-start gap-1">
         <div className="self-stretch h-7 flex items-center gap-2">
           <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
-            <FilmReelIcon className="w-5 h-5 text-primary" />
+            <FilmReelIcon className="w-6 h-6 text-primary" />
           </div>
           <div className="flex-1 flex flex-col justify-center text-foreground text-xl font-medium leading-7 font-brockmann">
             Join A Draft
