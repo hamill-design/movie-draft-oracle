@@ -209,7 +209,7 @@ const Home = () => {
                               className={`w-full py-4 px-4 pr-6 bg-white rounded border border-[#D9E0DF] cursor-pointer transition-colors flex items-start gap-4 ${
                                 selectedOption === person.name
                                   ? 'bg-yellow-400 text-black'
-                                  : 'hover:bg-[#F8F7FF] hover:border-[#EDEBFF]'
+                                  : 'hover:bg-[#F8F7FF] hover:border-[#EDEBFF] active:bg-[#EDEBFF] active:border-[#BCB2FF]'
                               }`}
                             >
                               <div className="w-12 h-12 overflow-hidden rounded-full flex justify-center items-start">
