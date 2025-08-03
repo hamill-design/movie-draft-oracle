@@ -296,7 +296,7 @@ const Home = () => {
 
           {/* Draft Mode Selection */}
           {isStepVisible('mode') && (
-            <div className="w-full p-6 bg-card shadow-sm rounded-lg flex flex-col gap-6">
+            <div className="w-full p-6 bg-card shadow-sm border border-border rounded flex flex-col gap-6">
               <div className="self-stretch flex flex-col justify-center items-center gap-2">
                 <div className="text-foreground text-2xl font-bold leading-8 tracking-wide font-brockmann">
                   Select A Mode
