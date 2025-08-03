@@ -196,15 +196,13 @@ const Home = () => {
                     
                     {selectedOption && (
                       <div className="mb-4">
-                        <div className="flex items-center gap-2">
-                          <ActorPortrait 
-                            profilePath={null}
-                            name={selectedOption}
-                            size="md"
-                          />
-                          <Badge variant="secondary" className="bg-yellow-400 text-black">
-                            Selected: {selectedOption}
-                          </Badge>
+                        <div className="w-full h-full flex-col justify-start items-center gap-1.5 inline-flex">
+                          <span className="text-muted-foreground text-sm font-medium leading-5 font-brockmann">
+                            You've Selected
+                          </span>
+                          <span className="text-primary text-lg font-semibold leading-6 font-brockmann">
+                            {selectedOption}
+                          </span>
                         </div>
                       </div>
                     )}
