@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Hash, Users } from 'lucide-react';
 import { FilmReelIcon } from '@/components/icons';
 import { validateInviteCode, validateParticipantName, sanitizeHtml } from '@/utils/inputValidation';
+import { HeaderIcon3 } from '@/components/HeaderIcon3';
 
 export const JoinDraftForm = () => {
   const navigate = useNavigate();
@@ -95,14 +96,7 @@ export const JoinDraftForm = () => {
   return (
     <div className="w-full h-full p-6 bg-background shadow-sm border border-border rounded flex flex-col items-start gap-6">
       <div className="self-stretch flex flex-col items-start gap-1">
-        <div className="self-stretch h-7 flex items-center gap-2">
-          <div className="w-6 h-6 flex flex-col justify-center items-center">
-            <FilmReelIcon className="w-6 h-6 text-primary" />
-          </div>
-          <div className="flex-1 flex flex-col justify-center text-foreground text-xl font-medium leading-7 font-brockmann">
-            Join A Draft
-          </div>
-        </div>
+        <HeaderIcon3 title="Join A Draft" />
         <div className="self-stretch flex flex-col items-start">
           <div className="self-stretch flex flex-col justify-center text-muted-foreground text-sm font-normal leading-5 font-brockmann">
             Have an invite code? Join a multiplayer draft session
