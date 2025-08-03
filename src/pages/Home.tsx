@@ -183,7 +183,7 @@ const Home = () => {
           {isStepVisible('option') && (
             <Card className="bg-background border-border">
               <CardContent className="pt-6 space-y-4">
-                <HeaderIcon3 title={theme === 'people' ? 'Search for a Person' : 'Select a Year'} />
+                <HeaderIcon3 title={theme === 'people' ? 'Search for a Person' : 'Select a Year'} theme={theme === 'people' || theme === 'year' ? theme : undefined} />
                 
                 {theme === 'people' ? (
                   <>
