@@ -21,10 +21,8 @@ const ThemeButton = React.forwardRef<HTMLButtonElement, ThemeButtonProps>(
           selected
             ? "bg-primary text-primary-foreground"
             : "bg-card border border-border",
-          // Hover state - purple background and outline
-          !selected && "hover:bg-purple-100 hover:outline hover:outline-1 hover:outline-purple-200 hover:outline-offset-[-1px]",
-          // Pressed state - darker purple background and outline
-          !selected && "active:bg-purple-200 active:outline active:outline-1 active:outline-purple-300 active:outline-offset-[-1px]",
+          // Hover and active states
+          !selected && "hover:bg-purple-100 active:bg-purple-200",
           className
         )}
         ref={ref}
