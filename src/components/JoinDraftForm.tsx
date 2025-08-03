@@ -106,7 +106,7 @@ export const JoinDraftForm = () => {
       <form onSubmit={handleJoin} className="self-stretch flex flex-col items-start gap-6">
         <div className="self-stretch flex flex-col items-start gap-5">
           <div className="self-stretch flex flex-col items-center">
-            <div className="self-stretch px-4 py-3 bg-background overflow-hidden rounded border border-muted-foreground focus-within:border-foreground flex items-center gap-3">
+            <div className="self-stretch px-4 py-3 bg-background overflow-hidden rounded-sm border border-muted-foreground focus-within:border-foreground flex items-center gap-3">
               <div className="flex-1 overflow-hidden flex flex-col items-center">
                 <input
                   id="invite-code"
@@ -124,7 +124,7 @@ export const JoinDraftForm = () => {
               Your Display Name
             </div>
             <div className="self-stretch flex flex-col items-start">
-              <div className="self-stretch px-4 py-3 bg-background overflow-hidden rounded border border-muted-foreground focus-within:border-foreground flex items-center gap-3">
+              <div className="self-stretch px-4 py-3 bg-background overflow-hidden rounded-sm border border-muted-foreground focus-within:border-foreground flex items-center gap-3">
                 <div className="flex-1 overflow-hidden flex flex-col items-start">
                   <input
                     id="participant-name"
