@@ -206,21 +206,29 @@ const Home = () => {
                             <div
                               key={person.id}
                               onClick={() => handleOptionSelect({ title: person.name, profile_path: person.profile_path })}
-                              className={`p-3 rounded cursor-pointer transition-colors flex items-center gap-3 ${
+                              className={`w-full py-4 px-4 pr-6 bg-white rounded border border-[#D9E0DF] cursor-pointer transition-colors flex items-start gap-4 ${
                                 selectedOption === person.name
                                   ? 'bg-yellow-400 text-black'
-                                  : 'bg-gray-700 hover:bg-gray-600 text-white'
+                                  : 'hover:bg-gray-50'
                               }`}
                             >
-                              <ActorPortrait 
-                                profilePath={person.profile_path}
-                                name={person.name}
-                                size="md"
-                              />
-                              <div>
-                                <div className="font-medium">{person.name}</div>
-                                <div className="text-sm opacity-75">
-                                  {person.known_for_department} • Known for: {person.known_for.slice(0, 2).map(item => item.title).join(', ')}
+                              <div className="w-12 h-12 overflow-hidden rounded-full flex justify-center items-start">
+                                <ActorPortrait 
+                                  profilePath={person.profile_path}
+                                  name={person.name}
+                                  size="md"
+                                />
+                              </div>
+                              <div className="flex-1 pb-0.5 flex flex-col justify-start items-start gap-0.5">
+                                <div className="self-stretch flex flex-col justify-start items-start">
+                                  <span className="text-[#2B2D2D] text-base font-semibold leading-6 tracking-[0.32px] font-brockmann">
+                                    {person.name}
+                                  </span>
+                                </div>
+                                <div className="self-stretch flex flex-col justify-start items-start">
+                                  <span className="text-[#828786] text-sm font-normal leading-5 font-brockmann">
+                                    {person.known_for_department} • Known for: {person.known_for.slice(0, 2).map(item => item.title).join(', ')}
+                                  </span>
                                 </div>
                               </div>
                             </div>
