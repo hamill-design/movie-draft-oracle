@@ -370,19 +370,13 @@ const Home = () => {
               </div>
               
               <div className="flex gap-2">
-                <div className="flex-1">
-                  <div className="w-full px-4 py-3 bg-white border border-[#9CA3A2] rounded-[2px] flex items-center gap-3">
-                    <div className="flex-1">
-                      <Input
-                        placeholder={draftMode === 'multiplayer' ? "Enter participant email..." : "Enter participant name..."}
-                        value={newParticipant}
-                        onChange={(e) => setNewParticipant(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleAddParticipant()}
-                        className="border-0 p-0 text-[#9CA3A2] text-sm font-brockmann font-medium placeholder:text-[#9CA3A2] focus-visible:ring-0"
-                      />
-                    </div>
-                  </div>
-                </div>
+                <Input
+                  placeholder={draftMode === 'multiplayer' ? "Enter participant email..." : "Enter participant name..."}
+                  value={newParticipant}
+                  onChange={(e) => setNewParticipant(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleAddParticipant()}
+                  className="rounded-[2px]"
+                />
                 <button 
                   onClick={handleAddParticipant} 
                   className="px-4 py-2 bg-[#680AFF] text-white text-sm font-brockmann font-medium leading-5 rounded-[2px] flex justify-center items-center"
