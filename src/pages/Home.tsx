@@ -272,13 +272,13 @@ const Home = () => {
                             variant={selectedOption === year ? 'default' : 'outline'}
                             className={`h-12 text-sm font-brockmann-medium transition-colors ${
                               selectedOption === year
-                                ? 'bg-yellow-400 text-black hover:bg-yellow-500 border-0'
+                                ? 'bg-[#680AFF] text-white hover:bg-[#680AFF] border-0'
                                 : 'bg-white text-[#2B2D2D] border-0 hover:bg-[#EDEBFF] active:bg-gray-100'
                             }`}
                             style={{
                               borderRadius: '6px',
-                              outline: selectedOption === year ? 'none' : '0.5px solid #2B2D2D',
-                              outlineOffset: selectedOption === year ? '0' : '-0.5px'
+                              outline: selectedOption === year ? '1px solid #680AFF' : '0.5px solid #2B2D2D',
+                              outlineOffset: '-1px'
                             }}
                           >
                             {year}
