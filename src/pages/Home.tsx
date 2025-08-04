@@ -19,7 +19,6 @@ import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useDraftForm, DraftSetupForm } from '@/hooks/useDraftForm';
 
-
 const Home = () => {
   const navigate = useNavigate();
   const { user, loading, signOut, isGuest } = useAuth();
@@ -145,7 +144,7 @@ const Home = () => {
           <JoinDraftForm />
           
           {/* Theme Selection */}
-          <div className="w-full p-6 bg-card shadow-sm border border-border rounded flex flex-col gap-6">
+          <div className="w-full p-6 bg-card shadow-sm rounded flex flex-col gap-6">
             <div className="self-stretch flex flex-col justify-center items-center gap-2">
               <div className="text-foreground text-2xl font-bold leading-8 tracking-wide font-brockmann">
                 Choose Your Draft Theme
@@ -191,7 +190,7 @@ const Home = () => {
 
           {/* Option Selection */}
           {isStepVisible('option') && (
-            <Card className="bg-background border-border">
+            <Card className="bg-background">
               <CardContent className="pt-6 space-y-4">
                 <HeaderIcon3 
                   title={theme === 'people' ? 'Search for a Person' : 'Select a Year'} 
@@ -311,7 +310,7 @@ const Home = () => {
 
           {/* Draft Mode Selection */}
           {isStepVisible('mode') && (
-            <div className="w-full p-6 bg-card shadow-sm border border-border rounded flex flex-col gap-6">
+            <div className="w-full p-6 bg-card shadow-sm rounded flex flex-col gap-6">
               <div className="self-stretch flex flex-col justify-center items-center gap-2">
                 <div className="text-foreground text-2xl font-bold leading-8 tracking-wide font-brockmann">
                   Select A Mode
@@ -364,8 +363,8 @@ const Home = () => {
 
           {/* Participants */}
           {isStepVisible('participants') && (
-            <Card className="bg-background border-border">
-            <div className="p-6 bg-[#FCFFFF] shadow-sm border border-border rounded flex flex-col gap-6">
+            <Card className="bg-background">
+            <div className="p-6 bg-[#FCFFFF] shadow-sm rounded flex flex-col gap-6">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 flex justify-center items-center">
                   <MultiPersonIcon className="w-6 h-6 text-primary" />

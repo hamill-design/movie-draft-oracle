@@ -1,153 +1,101 @@
 
-import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
-import { useToast } from '@/hooks/use-toast';
-import { useProfile } from '@/hooks/useProfile';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Hash, Users } from 'lucide-react';
-import { FilmReelIcon } from '@/components/icons';
-import { validateInviteCode, validateParticipantName, sanitizeHtml } from '@/utils/inputValidation';
-import { HeaderIcon3 } from '@/components/HeaderIcon3';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { HeaderIcon3 } from './HeaderIcon3';
+import { SearchIcon } from '@/components/icons';
 
 export const JoinDraftForm = () => {
-  const navigate = useNavigate();
-  const { user, guestSession } = useAuth();
-  const { toast } = useToast();
-  const { joinDraftByCode, loading } = useMultiplayerDraft();
-  const { getDisplayName, profile, loading: profileLoading } = useProfile();
-
-  const [inviteCode, setInviteCode] = useState('');
-  const [participantName, setParticipantName] = useState('');
-  const [hasSetInitialName, setHasSetInitialName] = useState(false);
+  const [draftCode, setDraftCode] = useState('');
   const [isJoining, setIsJoining] = useState(false);
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // Memoize the display name to prevent unnecessary re-renders
-  const displayName = useMemo(() => {
-    return profileLoading ? '' : getDisplayName();
-  }, [getDisplayName, profileLoading]);
-
-  useEffect(() => {
-    // Only set the initial name once when profile loads
-    if (!profileLoading && !hasSetInitialName && displayName) {
-      setParticipantName(displayName);
-      setHasSetInitialName(true);
-    }
-  }, [displayName, profileLoading, hasSetInitialName]);
-
-  const handleJoin = async (e: React.FormEvent) => {
+  const handleJoinDraft = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Prevent multiple simultaneous join attempts
-    if (isJoining) return;
-    
-    // Validate invite code
-    const inviteValidation = validateInviteCode(inviteCode);
-    if (!inviteValidation.isValid) {
+    if (!draftCode.trim()) {
       toast({
-        title: "Invalid Invite Code",
-        description: inviteValidation.error,
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Validate participant name
-    const nameValidation = validateParticipantName(participantName);
-    if (!nameValidation.isValid) {
-      toast({
-        title: "Invalid Name",
-        description: nameValidation.error,
+        title: "Draft code required",
+        description: "Please enter a draft code to join",
         variant: "destructive",
       });
       return;
     }
 
-    if (!user && !guestSession) {
-      toast({
-        title: "Session Required",
-        description: "Please refresh the page and try again",
-        variant: "destructive",
-      });
-      return;
-    }
+    setIsJoining(true);
 
     try {
-      setIsJoining(true);
-      const draftId = await joinDraftByCode(inviteCode.trim().toUpperCase(), participantName.trim());
+      // First check if the draft exists and is active
+      const { data: draft, error } = await supabase
+        .from('drafts')
+        .select('id, status, current_turn, total_rounds')
+        .eq('invite_code', draftCode.trim())
+        .single();
+
+      if (error) {
+        toast({
+          title: "Draft not found",
+          description: "Please check your draft code and try again",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (draft.status === 'completed') {
+        toast({
+          title: "Draft completed",
+          description: "This draft has already finished",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Navigate to the join page with the draft code
+      navigate(`/join/${draftCode.trim()}`);
       
-      // Navigate to the draft page
-      navigate(`/draft/${draftId}`);
-    } catch (error: any) {
-      // Error handling is already done in the hook
-      console.error('Failed to join draft:', error);
+    } catch (error) {
+      console.error('Error joining draft:', error);
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsJoining(false);
     }
   };
 
-  const isFormValid = !!(inviteCode.trim() && participantName.trim());
-  const isButtonDisabled = loading || !isFormValid || isJoining;
-
   return (
-    <div className="w-full h-full p-6 bg-background shadow-sm border border-border rounded flex flex-col items-start gap-6">
-      <div className="self-stretch flex flex-col items-start gap-1">
-        <HeaderIcon3 title="Join A Draft" icon={<FilmReelIcon className="w-6 h-6 text-primary" />} />
-        <div className="self-stretch flex flex-col items-start">
-          <div className="self-stretch flex flex-col justify-center text-muted-foreground text-sm font-normal leading-5 font-brockmann">
-            Have an invite code? Join a multiplayer draft session
+    <Card className="bg-background">
+      <CardContent className="pt-6">
+        <form onSubmit={handleJoinDraft} className="space-y-4">
+          <HeaderIcon3 
+            title="Join an Existing Draft" 
+            icon={<SearchIcon className="w-6 h-6 text-primary" />} 
+          />
+          
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter draft code..."
+              value={draftCode}
+              onChange={(e) => setDraftCode(e.target.value)}
+              className="flex-1 rounded-[2px]"
+            />
+            <Button 
+              type="submit" 
+              disabled={isJoining}
+              className="bg-[#680AFF] hover:bg-[#5A08E6] text-white font-brockmann font-medium px-6"
+            >
+              {isJoining ? 'Joining...' : 'Join'}
+            </Button>
           </div>
-        </div>
-      </div>
-      <form onSubmit={handleJoin} className="self-stretch flex flex-col items-start gap-6">
-        <div className="self-stretch flex flex-col items-start gap-5">
-          <div className="self-stretch flex flex-col items-center">
-            <div className="self-stretch px-4 py-3 bg-background overflow-hidden rounded-[2px] border border-muted-foreground focus-within:border-foreground flex items-center gap-3">
-              <div className="flex-1 overflow-hidden flex flex-col items-center">
-                <input
-                  id="invite-code"
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                  placeholder="Enter 8-digit Invite Code"
-                  maxLength={8}
-                  className="self-stretch text-center flex flex-col justify-center text-foreground placeholder:text-muted-foreground text-lg font-medium leading-7 tracking-wide font-mono bg-transparent border-0 outline-none"
-                />
-              </div>
-            </div>
-          </div>
-          <div className="self-stretch flex flex-col items-start gap-3">
-            <div className="flex flex-col justify-center text-foreground text-sm font-medium leading-5 font-brockmann">
-              Your Display Name
-            </div>
-            <div className="self-stretch flex flex-col items-start">
-              <div className="self-stretch px-4 py-3 bg-background overflow-hidden rounded-[2px] border border-muted-foreground focus-within:border-foreground flex items-center gap-3">
-                <div className="flex-1 overflow-hidden flex flex-col items-start">
-                  <input
-                    id="participant-name"
-                    value={participantName}
-                    onChange={(e) => setParticipantName(e.target.value)}
-                    placeholder="Enter Display Name"
-                    className="flex flex-col justify-center text-foreground placeholder:text-muted-foreground text-sm font-medium leading-5 font-brockmann bg-transparent border-0 outline-none w-full"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <button
-          type="submit"
-          disabled={isButtonDisabled}
-          className="self-stretch px-6 py-3 bg-primary rounded flex justify-center items-center disabled:opacity-50"
-        >
-          <div className="text-center flex flex-col justify-center text-primary-foreground text-base font-semibold leading-6 tracking-wide font-brockmann">
-            {(loading || isJoining) ? 'Joining...' : 'Join Draft'}
-          </div>
-        </button>
-      </form>
-    </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
