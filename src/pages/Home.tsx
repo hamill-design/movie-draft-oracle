@@ -393,8 +393,8 @@ const Home = () => {
 
               {draftMode === 'multiplayer' && (
                 <div className="p-4 bg-[#EBFFFA] border border-[#03946D] rounded flex items-center gap-2">
-                  <div className="w-6 h-6 p-0.5 flex justify-center items-center">
-                    <div className="w-full h-4 bg-[#03946D]"></div>
+                  <div className="w-6 h-6 flex justify-center items-center">
+                    <EmailIcon className="w-6 h-6 text-[#03946D]" />
                   </div>
                   <div className="flex-1">
                     <span className="text-[#03946D] text-sm font-brockmann font-bold leading-5">
