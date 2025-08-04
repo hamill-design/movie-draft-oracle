@@ -26,7 +26,7 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
   };
 
   return (
-    <Card className="bg-greyscale-blue-100">
+    <Card className="bg-greyscale-blue-100" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
       <CardHeader>
         <CardTitle className="text-white flex items-center gap-2">
           <CheckSquare className="text-yellow-400" size={24} />

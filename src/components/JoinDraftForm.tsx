@@ -94,7 +94,7 @@ export const JoinDraftForm = () => {
   const isButtonDisabled = loading || !isFormValid || isJoining;
 
   return (
-    <div className="w-full h-full p-6 bg-greyscale-blue-100 shadow-sm rounded flex flex-col items-start gap-6">
+    <div className="w-full h-full p-6 bg-greyscale-blue-100 rounded flex flex-col items-start gap-6" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
       <div className="self-stretch flex flex-col items-start gap-1">
         <HeaderIcon3 title="Join A Draft" icon={<FilmReelIcon className="w-6 h-6 text-primary" />} />
         <div className="self-stretch flex flex-col items-start">

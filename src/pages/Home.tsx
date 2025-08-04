@@ -145,7 +145,7 @@ const Home = () => {
           <JoinDraftForm />
           
           {/* Theme Selection */}
-          <div className="w-full p-6 bg-greyscale-blue-100 shadow-sm rounded flex flex-col gap-6">
+          <div className="w-full p-6 bg-greyscale-blue-100 rounded flex flex-col gap-6" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
             <div className="self-stretch flex flex-col justify-center items-center gap-2">
               <div className="text-foreground text-2xl font-bold leading-8 tracking-wide font-brockmann">
                 Choose Your Draft Theme
@@ -191,7 +191,7 @@ const Home = () => {
 
           {/* Option Selection */}
           {isStepVisible('option') && (
-            <div className="p-6 bg-greyscale-blue-100 shadow-sm rounded space-y-4">
+            <div className="p-6 bg-greyscale-blue-100 rounded space-y-4" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
                 <HeaderIcon3 
                   title={theme === 'people' ? 'Search for a Person' : 'Select a Year'} 
                   icon={theme === 'people' ? 
@@ -309,7 +309,7 @@ const Home = () => {
 
           {/* Draft Mode Selection */}
           {isStepVisible('mode') && (
-            <div className="w-full p-6 bg-greyscale-blue-100 shadow-sm rounded flex flex-col gap-6">
+            <div className="w-full p-6 bg-greyscale-blue-100 rounded flex flex-col gap-6" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
               <div className="self-stretch flex flex-col justify-center items-center gap-2">
                 <div className="text-foreground text-2xl font-bold leading-8 tracking-wide font-brockmann">
                   Select A Mode
@@ -362,7 +362,7 @@ const Home = () => {
 
           {/* Participants */}
           {isStepVisible('participants') && (
-            <div className="p-6 bg-greyscale-blue-100 shadow-sm rounded flex flex-col gap-6">
+            <div className="p-6 bg-greyscale-blue-100 rounded flex flex-col gap-6" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 flex justify-center items-center">
                   <MultiPersonIcon className="w-6 h-6 text-primary" />
