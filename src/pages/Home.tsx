@@ -364,7 +364,6 @@ const Home = () => {
 
           {/* Participants */}
           {isStepVisible('participants') && (
-            <Card className="bg-greyscale-blue-100">
             <div className="p-6 bg-greyscale-blue-100 shadow-sm rounded flex flex-col gap-6">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 flex justify-center items-center">
@@ -445,7 +444,6 @@ const Home = () => {
                 </div>
               )}
             </div>
-            </Card>
           )}
 
           {/* Categories Selection */}
