@@ -165,7 +165,7 @@ const Home = () => {
                 }`}
               >
                 <div className="w-6 h-6 flex justify-center items-center">
-                  <PersonIcon className="w-4 h-4" />
+                  <PersonIcon className="w-6 h-6" />
                 </div>
                 <span className="font-brockmann">Draft by Person</span>
               </button>
@@ -182,7 +182,7 @@ const Home = () => {
                 }`}
               >
                 <div className="w-6 h-6 flex justify-center items-center">
-                  <CalendarIcon className="w-4 h-4" />
+                  <CalendarIcon className="w-6 h-6" />
                 </div>
                 <span className="font-brockmann">Draft by Year</span>
               </button>
