@@ -191,8 +191,7 @@ const Home = () => {
 
           {/* Option Selection */}
           {isStepVisible('option') && (
-            <Card className="bg-greyscale-blue-100">
-              <CardContent className="pt-6 space-y-4">
+            <div className="p-6 bg-greyscale-blue-100 shadow-sm rounded space-y-4">
                 <HeaderIcon3 
                   title={theme === 'people' ? 'Search for a Person' : 'Select a Year'} 
                   icon={theme === 'people' ? 
@@ -305,8 +304,7 @@ const Home = () => {
                     )}
                   </>
                 )}
-              </CardContent>
-            </Card>
+            </div>
           )}
 
           {/* Draft Mode Selection */}
