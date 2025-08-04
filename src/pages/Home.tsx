@@ -263,10 +263,13 @@ const Home = () => {
                 ) : (
                   <>
                     {selectedOption && (
-                      <div className="mb-4">
-                        <Badge variant="secondary" className="bg-yellow-400 text-black">
-                          Selected: {selectedOption}
-                        </Badge>
+                      <div className="w-full flex flex-col justify-start items-center gap-1.5 mb-4">
+                        <span className="text-greyscale-blue-600 text-sm font-brockmann-medium leading-5">
+                          You've Selected
+                        </span>
+                        <span className="text-brand-primary text-lg font-brockmann-semibold leading-6">
+                          {selectedOption}
+                        </span>
                       </div>
                     )}
                     
