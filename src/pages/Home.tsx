@@ -322,7 +322,7 @@ const Home = () => {
                   }`}
                 >
                   <div className="w-6 h-6 flex justify-center items-center">
-                    <User className="w-4 h-4" />
+                    <User className="w-6 h-6" />
                   </div>
                   <span className="font-brockmann">Local Draft</span>
                 </button>
@@ -336,7 +336,7 @@ const Home = () => {
                   }`}
                 >
                   <div className="w-6 h-6 flex justify-center items-center">
-                    <Users className="w-4 h-4" />
+                    <Users className="w-6 h-6" />
                   </div>
                   <span className="font-brockmann">Online Multiplayer</span>
                 </button>
