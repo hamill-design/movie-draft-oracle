@@ -292,7 +292,7 @@ const Home = () => {
                         <span className="text-greyscale-blue-600 text-sm font-brockmann-medium leading-5">
                           You've Selected
                         </span>
-                        <span className="text-brand-primary text-lg font-brockmann-semibold leading-6">
+                        <span className="text-brand-primary text-lg font-brockmann font-semibold leading-6">
                           {selectedOption}
                         </span>
                       </div>
