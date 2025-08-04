@@ -273,7 +273,7 @@ const Home = () => {
                             className={`h-12 text-sm font-brockmann-medium transition-colors ${
                               selectedOption === year
                                 ? 'bg-yellow-400 text-black hover:bg-yellow-500 border-0'
-                                : 'bg-white text-[#2B2D2D] border-0 hover:bg-gray-50 active:bg-gray-100'
+                                : 'bg-white text-[#2B2D2D] border-0 hover:bg-[#EDEBFF] active:bg-gray-100'
                             }`}
                             style={{
                               borderRadius: '6px',
