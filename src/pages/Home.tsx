@@ -277,11 +277,15 @@ const Home = () => {
                             key={year}
                             onClick={() => handleYearSelect(year)}
                             variant={selectedOption === year ? 'default' : 'outline'}
-                            className={`h-12 text-sm ${
+                            className={`h-12 text-sm transition-colors ${
                               selectedOption === year
-                                ? 'bg-yellow-400 text-black hover:bg-yellow-500'
-                                : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                                ? 'bg-yellow-400 text-black hover:bg-yellow-500 border-0'
+                                : 'bg-white text-[#2B2D2D] border-0 hover:bg-gray-50 active:bg-gray-100'
                             }`}
+                            style={{
+                              outline: selectedOption === year ? 'none' : '0.5px solid #2B2D2D',
+                              outlineOffset: selectedOption === year ? '0' : '-0.5px'
+                            }}
                           >
                             {year}
                           </Button>
