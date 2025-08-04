@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ThemeButton } from '@/components/ui/theme-button';
 import { Trash2, Users, User, Calendar, Film, Search, Mail } from 'lucide-react';
-import { FilmReelIcon, PersonIcon, CalendarIcon, SearchIcon, EmailIcon, CheckboxIcon } from '@/components/icons';
+import { FilmReelIcon, PersonIcon, CalendarIcon, SearchIcon, EmailIcon, CheckboxIcon, MultiPersonIcon } from '@/components/icons';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActorPortrait } from '@/components/ActorPortrait';
@@ -367,8 +367,8 @@ const Home = () => {
             <Card className="bg-background border-border">
             <div className="p-6 bg-[#FCFFFF] shadow-sm border border-border rounded flex flex-col gap-6">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 p-0.5 flex justify-center items-center">
-                  <div className="w-full h-[18px] bg-[#680AFF]"></div>
+                <div className="w-6 h-6 flex justify-center items-center">
+                  <MultiPersonIcon className="w-6 h-6 text-primary" />
                 </div>
                 <span className="text-[#2B2D2D] text-xl font-brockmann font-medium leading-7">
                   Add Participants
