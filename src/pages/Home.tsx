@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ThemeButton } from '@/components/ui/theme-button';
-import { Trash2, Users, Calendar, Film, Search, Mail } from 'lucide-react';
+import { Trash2, Users, User, Calendar, Film, Search, Mail } from 'lucide-react';
 import { FilmReelIcon, PersonIcon, CalendarIcon, SearchIcon, EmailIcon, CheckboxIcon } from '@/components/icons';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { useAuth } from '@/contexts/AuthContext';
@@ -322,7 +322,7 @@ const Home = () => {
                   }`}
                 >
                   <div className="w-6 h-6 flex justify-center items-center">
-                    <Users className="w-4 h-4" />
+                    <User className="w-4 h-4" />
                   </div>
                   <span className="font-brockmann">Local Draft</span>
                 </button>
