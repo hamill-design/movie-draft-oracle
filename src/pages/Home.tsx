@@ -262,16 +262,6 @@ const Home = () => {
                   </>
                 ) : (
                   <>
-                    {selectedOption && (
-                      <div className="w-full flex flex-col justify-start items-center gap-1.5 mb-4">
-                        <span className="text-greyscale-blue-600 text-sm font-brockmann-medium leading-5">
-                          You've Selected
-                        </span>
-                        <span className="text-brand-primary text-lg font-brockmann-semibold leading-6">
-                          {selectedOption}
-                        </span>
-                      </div>
-                    )}
                     
                     <div className="max-h-60 overflow-y-auto">
                       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
@@ -296,6 +286,17 @@ const Home = () => {
                         ))}
                       </div>
                     </div>
+
+                    {selectedOption && (
+                      <div className="w-full flex flex-col justify-start items-center gap-1.5 mt-4">
+                        <span className="text-greyscale-blue-600 text-sm font-brockmann-medium leading-5">
+                          You've Selected
+                        </span>
+                        <span className="text-brand-primary text-lg font-brockmann-semibold leading-6">
+                          {selectedOption}
+                        </span>
+                      </div>
+                    )}
                   </>
                 )}
               </CardContent>
