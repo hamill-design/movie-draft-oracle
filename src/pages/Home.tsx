@@ -359,68 +359,92 @@ const Home = () => {
           {/* Participants */}
           {isStepVisible('participants') && (
             <Card className="bg-background border-border">
-            <CardContent className="pt-6">
-              <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <Users className="text-yellow-400" />
-                {draftMode === 'multiplayer' ? 'Invite Participants' : 'Add Participants'}
-              </h3>
+            <div className="p-6 bg-[#FCFFFF] shadow-sm border border-border rounded flex flex-col gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 p-0.5 flex justify-center items-center">
+                  <div className="w-full h-[18px] bg-[#680AFF]"></div>
+                </div>
+                <span className="text-[#2B2D2D] text-xl font-brockmann font-medium leading-7">
+                  Add Participants
+                </span>
+              </div>
               
-              <div className="flex gap-2 mb-4">
-                <Input
-                  placeholder={draftMode === 'multiplayer' ? "Enter participant email..." : "Enter participant name..."}
-                  value={newParticipant}
-                  onChange={(e) => setNewParticipant(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddParticipant()}
-                />
-                <Button onClick={handleAddParticipant} className="bg-yellow-400 hover:bg-yellow-500 text-black">
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <div className="w-full px-4 py-3 bg-white border border-[#9CA3A2] rounded-[2px] flex items-center gap-3">
+                    <div className="flex-1">
+                      <Input
+                        placeholder={draftMode === 'multiplayer' ? "Enter participant email..." : "Enter participant name..."}
+                        value={newParticipant}
+                        onChange={(e) => setNewParticipant(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleAddParticipant()}
+                        className="border-0 p-0 text-[#9CA3A2] text-sm font-brockmann font-medium placeholder:text-[#9CA3A2] focus-visible:ring-0"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  onClick={handleAddParticipant} 
+                  className="px-4 py-2 bg-[#680AFF] text-white text-sm font-brockmann font-medium leading-5 rounded-[2px] flex justify-center items-center"
+                >
                   Add
-                </Button>
+                </button>
               </div>
 
               {draftMode === 'multiplayer' && (
-                <div className="mb-4 p-3 bg-orange-900/20 border border-orange-600/30 rounded-lg">
-                  <p className="text-orange-300 text-sm flex items-center gap-2">
-                    <EmailIcon className="w-4 h-4" />
-                    <strong>Multiplayer Mode:</strong> Enter email addresses of friends you want to invite. They'll receive an email invitation to join your draft.
-                  </p>
+                <div className="p-4 bg-[#EBFFFA] border border-[#03946D] rounded flex items-center gap-2">
+                  <div className="w-6 h-6 p-0.5 flex justify-center items-center">
+                    <div className="w-full h-4 bg-[#03946D]"></div>
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-[#03946D] text-sm font-brockmann font-bold leading-5">
+                      Multiplayer Mode:
+                    </span>
+                    <span className="text-[#03946D] text-sm font-brockmann font-medium leading-5">
+                      {" "}Enter email addresses of friends you want to invite. They'll receive an email invitation to join.
+                    </span>
+                  </div>
                 </div>
               )}
 
               {participants.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="text-white font-medium">
-                    {draftMode === 'multiplayer' ? 'Email Invitations' : 'Participants'} ({participants.length}):
-                  </h4>
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <span className="text-[#646968] text-base font-brockmann leading-6">
+                      Participants ({participants.length}):
+                    </span>
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {participants.map((participant) => (
-                      <Badge
+                      <div
                         key={participant}
-                        variant="secondary"
-                        className={`pr-1 flex items-center gap-1 ${
+                        className={`py-2 px-4 pr-2.5 bg-[#D3CFFF] rounded flex items-center gap-2 ${
                           draftMode === 'multiplayer' && !isEmailValid(participant)
-                            ? 'bg-red-700 text-white border border-red-500'
-                            : 'bg-gray-700 text-white'
+                            ? 'bg-red-200 border border-red-500'
+                            : ''
                         }`}
                       >
                         {draftMode === 'multiplayer' && <Mail size={12} />}
-                        {participant}
+                        <span className="text-[#2B2D2D] text-sm font-brockmann font-medium leading-5">
+                          {participant}
+                        </span>
                         {draftMode === 'multiplayer' && !isEmailValid(participant) && (
-                          <span className="text-xs text-red-300 ml-1">Invalid</span>
+                          <span className="text-xs text-red-600 ml-1">Invalid</span>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <button
                           onClick={() => handleRemoveParticipant(participant)}
-                          className="h-4 w-4 p-0 hover:bg-red-600"
+                          className="p-1 rounded-md hover:bg-red-600 transition-colors"
                         >
-                          <Trash2 size={12} />
-                        </Button>
-                      </Badge>
+                          <div className="w-4 h-4 p-0.5 flex justify-center items-center">
+                            <div className="w-full h-[13px] bg-[#2B2D2D]"></div>
+                          </div>
+                        </button>
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
-            </CardContent>
+            </div>
             </Card>
           )}
 
