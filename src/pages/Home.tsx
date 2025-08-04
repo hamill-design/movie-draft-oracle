@@ -19,6 +19,7 @@ import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useDraftForm, DraftSetupForm } from '@/hooks/useDraftForm';
 
+
 const Home = () => {
   const navigate = useNavigate();
   const { user, loading, signOut, isGuest } = useAuth();
@@ -221,10 +222,10 @@ const Home = () => {
                             <div
                               key={person.id}
                               onClick={() => handleOptionSelect({ title: person.name, profile_path: person.profile_path })}
-                              className={`w-full py-4 px-4 pr-6 bg-white rounded border border-[#D9E0DF] cursor-pointer transition-colors flex items-start gap-4 ${
+                              className={`w-full py-4 px-4 pr-6 bg-white rounded cursor-pointer transition-colors flex items-start gap-4 ${
                                 selectedOption === person.name
                                   ? 'bg-yellow-400 text-black'
-                                  : 'hover:bg-[#F8F7FF] hover:border-[#EDEBFF] active:bg-[#EDEBFF] active:border-[#BCB2FF]'
+                                  : 'hover:bg-[#F8F7FF] active:bg-[#EDEBFF]'
                               }`}
                             >
                               <div className="w-12 h-12 overflow-hidden rounded-full flex justify-center items-start">
@@ -281,9 +282,7 @@ const Home = () => {
                                 : 'bg-white text-[#2B2D2D] border-0 hover:bg-[#EDEBFF] active:bg-gray-100'
                             }`}
                             style={{
-                              borderRadius: '6px',
-                              outline: selectedOption === year ? '1px solid #680AFF' : '0.5px solid #2B2D2D',
-                              outlineOffset: '-1px'
+                              borderRadius: '6px'
                             }}
                           >
                             {year}
@@ -347,7 +346,7 @@ const Home = () => {
                 </button>
               </div>
               {draftMode === 'multiplayer' && (
-                <div className="self-stretch p-4 bg-[#EBFFFA] rounded border border-[#03946D] flex flex-col">
+                <div className="self-stretch p-4 bg-[#EBFFFA] rounded flex flex-col">
                   <div className="self-stretch flex flex-col">
                     <span className="text-[#03946D] text-sm font-bold leading-5 font-brockmann">
                       Multiplayer Mode:
@@ -391,7 +390,7 @@ const Home = () => {
               </div>
 
               {draftMode === 'multiplayer' && (
-                <div className="p-4 bg-[#EBFFFA] border border-[#03946D] rounded flex items-center gap-2">
+                <div className="p-4 bg-[#EBFFFA] rounded flex items-center gap-2">
                   <div className="w-6 h-6 flex justify-center items-center">
                     <EmailIcon className="w-6 h-6 text-[#03946D]" />
                   </div>
@@ -419,7 +418,7 @@ const Home = () => {
                         key={participant}
                         className={`py-2 px-4 pr-2.5 bg-[#D3CFFF] rounded flex items-center gap-2 ${
                           draftMode === 'multiplayer' && !isEmailValid(participant)
-                            ? 'bg-red-200 border border-red-500'
+                            ? 'bg-red-200'
                             : ''
                         }`}
                       >
