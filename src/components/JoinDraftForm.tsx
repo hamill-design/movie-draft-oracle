@@ -96,7 +96,7 @@ export const JoinDraftForm = () => {
   return (
     <div className="w-full h-full p-6 bg-background shadow-sm border border-border rounded flex flex-col items-start gap-6">
       <div className="self-stretch flex flex-col items-start gap-1">
-        <HeaderIcon3 title="Join A Draft" />
+        <HeaderIcon3 title="Join A Draft" icon={<FilmReelIcon className="w-6 h-6 text-primary" />} />
         <div className="self-stretch flex flex-col items-start">
           <div className="self-stretch flex flex-col justify-center text-muted-foreground text-sm font-normal leading-5 font-brockmann">
             Have an invite code? Join a multiplayer draft session
