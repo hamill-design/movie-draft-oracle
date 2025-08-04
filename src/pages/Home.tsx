@@ -145,7 +145,7 @@ const Home = () => {
           <JoinDraftForm />
           
           {/* Theme Selection */}
-          <div className="w-full p-6 bg-card shadow-sm rounded flex flex-col gap-6">
+          <div className="w-full p-6 bg-card shadow-sm border border-border rounded flex flex-col gap-6">
             <div className="self-stretch flex flex-col justify-center items-center gap-2">
               <div className="text-foreground text-2xl font-bold leading-8 tracking-wide font-brockmann">
                 Choose Your Draft Theme
@@ -191,7 +191,7 @@ const Home = () => {
 
           {/* Option Selection */}
           {isStepVisible('option') && (
-            <Card className="bg-background">
+            <Card className="bg-background border-border">
               <CardContent className="pt-6 space-y-4">
                 <HeaderIcon3 
                   title={theme === 'people' ? 'Search for a Person' : 'Select a Year'} 
@@ -222,10 +222,10 @@ const Home = () => {
                             <div
                               key={person.id}
                               onClick={() => handleOptionSelect({ title: person.name, profile_path: person.profile_path })}
-                              className={`w-full py-4 px-4 pr-6 bg-white rounded cursor-pointer transition-colors flex items-start gap-4 ${
+                              className={`w-full py-4 px-4 pr-6 bg-white rounded border border-[#D9E0DF] cursor-pointer transition-colors flex items-start gap-4 ${
                                 selectedOption === person.name
                                   ? 'bg-yellow-400 text-black'
-                                  : 'hover:bg-[#F8F7FF] active:bg-[#EDEBFF]'
+                                  : 'hover:bg-[#F8F7FF] hover:border-[#EDEBFF] active:bg-[#EDEBFF] active:border-[#BCB2FF]'
                               }`}
                             >
                               <div className="w-12 h-12 overflow-hidden rounded-full flex justify-center items-start">
@@ -282,7 +282,9 @@ const Home = () => {
                                 : 'bg-white text-[#2B2D2D] border-0 hover:bg-[#EDEBFF] active:bg-gray-100'
                             }`}
                             style={{
-                              borderRadius: '6px'
+                              borderRadius: '6px',
+                              outline: selectedOption === year ? '1px solid #680AFF' : '0.5px solid #2B2D2D',
+                              outlineOffset: '-1px'
                             }}
                           >
                             {year}
@@ -309,7 +311,7 @@ const Home = () => {
 
           {/* Draft Mode Selection */}
           {isStepVisible('mode') && (
-            <div className="w-full p-6 bg-card shadow-sm rounded flex flex-col gap-6">
+            <div className="w-full p-6 bg-card shadow-sm border border-border rounded flex flex-col gap-6">
               <div className="self-stretch flex flex-col justify-center items-center gap-2">
                 <div className="text-foreground text-2xl font-bold leading-8 tracking-wide font-brockmann">
                   Select A Mode
@@ -346,7 +348,7 @@ const Home = () => {
                 </button>
               </div>
               {draftMode === 'multiplayer' && (
-                <div className="self-stretch p-4 bg-[#EBFFFA] rounded flex flex-col">
+                <div className="self-stretch p-4 bg-[#EBFFFA] rounded border border-[#03946D] flex flex-col">
                   <div className="self-stretch flex flex-col">
                     <span className="text-[#03946D] text-sm font-bold leading-5 font-brockmann">
                       Multiplayer Mode:
@@ -362,8 +364,8 @@ const Home = () => {
 
           {/* Participants */}
           {isStepVisible('participants') && (
-            <Card className="bg-background">
-            <div className="p-6 bg-[#FCFFFF] shadow-sm rounded flex flex-col gap-6">
+            <Card className="bg-background border-border">
+            <div className="p-6 bg-[#FCFFFF] shadow-sm border border-border rounded flex flex-col gap-6">
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 flex justify-center items-center">
                   <MultiPersonIcon className="w-6 h-6 text-primary" />
@@ -390,7 +392,7 @@ const Home = () => {
               </div>
 
               {draftMode === 'multiplayer' && (
-                <div className="p-4 bg-[#EBFFFA] rounded flex items-center gap-2">
+                <div className="p-4 bg-[#EBFFFA] border border-[#03946D] rounded flex items-center gap-2">
                   <div className="w-6 h-6 flex justify-center items-center">
                     <EmailIcon className="w-6 h-6 text-[#03946D]" />
                   </div>
@@ -418,7 +420,7 @@ const Home = () => {
                         key={participant}
                         className={`py-2 px-4 pr-2.5 bg-[#D3CFFF] rounded flex items-center gap-2 ${
                           draftMode === 'multiplayer' && !isEmailValid(participant)
-                            ? 'bg-red-200'
+                            ? 'bg-red-200 border border-red-500'
                             : ''
                         }`}
                       >
