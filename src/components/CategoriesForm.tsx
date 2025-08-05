@@ -132,7 +132,7 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
           display: 'grid',
           rowGap: '16px',
           columnGap: '16px',
-          alignSelf: 'stretch',
+          alignSelf: 'center',
           gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
           gridAutoRows: 'max-content'
         }}
