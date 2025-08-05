@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { CheckboxIcon } from '@/components/icons';
 import { UseFormReturn } from 'react-hook-form';
 
 interface DraftSetupForm {
@@ -31,7 +32,7 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
       {/* Header */}
       <div className="flex items-center gap-2">
         <div className="w-6 h-6 p-0.5 flex justify-center items-center">
-          <div className="w-5 h-5 bg-primary"></div>
+          <CheckboxIcon className="w-5 h-5 text-primary" />
         </div>
         <span className="text-foreground text-xl font-brockmann font-medium leading-7">
           Choose Categories
