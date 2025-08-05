@@ -81,7 +81,8 @@ const CustomCheckbox = ({
         justifyContent: 'flex-start',
         alignItems: 'center',
         gap: 8,
-        display: 'inline-flex'
+        display: 'inline-flex',
+        minHeight: 20 // Add minimum height constraint
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -151,7 +152,7 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
           columnGap: '16px',
           alignSelf: 'stretch',
           gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-          gridAutoRows: 'max-content'
+          gridAutoRows: 'minmax(20px, max-content)' // Set minimum row height
         }}
       >
         {categories.map((category) => (
