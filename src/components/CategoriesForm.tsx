@@ -40,7 +40,16 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
       </div>
       
       {/* Categories Grid */}
-      <div className="flex flex-col gap-0">
+      <div 
+        className="self-stretch h-32"
+        style={{
+          display: 'grid',
+          rowGap: '16px',
+          columnGap: '16px',
+          gridTemplateRows: 'repeat(4, minmax(0, 1fr))',
+          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'
+        }}
+      >
         {categories.map((category) => (
           <div key={category} className="w-full flex items-center gap-2">
             <Checkbox
