@@ -146,13 +146,12 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
       
       {/* Categories Grid */}
       <div 
-        className="self-stretch h-32"
+        className="self-stretch"
         style={{
           display: 'grid',
-          rowGap: '16px',
-          columnGap: '16px',
-          gridTemplateRows: 'repeat(4, minmax(0, 1fr))',
-          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))'
+          gap: '16px',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gridAutoRows: 'minmax(auto, 1fr)'
         }}
       >
         {categories.map((category) => (
