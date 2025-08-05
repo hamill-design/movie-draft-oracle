@@ -76,7 +76,7 @@ const CustomCheckbox = ({
 
   return (
     <div 
-      className="cursor-pointer flex items-center gap-2"
+      className="cursor-pointer flex items-center gap-1"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onToggle(!isChecked)}
@@ -89,7 +89,7 @@ const CustomCheckbox = ({
         fontSize: 14,
         fontFamily: 'Brockmann',
         fontWeight: '500',
-        lineHeight: 20,
+        lineHeight: 14,
         wordWrap: 'break-word'
       }}>
         {category}
@@ -130,11 +130,11 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
         className="self-stretch"
         style={{
           display: 'grid',
-          rowGap: '16px',
+          rowGap: '4px',
           columnGap: '16px',
           alignSelf: 'center',
           gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-          gridAutoRows: 'max-content'
+          gridAutoRows: 'min-content'
         }}
       >
         {categories.map((category) => (
