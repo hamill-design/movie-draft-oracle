@@ -76,16 +76,10 @@ const CustomCheckbox = ({
 
   return (
     <div 
-      style={{
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-        gap: 8,
-        display: 'inline-flex'
-      }}
+      className="cursor-pointer flex items-center gap-2"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onToggle(!isChecked)}
-      className="cursor-pointer"
     >
       <div style={getCheckboxStyle()}>
         {checkmarkElement}
