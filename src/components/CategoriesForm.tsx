@@ -150,8 +150,8 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
         style={{
           display: 'grid',
           gap: '16px',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gridAutoRows: 'minmax(auto, 1fr)'
+          gridTemplateColumns: 'repeat(2, max-content)',
+          justifyContent: 'start'
         }}
       >
         {categories.map((category) => (
