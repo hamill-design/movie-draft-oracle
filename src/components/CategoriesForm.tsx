@@ -91,24 +91,14 @@ const CustomCheckbox = ({
         {checkmarkElement}
       </div>
       <div style={{
-        flexDirection: 'column',
-        justifyContent: 'flex-start',
-        alignItems: 'flex-start',
-        display: 'inline-flex'
+        color: 'var(--Text-Primary, #2B2D2D)',
+        fontSize: 14,
+        fontFamily: 'Brockmann',
+        fontWeight: '500',
+        lineHeight: 20,
+        wordWrap: 'break-word'
       }}>
-        <div style={{
-          justifyContent: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          color: 'var(--Text-Primary, #2B2D2D)',
-          fontSize: 14,
-          fontFamily: 'Brockmann',
-          fontWeight: '500',
-          lineHeight: 20,
-          wordWrap: 'break-word'
-        }}>
-          {category}
-        </div>
+        {category}
       </div>
     </div>
   );
