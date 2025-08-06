@@ -76,23 +76,40 @@ const CustomCheckbox = ({
 
   return (
     <div 
-      className="cursor-pointer flex items-center gap-2"
+      className="cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onToggle(!isChecked)}
+      style={{
+        width: 415,
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        gap: 8,
+        display: 'inline-flex'
+      }}
     >
       <div style={getCheckboxStyle()}>
         {checkmarkElement}
       </div>
       <div style={{
-        color: 'var(--Text-Primary, #2B2D2D)',
-        fontSize: 14,
-        fontFamily: 'Brockmann',
-        fontWeight: '500',
-        lineHeight: 18,
-        wordWrap: 'break-word'
+        flexDirection: 'column',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
+        display: 'inline-flex'
       }}>
-        {category}
+        <div style={{
+          justifyContent: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          color: 'var(--Text-Primary, #2B2D2D)',
+          fontSize: 14,
+          fontFamily: 'Brockmann',
+          fontWeight: '500',
+          lineHeight: 20,
+          wordWrap: 'break-word'
+        }}>
+          {category}
+        </div>
       </div>
     </div>
   );
@@ -125,16 +142,15 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
         </span>
       </div>
       
-      {/* Categories Grid */}
+      {/* Categories List */}
       <div 
-        className="self-stretch"
         style={{
-          display: 'grid',
-          rowGap: '12px',
-          columnGap: '16px',
-          alignSelf: 'center',
-          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-          gridAutoRows: 'min-content'
+          width: '100%',
+          height: '100%',
+          flexDirection: 'column',
+          justifyContent: 'flex-start',
+          alignItems: 'flex-start',
+          display: 'inline-flex'
         }}
       >
         {categories.map((category) => (
