@@ -97,7 +97,9 @@ const CustomCheckbox = ({
         fontSize: 14,
         fontFamily: 'Brockmann',
         fontWeight: '500',
-        lineHeight: 20
+        lineHeight: '16px',
+        margin: 0,
+        padding: 0
       }}>
         {category}
       </span>
