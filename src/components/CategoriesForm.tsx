@@ -138,10 +138,10 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
       <div 
         style={{
           width: '100%',
-          flexDirection: 'column',
-          justifyContent: 'flex-start',
-          alignItems: 'flex-start',
-          display: 'flex'
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '8px',
+          alignItems: 'start'
         }}
       >
         {categories.map((category) => (
