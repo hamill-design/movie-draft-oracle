@@ -85,7 +85,7 @@ const CustomCheckbox = ({
         height: 24,
         justifyContent: 'flex-start',
         alignItems: 'center',
-        gap: 4,
+        gap: 0,
         display: 'flex'
       }}
     >
