@@ -146,7 +146,6 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
       <div 
         style={{
           width: '100%',
-          height: '100%',
           flexDirection: 'column',
           justifyContent: 'flex-start',
           alignItems: 'flex-start',
