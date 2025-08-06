@@ -140,7 +140,7 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
           width: '100%',
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: '4px',
+          gap: '2px',
           alignItems: 'start'
         }}
       >
