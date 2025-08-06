@@ -82,7 +82,7 @@ const CustomCheckbox = ({
       onClick={() => onToggle(!isChecked)}
       style={{
         width: '100%',
-        height: 24,
+        height: 20,
         justifyContent: 'flex-start',
         alignItems: 'center',
         gap: 4,
