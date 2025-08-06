@@ -122,7 +122,7 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
   return (
     <div 
       className="w-full bg-greyscale-blue-100 rounded-lg flex flex-col"
-      style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)', padding: '16px', gap: '12px'}}
+      style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)', padding: '0px', gap: '12px'}}
     >
       {/* Header */}
       <div className="flex items-center gap-2">
@@ -140,7 +140,7 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
           width: '100%',
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: '2px',
+          gap: '16px',
           alignItems: 'start'
         }}
       >
