@@ -82,10 +82,10 @@ const CustomCheckbox = ({
       onClick={() => onToggle(!isChecked)}
       style={{
         width: '100%',
-        height: 32,
+        height: 24,
         justifyContent: 'flex-start',
         alignItems: 'center',
-        gap: 8,
+        gap: 4,
         display: 'flex'
       }}
     >
@@ -140,7 +140,7 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
           width: '100%',
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
-          gap: '2px',
+          gap: '16px',
           alignItems: 'start'
         }}
       >
