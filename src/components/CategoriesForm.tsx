@@ -128,8 +128,8 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
     >
       {/* Header */}
       <div className="flex items-center gap-2">
-        <div className="w-6 h-6 p-0.5 flex justify-center items-center">
-          <CheckboxIcon className="w-5 h-5 text-primary" />
+        <div className="flex justify-center items-center" style={{ width: '24px', height: '24px', padding: '2px' }}>
+          <CheckboxIcon className="text-primary" />
         </div>
         <span className="text-foreground text-xl font-brockmann font-medium leading-7">
           Choose Categories
