@@ -86,7 +86,9 @@ const CustomCheckbox = ({
         justifyContent: 'flex-start',
         alignItems: 'center',
         gap: 4,
-        display: 'flex'
+        display: 'flex',
+        paddingTop: '0px',
+        paddingBottom: '0px'
       }}
     >
       <div style={getCheckboxStyle()}>
