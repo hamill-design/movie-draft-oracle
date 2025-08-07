@@ -432,8 +432,8 @@ const Home = () => {
                           onClick={() => handleRemoveParticipant(participant)}
                           className="p-1 rounded-xl hover:bg-purple-100 transition-colors flex justify-center items-center"
                         >
-                          <div className="w-4 h-4 p-0.5 flex justify-center items-center">
-                            <TrashIcon className="w-3 h-3 text-foreground" />
+                          <div className="w-4 h-4 flex justify-center items-center">
+                            <TrashIcon className="w-4 h-4 text-foreground" />
                           </div>
                         </button>
                       </div>
