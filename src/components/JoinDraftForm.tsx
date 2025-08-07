@@ -124,7 +124,7 @@ export const JoinDraftForm = () => {
               Your Display Name
             </div>
             <div className="self-stretch flex flex-col items-start">
-              <div className="self-stretch px-4 py-3 bg-background overflow-hidden rounded-[2px] border border-muted-foreground focus-within:border-foreground flex items-center gap-3">
+              <div className="self-stretch px-4 py-3 bg-ui-primary overflow-hidden rounded-[2px] border border-muted-foreground focus-within:border-foreground flex items-center gap-3">
                 <div className="flex-1 overflow-hidden flex flex-col items-start">
                   <input
                     id="participant-name"
