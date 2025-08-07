@@ -430,10 +430,10 @@ const Home = () => {
                         )}
                         <button
                           onClick={() => handleRemoveParticipant(participant)}
-                          className="p-1 rounded-md hover:bg-red-600 transition-colors"
+                          className="p-1 rounded-xl hover:bg-purple-100 transition-colors flex justify-center items-center"
                         >
-                          <div className="w-4 h-4 flex justify-center items-center">
-                            <TrashIcon className="w-4 h-4 text-current" />
+                          <div className="w-4 h-4 p-0.5 flex justify-center items-center">
+                            <TrashIcon className="w-3 h-3 text-foreground" />
                           </div>
                         </button>
                       </div>
