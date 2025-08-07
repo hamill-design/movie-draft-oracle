@@ -19,23 +19,23 @@ const PickConfirmation = ({
   if (!selectedMovie || !selectedCategory) return null;
 
   return (
-    <Card className="bg-gray-800 border-gray-600">
+    <Card className="bg-card border-border">
       <CardContent className="pt-6">
         <div className="text-center space-y-4">
-          <div className="text-white">
+          <div className="text-card-foreground font-brockmann">
             <p className="text-lg">
               <strong>{currentPlayerName}</strong> is drafting:
             </p>
-            <p className="text-yellow-400 font-bold text-xl">
+            <p className="text-yellow-500 font-bold text-xl">
               {selectedMovie.title}
             </p>
-            <p className="text-gray-300">
-              for category: <span className="text-yellow-400">{selectedCategory}</span>
+            <p className="text-muted-foreground">
+              for category: <span className="text-yellow-500">{selectedCategory}</span>
             </p>
           </div>
           <Button
             onClick={onConfirm}
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold px-8 py-3"
+            className="bg-yellow-500 hover:bg-yellow-600 text-greyscale-blue-800 font-brockmann font-semibold px-8 py-3"
             size="lg"
           >
             Confirm Pick

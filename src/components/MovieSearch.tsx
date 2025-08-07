@@ -80,14 +80,14 @@ const MovieSearch = ({
   const shouldShowResults = searchQuery.trim().length > 0;
 
   return (
-    <Card className="bg-gray-800 border-gray-600">
+    <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
-          <Search className="text-yellow-400" size={24} />
+        <CardTitle className="text-card-foreground font-brockmann flex items-center gap-2">
+          <Search className="text-yellow-500" size={24} />
           Search Movies
           {theme === 'year' ? ` from ${option}` : theme === 'people' ? ` featuring ${getCleanActorName(option)}` : ''}
           {!loading && shouldShowResults && filteredMovies.length > 0 && (
-            <span className="text-sm text-gray-400 ml-2">
+            <span className="text-sm text-muted-foreground ml-2">
               ({filteredMovies.length} movies found)
             </span>
           )}
@@ -104,19 +104,19 @@ const MovieSearch = ({
             }
           }}
           maxLength={INPUT_LIMITS.MAX_SEARCH_QUERY_LENGTH}
-          className="bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+          className=""
         />
         
         {shouldShowResults && (
           <div className="mt-4 max-h-60 overflow-y-auto space-y-2">
             {loading ? (
-              <div className="text-gray-400">Loading movies...</div>
+              <div className="text-muted-foreground font-brockmann">Loading movies...</div>
             ) : filteredMoviesByTheme.length === 0 ? (
-              <div className="text-gray-400">
+              <div className="text-muted-foreground font-brockmann">
                 No movies available for {theme === 'year' ? `${option}` : theme === 'people' ? `${getCleanActorName(option)}` : 'this search'}
               </div>
             ) : filteredMovies.length === 0 ? (
-              <div className="text-gray-400">
+              <div className="text-muted-foreground font-brockmann">
                 No movies found matching "{searchQuery}" {theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${getCleanActorName(option)}` : ''}
               </div>
             ) : (
@@ -126,22 +126,22 @@ const MovieSearch = ({
                   onClick={() => onMovieSelect(movie)}
                   className={`p-3 rounded cursor-pointer transition-colors ${
                     selectedMovie?.id === movie.id
-                      ? 'bg-yellow-400 text-black'
-                      : 'bg-gray-700 hover:bg-gray-600 text-white'
+                      ? 'bg-yellow-500 text-greyscale-blue-800'
+                      : 'bg-muted hover:bg-accent text-card-foreground'
                   }`}
                 >
-                  <div className="font-medium">{movie.title}</div>
-                  <div className="text-sm opacity-75">
+                  <div className="font-medium font-brockmann">{movie.title}</div>
+                  <div className="text-sm opacity-75 font-brockmann">
                     {movie.year} • {movie.genre}
                     {theme === 'year' && movie.year !== parseInt(option) && (
-                      <span className="text-red-400 ml-2">[YEAR MISMATCH: {movie.year}]</span>
+                      <span className="text-error-red-500 ml-2">[YEAR MISMATCH: {movie.year}]</span>
                     )}
                   </div>
                 </div>
               ))
             )}
             {filteredMovies.length > 50 && (
-              <div className="text-gray-400 text-sm text-center py-2">
+              <div className="text-muted-foreground text-sm text-center py-2 font-brockmann">
                 Showing first 50 results of {filteredMovies.length} movies. Use search to narrow down.
               </div>
             )}

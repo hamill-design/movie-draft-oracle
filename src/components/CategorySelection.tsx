@@ -46,19 +46,19 @@ const CategorySelection = ({
   };
 
   return (
-    <Card className="bg-gray-800 border-gray-600">
+    <Card className="bg-card border-border">
       <CardHeader>
-        <CardTitle className="text-white">
+        <CardTitle className="text-card-foreground font-brockmann">
           Select Category for "{selectedMovie.title}"
         </CardTitle>
         {eligibleCategories.length > 0 && (
-          <div className="text-gray-400 text-sm space-y-1">
+          <div className="text-muted-foreground text-sm space-y-1 font-brockmann">
             <p>Based on this movie's properties, you can select from {eligibleCategories.length} eligible categories.</p>
             {selectedMovie.hasOscar && (
-              <p className="text-green-400">Eligible for Academy Award category (Has Oscar nominations/wins)</p>
+              <p className="text-positive-green-500">Eligible for Academy Award category (Has Oscar nominations/wins)</p>
             )}
             {selectedMovie.isBlockbuster && (
-              <p className="text-yellow-400">Eligible for Blockbuster category 
+              <p className="text-yellow-500">Eligible for Blockbuster category 
                 {selectedMovie.budget > 0 && ` (Budget: $${(selectedMovie.budget / 1000000).toFixed(0)}M)`}
                 {selectedMovie.revenue > 0 && ` (Revenue: $${(selectedMovie.revenue / 1000000).toFixed(0)}M)`}
               </p>
@@ -79,14 +79,14 @@ const CategorySelection = ({
                 onClick={() => onCategorySelect(category)}
                 disabled={isDisabled}
                 variant={selectedCategory === category ? "default" : "outline"}
-                className={`h-auto p-3 text-sm ${
+                className={`h-auto p-3 text-sm font-brockmann font-semibold ${
                   selectedCategory === category
-                    ? "bg-yellow-400 text-black hover:bg-yellow-500"
+                    ? "bg-yellow-500 text-greyscale-blue-800 hover:bg-yellow-600"
                     : isDisabled
                     ? "opacity-50 cursor-not-allowed"
                     : isEligible
-                    ? "border-gray-600 text-gray-300 hover:bg-gray-700"
-                    : "border-red-600 text-red-400 opacity-50 cursor-not-allowed"
+                    ? "border-border text-card-foreground hover:bg-accent"
+                    : "border-error-red-500 text-error-red-500 opacity-50 cursor-not-allowed"
                 }`}
                 title={getCategoryTooltip(category)}
               >
@@ -98,7 +98,7 @@ const CategorySelection = ({
           })}
         </div>
         {eligibleCategories.length === 0 && (
-          <div className="text-red-400 text-center mt-4">
+          <div className="text-error-red-500 text-center mt-4 font-brockmann">
             This movie doesn't match any of the available categories. Please select a different movie.
           </div>
         )}

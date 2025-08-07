@@ -10,17 +10,17 @@ interface DraftInfoProps {
 
 const DraftInfo = ({ theme, option, draftSize }: DraftInfoProps) => {
   return (
-    <Card className="bg-gray-800 border-gray-600 mb-8">
+    <Card className="bg-card border-border mb-8">
       <CardContent className="pt-6">
-        <div className="text-center">
-          <p className="text-gray-300">
-            Theme: <span className="text-yellow-400 font-bold capitalize">{theme}</span>
+        <div className="text-center font-brockmann">
+          <p className="text-card-foreground">
+            Theme: <span className="text-yellow-500 font-semibold capitalize">{theme}</span>
           </p>
-          <p className="text-gray-300">
-            Selection: <span className="text-yellow-400 font-bold">{option}</span>
+          <p className="text-card-foreground">
+            Selection: <span className="text-yellow-500 font-semibold">{option}</span>
           </p>
-          <p className="text-gray-300">
-            Draft Size: <span className="text-yellow-400 font-bold">{draftSize} people</span>
+          <p className="text-card-foreground">
+            Draft Size: <span className="text-yellow-500 font-semibold">{draftSize} people</span>
           </p>
         </div>
       </CardContent>
