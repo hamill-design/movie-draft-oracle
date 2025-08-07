@@ -27,22 +27,27 @@ const DraftHeader = ({
 
       {/* Draft Info */}
       <Card className="bg-gray-800 border-gray-600 mb-6">
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-center gap-6 text-center">
-            <div className="flex items-center gap-3">
-              {theme === 'people' && <DraftActorPortrait actorName={getCleanActorName(draftOption)} size="lg" />}
-              <p className="text-gray-300">
-                Theme: <span className="text-yellow-400 font-bold">
-                  {theme === 'people' ? getCleanActorName(draftOption) : draftOption}
-                </span>
-              </p>
+        <CardContent className="p-6">
+          <div className="flex flex-col justify-center items-center gap-4">
+            <span className="text-text-primary text-[32px] font-brockmann font-medium leading-[36px] tracking-[1.28px]">
+              NOW DRAFTING
+            </span>
+            <div className="text-[64px] font-chaney font-normal leading-[64px]">
+              <span className="text-purple-500">
+                {theme === 'people' ? getCleanActorName(draftOption).toUpperCase() + ' ' : draftOption.toString() + ' '}
+              </span>
+              <span className="text-text-primary">
+                {theme === 'people' ? 'MOVIES' : 'MOVIES'}
+              </span>
             </div>
-            {!isComplete && currentPlayer && <div className="flex items-center gap-2">
+            {!isComplete && currentPlayer && (
+              <div className="flex items-center gap-2 mt-4">
                 <Crown className="text-yellow-400" size={20} />
-                <p className="text-white font-bold">
+                <p className="text-text-primary font-brockmann font-semibold">
                   Current Pick: {currentPlayer.name} (#{currentPlayer.pick})
                 </p>
-              </div>}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
