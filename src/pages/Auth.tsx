@@ -126,7 +126,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
       <Card className="w-full max-w-md bg-gray-800 border-gray-600">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
