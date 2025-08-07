@@ -84,7 +84,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
                     <div key={category} className="w-[140px] min-w-[150px] flex flex-col justify-start items-center">
                       {pick ? (
                         <div className="flex flex-col items-center">
-                          <span className="text-text-primary text-xs font-brockmann font-bold leading-4 tracking-[0.24px] text-center">
+                          <span className="text-text-primary text-sm font-brockmann font-semibold leading-5 tracking-[0.24px] text-center">
                             {pick.movie.title}
                           </span>
                         </div>
