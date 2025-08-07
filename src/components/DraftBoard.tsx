@@ -68,7 +68,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
                   isCurrentPlayer ? 'bg-purple-100' : ''
                 }`}
               >
-                <div className="w-[88px] flex justify-start items-center gap-2">
+                <div className="w-[120px] px-4 flex justify-start items-start">
                   <span 
                     className={`text-sm font-brockmann font-medium leading-5 ${
                       isCurrentPlayer ? 'text-purple-500' : 'text-greyscale-blue-600'
