@@ -421,7 +421,7 @@ const Home = () => {
                             : ''
                         }`}
                       >
-                        {draftMode === 'multiplayer' && <Mail size={16} />}
+                        {draftMode === 'multiplayer' && <Mail size={16} className="text-primary" />}
                         <span className="text-[#2B2D2D] text-sm font-brockmann font-medium leading-5">
                           {participant}
                         </span>
