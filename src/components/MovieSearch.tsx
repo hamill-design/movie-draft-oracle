@@ -82,8 +82,8 @@ const MovieSearch = ({
   return (
     <div className="w-full h-full p-6 bg-greyscale-blue-100 shadow-sm rounded border flex flex-col gap-6">
       <div className="flex items-center gap-2">
-        <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
-          <div className="w-5 h-5 bg-brand-primary rounded-sm"></div>
+        <div className="w-6 h-6 flex justify-center items-center">
+          <Search size={24} className="text-text-primary" />
         </div>
         <span className="text-text-primary text-xl font-brockmann font-medium leading-7">
           Search Movies
