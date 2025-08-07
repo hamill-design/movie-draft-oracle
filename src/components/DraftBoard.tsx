@@ -50,7 +50,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
           </div>
           {categories.map((category, index) => (
             <div key={category} className="min-w-[150px] py-[14px] px-4 flex flex-col justify-start items-center">
-              <span className="text-purple-700 text-sm font-brockmann font-medium leading-5 text-center">{category.replace(/\s*\([^)]*\)/g, "").replace(/^Nominee or Winner:\s*/i, "")}</span>
+              <span className="text-purple-700 text-sm font-brockmann font-medium leading-5 text-center">{category.replace(/\s*\([^)]*\)/g, "")}</span>
             </div>
           ))}
         </div>
@@ -68,7 +68,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
                   isCurrentPlayer ? 'bg-purple-100' : ''
                 }`}
               >
-                <div className="w-auto py-[14px] px-4 flex flex-col justify-start items-start">
+                <div className="w-[120px] py-[14px] px-4 flex flex-col justify-start items-start">
                   <span 
                     className={`text-sm font-brockmann font-medium leading-5 ${
                       isCurrentPlayer ? 'text-purple-500' : 'text-greyscale-blue-600'
