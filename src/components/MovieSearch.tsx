@@ -80,43 +80,47 @@ const MovieSearch = ({
   const shouldShowResults = searchQuery.trim().length > 0;
 
   return (
-    <Card className="bg-card border-border">
-      <CardHeader>
-        <CardTitle className="text-card-foreground font-brockmann flex items-center gap-2">
-          <Search className="text-yellow-500" size={24} />
+    <div className="w-full h-full p-6 bg-greyscale-blue-100 shadow-sm rounded border flex flex-col gap-6">
+      <div className="flex items-center gap-2">
+        <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
+          <div className="w-5 h-5 bg-brand-primary rounded-sm"></div>
+        </div>
+        <span className="text-text-primary text-xl font-brockmann font-medium leading-7">
           Search Movies
           {theme === 'year' ? ` from ${option}` : theme === 'people' ? ` featuring ${getCleanActorName(option)}` : ''}
-          {!loading && shouldShowResults && filteredMovies.length > 0 && (
-            <span className="text-sm text-muted-foreground ml-2">
-              ({filteredMovies.length} movies found)
-            </span>
-          )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Input
-          placeholder={getPlaceholderText()}
-          value={searchQuery}
-          onChange={(e) => {
-            const sanitizedValue = sanitizeHtml(e.target.value);
-            if (sanitizedValue.length <= INPUT_LIMITS.MAX_SEARCH_QUERY_LENGTH) {
-              onSearchChange(sanitizedValue);
-            }
-          }}
-          maxLength={INPUT_LIMITS.MAX_SEARCH_QUERY_LENGTH}
-          className=""
-        />
+        </span>
+      </div>
+      
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-3 px-4 py-3 bg-ui-primary rounded-sm border border-text-primary">
+            <div className="flex-1 overflow-hidden flex flex-col justify-start items-start">
+              <input
+                placeholder={getPlaceholderText()}
+                value={searchQuery}
+                onChange={(e) => {
+                  const sanitizedValue = sanitizeHtml(e.target.value);
+                  if (sanitizedValue.length <= INPUT_LIMITS.MAX_SEARCH_QUERY_LENGTH) {
+                    onSearchChange(sanitizedValue);
+                  }
+                }}
+                maxLength={INPUT_LIMITS.MAX_SEARCH_QUERY_LENGTH}
+                className="w-full bg-transparent text-text-primary text-sm font-brockmann font-medium leading-5 outline-none placeholder:text-text-primary placeholder:opacity-60"
+              />
+            </div>
+          </div>
+        </div>
         
         {shouldShowResults && (
-          <div className="mt-4 max-h-60 overflow-y-auto space-y-2">
+          <div className="max-h-60 overflow-hidden flex flex-col justify-start items-center gap-2">
             {loading ? (
-              <div className="text-muted-foreground font-brockmann">Loading movies...</div>
+              <div className="text-text-primary font-brockmann font-medium text-sm leading-5">Loading movies...</div>
             ) : filteredMoviesByTheme.length === 0 ? (
-              <div className="text-muted-foreground font-brockmann">
+              <div className="text-text-primary font-brockmann font-medium text-sm leading-5">
                 No movies available for {theme === 'year' ? `${option}` : theme === 'people' ? `${getCleanActorName(option)}` : 'this search'}
               </div>
             ) : filteredMovies.length === 0 ? (
-              <div className="text-muted-foreground font-brockmann">
+              <div className="text-text-primary font-brockmann font-medium text-sm leading-5">
                 No movies found matching "{searchQuery}" {theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${getCleanActorName(option)}` : ''}
               </div>
             ) : (
@@ -124,31 +128,41 @@ const MovieSearch = ({
                 <div
                   key={movie.id}
                   onClick={() => onMovieSelect(movie)}
-                  className={`p-3 rounded cursor-pointer transition-colors ${
+                  className={`w-full py-2.5 px-4 rounded cursor-pointer transition-colors flex flex-col justify-start items-start gap-0.5 ${
                     selectedMovie?.id === movie.id
-                      ? 'bg-yellow-500 text-greyscale-blue-800'
-                      : 'bg-muted hover:bg-accent text-card-foreground'
+                      ? 'bg-brand-primary'
+                      : 'bg-ui-primary border border-greyscale-blue-200 hover:bg-greyscale-blue-50'
                   }`}
                 >
-                  <div className="font-medium font-brockmann">{movie.title}</div>
-                  <div className="text-sm opacity-75 font-brockmann">
-                    {movie.year} • {movie.genre}
-                    {theme === 'year' && movie.year !== parseInt(option) && (
-                      <span className="text-error-red-500 ml-2">[YEAR MISMATCH: {movie.year}]</span>
-                    )}
+                  <div className="w-full flex flex-col justify-start items-start">
+                    <span className={`text-base font-brockmann font-semibold leading-6 tracking-[0.32px] ${
+                      selectedMovie?.id === movie.id ? 'text-ui-primary' : 'text-text-primary'
+                    }`}>
+                      {movie.title}
+                    </span>
+                  </div>
+                  <div className="w-full opacity-75 flex flex-col justify-start items-start">
+                    <span className={`text-sm font-brockmann font-normal leading-5 ${
+                      selectedMovie?.id === movie.id ? 'text-ui-primary' : 'text-text-primary'
+                    }`}>
+                      {movie.year} • {movie.genre}
+                      {theme === 'year' && movie.year !== parseInt(option) && (
+                        <span className="text-error-red-500 ml-2">[YEAR MISMATCH: {movie.year}]</span>
+                      )}
+                    </span>
                   </div>
                 </div>
               ))
             )}
             {filteredMovies.length > 50 && (
-              <div className="text-muted-foreground text-sm text-center py-2 font-brockmann">
+              <div className="text-text-primary text-sm text-center py-2 font-brockmann font-medium leading-5">
                 Showing first 50 results of {filteredMovies.length} movies. Use search to narrow down.
               </div>
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
