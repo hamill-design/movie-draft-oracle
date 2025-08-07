@@ -112,7 +112,7 @@ const MovieSearch = ({
         </div>
         
         {shouldShowResults && (
-          <div className="max-h-60 overflow-hidden flex flex-col justify-start items-center gap-2">
+          <div className="max-h-60 overflow-y-auto flex flex-col justify-start items-center gap-2">
             {loading ? (
               <div className="text-text-primary font-brockmann font-medium text-sm leading-5">Loading movies...</div>
             ) : filteredMoviesByTheme.length === 0 ? (
