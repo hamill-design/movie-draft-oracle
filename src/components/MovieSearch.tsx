@@ -131,7 +131,7 @@ const MovieSearch = ({
                   className={`w-full py-2.5 px-4 rounded cursor-pointer transition-colors flex flex-col justify-start items-start gap-0.5 ${
                     selectedMovie?.id === movie.id
                       ? 'bg-brand-primary'
-                      : 'bg-ui-primary border border-greyscale-blue-200 hover:bg-greyscale-blue-50'
+                      : 'bg-ui-primary border border-greyscale-blue-200 hover:bg-[#EDEBFF] hover:border-[#BCB2FF]'
                   }`}
                 >
                   <div className="w-full flex flex-col justify-start items-start">
