@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { DraftActorPortrait } from './DraftActorPortrait';
 import { getCleanActorName } from '@/lib/utils';
@@ -38,7 +39,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
   // Category display mapping - you can customize the display names here
   const categoryDisplayNames: { [key: string]: string } = {
     'Academy Award Nominee or Winner': 'Academy Award',
-    'Blockbuster (minimum of $50 Mil)': 'Blockbuster ($50M+)',
+    'Blockbuster (minimum of $50 Mil)': 'Blockbuster',
     // Add more mappings as needed
   };
 
@@ -119,3 +120,4 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
 };
 
 export default DraftBoard;
+
