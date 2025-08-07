@@ -1,7 +1,4 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { User } from 'lucide-react';
 import { DraftActorPortrait } from './DraftActorPortrait';
 import { getCleanActorName } from '@/lib/utils';
 
@@ -38,67 +35,83 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
   const actorName = theme === 'people' ? getCleanActorName(draftOption) : '';
 
   return (
-    <Card className="bg-gray-800 border-gray-600 mb-6">
-      <CardHeader>
-        <CardTitle className="text-white">Draft Board</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="text-gray-300 min-w-[180px]">Player</TableHead>
-                {categories.map((category) => (
-                  <TableHead key={category} className="text-gray-300 text-center min-w-[150px]">
-                    {category}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {players.map((player) => {
-                const isCurrentPlayer = currentPlayer && currentPlayer.id === player.id;
-                console.log(`Player ${player.name} (ID: ${player.id}) - Is current: ${isCurrentPlayer}`);
-                
-                return (
-                  <TableRow 
-                    key={player.id}
-                    className={isCurrentPlayer ? "bg-yellow-400/20 border-yellow-400/50" : ""}
-                  >
-                    <TableCell className={`font-medium min-w-[180px] ${isCurrentPlayer ? 'text-yellow-400 font-bold' : 'text-white'}`}>
-                      <div className="flex items-center gap-2">
-                        <User 
-                          size={16} 
-                          className={isCurrentPlayer ? 'text-yellow-400' : ''} 
-                        />
-                        {player.name}
-                      </div>
-                    </TableCell>
-                    {categories.map((category) => {
-                      const pick = picks.find(p => p.playerId === player.id && p.category === category);
-                      return (
-                        <TableCell key={category} className="text-center">
-                          {pick ? (
-                            <div className="text-xs">
-                              <div className="text-white font-medium truncate">{pick.movie.title}</div>
-                              <div className="text-gray-400">
-                                {theme === 'year' ? pick.movie.year : pick.movie.genre}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-gray-600">-</div>
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+    <div className="w-full p-6 bg-ui-primary rounded shadow-[0px_0px_3px_rgba(0,0,0,0.25)] mb-6">
+      <div className="flex flex-col justify-center items-center gap-2 mb-6">
+        <span className="text-text-primary text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
+          DRAFT BOARD
+        </span>
+      </div>
+      
+      <div className="overflow-hidden flex flex-col">
+        {/* Header Row */}
+        <div className="flex justify-center items-start border-b border-purple-700">
+          <div className="w-[120px] py-[14px] px-4 flex flex-col justify-start items-start">
+            <span className="text-purple-700 text-sm font-brockmann font-medium leading-5">Player</span>
+          </div>
+          {categories.map((category, index) => (
+            <div key={category} className="min-w-[150px] py-[14px] px-4 flex flex-col justify-start items-center">
+              <span className="text-purple-700 text-sm font-brockmann font-medium leading-5 text-center">{category}</span>
+            </div>
+          ))}
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Body Rows */}
+        <div className="flex flex-col">
+          {players.map((player) => {
+            const isCurrentPlayer = currentPlayer && currentPlayer.id === player.id;
+            console.log(`Player ${player.name} (ID: ${player.id}) - Is current: ${isCurrentPlayer}`);
+            
+            return (
+              <div 
+                key={player.id}
+                className={`flex justify-center items-center gap-8 py-4 ${
+                  isCurrentPlayer ? 'bg-purple-100' : ''
+                }`}
+              >
+                <div className="w-[88px] flex justify-start items-center gap-2">
+                  <div className="w-4 h-4 relative">
+                    <div 
+                      className={`w-[9.33px] h-1 absolute left-[3.33px] top-[10px] border ${
+                        isCurrentPlayer ? 'border-purple-500' : 'border-greyscale-blue-600'
+                      }`}
+                    />
+                    <div 
+                      className={`w-[5.33px] h-[5.33px] absolute left-[5.33px] top-[2px] border ${
+                        isCurrentPlayer ? 'border-purple-500' : 'border-greyscale-blue-600'
+                      }`}
+                    />
+                  </div>
+                  <span 
+                    className={`text-sm font-brockmann font-medium leading-5 ${
+                      isCurrentPlayer ? 'text-purple-500' : 'text-greyscale-blue-600'
+                    }`}
+                  >
+                    {player.name}
+                  </span>
+                </div>
+                
+                {categories.map((category) => {
+                  const pick = picks.find(p => p.playerId === player.id && p.category === category);
+                  return (
+                    <div key={category} className="w-[140px] min-w-[150px] flex flex-col justify-start items-center">
+                      {pick ? (
+                        <div className="flex flex-col items-center">
+                          <span className="text-text-primary text-xs font-brockmann font-bold leading-4 tracking-[0.24px] text-center">
+                            {pick.movie.title}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-greyscale-blue-600 text-sm font-brockmann font-normal leading-5">-</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 };
 
