@@ -69,18 +69,6 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
                 }`}
               >
                 <div className="w-[88px] flex justify-start items-center gap-2">
-                  <div className="w-4 h-4 relative">
-                    <div 
-                      className={`w-[9.33px] h-1 absolute left-[3.33px] top-[10px] border ${
-                        isCurrentPlayer ? 'border-purple-500' : 'border-greyscale-blue-600'
-                      }`}
-                    />
-                    <div 
-                      className={`w-[5.33px] h-[5.33px] absolute left-[5.33px] top-[2px] border ${
-                        isCurrentPlayer ? 'border-purple-500' : 'border-greyscale-blue-600'
-                      }`}
-                    />
-                  </div>
                   <span 
                     className={`text-sm font-brockmann font-medium leading-5 ${
                       isCurrentPlayer ? 'text-purple-500' : 'text-greyscale-blue-600'
