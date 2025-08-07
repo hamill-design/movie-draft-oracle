@@ -137,7 +137,7 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, hsl(var(--greyscale-blue-100)) 0%, hsl(var(--purple-50)) 50%, hsl(var(--greyscale-blue-100)) 100%)'}}>
+    <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
       <div className="container mx-auto px-4 py-8">
 
         <div className="max-w-4xl mx-auto space-y-8">
