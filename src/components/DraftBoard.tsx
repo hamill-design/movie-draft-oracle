@@ -64,7 +64,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
             return (
               <div 
                 key={player.id}
-                className={`flex justify-start items-center py-4 ${
+                className={`flex justify-start items-center py-3 ${
                   isCurrentPlayer ? 'bg-purple-100' : ''
                 }`}
               >
