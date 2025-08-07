@@ -50,7 +50,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
           </div>
           {categories.map((category, index) => (
             <div key={category} className="min-w-[150px] py-[14px] px-4 flex flex-col justify-start items-center">
-              <span className="text-purple-700 text-sm font-brockmann font-medium leading-5 text-center">{category.replace(/\s*\([^)]*\)/g, "")}</span>
+              <span className="text-purple-700 text-sm font-brockmann font-medium leading-5 text-center">Oscar</span>
             </div>
           ))}
         </div>
