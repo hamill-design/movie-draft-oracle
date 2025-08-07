@@ -137,7 +137,7 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #FCFFFF 0%, #F0F1FF 50%, #FCFFFF 100%)'}}>
+    <div className="min-h-screen bg-ui-bg">
       <div className="container mx-auto px-4 py-8">
 
         <div className="max-w-4xl mx-auto space-y-8">
@@ -160,8 +160,8 @@ const Home = () => {
                 }}
                 className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] border flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                   theme === 'people'
-                    ? 'bg-[#680AFF] border-[#680AFF] text-white'
-                    : 'bg-white border-[#D9E0DF] text-[#2B2D2D] hover:bg-purple-100 hover:border-purple-200 active:bg-purple-200 active:border-purple-300'
+                    ? 'bg-purple-500 border-purple-500 text-white'
+                    : 'bg-ui-primary border-greyscale-blue-200 text-text-primary hover:bg-purple-100 hover:border-purple-200 active:bg-purple-200 active:border-purple-300'
                 }`}
               >
                 <div className="w-6 h-6 flex justify-center items-center">
@@ -177,8 +177,8 @@ const Home = () => {
                 }}
                 className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] border flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                   theme === 'year'
-                    ? 'bg-[#680AFF] border-[#680AFF] text-white'
-                    : 'bg-white border-[#D9E0DF] text-[#2B2D2D] hover:bg-purple-100 hover:border-purple-200 active:bg-purple-200 active:border-purple-300'
+                    ? 'bg-purple-500 border-purple-500 text-white'
+                    : 'bg-ui-primary border-greyscale-blue-200 text-text-primary hover:bg-purple-100 hover:border-purple-200 active:bg-purple-200 active:border-purple-300'
                 }`}
               >
                 <div className="w-6 h-6 flex justify-center items-center">
@@ -236,7 +236,7 @@ const Home = () => {
                               </div>
                               <div className="flex-1 pb-0.5 flex flex-col justify-start items-start gap-0.5">
                                 <div className="self-stretch flex flex-col justify-start items-start">
-                                  <span className="text-[#2B2D2D] text-base font-semibold leading-6 tracking-[0.32px] font-brockmann">
+                                  <span className="text-text-primary text-base font-semibold leading-6 tracking-[0.32px] font-brockmann">
                                     {person.name}
                                   </span>
                                 </div>
@@ -277,12 +277,12 @@ const Home = () => {
                             variant={selectedOption === year ? 'default' : 'outline'}
                             className={`h-12 text-sm font-brockmann-medium transition-colors ${
                               selectedOption === year
-                                ? 'bg-[#680AFF] text-white hover:bg-[#680AFF] border-0'
-                                : 'bg-white text-[#2B2D2D] border-0 hover:bg-[#EDEBFF] active:bg-gray-100'
+                                ? 'bg-purple-500 text-white hover:bg-purple-500 border-0'
+                                : 'bg-ui-primary text-text-primary border-0 hover:bg-purple-100 active:bg-greyscale-blue-150'
                             }`}
                             style={{
                               borderRadius: '6px',
-                              outline: selectedOption === year ? '1px solid #680AFF' : '0.5px solid #2B2D2D',
+                              outline: selectedOption === year ? '1px solid hsl(var(--purple-500))' : '0.5px solid hsl(var(--text-primary))',
                               outlineOffset: '-1px'
                             }}
                           >
@@ -321,8 +321,8 @@ const Home = () => {
                   onClick={() => setDraftMode('single')}
                   className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] border flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                     draftMode === 'single'
-                      ? 'bg-[#680AFF] border-[#680AFF] text-white'
-                      : 'bg-white border-[#D9E0DF] text-[#2B2D2D] hover:bg-[#EDEBFF] hover:border-[#EDEBFF] active:bg-[#BCB2FF] active:border-[#9333ea]'
+                      ? 'bg-purple-500 border-purple-500 text-white'
+                      : 'bg-ui-primary border-greyscale-blue-200 text-text-primary hover:bg-purple-100 hover:border-purple-100 active:bg-purple-200 active:border-purple-300'
                   }`}
                 >
                   <div className="w-6 h-6 flex justify-center items-center">
@@ -335,8 +335,8 @@ const Home = () => {
                   onClick={() => setDraftMode('multiplayer')}
                   className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] border flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                     draftMode === 'multiplayer'
-                      ? 'bg-[#680AFF] border-[#680AFF] text-white'
-                      : 'bg-white border-[#D9E0DF] text-[#2B2D2D] hover:bg-[#EDEBFF] hover:border-[#EDEBFF] active:bg-[#BCB2FF] active:border-[#9333ea]'
+                      ? 'bg-purple-500 border-purple-500 text-white'
+                      : 'bg-ui-primary border-greyscale-blue-200 text-text-primary hover:bg-purple-100 hover:border-purple-100 active:bg-purple-200 active:border-purple-300'
                   }`}
                 >
                   <div className="w-6 h-6 flex justify-center items-center">
@@ -346,12 +346,12 @@ const Home = () => {
                 </button>
               </div>
               {draftMode === 'multiplayer' && (
-                <div className="self-stretch p-4 bg-[#EBFFFA] rounded border border-[#03946D] flex flex-col">
+                <div className="self-stretch p-4 bg-teal-100 rounded border border-teal-700 flex flex-col">
                   <div className="self-stretch flex flex-col">
-                    <span className="text-[#03946D] text-sm font-bold leading-5 font-brockmann">
+                    <span className="text-teal-700 text-sm font-bold leading-5 font-brockmann">
                       Multiplayer Mode:
                     </span>
-                    <span className="text-[#03946D] text-sm font-medium leading-5 font-brockmann">
+                    <span className="text-teal-700 text-sm font-medium leading-5 font-brockmann">
                       {" "}Enter email addresses of friends you want to invite. They'll receive an email invitation to join your draft.
                     </span>
                   </div>
@@ -367,7 +367,7 @@ const Home = () => {
                 <div className="w-6 h-6 flex justify-center items-center">
                   <MultiPersonIcon className="w-6 h-6 text-primary" />
                 </div>
-                <span className="text-[#2B2D2D] text-xl font-brockmann font-medium leading-7">
+                <span className="text-text-primary text-xl font-brockmann font-medium leading-7">
                   Add Participants
                 </span>
               </div>
@@ -382,22 +382,22 @@ const Home = () => {
                 />
                 <button 
                   onClick={handleAddParticipant} 
-                  className="px-4 py-2 bg-[#680AFF] text-white text-sm font-brockmann font-medium leading-5 rounded-[2px] flex justify-center items-center"
+                  className="px-4 py-2 bg-purple-500 text-white text-sm font-brockmann font-medium leading-5 rounded-[2px] flex justify-center items-center"
                 >
                   Add
                 </button>
               </div>
 
               {draftMode === 'multiplayer' && (
-                <div className="p-4 bg-[#EBFFFA] border border-[#03946D] rounded flex items-center gap-2">
+                <div className="p-4 bg-teal-100 border border-teal-700 rounded flex items-center gap-2">
                   <div className="w-6 h-6 flex justify-center items-center">
-                    <EmailIcon className="w-6 h-6 text-[#03946D]" />
+                    <EmailIcon className="w-6 h-6 text-teal-700" />
                   </div>
                   <div className="flex-1">
-                    <span className="text-[#03946D] text-sm font-brockmann font-bold leading-5">
+                    <span className="text-teal-700 text-sm font-brockmann font-bold leading-5">
                       Multiplayer Mode:
                     </span>
-                    <span className="text-[#03946D] text-sm font-brockmann font-medium leading-5">
+                    <span className="text-teal-700 text-sm font-brockmann font-medium leading-5">
                       {" "}Enter email addresses of friends you want to invite. They'll receive an email invitation to join.
                     </span>
                   </div>
@@ -407,7 +407,7 @@ const Home = () => {
               {participants.length > 0 && (
                 <div className="flex flex-col gap-3">
                   <div>
-                    <span className="text-[#646968] text-base font-brockmann leading-6">
+                    <span className="text-greyscale-blue-600 text-base font-brockmann leading-6">
                       Participants ({participants.length}):
                     </span>
                   </div>
@@ -415,14 +415,14 @@ const Home = () => {
                     {participants.map((participant) => (
                       <div
                         key={participant}
-                        className={`py-2 px-4 pr-2.5 bg-[#D3CFFF] rounded flex items-center gap-2 ${
+                        className={`py-2 px-4 pr-2.5 bg-purple-150 rounded flex items-center gap-2 ${
                           draftMode === 'multiplayer' && !isEmailValid(participant)
                             ? 'bg-red-200 border border-red-500'
                             : ''
                         }`}
                       >
                         {draftMode === 'multiplayer' && <Mail size={16} className="text-primary" />}
-                        <span className="text-[#2B2D2D] text-sm font-brockmann font-medium leading-5">
+                        <span className="text-text-primary text-sm font-brockmann font-medium leading-5">
                           {participant}
                         </span>
                         {draftMode === 'multiplayer' && !isEmailValid(participant) && (

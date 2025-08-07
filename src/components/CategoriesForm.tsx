@@ -95,7 +95,7 @@ const CustomCheckbox = ({
         {checkmarkElement}
       </div>
       <span style={{
-        color: 'var(--Text-Primary, #2B2D2D)',
+        color: 'hsl(var(--text-primary))',
         fontSize: 14,
         fontFamily: 'Brockmann',
         fontWeight: '500',

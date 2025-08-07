@@ -73,42 +73,130 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Light theme gradient background */
-    --background: 0 0% 100%;
-    --background-gradient: linear-gradient(140deg, #FCFFFF 0%, #F0F1FF 50%, #FCFFFF 100%);
-    --foreground: 220 13% 17%;
+    /* UI Background */
+    --background: 57 100% 98%; /* #fffff7 */
+    --background-gradient: linear-gradient(140deg, hsl(220 100% 99%) 0%, hsl(243 100% 96%) 50%, hsl(220 100% 99%) 100%);
+    --foreground: 195 6% 18%; /* Greyscale Blue 800 */
 
     /* Card and container backgrounds */
-    --card: 220 20% 99%;
-    --card-foreground: 220 13% 17%;
+    --card: 0 0% 100%; /* UI Primary - White */
+    --card-foreground: 195 6% 18%;
 
-    --popover: 220 20% 99%;
-    --popover-foreground: 220 13% 17%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 195 6% 18%;
 
-    /* Brand Colors - Design System */
-    --brand-primary: 262 100% 52%; /* #680AFF */
+    /* Brand Colors - Purple Scale */
+    --brand-primary: 262 100% 52%; /* Purple 500 #680AFF */
     --brand-primary-foreground: 0 0% 100%;
-    --purple-150: 255 100% 90%; /* #D3CFFF */
-    --purple-200: 252 100% 85%; /* #BCB2FF */
-    --purple-300: 245 100% 79%; /* #907AFF */
     
-    /* Greyscale System */
-    --greyscale-blue-900: 210 26% 6%; /* #0E0F0F */
-    --greyscale-blue-800: 210 10% 17%; /* #2B2D2D */
-    --greyscale-blue-700: 210 8% 29%; /* #474B4B */
-    --greyscale-blue-600: 210 7% 40%; /* #646968 */
-    --greyscale-blue-500: 210 6% 52%; /* #828786 */
-    --greyscale-blue-200: 180 6% 85%; /* #D9E0DF */
-    --greyscale-blue-100: 220 20% 99%; /* #FCFFFF */
+    /* Purple Scale */
+    --purple-50: 243 100% 98%; /* #f8f7ff */
+    --purple-100: 243 100% 96%; /* #edebff */
+    --purple-150: 244 100% 91%; /* #d3cfff */
+    --purple-200: 244 100% 86%; /* #bcb2ff */
+    --purple-300: 244 100% 74%; /* #907aff */
+    --purple-400: 244 100% 63%; /* #7b42ff */
+    --purple-500: 262 100% 52%; /* #680aff */
+    --purple-600: 262 92% 41%; /* #5106c9 */
+    --purple-700: 262 94% 30%; /* #3b0394 */
+    --purple-800: 262 96% 19%; /* #25015e */
+    --purple-900: 262 100% 8%; /* #100029 */
     
-    /* UI Colors */
-    --ui-primary: 0 0% 100%; /* white */
-    --text-primary: 210 10% 17%; /* #2B2D2D */
+    /* Greyscale Blue Scale */
+    --greyscale-blue-100: 195 100% 99%; /* #fcffff */
+    --greyscale-blue-150: 180 14% 93%; /* #ebf0ef */
+    --greyscale-blue-200: 180 6% 85%; /* #d9e0df */
+    --greyscale-blue-300: 150 6% 75%; /* #bdc3c2 */
+    --greyscale-blue-400: 150 3% 63%; /* #9ca3a2 */
+    --greyscale-blue-500: 120 3% 52%; /* #828786 */
+    --greyscale-blue-600: 120 3% 40%; /* #646968 */
+    --greyscale-blue-700: 120 3% 29%; /* #474b4b */
+    --greyscale-blue-800: 195 6% 18%; /* #2b2d2d */
+    --greyscale-blue-900: 210 7% 6%; /* #0e0f0f */
     
-    /* Accent Colors */
-    --yellow-500: 48 100% 52%; /* #FFD60A */
-    --teal-100: 165 100% 95%; /* #EBFFFA */
-    --teal-700: 166 97% 30%; /* #03946D */
+    /* Greyscale Scale */
+    --greyscale-100: 0 0% 100%; /* #ffffff */
+    --greyscale-200: 0 0% 90%; /* #e5e5e5 */
+    --greyscale-300: 0 0% 80%; /* #cccccc */
+    --greyscale-400: 0 0% 70%; /* #b2b2b2 */
+    --greyscale-500: 0 0% 60%; /* #999999 */
+    --greyscale-600: 0 0% 50%; /* #808080 */
+    --greyscale-700: 0 0% 40%; /* #666666 */
+    --greyscale-800: 0 0% 30%; /* #4d4d4d */
+    --greyscale-900: 0 0% 20%; /* #333333 */
+    --greyscale-1000: 0 0% 10%; /* #1a1a1a */
+    
+    /* Orange Scale */
+    --orange-100: 30 100% 95%; /* #fff3eb */
+    --orange-200: 30 100% 85%; /* #ffd1b2 */
+    --orange-300: 30 100% 74%; /* #ffaf7a */
+    --orange-400: 30 100% 63%; /* #ff8e42 */
+    --orange-500: 30 100% 52%; /* #ff6c0a */
+    --orange-600: 30 95% 41%; /* #c95406 */
+    --orange-700: 30 97% 30%; /* #943d03 */
+    --orange-800: 30 98% 19%; /* #5e2601 */
+    --orange-900: 30 100% 8%; /* #291000 */
+    
+    /* Yellow Scale */
+    --yellow-100: 48 100% 95%; /* #fffceb */
+    --yellow-200: 48 100% 85%; /* #fff2b2 */
+    --yellow-300: 48 100% 74%; /* #ffe97a */
+    --yellow-400: 48 100% 63%; /* #ffdf42 */
+    --yellow-500: 48 100% 52%; /* #ffd60a */
+    --yellow-600: 48 95% 41%; /* #c9a806 */
+    --yellow-700: 48 97% 30%; /* #947c03 */
+    --yellow-800: 48 98% 19%; /* #5e4f01 */
+    --yellow-900: 48 100% 8%; /* #292200 */
+    
+    /* Teal Scale */
+    --teal-100: 165 100% 95%; /* #ebfffa */
+    --teal-200: 165 100% 85%; /* #b2ffea */
+    --teal-300: 165 100% 74%; /* #7affdc */
+    --teal-400: 165 100% 63%; /* #42ffcd */
+    --teal-500: 165 100% 52%; /* #0affbe */
+    --teal-600: 165 95% 41%; /* #06c995 */
+    --teal-700: 165 97% 30%; /* #03946d */
+    --teal-800: 165 98% 19%; /* #015e45 */
+    --teal-900: 165 100% 8%; /* #00291e */
+    
+    /* Blue Scale */
+    --blue-100: 195 100% 95%; /* #ebf9ff */
+    --blue-200: 195 100% 85%; /* #b2e8ff */
+    --blue-300: 195 100% 74%; /* #7ad7ff */
+    --blue-400: 195 100% 63%; /* #42c6ff */
+    --blue-500: 195 100% 52%; /* #0ab5ff */
+    --blue-600: 195 95% 41%; /* #068ec9 */
+    --blue-700: 195 97% 30%; /* #036994 */
+    --blue-800: 195 98% 19%; /* #01425e */
+    --blue-900: 195 100% 8%; /* #001d29 */
+    
+    /* Error Red Scale */
+    --error-red-100: 0 100% 95%; /* #ffebeb */
+    --error-red-200: 0 100% 85%; /* #ffc0c0 */
+    --error-red-300: 0 100% 74%; /* #ff9696 */
+    --error-red-400: 0 100% 63%; /* #ff6c6c */
+    --error-red-500: 0 100% 52%; /* #ff4242 */
+    --error-red-600: 0 95% 41%; /* #ce0606 */
+    --error-red-700: 0 97% 30%; /* #9e0303 */
+    --error-red-800: 0 98% 19%; /* #6e0101 */
+    --error-red-900: 0 100% 8%; /* #3d0000 */
+    
+    /* Positive Green Scale */
+    --positive-green-100: 135 100% 95%; /* #ebfff4 */
+    --positive-green-200: 135 83% 85%; /* #adf2cc */
+    --positive-green-300: 135 81% 74%; /* #74e7a8 */
+    --positive-green-400: 135 78% 63%; /* #41da86 */
+    --positive-green-500: 135 82% 44%; /* #13ce66 */
+    --positive-green-600: 135 82% 38%; /* #0cb257 */
+    --positive-green-700: 135 88% 26%; /* #067c3b */
+    --positive-green-800: 135 92% 16%; /* #025326 */
+    --positive-green-900: 135 100% 8%; /* #002912 */
+    
+    /* UI Tokens */
+    --ui-primary: 0 0% 100%; /* Base White */
+    --ui-bg: 57 100% 98%; /* #fffff7 */
+    --ui-highlight: 48 100% 74%; /* Yellow 300 */
+    --text-primary: 195 6% 18%; /* Greyscale Blue 800 */
 
     /* Component tokens */
     --primary: 262 100% 52%;
