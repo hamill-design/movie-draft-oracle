@@ -457,7 +457,7 @@ const Home = () => {
                     className="bg-yellow-500 hover:bg-yellow-600 text-greyscale-blue-800 font-brockmann font-semibold px-6 py-3 text-base rounded-sm tracking-wide"
                     size="lg"
                   >
-                    {draftMode === 'multiplayer' ? 'Create Multiplayer Draft' : 'Start Solo Draft'}
+                    {draftMode === 'multiplayer' ? 'Create Multiplayer Draft' : 'Start Draft'}
                   </Button>
                 </div>
               </form>
