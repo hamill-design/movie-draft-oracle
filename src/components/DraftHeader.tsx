@@ -26,8 +26,8 @@ const DraftHeader = ({
       
 
       {/* Draft Info */}
-      <Card className="bg-gray-800 border-gray-600 mb-6">
-        <CardContent className="p-6">
+      <div className="mb-6">
+        <div className="p-6">
           <div className="flex flex-col justify-center items-center gap-4">
             <span className="text-text-primary text-[32px] font-brockmann font-medium leading-[36px] tracking-[1.28px]">
               NOW DRAFTING
@@ -49,8 +49,8 @@ const DraftHeader = ({
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </>;
 };
 export default DraftHeader;
