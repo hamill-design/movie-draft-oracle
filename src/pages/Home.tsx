@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ThemeButton } from '@/components/ui/theme-button';
 import { Trash2, Users, User, Calendar, Film, Search, Mail } from 'lucide-react';
-import { FilmReelIcon, PersonIcon, CalendarIcon, SearchIcon, EmailIcon, CheckboxIcon, MultiPersonIcon } from '@/components/icons';
+import { FilmReelIcon, PersonIcon, CalendarIcon, SearchIcon, EmailIcon, CheckboxIcon, MultiPersonIcon, TrashIcon } from '@/components/icons';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActorPortrait } from '@/components/ActorPortrait';
@@ -432,8 +432,8 @@ const Home = () => {
                           onClick={() => handleRemoveParticipant(participant)}
                           className="p-1 rounded-md hover:bg-red-600 transition-colors"
                         >
-                          <div className="w-4 h-4 p-0.5 flex justify-center items-center">
-                            <div className="w-full h-[13px] bg-[#2B2D2D]"></div>
+                          <div className="w-4 h-4 flex justify-center items-center">
+                            <TrashIcon className="w-4 h-4 text-current" />
                           </div>
                         </button>
                       </div>
