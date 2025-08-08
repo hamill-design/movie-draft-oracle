@@ -56,9 +56,9 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
       </div>
       
       <div className="w-full overflow-x-auto">
-        <div className="w-full">
+        <div className="w-full" style={{ minWidth: `${128 + (categories.length * 150)}px` }}>
           {/* Header Row */}
-          <div className="flex border-b border-purple-700">
+          <div className="flex border-b border-purple-700" style={{ minWidth: `${128 + (categories.length * 150)}px` }}>
             <div className="min-w-[128px] py-[14px] px-4 flex flex-col justify-start items-start">
               <span className="text-purple-700 text-sm font-brockmann font-medium leading-5">Player</span>
             </div>
@@ -83,6 +83,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
                   className={`flex py-3 ${
                     isCurrentPlayer ? 'bg-purple-100' : ''
                   }`}
+                  style={{ minWidth: `${128 + (categories.length * 150)}px` }}
                 >
                   <div className="min-w-[128px] py-[14px] px-4 flex flex-col justify-start items-start">
                     <span 
