@@ -59,11 +59,11 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
         <div className="w-full" style={{ minWidth: `${128 + (categories.length * 150)}px` }}>
           {/* Header Row */}
           <div className="flex border-b border-purple-700" style={{ minWidth: `${128 + (categories.length * 150)}px` }}>
-            <div className="min-w-[128px] py-[14px] px-4 flex flex-col justify-start items-start">
+            <div className="min-w-[128px] py-3 px-4 flex flex-col justify-center items-start">
               <span className="text-purple-700 text-sm font-brockmann font-medium leading-5">Player</span>
             </div>
             {categories.map((category, index) => (
-              <div key={category} className="flex-1 min-w-[150px] py-[14px] px-4 flex flex-col justify-start items-center">
+              <div key={category} className="flex-1 min-w-[150px] py-3 px-4 flex flex-col justify-center items-center">
                 <span className="text-purple-700 text-sm font-brockmann font-medium leading-5 text-center">
                   {getCategoryDisplayName(category)}
                 </span>
@@ -85,7 +85,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
                   }`}
                   style={{ minWidth: `${128 + (categories.length * 150)}px` }}
                 >
-                  <div className="min-w-[128px] py-[14px] px-4 flex flex-col justify-start items-start">
+                  <div className="min-w-[128px] py-3 px-4 flex flex-col justify-center items-start">
                     <span 
                       className={`text-sm font-brockmann font-medium leading-5 ${
                         isCurrentPlayer ? 'text-purple-500' : 'text-greyscale-blue-600'
@@ -98,7 +98,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
                   {categories.map((category) => {
                     const pick = picks.find(p => p.playerId === player.id && p.category === category);
                     return (
-                      <div key={category} className="flex-1 min-w-[150px] flex flex-col justify-start items-center">
+                      <div key={category} className="flex-1 min-w-[150px] py-3 px-4 flex flex-col justify-center items-center">
                         {pick ? (
                           <div className="flex flex-col items-center">
                             <span className="text-text-primary text-sm font-brockmann font-semibold leading-5 tracking-[0.24px] text-center">
