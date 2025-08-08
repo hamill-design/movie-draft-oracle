@@ -56,7 +56,7 @@ const CategorySelection = ({
             <div className="w-5 h-5 bg-[#680AFF]" />
           </div>
           <div className="flex-1 text-[#2B2D2D] text-xl font-brockmann font-medium leading-7">
-            Search Movies featuring {selectedMovie.title}
+            Select Category for {selectedMovie.title}
           </div>
         </div>
         <div className="w-full flex flex-col">
