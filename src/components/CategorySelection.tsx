@@ -84,7 +84,7 @@ const CategorySelection = ({
       </div>
 
       {/* Category Buttons Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-[12px] gap-y-[12px] justify-items-start">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-[12px] gap-y-[12px]">
         {categories.map((category) => {
           const isAlreadyPicked = picks.some(p => p.playerId === currentPlayerId && p.category === category);
           const isEligible = eligibleCategories.includes(category);
@@ -96,7 +96,7 @@ const CategorySelection = ({
               <button
                 key={category}
                 onClick={() => onCategorySelect(category)}
-                className="w-[294px] px-6 py-3 bg-brand-primary rounded text-ui-primary text-sm font-brockmann font-medium leading-5 text-center"
+                className="w-full px-6 py-3 bg-brand-primary rounded text-ui-primary text-sm font-brockmann font-medium leading-5 text-center"
                 title={getCategoryTooltip(category)}
               >
                 {category}
@@ -109,7 +109,7 @@ const CategorySelection = ({
               <button
                 key={category}
                 disabled
-                className="w-[294px] px-6 py-3 opacity-50 bg-greyscale-blue-200 rounded-md border border-greyscale-blue-300 flex items-center justify-center gap-2 cursor-not-allowed"
+                className="w-full px-6 py-3 opacity-50 bg-greyscale-blue-200 rounded-md border border-greyscale-blue-300 flex items-center justify-center gap-2 cursor-not-allowed"
                 title={getCategoryTooltip(category)}
               >
                 <span className="text-greyscale-blue-800 text-sm font-brockmann font-medium leading-5 text-center">
@@ -124,7 +124,7 @@ const CategorySelection = ({
             <button
               key={category}
               onClick={() => onCategorySelect(category)}
-              className="w-[294px] px-6 py-3 bg-white rounded border border-greyscale-blue-200 text-text-primary text-sm font-brockmann font-medium leading-5 text-center hover:bg-greyscale-blue-50"
+              className="w-full px-6 py-3 bg-white rounded border border-greyscale-blue-200 text-text-primary text-sm font-brockmann font-medium leading-5 text-center hover:bg-greyscale-blue-50"
               title={getCategoryTooltip(category)}
             >
               {category}
