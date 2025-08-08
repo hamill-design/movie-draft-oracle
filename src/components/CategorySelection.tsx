@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getEligibleCategories } from '@/utils/movieCategoryUtils';
 import { SearchIcon } from '@/components/icons/SearchIcon';
+import { CheckboxIcon } from '@/components/icons/CheckboxIcon';
 import { NAIcon } from '@/components/icons/NAIcon';
 
 interface Pick {
@@ -53,7 +54,7 @@ const CategorySelection = ({
       <div className="w-full h-full flex flex-col gap-1.5">
         <div className="w-full flex items-center gap-2">
           <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
-            <div className="w-5 h-5 bg-[#680AFF]" />
+            <CheckboxIcon className="w-6 h-6 text-[#680AFF]" />
           </div>
           <div className="flex-1 text-[#2B2D2D] text-xl font-brockmann font-medium leading-7">
             Select Category for {selectedMovie.title}
