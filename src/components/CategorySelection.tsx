@@ -124,7 +124,7 @@ const CategorySelection = ({
             <button
               key={category}
               onClick={() => onCategorySelect(category)}
-              className="w-full px-6 py-3 bg-[#EDEBFF] rounded outline outline-1 outline-[#BCB2FF] outline-offset-[-1px] text-[#2B2D2D] text-sm font-brockmann font-medium leading-5 text-center hover:bg-[#E5E1FF]"
+              className="w-full px-6 py-3 bg-white rounded border border-greyscale-blue-200 text-text-primary text-sm font-brockmann font-medium leading-5 text-center hover:bg-[#EDEBFF] hover:outline hover:outline-1 hover:outline-[#BCB2FF] hover:outline-offset-[-1px] hover:text-[#2B2D2D] hover:border-transparent"
               title={getCategoryTooltip(category)}
             >
               {category}
