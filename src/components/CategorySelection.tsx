@@ -50,37 +50,40 @@ const CategorySelection = ({
   return (
     <div className="w-full p-6 bg-greyscale-blue-100 shadow-[0px_0px_3px_rgba(0,0,0,0.25)] rounded flex flex-col gap-6">
       {/* Header Section */}
-      <div className="flex flex-col gap-1.5">
-        {/* Title with Search Icon */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center p-0.5">
-            <SearchIcon className="w-6 h-6 text-brand-primary" />
+      <div className="w-full h-full flex flex-col gap-1.5">
+        <div className="w-full flex items-center gap-2">
+          <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
+            <div className="w-5 h-5 bg-[#680AFF]" />
           </div>
-          <div className="flex-1 text-text-primary text-xl font-brockmann font-medium leading-7">
+          <div className="flex-1 text-[#2B2D2D] text-xl font-brockmann font-medium leading-7">
             Search Movies featuring {selectedMovie.title}
           </div>
         </div>
-        
-        {/* Eligibility Information */}
-        {eligibleCategories.length > 0 && (
-          <div className="flex flex-col">
-            <div className="text-greyscale-blue-500 text-xs font-brockmann italic leading-4">
-              Based on this movie's properties, you can select from {eligibleCategories.length} eligible categories.
+        <div className="w-full flex flex-col">
+          <div className="w-full flex flex-col gap-1">
+            <div className="w-full flex flex-col">
+              <div className="w-full text-[#828786] text-xs font-brockmann italic font-normal leading-4">
+                Based on this movie's properties, you can select from {eligibleCategories.length} eligible categories.
+              </div>
             </div>
             {selectedMovie.hasOscar && (
-              <div className="text-brand-primary text-sm font-brockmann leading-5">
-                Eligible for Academy Award category (Has Oscar nominations/wins)
+              <div className="w-full flex flex-col">
+                <div className="w-full text-[#680AFF] text-sm font-brockmann font-normal leading-5">
+                  Eligible for Academy Award category (Has Oscar nominations/wins)
+                </div>
               </div>
             )}
             {selectedMovie.isBlockbuster && (
-              <div className="text-teal-600 text-sm font-brockmann leading-5">
-                Eligible for Blockbuster category 
-                {selectedMovie.budget > 0 && ` (Budget: $${(selectedMovie.budget / 1000000).toFixed(0)}M)`}
-                {selectedMovie.revenue > 0 && ` (Revenue: $${(selectedMovie.revenue / 1000000).toFixed(0)}M)`}
+              <div className="w-full flex flex-col">
+                <div className="w-full text-[#06C995] text-sm font-brockmann font-normal leading-5">
+                  Eligible for Blockbuster category 
+                  {selectedMovie.budget > 0 && ` (Budget: $${(selectedMovie.budget / 1000000).toFixed(0)}M)`}
+                  {selectedMovie.revenue > 0 && ` (Revenue: $${(selectedMovie.revenue / 1000000).toFixed(0)}M)`}
+                </div>
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Category Buttons Grid */}
