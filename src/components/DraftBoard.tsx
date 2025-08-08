@@ -56,14 +56,14 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
       </div>
       
       <div className="w-full overflow-x-auto">
-        <div className="min-w-full inline-block">
+        <div className="w-full">
           {/* Header Row */}
-          <div className="flex justify-start items-start border-b border-purple-700" style={{ minWidth: `${120 + (categories.length * 150)}px` }}>
-            <div className="w-[120px] min-w-[120px] py-[14px] px-4 flex flex-col justify-start items-start">
+          <div className="flex border-b border-purple-700">
+            <div className="min-w-[128px] py-[14px] px-4 flex flex-col justify-start items-start">
               <span className="text-purple-700 text-sm font-brockmann font-medium leading-5">Player</span>
             </div>
             {categories.map((category, index) => (
-              <div key={category} className="min-w-[150px] w-[150px] py-[14px] px-4 flex flex-col justify-start items-center">
+              <div key={category} className="flex-1 min-w-[150px] py-[14px] px-4 flex flex-col justify-start items-center">
                 <span className="text-purple-700 text-sm font-brockmann font-medium leading-5 text-center">
                   {getCategoryDisplayName(category)}
                 </span>
@@ -80,12 +80,11 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
               return (
                 <div 
                   key={player.id}
-                  className={`flex justify-start items-center py-3 ${
+                  className={`flex py-3 ${
                     isCurrentPlayer ? 'bg-purple-100' : ''
                   }`}
-                  style={{ minWidth: `${120 + (categories.length * 150)}px` }}
                 >
-                  <div className="w-[120px] min-w-[120px] py-[14px] px-4 flex flex-col justify-start items-start">
+                  <div className="min-w-[128px] py-[14px] px-4 flex flex-col justify-start items-start">
                     <span 
                       className={`text-sm font-brockmann font-medium leading-5 ${
                         isCurrentPlayer ? 'text-purple-500' : 'text-greyscale-blue-600'
@@ -98,7 +97,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
                   {categories.map((category) => {
                     const pick = picks.find(p => p.playerId === player.id && p.category === category);
                     return (
-                      <div key={category} className="w-[150px] min-w-[150px] flex flex-col justify-start items-center">
+                      <div key={category} className="flex-1 min-w-[150px] flex flex-col justify-start items-center">
                         {pick ? (
                           <div className="flex flex-col items-center">
                             <span className="text-text-primary text-sm font-brockmann font-semibold leading-5 tracking-[0.24px] text-center">
