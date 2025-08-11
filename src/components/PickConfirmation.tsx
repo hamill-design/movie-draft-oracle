@@ -42,7 +42,7 @@ const PickConfirmation = ({
         </div>
         <button
           onClick={onConfirm}
-          className="px-6 py-3 bg-[#FFD60A] rounded-sm text-[#2B2D2D] text-base font-brockmann font-semibold leading-6 tracking-[0.32px] text-center"
+          className="px-6 py-3 bg-[#FFD60A] rounded-[2px] text-[#2B2D2D] text-base font-brockmann font-semibold leading-6 tracking-[0.32px] text-center"
         >
           Confirm Pick
         </button>
