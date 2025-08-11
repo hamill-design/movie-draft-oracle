@@ -138,26 +138,22 @@ const Profile = () => {
     <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={() => navigate('/')}
-              variant="outline"
-              size="sm"
-              className="border-gray-600 text-gray-300 hover:bg-gray-700"
-            >
-              <ArrowLeft size={16} className="mr-2" />
-              Back to Home
-            </Button>
-            <h1 className="text-3xl font-bold text-white">My Profile</h1>
+        <div className="w-full h-full justify-between items-center inline-flex mb-8">
+          <div className="justify-start items-center gap-4 flex">
+            <div className="flex-col justify-start items-start inline-flex">
+              <div className="justify-center flex flex-col text-greyscale-blue-900 text-5xl font-chaney font-normal leading-[52px] tracking-[1.92px]">
+                Profile
+              </div>
+            </div>
           </div>
-          <Button
+          <div 
             onClick={handleSignOut}
-            variant="outline"
-            className="border-gray-600 text-gray-300 hover:bg-gray-700"
+            className="px-4 py-2 bg-purple-150 rounded-[2px] justify-center items-center flex cursor-pointer hover:bg-purple-200 transition-colors"
           >
-            Sign Out
-          </Button>
+            <div className="text-center justify-center flex flex-col text-text-primary text-sm font-brockmann font-medium leading-5">
+              Sign Out
+            </div>
+          </div>
         </div>
 
         {/* Banner Ad - Hidden for now */}
