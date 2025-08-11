@@ -263,13 +263,9 @@ const Profile = () => {
                               </h3>
                             </div>
                             <div className="mb-2">
-                              {draft.is_multiplayer ? (
-                                <Badge variant="default">Multiplayer</Badge>
-                              ) : (
-                                <div data-property-1="Variant2" style={{width: '100%', height: '100%', paddingLeft: '12px', paddingRight: '12px', paddingTop: '4px', paddingBottom: '4px', background: 'var(--Purple-100, #EDEBFF)', borderRadius: '9999px', outline: '0.50px var(--Purple-700, #3B0394) solid', outlineOffset: '-0.50px', justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
-                                  <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Purple-700, #3B0394)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '16px', wordWrap: 'break-word'}}>Local</div>
-                                </div>
-                              )}
+                              <Badge variant={draft.is_multiplayer ? "default" : "secondary"}>
+                                {draft.is_multiplayer ? 'Multiplayer' : 'Local'}
+                              </Badge>
                               {draft.is_complete && (
                                 <Badge variant="secondary" className="ml-2 bg-green-600 text-white">
                                   Complete
