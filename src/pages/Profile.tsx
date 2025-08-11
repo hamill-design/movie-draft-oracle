@@ -235,82 +235,78 @@ const Profile = () => {
               <div className="grid gap-4">
                 {drafts.map((draft, index) => (
                   <div key={draft.id}>
-                    <div style={{width: '100%', height: '100%', padding: 24, background: 'var(--UI-Primary, white)', boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', borderRadius: 8, outline: '1px var(--Greyscale-(Blue)-200, #D9E0DF) solid', outlineOffset: '-1px', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex', flexWrap: 'wrap', alignContent: 'center'}}>
-                      <div style={{flex: '1 1 0', minWidth: 240, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 16, display: 'inline-flex'}}>
-                        <div style={{justifyContent: 'flex-start', alignItems: 'flex-start', gap: 12, display: 'inline-flex'}}>
+                    <div className="w-full p-6 bg-white shadow-sm rounded-lg border border-gray-200 flex flex-wrap items-center justify-between gap-4">
+                      {/* Left Section - Content */}
+                      <div className="flex-1 min-w-60 flex flex-col gap-4">
+                        {/* Header with portrait and title */}
+                        <div className="flex items-start gap-3">
                           {draft.theme === 'people' ? (
-                            <div style={{width: 56, alignSelf: 'stretch', borderRadius: 4, overflow: 'hidden'}}>
+                            <div className="w-14 h-14 rounded overflow-hidden flex-shrink-0">
                               <DraftActorPortrait 
                                 actorName={getCleanActorName(draft.option)}
                                 size="lg"
                               />
                             </div>
                           ) : (
-                            <div style={{width: 56, height: 56, borderRadius: 4, background: 'var(--Greyscale-(Blue)-200, #D9E0DF)', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                            <div className="w-14 h-14 rounded bg-gray-200 flex items-center justify-center flex-shrink-0">
                               {draft.theme === 'year' ? (
-                                <Calendar size={24} style={{color: 'var(--Greyscale-(Blue)-500, #828786)'}} />
+                                <Calendar size={24} className="text-gray-500" />
                               ) : (
-                                <User size={24} style={{color: 'var(--Greyscale-(Blue)-500, #828786)'}} />
+                                <User size={24} className="text-gray-500" />
                               )}
                             </div>
                           )}
-                          <div style={{flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 8, display: 'inline-flex'}}>
-                            <div style={{flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex'}}>
-                              <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-800, #2B2D2D)', fontSize: 18, fontFamily: 'Brockmann', fontWeight: '600', lineHeight: 24, wordWrap: 'break-word'}}>
-                                {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
-                              </div>
-                            </div>
-                            <div style={{alignSelf: 'stretch', height: 24, justifyContent: 'flex-start', alignItems: 'flex-start', gap: 8, display: 'inline-flex', flexWrap: 'wrap', alignContent: 'flex-start'}}>
-                              <div style={{paddingLeft: 12, paddingRight: 12, paddingTop: 4, paddingBottom: 4, background: draft.is_multiplayer ? 'var(--Teal-100, #EBFFFA)' : 'var(--Purple-100, #EDEBFF)', borderRadius: 9999, outline: `0.50px ${draft.is_multiplayer ? 'var(--Teal-800, #015E45)' : 'var(--Purple-700, #3B0394)'} solid`, outlineOffset: '-0.50px', justifyContent: 'flex-start', alignItems: 'center', display: 'flex'}}>
+                          <div className="flex flex-col gap-2">
+                            <h3 className="text-lg font-semibold text-gray-800 font-brockmann">
+                              {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
+                            </h3>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <div style={{paddingLeft: 12, paddingRight: 12, paddingTop: 4, paddingBottom: 4, background: draft.is_multiplayer ? 'var(--Teal-100, #EBFFFA)' : 'var(--Purple-100, #EDEBFF)', borderRadius: 9999, outline: `0.50px ${draft.is_multiplayer ? 'var(--Teal-800, #015E45)' : 'var(--Purple-700, #3B0394)'} solid`, outlineOffset: '-0.50px', justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
                                 <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: draft.is_multiplayer ? 'var(--Teal-800, #015E45)' : 'var(--Purple-700, #3B0394)', fontSize: 12, fontFamily: 'Brockmann', fontWeight: '600', lineHeight: 16, wordWrap: 'break-word'}}>
                                   {draft.is_multiplayer ? 'Multiplayer' : 'Local'}
                                 </div>
                               </div>
                               {draft.is_complete && (
-                                <div style={{paddingLeft: 12, paddingRight: 12, paddingTop: 4, paddingBottom: 4, background: 'var(--Teal-600, #06C995)', borderRadius: 9999, justifyContent: 'flex-start', alignItems: 'center', display: 'flex'}}>
+                                <div style={{paddingLeft: 12, paddingRight: 12, paddingTop: 4, paddingBottom: 4, background: 'var(--Teal-600, #06C995)', borderRadius: 9999, justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
                                   <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--UI-Primary, white)', fontSize: 12, fontFamily: 'Brockmann', fontWeight: '600', lineHeight: 16, wordWrap: 'break-word'}}>Complete</div>
                                 </div>
                               )}
                             </div>
                           </div>
                         </div>
-                        <div style={{alignSelf: 'stretch', justifyContent: 'flex-start', alignItems: 'center', gap: 16, display: 'inline-flex', flexWrap: 'wrap', alignContent: 'center'}}>
-                          <div style={{justifyContent: 'flex-start', alignItems: 'center', gap: 4, display: 'flex'}}>
-                            <Calendar size={16} style={{color: 'var(--Greyscale-(Blue)-500, #828786)'}} />
-                            <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-500, #828786)', fontSize: 14, fontFamily: 'Brockmann', fontWeight: '500', lineHeight: 20, wordWrap: 'break-word'}}>
-                              {new Date(draft.created_at).toLocaleDateString()}
-                            </div>
+                        
+                        {/* Metadata */}
+                        <div className="flex items-center gap-4 flex-wrap text-sm text-gray-500">
+                          <div className="flex items-center gap-1">
+                            <Calendar size={16} />
+                            <span className="font-medium font-brockmann">{new Date(draft.created_at).toLocaleDateString()}</span>
                           </div>
-                          <div style={{justifyContent: 'flex-start', alignItems: 'center', gap: 4, display: 'flex'}}>
-                            <Users size={16} style={{color: 'var(--Greyscale-(Blue)-500, #828786)'}} />
-                            <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-500, #828786)', fontSize: 14, fontFamily: 'Brockmann', fontWeight: '500', lineHeight: 20, wordWrap: 'break-word'}}>
-                              {draft.participants.length} players
-                            </div>
+                          <div className="flex items-center gap-1">
+                            <Users size={16} />
+                            <span className="font-medium font-brockmann">{draft.participants.length} players</span>
                           </div>
-                          <div style={{justifyContent: 'flex-start', alignItems: 'center', gap: 4, display: 'flex'}}>
-                            <Trophy size={16} style={{color: 'var(--Greyscale-(Blue)-500, #828786)'}} />
-                            <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-500, #828786)', fontSize: 14, fontFamily: 'Brockmann', fontWeight: '500', lineHeight: 20, wordWrap: 'break-word'}}>
-                              {draft.categories.length} categories
-                            </div>
+                          <div className="flex items-center gap-1">
+                            <Trophy size={16} />
+                            <span className="font-medium font-brockmann">{draft.categories.length} categories</span>
                           </div>
                         </div>
                       </div>
-                      <div style={{flex: '1 1 0', maxWidth: 360, minWidth: 240, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-end', gap: 16, display: 'inline-flex'}}>
-                        <div 
+                      
+                      {/* Right Section - Actions */}
+                      <div className="flex flex-col gap-4 items-end min-w-60 max-w-80">
+                        <button 
                           onClick={() => handleViewDraft(draft)}
-                          style={{alignSelf: 'stretch', paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, background: 'var(--Brand-Primary, #680AFF)', borderRadius: 2, justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer'}}
+                          className="w-full px-4 py-2 bg-brand-primary text-white rounded font-medium font-brockmann hover:bg-purple-700 transition-colors"
                         >
-                          <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--UI-Primary, white)', fontSize: 14, fontFamily: 'Brockmann', fontWeight: '500', lineHeight: 20, wordWrap: 'break-word'}}>
-                            {draft.is_complete ? 'View Draft' : 'Continue Draft'}
-                          </div>
-                        </div>
-                        <div 
+                          {draft.is_complete ? 'View Draft' : 'Continue Draft'}
+                        </button>
+                        <button 
                           onClick={() => handleDeleteDraft(draft.id)}
-                          style={{paddingLeft: 12, paddingRight: 12, paddingTop: 8, paddingBottom: 8, borderRadius: 2, justifyContent: 'center', alignItems: 'center', gap: 8, display: 'inline-flex', cursor: 'pointer'}}
+                          className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-red-600 transition-colors"
                         >
-                          <Trash2 size={16} style={{color: 'var(--Greyscale-(Blue)-600, #646968)'}} />
-                          <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-600, #646968)', fontSize: 14, fontFamily: 'Brockmann', fontWeight: '500', lineHeight: 20, wordWrap: 'break-word'}}>Delete</div>
-                        </div>
+                          <Trash2 size={16} />
+                          <span className="font-medium font-brockmann">Delete</span>
+                        </button>
                       </div>
                     </div>
                     
