@@ -48,7 +48,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
   };
 
   return (
-    <div className="w-full p-6 bg-ui-primary rounded shadow-[0px_0px_3px_rgba(0,0,0,0.25)] mb-6">
+    <div className="w-full p-6 bg-greyscale-blue-100 rounded shadow-[0px_0px_3px_rgba(0,0,0,0.25)] mb-6">
       <div className="flex flex-col justify-center items-center gap-2 mb-6">
         <span className="text-text-primary text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
           DRAFT BOARD
