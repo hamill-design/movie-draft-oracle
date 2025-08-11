@@ -263,9 +263,15 @@ const Profile = () => {
                               </h3>
                             </div>
                             <div className="mb-2">
-                              <Badge variant={draft.is_multiplayer ? "default" : "secondary"}>
-                                {draft.is_multiplayer ? 'Multiplayer' : 'Local'}
-                              </Badge>
+                              {draft.is_multiplayer ? (
+                                <div style={{width: '100%', height: '100%', paddingLeft: 12, paddingRight: 12, paddingTop: 4, paddingBottom: 4, background: 'var(--Teal-100, #EBFFFA)', borderRadius: 9999, outline: '0.50px var(--Teal-800, #015E45) solid', outlineOffset: '-0.50px', justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
+                                  <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Teal-800, #015E45)', fontSize: 12, fontFamily: 'Brockmann', fontWeight: '600', lineHeight: 16, wordWrap: 'break-word'}}>Multiplayer</div>
+                                </div>
+                              ) : (
+                                <div style={{width: '100%', height: '100%', paddingLeft: 12, paddingRight: 12, paddingTop: 4, paddingBottom: 4, background: 'var(--Purple-100, #EDEBFF)', borderRadius: 9999, outline: '0.50px var(--Purple-700, #3B0394) solid', outlineOffset: '-0.50px', justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
+                                  <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Purple-700, #3B0394)', fontSize: 12, fontFamily: 'Brockmann', fontWeight: '600', lineHeight: 16, wordWrap: 'break-word'}}>Local</div>
+                                </div>
+                              )}
                               {draft.is_complete && (
                                 <Badge variant="secondary" className="ml-2 bg-green-600 text-white">
                                   Complete
