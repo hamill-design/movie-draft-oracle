@@ -159,17 +159,18 @@ const Profile = () => {
         {/* Banner Ad - Hidden for now */}
         {/* <BannerAd className="mb-8" /> */}
 
-        {/* User Info */}
-        <Card className="bg-gray-800 border-gray-600 mb-8">
-          <CardHeader>
-            <CardTitle className="text-white">Account Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-gray-300 mb-2">
-                  <strong>Name:</strong>
-                </p>
+        <div className="w-full h-full p-6 bg-greyscale-blue-100 shadow-[0px_0px_3px_rgba(0,0,0,0.25)] rounded flex-col justify-start items-start gap-3 inline-flex mb-8">
+          <div className="flex-col justify-start items-start flex">
+            <div className="justify-center flex flex-col text-text-primary text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
+              Account Information
+            </div>
+          </div>
+          <div className="self-stretch justify-start items-center gap-4 inline-flex flex-wrap content-center">
+            <div className="flex-1 min-w-[300px] justify-start items-center gap-1.5 flex">
+              <div className="justify-center flex flex-col text-greyscale-blue-600 text-base font-brockmann font-semibold leading-6 tracking-[0.32px]">
+                Name:
+              </div>
+              <div className="flex-col justify-start items-start inline-flex">
                 {isEditingName ? (
                   <div className="flex items-center gap-2">
                     <Input
@@ -195,31 +196,42 @@ const Profile = () => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-300">
-                      {profile?.name || 'No name set'}
-                    </span>
-                    <Button
-                      onClick={() => setIsEditingName(true)}
-                      size="sm"
-                      variant="ghost"
-                      className="text-gray-400 hover:text-gray-300"
-                    >
-                      <Edit3 size={16} />
-                    </Button>
+                  <div className="justify-center flex flex-col text-greyscale-blue-600 text-base font-brockmann font-normal leading-6">
+                    {profile?.name || 'No name set'}
                   </div>
                 )}
               </div>
+              {!isEditingName && (
+                <div 
+                  onClick={() => setIsEditingName(true)}
+                  className="p-1 rounded-md justify-center items-center flex cursor-pointer hover:bg-greyscale-blue-200"
+                >
+                  <div className="w-4 h-4 relative">
+                    <Edit3 size={16} className="text-greyscale-blue-600" />
+                  </div>
+                </div>
+              )}
             </div>
-            
-            <p className="text-gray-300">
-              <strong>Email:</strong> {user.email}
-            </p>
-            <p className="text-gray-300">
-              <strong>Total Drafts:</strong> {drafts.length}
-            </p>
-          </CardContent>
-        </Card>
+            <div className="flex-1 min-w-[300px] justify-start items-center gap-1.5 flex">
+              <div className="justify-center flex flex-col">
+                <span className="text-greyscale-blue-600 text-base font-brockmann font-bold leading-6">Email:</span>
+                <span className="text-greyscale-blue-600 text-base font-brockmann font-normal leading-6"> </span>
+              </div>
+              <div className="justify-center flex flex-col text-greyscale-blue-600 text-base font-brockmann font-normal leading-6">
+                {user.email}
+              </div>
+            </div>
+            <div className="flex-1 min-w-[300px] justify-start items-start gap-1.5 flex">
+              <div className="justify-center flex flex-col">
+                <span className="text-greyscale-blue-600 text-base font-brockmann font-bold leading-6">Total Drafts:</span>
+                <span className="text-greyscale-blue-600 text-base font-brockmann font-normal leading-6"> </span>
+              </div>
+              <div className="justify-center flex flex-col text-greyscale-blue-600 text-base font-brockmann font-normal leading-6">
+                {drafts.length}
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Saved Drafts */}
         <Card className="bg-gray-800 border-gray-600">
@@ -235,80 +247,67 @@ const Profile = () => {
               <div className="grid gap-4">
                 {drafts.map((draft, index) => (
                   <div key={draft.id}>
-                    <div className="w-full p-6 bg-white shadow-sm rounded-lg border border-gray-200 flex flex-wrap items-center justify-between gap-4">
-                      {/* Left Section - Content */}
-                      <div className="flex-1 min-w-60 flex flex-col gap-4">
-                        {/* Header with portrait and title */}
-                        <div className="flex items-start gap-3">
-                          {draft.theme === 'people' ? (
-                            <div className="w-14 h-14 rounded overflow-hidden flex-shrink-0">
-                              <DraftActorPortrait 
-                                actorName={getCleanActorName(draft.option)}
-                                size="lg"
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-14 h-14 rounded bg-gray-200 flex items-center justify-center flex-shrink-0">
+                    <Card className="bg-gray-700 border-gray-600 relative">
+                      <Button
+                        onClick={() => handleDeleteDraft(draft.id)}
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 p-1 h-8 w-8"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                      <CardContent className="pt-6">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="flex items-center gap-3 mb-2">
                               {draft.theme === 'year' ? (
-                                <Calendar size={24} className="text-gray-500" />
+                                <Calendar size={20} className="text-yellow-400" />
+                              ) : draft.theme === 'people' ? (
+                                <DraftActorPortrait 
+                                  actorName={getCleanActorName(draft.option)}
+                                  size="md"
+                                />
                               ) : (
-                                <User size={24} className="text-gray-500" />
+                                <User size={20} className="text-yellow-400" />
                               )}
+                              <h3 className="text-white font-semibold text-lg">
+                                {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
+                              </h3>
                             </div>
-                          )}
-                          <div className="flex flex-col gap-2">
-                            <h3 className="text-lg font-semibold text-gray-800 font-brockmann">
-                              {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
-                            </h3>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <div style={{paddingLeft: 12, paddingRight: 12, paddingTop: 4, paddingBottom: 4, background: draft.is_multiplayer ? 'var(--Teal-100, #EBFFFA)' : 'var(--Purple-100, #EDEBFF)', borderRadius: 9999, outline: `0.50px ${draft.is_multiplayer ? 'var(--Teal-800, #015E45)' : 'var(--Purple-700, #3B0394)'} solid`, outlineOffset: '-0.50px', justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
-                                <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: draft.is_multiplayer ? 'var(--Teal-800, #015E45)' : 'var(--Purple-700, #3B0394)', fontSize: 12, fontFamily: 'Brockmann', fontWeight: '600', lineHeight: 16, wordWrap: 'break-word'}}>
-                                  {draft.is_multiplayer ? 'Multiplayer' : 'Local'}
-                                </div>
-                              </div>
+                            <div className="mb-2">
+                              <Badge variant={draft.is_multiplayer ? "default" : "secondary"}>
+                                {draft.is_multiplayer ? 'Multiplayer' : 'Local'}
+                              </Badge>
                               {draft.is_complete && (
-                                <div style={{paddingLeft: 12, paddingRight: 12, paddingTop: 4, paddingBottom: 4, background: 'var(--Teal-600, #06C995)', borderRadius: 9999, justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
-                                  <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--UI-Primary, white)', fontSize: 12, fontFamily: 'Brockmann', fontWeight: '600', lineHeight: 16, wordWrap: 'break-word'}}>Complete</div>
-                                </div>
+                                <Badge variant="secondary" className="ml-2 bg-green-600 text-white">
+                                  Complete
+                                </Badge>
                               )}
                             </div>
+                            <div className="flex items-center gap-4 text-sm text-gray-300">
+                              <div className="flex items-center gap-1">
+                                <Calendar size={14} />
+                                {new Date(draft.created_at).toLocaleDateString()}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Users size={14} />
+                                {draft.participants.length} players
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Trophy size={14} />
+                                {draft.categories.length} categories
+                              </div>
+                            </div>
                           </div>
+                          <Button
+                            onClick={() => handleViewDraft(draft)}
+                            className="bg-yellow-400 text-black hover:bg-yellow-500"
+                          >
+                            {draft.is_complete ? 'View Draft' : 'Continue Draft'}
+                          </Button>
                         </div>
-                        
-                        {/* Metadata */}
-                        <div className="flex items-center gap-4 flex-wrap text-sm text-gray-500">
-                          <div className="flex items-center gap-1">
-                            <Calendar size={16} />
-                            <span className="font-medium font-brockmann">{new Date(draft.created_at).toLocaleDateString()}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Users size={16} />
-                            <span className="font-medium font-brockmann">{draft.participants.length} players</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Trophy size={16} />
-                            <span className="font-medium font-brockmann">{draft.categories.length} categories</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Right Section - Actions */}
-                      <div className="flex flex-col gap-4 items-end min-w-60 max-w-80">
-                        <button 
-                          onClick={() => handleViewDraft(draft)}
-                          className="w-full px-4 py-2 bg-brand-primary text-white rounded font-medium font-brockmann hover:bg-purple-700 transition-colors"
-                        >
-                          {draft.is_complete ? 'View Draft' : 'Continue Draft'}
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteDraft(draft.id)}
-                          className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-red-600 transition-colors"
-                        >
-                          <Trash2 size={16} />
-                          <span className="font-medium font-brockmann">Delete</span>
-                        </button>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                     
                     {/* Inline Ad after every 3 drafts - Hidden for now */}
                     {/* {index > 0 && (index + 1) % 3 === 0 && <InlineAd />} */}
