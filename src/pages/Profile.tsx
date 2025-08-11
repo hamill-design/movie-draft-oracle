@@ -159,17 +159,18 @@ const Profile = () => {
         {/* Banner Ad - Hidden for now */}
         {/* <BannerAd className="mb-8" /> */}
 
-        {/* User Info */}
-        <Card className="bg-gray-800 border-gray-600 mb-8">
-          <CardHeader>
-            <CardTitle className="text-white">Account Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-gray-300 mb-2">
-                  <strong>Name:</strong>
-                </p>
+        <div className="w-full h-full p-6 bg-greyscale-blue-100 shadow-[0px_0px_3px_rgba(0,0,0,0.25)] rounded flex-col justify-start items-start gap-3 inline-flex mb-8">
+          <div className="flex-col justify-start items-start flex">
+            <div className="justify-center flex flex-col text-text-primary text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
+              Account Information
+            </div>
+          </div>
+          <div className="self-stretch justify-start items-center gap-4 inline-flex flex-wrap content-center">
+            <div className="flex-1 min-w-[300px] justify-start items-center gap-1.5 flex">
+              <div className="justify-center flex flex-col text-greyscale-blue-600 text-base font-brockmann font-semibold leading-6 tracking-[0.32px]">
+                Name:
+              </div>
+              <div className="flex-col justify-start items-start inline-flex">
                 {isEditingName ? (
                   <div className="flex items-center gap-2">
                     <Input
@@ -195,31 +196,42 @@ const Profile = () => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-300">
-                      {profile?.name || 'No name set'}
-                    </span>
-                    <Button
-                      onClick={() => setIsEditingName(true)}
-                      size="sm"
-                      variant="ghost"
-                      className="text-gray-400 hover:text-gray-300"
-                    >
-                      <Edit3 size={16} />
-                    </Button>
+                  <div className="justify-center flex flex-col text-greyscale-blue-600 text-base font-brockmann font-normal leading-6">
+                    {profile?.name || 'No name set'}
                   </div>
                 )}
               </div>
+              {!isEditingName && (
+                <div 
+                  onClick={() => setIsEditingName(true)}
+                  className="p-1 rounded-md justify-center items-center flex cursor-pointer hover:bg-greyscale-blue-200"
+                >
+                  <div className="w-4 h-4 relative">
+                    <Edit3 size={16} className="text-greyscale-blue-600" />
+                  </div>
+                </div>
+              )}
             </div>
-            
-            <p className="text-gray-300">
-              <strong>Email:</strong> {user.email}
-            </p>
-            <p className="text-gray-300">
-              <strong>Total Drafts:</strong> {drafts.length}
-            </p>
-          </CardContent>
-        </Card>
+            <div className="flex-1 min-w-[300px] justify-start items-center gap-1.5 flex">
+              <div className="justify-center flex flex-col">
+                <span className="text-greyscale-blue-600 text-base font-brockmann font-bold leading-6">Email:</span>
+                <span className="text-greyscale-blue-600 text-base font-brockmann font-normal leading-6"> </span>
+              </div>
+              <div className="justify-center flex flex-col text-greyscale-blue-600 text-base font-brockmann font-normal leading-6">
+                {user.email}
+              </div>
+            </div>
+            <div className="flex-1 min-w-[300px] justify-start items-start gap-1.5 flex">
+              <div className="justify-center flex flex-col">
+                <span className="text-greyscale-blue-600 text-base font-brockmann font-bold leading-6">Total Drafts:</span>
+                <span className="text-greyscale-blue-600 text-base font-brockmann font-normal leading-6"> </span>
+              </div>
+              <div className="justify-center flex flex-col text-greyscale-blue-600 text-base font-brockmann font-normal leading-6">
+                {drafts.length}
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Saved Drafts */}
         <Card className="bg-gray-800 border-gray-600">
