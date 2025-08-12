@@ -292,5 +292,5 @@ All colors MUST be HSL.
 }
 
 .logo-hover:hover {
-  fill: hsl(var(--purple-400));
+  color: hsl(var(--purple-400));
 }
