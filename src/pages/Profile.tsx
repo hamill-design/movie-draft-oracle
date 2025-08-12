@@ -234,7 +234,7 @@ const Profile = () => {
         </div>
 
         {/* Saved Drafts */}
-        <div className="w-full h-full p-6 bg-greyscale-blue-100 shadow-[0px_0px_3px_rgba(0,0,0,0.25)] rounded flex-col justify-start items-start gap-3 inline-flex">
+        <div className="w-full h-full p-6 bg-greyscale-blue-100 shadow-[0px_0px_3px_rgba(0,0,0,0.25)] rounded flex-col justify-start items-start gap-6 inline-flex">
           <div className="flex-col justify-start items-start flex">
             <div className="justify-center flex flex-col text-text-primary text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
               Saved Drafts
