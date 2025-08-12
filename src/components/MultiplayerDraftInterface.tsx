@@ -221,21 +221,26 @@ export const MultiplayerDraftInterface = ({
   return <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
       <div className="max-w-6xl mx-auto p-4 space-y-6">
         {/* Header */}
-        <Card>
-          <CardHeader>
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                {draft.theme === 'people' ? <DraftActorPortrait actorName={getCleanActorName(draft.option)} size="md" /> : <Calendar size={24} className="text-yellow-400" />}
-                <CardTitle className="text-2xl">
-                  {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
-                </CardTitle>
+        <div className="mb-6">
+          <div className="p-6">
+            <div className="flex flex-col justify-center items-center gap-4 text-center">
+              <span className="text-text-primary text-[32px] font-brockmann font-medium leading-[36px] tracking-[1.28px]">
+                NOW DRAFTING
+              </span>
+              <div className="text-[64px] font-chaney font-normal leading-[64px] text-center">
+                <span className="text-purple-500">
+                  {draft.theme === 'people' ? getCleanActorName(draft.option).toUpperCase() + ' ' : draft.option.toString() + ' '}
+                </span>
+                <span className="text-text-primary">
+                  MOVIES
+                </span>
               </div>
-              <Badge variant="secondary" className="w-fit">
+              <Badge variant="secondary" className="w-fit mt-2">
                 Multiplayer
               </Badge>
             </div>
-          </CardHeader>
-        </Card>
+          </div>
+        </div>
 
         {/* Status and Participants */}
         <div className="grid md:grid-cols-2 gap-6">
