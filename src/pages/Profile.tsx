@@ -234,80 +234,135 @@ const Profile = () => {
         </div>
 
         {/* Saved Drafts */}
-        <Card className="bg-gray-800 border-gray-600">
-          <CardHeader>
-            <CardTitle className="text-white">Saved Drafts</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="w-full h-full p-6 bg-greyscale-blue-100 shadow-[0px_0px_3px_rgba(0,0,0,0.25)] rounded flex-col justify-start items-start gap-3 inline-flex">
+          <div className="flex-col justify-start items-start flex">
+            <div className="justify-center flex flex-col text-text-primary text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
+              Saved Drafts
+            </div>
+          </div>
+          <div className="pt-6">
             {drafts.length === 0 ? (
-              <p className="text-gray-400 text-center py-8">
+              <p className="text-greyscale-blue-600 text-center py-8 font-brockmann">
                 No saved drafts yet. Start a new draft to see it here!
               </p>
             ) : (
               <div className="grid gap-4">
                 {drafts.map((draft, index) => (
                   <div key={draft.id}>
-                    <Card className="bg-gray-700 border-gray-600 relative">
-                      <Button
-                        onClick={() => handleDeleteDraft(draft.id)}
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-2 right-2 text-gray-400 hover:text-red-400 hover:bg-red-400/10 p-1 h-8 w-8"
-                      >
-                        <Trash2 size={14} />
-                      </Button>
-                      <CardContent className="pt-6">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="flex items-center gap-3 mb-2">
-                              {draft.theme === 'year' ? (
-                                <Calendar size={20} className="text-yellow-400" />
-                              ) : draft.theme === 'people' ? (
-                                <DraftActorPortrait 
-                                  actorName={getCleanActorName(draft.option)}
-                                  size="md"
-                                />
-                              ) : (
-                                <User size={20} className="text-yellow-400" />
-                              )}
-                              <h3 className="text-white font-semibold text-lg">
+                    {/* New Draft Card Design */}
+                    <div className="w-full h-full p-6 bg-white shadow-[0px_1px_2px_rgba(0,0,0,0.05)] rounded-lg border border-[#D9E0DF] justify-between items-center inline-flex flex-wrap">
+                      {/* Left Container */}
+                      <div className="flex-1 min-w-[240px] flex-col justify-start items-start gap-4 inline-flex">
+                        {/* Header with Image and Info */}
+                        <div className="justify-start items-start gap-3 inline-flex">
+                          {/* Actor Portrait */}
+                          <div className="w-14 self-stretch rounded">
+                            {draft.theme === 'people' ? (
+                              <DraftActorPortrait 
+                                actorName={getCleanActorName(draft.option)}
+                                size="lg"
+                                className="w-14 h-14 rounded object-cover"
+                              />
+                            ) : (
+                              <div className="w-14 h-14 bg-greyscale-blue-200 rounded flex items-center justify-center">
+                                {draft.theme === 'year' ? (
+                                  <Calendar size={24} className="text-greyscale-blue-500" />
+                                ) : (
+                                  <User size={24} className="text-greyscale-blue-500" />
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Title and Status */}
+                          <div className="flex-col justify-start items-start gap-2 inline-flex">
+                            <div className="flex-col justify-start items-start flex">
+                              <div className="justify-center flex flex-col text-[#2B2D2D] text-lg font-brockmann font-semibold leading-6">
                                 {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
-                              </h3>
+                              </div>
                             </div>
-                            <div className="mb-2">
-                              <Badge variant={draft.is_multiplayer ? "default" : "secondary"}>
-                                {draft.is_multiplayer ? 'Multiplayer' : 'Local'}
-                              </Badge>
-                              {draft.is_complete && (
-                                <Badge variant="secondary" className="ml-2 bg-green-600 text-white">
-                                  Complete
-                                </Badge>
+                            
+                            {/* Status Chips */}
+                            <div className="self-stretch h-6 justify-start items-start gap-2 inline-flex flex-wrap">
+                              {/* Multiplayer/Local Badge */}
+                              {draft.is_multiplayer ? (
+                                <div className="px-3 py-1 bg-[#EBFFFA] rounded-full border-[0.5px] border-[#015E45] justify-start items-center flex">
+                                  <span className="text-[#015E45] text-xs font-brockmann font-semibold leading-4">Multiplayer</span>
+                                </div>
+                              ) : (
+                                <div className="px-3 py-1 bg-[#EDEBFF] rounded-full border-[0.5px] border-[#3B0394] justify-start items-center flex">
+                                  <span className="text-[#3B0394] text-xs font-brockmann font-semibold leading-4">Local</span>
+                                </div>
                               )}
-                            </div>
-                            <div className="flex items-center gap-4 text-sm text-gray-300">
-                              <div className="flex items-center gap-1">
-                                <Calendar size={14} />
-                                {new Date(draft.created_at).toLocaleDateString()}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Users size={14} />
-                                {draft.participants.length} players
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Trophy size={14} />
-                                {draft.categories.length} categories
-                              </div>
+                              
+                              {/* Complete Badge */}
+                              {draft.is_complete && (
+                                <div className="px-3 py-1 bg-[#06C995] rounded-full justify-start items-center flex">
+                                  <span className="text-white text-xs font-brockmann font-semibold leading-4">Complete</span>
+                                </div>
+                              )}
                             </div>
                           </div>
-                          <Button
-                            onClick={() => handleViewDraft(draft)}
-                            className="bg-yellow-400 text-black hover:bg-yellow-500"
-                          >
-                            {draft.is_complete ? 'View Draft' : 'Continue Draft'}
-                          </Button>
                         </div>
-                      </CardContent>
-                    </Card>
+                        
+                        {/* Details */}
+                        <div className="self-stretch justify-start items-center gap-4 inline-flex flex-wrap">
+                          {/* Date */}
+                          <div className="justify-start items-center gap-1 flex">
+                            <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
+                              <Calendar size={12} className="text-[#828786]" />
+                            </div>
+                            <span className="text-[#828786] text-sm font-brockmann font-medium leading-5">
+                              {new Date(draft.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                          
+                          {/* Players */}
+                          <div className="justify-start items-center gap-1 flex">
+                            <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
+                              <Users size={12} className="text-[#828786]" />
+                            </div>
+                            <span className="text-[#828786] text-sm font-brockmann font-medium leading-5">
+                              {draft.participants.length} players
+                            </span>
+                          </div>
+                          
+                          {/* Categories */}
+                          <div className="justify-start items-center gap-1 flex">
+                            <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
+                              <Trophy size={12} className="text-[#828786]" />
+                            </div>
+                            <span className="text-[#828786] text-sm font-brockmann font-medium leading-5">
+                              {draft.categories.length} categories
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Right Container - Action Buttons */}
+                      <div className="flex-1 max-w-[360px] min-w-[240px] flex-col justify-start items-end gap-4 inline-flex">
+                        {/* Continue/View Draft Button */}
+                        <button 
+                          onClick={() => handleViewDraft(draft)}
+                          className="self-stretch px-4 py-2 bg-[#680AFF] rounded-sm justify-center items-center inline-flex hover:bg-[#5A08E6] transition-colors"
+                        >
+                          <span className="text-center text-white text-sm font-brockmann font-medium leading-5">
+                            {draft.is_complete ? 'View Draft' : 'Continue Draft'}
+                          </span>
+                        </button>
+                        
+                        {/* Delete Button */}
+                        <button 
+                          onClick={() => handleDeleteDraft(draft.id)}
+                          className="px-3 py-2 rounded-sm justify-center items-center gap-2 inline-flex hover:bg-gray-100 transition-colors"
+                        >
+                          <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
+                            <Trash2 size={12} className="text-[#646968]" />
+                          </div>
+                          <span className="text-center text-[#646968] text-sm font-brockmann font-medium leading-5">Delete</span>
+                        </button>
+                      </div>
+                    </div>
                     
                     {/* Inline Ad after every 3 drafts - Hidden for now */}
                     {/* {index > 0 && (index + 1) % 3 === 0 && <InlineAd />} */}
@@ -315,8 +370,8 @@ const Profile = () => {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
