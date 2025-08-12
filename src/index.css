@@ -199,7 +199,7 @@ All colors MUST be HSL.
     --text-primary: 195 6% 18%; /* Greyscale Blue 800 */
 
     /* Component tokens */
-    --primary: 262 100% 52%;
+    --primary: 255 100% 65%; /* Purple 400 #794DFF */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96.1%;
@@ -247,7 +247,7 @@ All colors MUST be HSL.
     --purple-200: 252 100% 85%;
     --greyscale-blue-900: 240 8% 6%;
 
-    --primary: 262 100% 52%;
+    --primary: 255 100% 65%; /* Purple 400 #794DFF */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 217.2 32.6% 17.5%;
