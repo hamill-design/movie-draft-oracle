@@ -342,14 +342,14 @@ const Profile = () => {
                       {/* Right Container - Action Buttons */}
                       <div className="flex-1 max-w-[360px] min-w-[240px] flex-col justify-start items-end gap-4 inline-flex">
                         {/* Continue/View Draft Button */}
-                        <button 
+                        <Button 
                           onClick={() => handleViewDraft(draft)}
-                          className="self-stretch px-4 py-2 bg-[#680AFF] rounded-sm justify-center items-center inline-flex hover:bg-purple-400 transition-colors"
+                          variant="default"
+                          size="default"
+                          className="self-stretch"
                         >
-                          <span className="text-center text-white text-sm font-brockmann font-medium leading-5">
-                            {draft.is_complete ? 'View Draft' : 'Continue Draft'}
-                          </span>
-                        </button>
+                          {draft.is_complete ? 'View Draft' : 'Continue Draft'}
+                        </Button>
                         
                         {/* Delete Button */}
                         <button 
