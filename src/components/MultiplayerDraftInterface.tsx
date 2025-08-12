@@ -19,7 +19,6 @@ import DraftBoard from '@/components/DraftBoard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DiagnosticInfo } from '@/components/DiagnosticInfo';
 import { getCleanActorName } from '@/lib/utils';
-
 interface MultiplayerDraftInterfaceProps {
   draftId?: string;
   initialData?: {
@@ -35,7 +34,6 @@ interface MultiplayerDraftInterfaceProps {
     picks: any[];
   };
 }
-
 export const MultiplayerDraftInterface = ({
   draftId,
   initialData,
@@ -61,7 +59,6 @@ export const MultiplayerDraftInterface = ({
     makePick,
     startDraft
   } = useMultiplayerDraft(draftId);
-
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -121,15 +118,12 @@ export const MultiplayerDraftInterface = ({
       createDraft();
     }
   }, [initialData, draftId, participantId, createMultiplayerDraft, navigate, toast]);
-
   const handleMovieSelect = (movie: any) => {
     setSelectedMovie(movie);
   };
-
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
   };
-
   const confirmPick = async () => {
     if (!selectedMovie || !selectedCategory) {
       return;
@@ -143,7 +137,6 @@ export const MultiplayerDraftInterface = ({
       console.error('Failed to make pick in interface:', error);
     }
   };
-
   const copyInviteCode = async () => {
     if (!draft?.invite_code) return;
     try {
@@ -158,7 +151,6 @@ export const MultiplayerDraftInterface = ({
       console.error('Failed to copy invite code:', error);
     }
   };
-
   const getCurrentTurnPlayer = () => {
     if (!draft || !participants.length) return null;
 
@@ -185,7 +177,6 @@ export const MultiplayerDraftInterface = ({
 
   // Check if draft has been started (has turn order)
   const draftHasStarted = draft?.turn_order && draft.turn_order.length > 0;
-
   if (loading) {
     return <div className="min-h-screen bg-background p-4">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -198,7 +189,6 @@ export const MultiplayerDraftInterface = ({
         </div>
       </div>;
   }
-
   if (!participantId) {
     return <div className="max-w-4xl mx-auto p-6">
         <Card>
@@ -211,7 +201,6 @@ export const MultiplayerDraftInterface = ({
         </Card>
       </div>;
   }
-
   if (!draft) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
         <Card>
@@ -227,10 +216,8 @@ export const MultiplayerDraftInterface = ({
         </Card>
       </div>;
   }
-
   const currentTurnPlayer = getCurrentTurnPlayer();
   const isComplete = draft.is_complete;
-
   return <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
       <div className="max-w-6xl mx-auto p-4 space-y-6">
         {/* Header */}
@@ -326,161 +313,23 @@ export const MultiplayerDraftInterface = ({
                     const pId = participant.user_id || participant.guest_participant_id;
                     const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
                     const isCurrentTurn = pId === currentTurnId;
-                    return <div 
-                      key={participant.id} 
-                      className="w-full"
-                      style={{
-                        paddingTop: 12,
-                        paddingBottom: 12,
-                        paddingLeft: 16,
-                        paddingRight: 12,
-                        background: 'var(--UI-Primary, white)',
-                        borderRadius: 2,
-                        outline: '0.50px var(--Greyscale-(Blue)-300, #BDC3C2) solid',
-                        outlineOffset: '-0.50px',
-                        justifyContent: 'flex-start',
-                        alignItems: 'center',
-                        gap: 8,
-                        display: 'inline-flex'
-                      }}
-                    >
-                      <div style={{
-                        flex: '1 1 0',
-                        paddingBottom: 2,
-                        flexDirection: 'column',
-                        justifyContent: 'flex-start',
-                        alignItems: 'flex-start',
-                        gap: 4,
-                        display: 'inline-flex'
-                      }}>
-                        <div style={{
-                          alignSelf: 'stretch',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          display: 'inline-flex'
-                        }}>
-                          <div style={{
-                            flex: '1 1 0',
-                            flexDirection: 'column',
-                            justifyContent: 'flex-start',
-                            alignItems: 'flex-start',
-                            display: 'inline-flex'
-                          }}>
-                            <div style={{
-                              justifyContent: 'center',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              color: 'var(--Text-Primary, #2B2D2D)',
-                              fontSize: 16,
-                              fontFamily: 'Brockmann',
-                              fontWeight: '600',
-                              lineHeight: 24,
-                              letterSpacing: 0.32,
-                              wordWrap: 'break-word'
-                            }}>
-                              {participant.participant_name}
+                    return <div key={participant.id} className="flex items-center gap-2 py-3 px-4 bg-white rounded-sm border border-border">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback>
+                              {participant.participant_name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{participant.participant_name}</span>
+                              {participant.is_host && <Badge variant="outline" className="text-xs">Host</Badge>}
+                              {isCurrentTurn && !isComplete && draftHasStarted && <Badge variant="default" className="text-xs">Current Turn</Badge>}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {participant.status === 'joined' ? 'Joined' : participant.status}
                             </div>
                           </div>
-                          <div style={{
-                            justifyContent: 'flex-start',
-                            alignItems: 'center',
-                            gap: 4,
-                            display: 'flex'
-                          }}>
-                            {participant.is_host && (
-                              <div style={{
-                                paddingLeft: 12,
-                                paddingRight: 12,
-                                paddingTop: 4,
-                                paddingBottom: 4,
-                                background: 'var(--Purple-50, #F8F7FF)',
-                                borderRadius: 9999,
-                                outline: '0.50px var(--Purple-800, #25015E) solid',
-                                outlineOffset: '-0.50px',
-                                justifyContent: 'flex-start',
-                                alignItems: 'center',
-                                display: 'flex'
-                              }}>
-                                <div style={{
-                                  justifyContent: 'center',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  color: 'var(--Purple-900, #100029)',
-                                  fontSize: 12,
-                                  fontFamily: 'Brockmann',
-                                  fontWeight: '600',
-                                  lineHeight: 16,
-                                  wordWrap: 'break-word'
-                                }}>
-                                  Host
-                                </div>
-                              </div>
-                            )}
-                            {isCurrentTurn && !isComplete && draftHasStarted && (
-                              <div style={{
-                                paddingLeft: 12,
-                                paddingRight: 12,
-                                paddingTop: 4,
-                                paddingBottom: 4,
-                                background: 'var(--Purple-800, #25015E)',
-                                borderRadius: 9999,
-                                justifyContent: 'flex-start',
-                                alignItems: 'center',
-                                display: 'flex'
-                              }}>
-                                <div style={{
-                                  justifyContent: 'center',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  color: 'var(--UI-Primary, white)',
-                                  fontSize: 12,
-                                  fontFamily: 'Brockmann',
-                                  fontWeight: '600',
-                                  lineHeight: 16,
-                                  wordWrap: 'break-word'
-                                }}>
-                                  Current Turn
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div style={{
-                          alignSelf: 'stretch',
-                          justifyContent: 'flex-start',
-                          alignItems: 'flex-start',
-                          gap: 4,
-                          display: 'inline-flex'
-                        }}>
-                          <div style={{
-                            justifyContent: 'center',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            color: 'var(--Teal-600, #06C995)',
-                            fontSize: 12,
-                            fontFamily: 'Brockmann',
-                            fontWeight: '400',
-                            lineHeight: 16,
-                            wordWrap: 'break-word'
-                          }}>
-                            {participant.status === 'joined' ? 'Joined' : participant.status}
-                          </div>
-                          <div style={{
-                            justifyContent: 'center',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            color: 'var(--Greyscale-(Blue)-500, #828786)',
-                            fontSize: 12,
-                            fontFamily: 'Brockmann',
-                            fontWeight: '400',
-                            lineHeight: 16,
-                            wordWrap: 'break-word'
-                          }}>
-                            {participant.email || 'Guest'}
-                          </div>
-                        </div>
-                      </div>
-                    </div>;
+                        </div>;
                   })}
                 </div>
               </div>
