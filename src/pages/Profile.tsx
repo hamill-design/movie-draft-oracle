@@ -240,7 +240,7 @@ const Profile = () => {
               Saved Drafts
             </div>
           </div>
-          <div className="pt-6 w-full">
+          <div className="w-full">
             {drafts.length === 0 ? (
               <p className="text-greyscale-blue-600 text-center py-8 font-brockmann">
                 No saved drafts yet. Start a new draft to see it here!
