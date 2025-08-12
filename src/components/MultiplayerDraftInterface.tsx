@@ -218,7 +218,7 @@ export const MultiplayerDraftInterface = ({
   }
   const currentTurnPlayer = getCurrentTurnPlayer();
   const isComplete = draft.is_complete;
-  return <div className="min-h-screen bg-background">
+  return <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
       <div className="max-w-6xl mx-auto p-4 space-y-6">
         {/* Header */}
         <Card>
