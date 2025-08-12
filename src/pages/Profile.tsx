@@ -283,7 +283,7 @@ const Profile = () => {
                             </div>
                             
                             {/* Status Chips */}
-                            <div className="self-stretch h-6 justify-start items-start gap-2 inline-flex flex-wrap">
+                            <div className="self-stretch h-6 justify-start items-start gap-1.5 inline-flex flex-wrap">
                               {/* Multiplayer/Local Badge */}
                               {draft.is_multiplayer ? (
                                 <div className="px-3 py-1 bg-[#EBFFFA] rounded-full justify-start items-center flex" style={{boxShadow: 'inset 0 0 0 0.5px #015E45'}}>
