@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
@@ -320,7 +321,7 @@ export const MultiplayerDraftInterface = ({
               <div className="space-y-4">
                 <div style={{width: '100%', height: '100%', justifyContent: 'flex-start', alignItems: 'center', gap: 8, display: 'inline-flex'}}>
                   <div style={{width: 24, height: 24, padding: 2, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 10, display: 'inline-flex'}}>
-                    <MultiPersonIcon className="w-5 h-5" style={{color: 'var(--Brand-Primary, #680AFF)'}} />
+                    <MultiPersonIcon className="w-5 h-5 text-[#680AFF]" />
                   </div>
                   <div style={{flex: '1 1 0', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: 20, fontFamily: 'Brockmann', fontWeight: '500', lineHeight: 28, wordWrap: 'break-word'}}>Participants</div>
                 </div>
