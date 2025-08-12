@@ -254,9 +254,9 @@ const Profile = () => {
                       {/* Left Container */}
                       <div className="flex-1 min-w-[240px] flex-col justify-start items-start gap-4 inline-flex">
                         {/* Header with Image and Info */}
-                        <div className="justify-start items-start gap-3 inline-flex">
+                        <div className="justify-start items-end gap-3 inline-flex">
                           {/* Actor Portrait */}
-                          <div className="w-14 self-stretch rounded">
+                          <div className="w-14 h-14 rounded">
                             {draft.theme === 'people' ? (
                               <DraftActorPortrait 
                                 actorName={getCleanActorName(draft.option)}
