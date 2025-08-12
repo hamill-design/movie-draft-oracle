@@ -240,17 +240,17 @@ const Profile = () => {
               Saved Drafts
             </div>
           </div>
-          <div className="pt-6">
+          <div className="pt-6 w-full">
             {drafts.length === 0 ? (
               <p className="text-greyscale-blue-600 text-center py-8 font-brockmann">
                 No saved drafts yet. Start a new draft to see it here!
               </p>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid gap-4 w-full">
                 {drafts.map((draft, index) => (
-                  <div key={draft.id}>
+                  <div key={draft.id} className="w-full">
                     {/* New Draft Card Design */}
-                    <div className="w-full h-full p-6 bg-white shadow-[0px_1px_2px_rgba(0,0,0,0.05)] rounded-lg border border-[#D9E0DF] justify-between items-center inline-flex flex-wrap">
+                    <div className="w-full p-6 bg-white shadow-[0px_1px_2px_rgba(0,0,0,0.05)] rounded-lg border border-[#D9E0DF] flex justify-between items-center flex-wrap">
                       {/* Left Container */}
                       <div className="flex-1 min-w-[240px] flex-col justify-start items-start gap-4 inline-flex">
                         {/* Header with Image and Info */}
