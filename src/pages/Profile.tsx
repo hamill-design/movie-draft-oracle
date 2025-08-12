@@ -306,7 +306,7 @@ const Profile = () => {
                         </div>
                         
                         {/* Details */}
-                        <div className="self-stretch justify-start items-center gap-4 inline-flex flex-wrap">
+                        <div className="self-stretch justify-start items-center gap-2 inline-flex flex-wrap">
                           {/* Date */}
                           <div className="justify-start items-center gap-1 flex">
                             <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
