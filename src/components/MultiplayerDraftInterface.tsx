@@ -281,12 +281,11 @@ export const MultiplayerDraftInterface = ({
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between flex-wrap gap-4">
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Participants ({participants.length})
+                <CardTitle className="text-2xl font-bold">
+                  Join Code
                 </CardTitle>
                 {draft.invite_code && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 min-w-[295px]">
                     <Badge variant="outline" className="font-mono text-lg px-3 py-1">
                       {draft.invite_code}
                     </Badge>
@@ -299,29 +298,35 @@ export const MultiplayerDraftInterface = ({
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {participants.map(participant => {
-                const pId = participant.user_id || participant.guest_participant_id;
-                const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
-                const isCurrentTurn = pId === currentTurnId;
-                return <div key={participant.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {participant.participant_name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{participant.participant_name}</span>
-                          {participant.is_host && <Badge variant="outline" className="text-xs">Host</Badge>}
-                          {isCurrentTurn && !isComplete && draftHasStarted && <Badge variant="default" className="text-xs">Current Turn</Badge>}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {participant.status === 'joined' ? 'Joined' : participant.status}
-                        </div>
-                      </div>
-                    </div>;
-              })}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  <h3 className="font-medium text-lg">Participants</h3>
+                </div>
+                <div className="space-y-2">
+                  {participants.map(participant => {
+                    const pId = participant.user_id || participant.guest_participant_id;
+                    const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
+                    const isCurrentTurn = pId === currentTurnId;
+                    return <div key={participant.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback>
+                              {participant.participant_name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{participant.participant_name}</span>
+                              {participant.is_host && <Badge variant="outline" className="text-xs">Host</Badge>}
+                              {isCurrentTurn && !isComplete && draftHasStarted && <Badge variant="default" className="text-xs">Current Turn</Badge>}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {participant.status === 'joined' ? 'Joined' : participant.status}
+                            </div>
+                          </div>
+                        </div>;
+                  })}
+                </div>
               </div>
             </CardContent>
           </Card>
