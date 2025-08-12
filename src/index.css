@@ -285,3 +285,12 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom logo hover effect */
+.logo-hover {
+  transition: fill 0.3s ease;
+}
+
+.logo-hover:hover {
+  fill: hsl(var(--purple-400));
+}
