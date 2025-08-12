@@ -346,7 +346,7 @@ const Profile = () => {
                           onClick={() => handleViewDraft(draft)}
                           variant="default"
                           size="default"
-                          className="self-stretch"
+                          className="self-stretch bg-brand-primary hover:bg-purple-400 text-brand-primary-foreground"
                         >
                           {draft.is_complete ? 'View Draft' : 'Continue Draft'}
                         </Button>
