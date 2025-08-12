@@ -340,7 +340,7 @@ const Profile = () => {
                       </div>
                       
                       {/* Right Container - Action Buttons */}
-                      <div className="flex-1 max-w-[360px] min-w-[240px] flex-col justify-start items-end gap-4 inline-flex pt-4">
+                      <div className="flex-1 max-w-[360px] min-w-[240px] flex-col justify-start items-end gap-4 inline-flex">
                         {/* Continue/View Draft Button */}
                         <button 
                           onClick={() => handleViewDraft(draft)}
