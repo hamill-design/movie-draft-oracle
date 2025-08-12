@@ -313,7 +313,7 @@ export const MultiplayerDraftInterface = ({
                     const pId = participant.user_id || participant.guest_participant_id;
                     const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
                     const isCurrentTurn = pId === currentTurnId;
-                    return <div key={participant.id} className="flex items-center gap-3 p-2 rounded-lg bg-muted/50">
+                    return <div key={participant.id} className="flex items-center gap-2 py-3 px-4 bg-white rounded-sm border border-border">
                           <Avatar className="h-8 w-8">
                             <AvatarFallback>
                               {participant.participant_name.charAt(0).toUpperCase()}
