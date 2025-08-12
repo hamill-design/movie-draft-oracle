@@ -250,7 +250,7 @@ const Profile = () => {
                 {drafts.map((draft, index) => (
                   <div key={draft.id} className="w-full">
                     {/* New Draft Card Design */}
-                    <div className="w-full p-6 bg-white shadow-[0px_1px_2px_rgba(0,0,0,0.05)] rounded-lg border border-[#D9E0DF] flex justify-between items-center flex-wrap">
+                    <div className="w-full p-6 bg-white shadow-[0px_1px_2px_rgba(0,0,0,0.05)] rounded-lg border border-[#D9E0DF] flex justify-between items-center flex-wrap gap-4">
                       {/* Left Container */}
                       <div className="flex-1 min-w-[240px] flex-col justify-start items-start gap-4 inline-flex">
                         {/* Header with Image and Info */}
