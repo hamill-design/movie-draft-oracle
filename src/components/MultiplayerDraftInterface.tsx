@@ -285,7 +285,7 @@ export const MultiplayerDraftInterface = ({
                   Join Code
                 </CardTitle>
                 {draft.invite_code && (
-                  <div className="flex items-center gap-2 min-w-[295px]">
+                  <div className="flex items-center gap-2 min-w-[295px] ml-auto">
                     <Badge variant="outline" className="font-mono text-lg px-3 py-1">
                       {draft.invite_code}
                     </Badge>
