@@ -344,7 +344,7 @@ const Profile = () => {
                         {/* Continue/View Draft Button */}
                         <button 
                           onClick={() => handleViewDraft(draft)}
-                          className="self-stretch px-4 py-2 bg-[#680AFF] rounded-sm justify-center items-center inline-flex hover:bg-purple-400 transition-colors"
+                          className="self-stretch px-4 py-2 bg-[#680AFF] rounded-sm justify-center items-center inline-flex hover:bg-[hsl(var(--purple-400))] transition-colors"
                         >
                           <span className="text-center text-white text-sm font-brockmann font-medium leading-5">
                             {draft.is_complete ? 'View Draft' : 'Continue Draft'}
