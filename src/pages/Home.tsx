@@ -322,7 +322,7 @@ const Home = () => {
                   className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] border flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                     draftMode === 'single'
                       ? 'bg-purple-500 border-purple-500 text-white'
-                      : 'bg-ui-primary border-greyscale-blue-200 text-text-primary hover:bg-purple-100 hover:border-purple-100 active:bg-purple-200 active:border-purple-300'
+                      : 'bg-ui-primary border-greyscale-blue-200 text-text-primary hover:bg-purple-100 hover:border-purple-400 active:bg-purple-200 active:border-purple-300'
                   }`}
                 >
                   <div className="w-6 h-6 flex justify-center items-center">
