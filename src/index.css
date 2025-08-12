@@ -288,7 +288,7 @@ All colors MUST be HSL.
 
 /* Custom logo hover effect */
 .logo-hover {
-  transition: fill 0.3s ease;
+  transition: color 0.3s ease;
 }
 
 .logo-hover:hover {
