@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Copy, Check, Users, Clock, Film, User, Calendar, Trophy } from 'lucide-react';
+import { MultiPersonIcon } from '@/components/icons/MultiPersonIcon';
 import MovieSearch from '@/components/MovieSearch';
 import { DraftActorPortrait } from '@/components/DraftActorPortrait';
 import CategorySelection from '@/components/CategorySelection';
@@ -19,6 +20,7 @@ import DraftBoard from '@/components/DraftBoard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DiagnosticInfo } from '@/components/DiagnosticInfo';
 import { getCleanActorName } from '@/lib/utils';
+
 interface MultiplayerDraftInterfaceProps {
   draftId?: string;
   initialData?: {
@@ -34,6 +36,7 @@ interface MultiplayerDraftInterfaceProps {
     picks: any[];
   };
 }
+
 export const MultiplayerDraftInterface = ({
   draftId,
   initialData,
@@ -59,6 +62,7 @@ export const MultiplayerDraftInterface = ({
     makePick,
     startDraft
   } = useMultiplayerDraft(draftId);
+
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -118,12 +122,15 @@ export const MultiplayerDraftInterface = ({
       createDraft();
     }
   }, [initialData, draftId, participantId, createMultiplayerDraft, navigate, toast]);
+
   const handleMovieSelect = (movie: any) => {
     setSelectedMovie(movie);
   };
+
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
   };
+
   const confirmPick = async () => {
     if (!selectedMovie || !selectedCategory) {
       return;
@@ -137,6 +144,7 @@ export const MultiplayerDraftInterface = ({
       console.error('Failed to make pick in interface:', error);
     }
   };
+
   const copyInviteCode = async () => {
     if (!draft?.invite_code) return;
     try {
@@ -151,6 +159,7 @@ export const MultiplayerDraftInterface = ({
       console.error('Failed to copy invite code:', error);
     }
   };
+
   const getCurrentTurnPlayer = () => {
     if (!draft || !participants.length) return null;
 
@@ -177,6 +186,7 @@ export const MultiplayerDraftInterface = ({
 
   // Check if draft has been started (has turn order)
   const draftHasStarted = draft?.turn_order && draft.turn_order.length > 0;
+
   if (loading) {
     return <div className="min-h-screen bg-background p-4">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -189,6 +199,7 @@ export const MultiplayerDraftInterface = ({
         </div>
       </div>;
   }
+
   if (!participantId) {
     return <div className="max-w-4xl mx-auto p-6">
         <Card>
@@ -201,6 +212,7 @@ export const MultiplayerDraftInterface = ({
         </Card>
       </div>;
   }
+
   if (!draft) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
         <Card>
@@ -216,8 +228,10 @@ export const MultiplayerDraftInterface = ({
         </Card>
       </div>;
   }
+
   const currentTurnPlayer = getCurrentTurnPlayer();
   const isComplete = draft.is_complete;
+
   return <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
       <div className="max-w-6xl mx-auto p-4 space-y-6">
         {/* Header */}
@@ -304,9 +318,11 @@ export const MultiplayerDraftInterface = ({
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  <h3 className="font-medium text-lg">Participants</h3>
+                <div style={{width: '100%', height: '100%', justifyContent: 'flex-start', alignItems: 'center', gap: 8, display: 'inline-flex'}}>
+                  <div style={{width: 24, height: 24, padding: 2, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 10, display: 'inline-flex'}}>
+                    <MultiPersonIcon className="w-5 h-5" style={{color: 'var(--Brand-Primary, #680AFF)'}} />
+                  </div>
+                  <div style={{flex: '1 1 0', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: 20, fontFamily: 'Brockmann', fontWeight: '500', lineHeight: 28, wordWrap: 'break-word'}}>Participants</div>
                 </div>
                 <div className="space-y-2">
                   {participants.map(participant => {
