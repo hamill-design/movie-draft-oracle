@@ -223,28 +223,16 @@ export const MultiplayerDraftInterface = ({
         {/* Header */}
         <Card>
           <CardHeader>
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  {draft.theme === 'people' ? <DraftActorPortrait actorName={getCleanActorName(draft.option)} size="md" /> : <Calendar size={24} className="text-yellow-400" />}
-                  <CardTitle className="text-2xl">
-                    {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
-                  </CardTitle>
-                </div>
-                <Badge variant="secondary" className="w-fit">
-                  Multiplayer
-                </Badge>
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                {draft.theme === 'people' ? <DraftActorPortrait actorName={getCleanActorName(draft.option)} size="md" /> : <Calendar size={24} className="text-yellow-400" />}
+                <CardTitle className="text-2xl">
+                  {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
+                </CardTitle>
               </div>
-              
-              {draft.invite_code && <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="font-mono text-lg px-3 py-1">
-                    {draft.invite_code}
-                  </Badge>
-                  <Button variant="outline" size="sm" onClick={copyInviteCode} className="flex items-center gap-2">
-                    {copySuccess ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    {copySuccess ? 'Copied!' : 'Copy'}
-                  </Button>
-                </div>}
+              <Badge variant="secondary" className="w-fit">
+                Multiplayer
+              </Badge>
             </div>
           </CardHeader>
         </Card>
@@ -292,10 +280,23 @@ export const MultiplayerDraftInterface = ({
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Participants ({participants.length})
-              </CardTitle>
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Participants ({participants.length})
+                </CardTitle>
+                {draft.invite_code && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="font-mono text-lg px-3 py-1">
+                      {draft.invite_code}
+                    </Badge>
+                    <Button variant="outline" size="sm" onClick={copyInviteCode} className="flex items-center gap-2">
+                      {copySuccess ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      {copySuccess ? 'Copied!' : 'Copy'}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
