@@ -30,7 +30,7 @@ const CustomCheckbox = ({
       return {
         width: 16,
         height: 16,
-        background: isHovered ? 'var(--Purple-400, #7B42FF)' : 'var(--Brand-Primary, #680AFF)',
+        background: isHovered ? 'hsl(var(--purple-400))' : 'var(--Brand-Primary, #680AFF)',
         borderRadius: 4,
         outline: '1px var(--Purple-300, #907AFF) solid',
         outlineOffset: '-1px',

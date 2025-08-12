@@ -95,7 +95,7 @@ All colors MUST be HSL.
     --purple-150: 244 100% 91%; /* #d3cfff */
     --purple-200: 244 100% 86%; /* #bcb2ff */
     --purple-300: 244 100% 74%; /* #907aff */
-    --purple-400: 244 100% 63%; /* #7b42ff */
+    --purple-400: 255 100% 65%; /* #794DFF */
     --purple-500: 262 100% 52%; /* #680aff */
     --purple-600: 262 92% 41%; /* #5106c9 */
     --purple-700: 262 94% 30%; /* #3b0394 */
@@ -292,5 +292,5 @@ All colors MUST be HSL.
 }
 
 .logo-hover:hover {
-  color: #7B42FF !important;
+  color: hsl(var(--purple-400)) !important;
 }
