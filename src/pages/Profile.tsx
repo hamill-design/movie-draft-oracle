@@ -286,11 +286,11 @@ const Profile = () => {
                             <div className="self-stretch h-6 justify-start items-start gap-2 inline-flex flex-wrap">
                               {/* Multiplayer/Local Badge */}
                               {draft.is_multiplayer ? (
-                                <div className="px-3 py-1 bg-[#EBFFFA] rounded-full border-[0.5px] border-[#015E45] justify-start items-center flex">
+                                <div className="px-3 py-1 bg-[#EBFFFA] rounded-full justify-start items-center flex" style={{boxShadow: 'inset 0 0 0 0.5px #015E45'}}>
                                   <span className="text-[#015E45] text-xs font-brockmann font-semibold leading-4">Multiplayer</span>
                                 </div>
                               ) : (
-                                <div className="px-3 py-1 bg-[#EDEBFF] rounded-full border-[0.5px] border-[#3B0394] justify-start items-center flex">
+                                <div className="px-3 py-1 bg-[#EDEBFF] rounded-full justify-start items-center flex" style={{boxShadow: 'inset 0 0 0 0.5px #3B0394'}}>
                                   <span className="text-[#3B0394] text-xs font-brockmann font-semibold leading-4">Local</span>
                                 </div>
                               )}
