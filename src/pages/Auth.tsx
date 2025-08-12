@@ -127,13 +127,13 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
-      <Card className="w-full max-w-md bg-gray-800 border-gray-600">
+      <Card className="w-full max-w-md bg-greyscale-800 border-greyscale-600">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Film className="text-yellow-400" size={32} />
-            <CardTitle className="text-2xl text-white">Movie Draft League</CardTitle>
+            <CardTitle className="text-2xl text-greyscale-100">Movie Draft League</CardTitle>
           </div>
-          <p className="text-gray-300">
+          <p className="text-greyscale-300">
             {isResetMode ? 'Reset your password' : (isLogin ? 'Welcome back!' : 'Create your account')}
           </p>
         </CardHeader>
@@ -141,22 +141,22 @@ const Auth = () => {
           {isResetMode ? (
             <form onSubmit={handlePasswordReset} className="space-y-4">
               {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-900/50 border border-red-600 rounded text-red-200 text-sm">
+                <div className="flex items-center gap-2 p-3 bg-error-red-900/50 border border-error-red-600 rounded text-error-red-200 text-sm">
                   <AlertCircle size={16} />
                   {error}
                 </div>
               )}
               
               <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Email</label>
+                <label className="text-greyscale-300 text-sm font-medium">Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-greyscale-400" />
                   <Input
                     type="email"
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                    className="pl-10 bg-greyscale-700 border-greyscale-600 text-greyscale-100 placeholder-greyscale-400"
                     required
                   />
                 </div>
@@ -165,7 +165,7 @@ const Auth = () => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-semibold"
+                className="w-full bg-yellow-400 text-greyscale-1000 hover:bg-yellow-500 font-semibold"
               >
                 {loading ? 'Sending...' : 'Send Reset Email'}
               </Button>
@@ -183,22 +183,22 @@ const Auth = () => {
           ) : (
             <form onSubmit={handleAuth} className="space-y-4">
               {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-900/50 border border-red-600 rounded text-red-200 text-sm">
+                <div className="flex items-center gap-2 p-3 bg-error-red-900/50 border border-error-red-600 rounded text-error-red-200 text-sm">
                   <AlertCircle size={16} />
                   {error}
                 </div>
               )}
               
               <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Email</label>
+                <label className="text-greyscale-300 text-sm font-medium">Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-3 h-4 w-4 text-greyscale-400" />
                   <Input
                     type="email"
                     placeholder="Enter your email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                    className="pl-10 bg-greyscale-700 border-greyscale-600 text-greyscale-100 placeholder-greyscale-400"
                     required
                   />
                 </div>
@@ -206,15 +206,15 @@ const Auth = () => {
 
               {!isLogin && (
                 <div className="space-y-2">
-                  <label className="text-gray-300 text-sm font-medium">Name</label>
+                  <label className="text-greyscale-300 text-sm font-medium">Name</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <User className="absolute left-3 top-3 h-4 w-4 text-greyscale-400" />
                     <Input
                       type="text"
                       placeholder="Enter your name"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                      className="pl-10 bg-greyscale-700 border-greyscale-600 text-greyscale-100 placeholder-greyscale-400"
                       required={!isLogin}
                     />
                   </div>
@@ -222,15 +222,15 @@ const Auth = () => {
               )}
 
               <div className="space-y-2">
-                <label className="text-gray-300 text-sm font-medium">Password</label>
+                <label className="text-greyscale-300 text-sm font-medium">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-greyscale-400" />
                   <Input
                     type="password"
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                    className="pl-10 bg-greyscale-700 border-greyscale-600 text-greyscale-100 placeholder-greyscale-400"
                     required
                     minLength={6}
                   />
@@ -253,7 +253,7 @@ const Auth = () => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-yellow-400 text-black hover:bg-yellow-500 font-semibold"
+                className="w-full bg-yellow-400 text-greyscale-1000 hover:bg-yellow-500 font-semibold"
               >
                 {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}
               </Button>
@@ -262,7 +262,7 @@ const Auth = () => {
 
           {!isResetMode && (
             <div className="mt-6 text-center">
-              <p className="text-gray-400 text-sm">
+              <p className="text-greyscale-400 text-sm">
                 {isLogin ? "Don't have an account?" : "Already have an account?"}
               </p>
               <Button

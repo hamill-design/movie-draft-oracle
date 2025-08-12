@@ -32,10 +32,10 @@ export const DraftActorPortrait: React.FC<DraftActorPortraitProps> = ({
 
   if (loading) {
     return (
-      <div className={`bg-gray-600 rounded-full flex items-center justify-center ${
+      <div className={`bg-greyscale-600 rounded-full flex items-center justify-center ${
         size === 'sm' ? 'h-8 w-8' : size === 'md' ? 'h-12 w-12' : 'h-16 w-16'
       } ${className}`}>
-        <User size={size === 'sm' ? 12 : size === 'md' ? 16 : 20} className="text-gray-400" />
+        <User size={size === 'sm' ? 12 : size === 'md' ? 16 : 20} className="text-greyscale-400" />
       </div>
     );
   }

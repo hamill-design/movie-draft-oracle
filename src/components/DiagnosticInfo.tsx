@@ -53,7 +53,7 @@ export const DiagnosticInfo: React.FC<DiagnosticInfoProps> = ({
           onClick={() => setShowDiagnostics(true)}
           variant="outline"
           size="sm"
-          className="bg-red-500 text-white hover:bg-red-600"
+          className="bg-error-red-500 text-error-red-100 hover:bg-error-red-600"
         >
           🔍 Show Diagnostics
         </Button>
@@ -63,10 +63,10 @@ export const DiagnosticInfo: React.FC<DiagnosticInfoProps> = ({
 
   return (
     <div className="fixed bottom-4 right-4 z-50 w-96 max-h-96 overflow-y-auto">
-      <Card className="border-red-500 border-2">
+      <Card className="border-error-red-500 border-2">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm text-red-600">🔍 DIAGNOSTIC v1.0</CardTitle>
+            <CardTitle className="text-sm text-error-red-600">🔍 DIAGNOSTIC v1.0</CardTitle>
             <Button
               onClick={() => setShowDiagnostics(false)}
               variant="ghost"
@@ -127,7 +127,7 @@ export const DiagnosticInfo: React.FC<DiagnosticInfoProps> = ({
               onClick={fixMyParticipantNames}
               variant="outline"
               size="sm"
-              className="w-full text-xs bg-blue-50 hover:bg-blue-100"
+              className="w-full text-xs bg-blue-100 hover:bg-blue-200"
             >
               🔧 Fix My Name in Past Drafts
             </Button>

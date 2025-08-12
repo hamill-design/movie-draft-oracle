@@ -59,12 +59,12 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon size={16} className={available ? 'text-gray-400' : 'text-gray-600'} />
-          <span className={`text-sm ${available ? 'text-white' : 'text-gray-500'}`}>
+          <Icon size={16} className={available ? 'text-greyscale-400' : 'text-greyscale-600'} />
+          <span className={`text-sm ${available ? 'text-greyscale-100' : 'text-greyscale-500'}`}>
             {label}
           </span>
         </div>
-        <span className={`text-sm font-semibold ${available ? 'text-white' : 'text-gray-500'}`}>
+        <span className={`text-sm font-semibold ${available ? 'text-greyscale-100' : 'text-greyscale-500'}`}>
           {available ? `${value}${suffix}` : 'N/A'}
         </span>
       </div>
@@ -78,7 +78,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
   );
 
   return (
-    <Card className={`bg-gray-800 border-gray-600 ${className}`}>
+    <Card className={`bg-greyscale-800 border-greyscale-600 ${className}`}>
       <CardHeader>
         {/* Pick Number and Category */}
         {pickNumber && category && (
@@ -91,7 +91,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
               <img
                 src={posterUrl.startsWith('/') ? `https://image.tmdb.org/t/p/w185${posterUrl}` : posterUrl}
                 alt={`${movieTitle} poster`}
-                className="w-full h-full object-cover rounded border border-gray-600"
+                className="w-full h-full object-cover rounded border border-greyscale-600"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                 }}
@@ -101,8 +101,8 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
           
           <div className="flex items-center justify-between flex-1">
             <div>
-              <CardTitle className="text-white text-lg">{movieTitle}</CardTitle>
-              <div className="text-gray-400 text-sm space-y-0.5">
+              <CardTitle className="text-greyscale-100 text-lg">{movieTitle}</CardTitle>
+              <div className="text-greyscale-400 text-sm space-y-0.5">
                 {movieYear && <p>({movieYear})</p>}
                 {movieGenre && <p>{movieGenre}</p>}
               </div>
@@ -111,7 +111,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
               <div className="text-3xl font-bold text-yellow-400">
                 {scoreBreakdown.finalScore}
               </div>
-              <div className="text-gray-400 text-sm">
+              <div className="text-greyscale-400 text-sm">
                 Grade: {getScoreGrade(scoreBreakdown.finalScore)}
               </div>
             </div>
@@ -122,7 +122,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
       <CardContent className="space-y-4">
         {/* Score Breakdown */}
         <div className="space-y-3">
-          <h4 className="text-white font-semibold text-sm">Score Breakdown</h4>
+          <h4 className="text-greyscale-100 font-semibold text-sm">Score Breakdown</h4>
           
           <ScoreMetric
             icon={DollarSign}
@@ -130,7 +130,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
             value={scoreBreakdown.boxOfficeScore}
             available={scoreBreakdown.availableComponents.includes('Box Office')}
             suffix=" pts"
-            color="bg-green-500"
+            color="bg-positive-green-500"
             maxValue={200}
           />
 
@@ -140,7 +140,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
             value={scoreBreakdown.rtCriticsScore}
             available={scoreBreakdown.availableComponents.includes('RT Critics')}
             suffix=" pts"
-            color="bg-red-500"
+            color="bg-error-red-500"
           />
 
           <ScoreMetric
@@ -164,16 +164,16 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Trophy size={16} className="text-yellow-400" />
-              <span className="text-sm text-white">Oscar Bonus</span>
+              <span className="text-sm text-greyscale-100">Oscar Bonus</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-white">
+              <span className="text-sm font-semibold text-greyscale-100">
                 +{scoreBreakdown.oscarBonus} pts
               </span>
               <Badge 
                 variant={scoringData.oscarStatus === 'winner' ? 'default' : 
                         scoringData.oscarStatus === 'nominee' ? 'secondary' : 'outline'}
-                className={scoringData.oscarStatus === 'winner' ? 'bg-yellow-500 text-black' : ''}
+                className={scoringData.oscarStatus === 'winner' ? 'bg-yellow-500 text-greyscale-1000' : ''}
               >
                 {scoringData.oscarStatus === 'winner' ? 'Winner' : 
                  scoringData.oscarStatus === 'nominee' ? 'Nominee' : 'None'}
@@ -184,19 +184,19 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
 
         {/* Raw Data */}
         {(scoringData.budget || scoringData.revenue) && (
-          <div className="pt-3 border-t border-gray-600">
-            <h4 className="text-white font-semibold text-sm mb-2">Box Office Data</h4>
+          <div className="pt-3 border-t border-greyscale-600">
+            <h4 className="text-greyscale-100 font-semibold text-sm mb-2">Box Office Data</h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
               {scoringData.budget && (
                 <div>
-                  <span className="text-gray-400">Budget:</span>
-                  <span className="text-white ml-2">{formatCurrency(scoringData.budget)}</span>
+                  <span className="text-greyscale-400">Budget:</span>
+                  <span className="text-greyscale-100 ml-2">{formatCurrency(scoringData.budget)}</span>
                 </div>
               )}
               {scoringData.revenue && (
                 <div>
-                  <span className="text-gray-400">Revenue:</span>
-                  <span className="text-white ml-2">{formatCurrency(scoringData.revenue)}</span>
+                  <span className="text-greyscale-400">Revenue:</span>
+                  <span className="text-greyscale-100 ml-2">{formatCurrency(scoringData.revenue)}</span>
                 </div>
               )}
             </div>
@@ -205,7 +205,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
 
         {/* Missing Data Warning */}
         {scoreBreakdown.missingComponents.length > 0 && (
-          <div className="pt-3 border-t border-gray-600">
+          <div className="pt-3 border-t border-greyscale-600">
             <p className="text-yellow-400 text-xs">
               ⚠️ Missing data: {scoreBreakdown.missingComponents.join(', ')}
             </p>

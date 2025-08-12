@@ -14,20 +14,20 @@ interface MovieCardProps {
 
 const MovieCard: React.FC<MovieCardProps> = ({ movie, onDraft, onRemove }) => {
   return (
-    <Card className="bg-gray-900 border-gray-700 hover:border-yellow-400 transition-all duration-300 transform hover:scale-105">
+    <Card className="bg-greyscale-900 border-greyscale-700 hover:border-yellow-400 transition-all duration-300 transform hover:scale-105">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="text-6xl mb-2">{movie.poster}</div>
-          <Badge variant="secondary" className="bg-yellow-400 text-black">
+          <Badge variant="secondary" className="bg-yellow-400 text-greyscale-1000">
             {movie.genre}
           </Badge>
         </div>
-        <CardTitle className="text-white text-lg">{movie.title}</CardTitle>
+        <CardTitle className="text-greyscale-100 text-lg">{movie.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-gray-300 text-sm line-clamp-3">{movie.description}</p>
+        <p className="text-greyscale-300 text-sm line-clamp-3">{movie.description}</p>
         
-        <div className="flex items-center gap-4 text-gray-400 text-xs">
+        <div className="flex items-center gap-4 text-greyscale-400 text-xs">
           <div className="flex items-center gap-1">
             <Calendar size={14} />
             <span>{movie.year}</span>
@@ -38,7 +38,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onDraft, onRemove }) => {
           </div>
         </div>
         
-        <div className="flex items-center gap-1 text-gray-400 text-xs">
+        <div className="flex items-center gap-1 text-greyscale-400 text-xs">
           <User size={14} />
           <span>{movie.director}</span>
         </div>
@@ -49,18 +49,18 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onDraft, onRemove }) => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="flex-1 border-red-500 text-red-400 hover:bg-red-500 hover:text-white"
+                className="flex-1 border-error-red-500 text-error-red-400 hover:bg-error-red-500 hover:text-greyscale-100"
                 onClick={() => onRemove?.(movie.id)}
               >
                 Remove
               </Button>
-              <Badge className="bg-green-600 text-white px-3 py-1">
+              <Badge className="bg-positive-green-600 text-greyscale-100 px-3 py-1">
                 Drafted ✓
               </Badge>
             </div>
           ) : (
             <Button 
-              className="w-full bg-yellow-400 text-black hover:bg-yellow-500"
+              className="w-full bg-yellow-400 text-greyscale-1000 hover:bg-yellow-500"
               onClick={() => onDraft(movie.id)}
             >
               Draft Movie

@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 // Logo Components
 const LogoLong = ({ className }: { className?: string }) => (
-  <svg className={`${className} text-brand-primary hover:text-purple-400 transition-colors duration-300`} viewBox="0 0 428 27" xmlns="http://www.w3.org/2000/svg">
+  <svg className={`${className} text-brand-primary hover:text-purple-500 transition-colors duration-300`} viewBox="0 0 428 27" xmlns="http://www.w3.org/2000/svg">
     <g fill="currentColor">
       <path d="M44.5008 0.690016V25.656C44.5008 26.0324 44.1876 26.3461 43.8118 26.3461H37.0787C36.7029 26.3461 36.3898 26.0324 36.3898 25.656V11.6048C36.3898 11.0403 35.7321 10.7266 35.2937 11.0716L22.7984 20.9828C22.5479 21.1709 22.2034 21.1709 21.9529 20.9828L9.17574 10.9775C8.73731 10.6325 8.07966 10.9775 8.07966 11.5107V25.656C8.07966 26.0324 7.76649 26.3461 7.3907 26.3461H0.688963C0.313165 26.3461 0 26.0324 0 25.656V0.690016C0 0.313644 0.313165 0 0.688963 0H7.86044C7.86044 0 8.14229 0.0627287 8.26756 0.125457L22.0155 10.6012C22.266 10.7893 22.6105 10.7893 22.8297 10.6012L36.2645 0.156822C36.2645 0.156822 36.5464 0 36.6716 0H43.8431C44.2189 0 44.5321 0.313644 44.5321 0.690016H44.5008Z"/>
       <path d="M85.5485 26.3461H48.689C48.3132 26.3461 48 26.0324 48 25.656V0.690016C48 0.313644 48.3132 0 48.689 0H85.5485C85.9243 0 86.2375 0.313644 86.2375 0.690016V25.656C86.2375 26.0324 85.9243 26.3461 85.5485 26.3461ZM77.9699 18.3795V7.87245C77.9699 7.49608 77.6567 7.18244 77.2809 7.18244H56.9565C56.5807 7.18244 56.2676 7.49608 56.2676 7.87245V18.3795C56.2676 18.7559 56.5807 19.0695 56.9565 19.0695H77.2809C77.6567 19.0695 77.9699 18.7559 77.9699 18.3795Z"/>
@@ -24,7 +24,7 @@ const LogoLong = ({ className }: { className?: string }) => (
 );
 
 const LogoDefault = ({ className }: { className?: string }) => (
-  <svg className={`${className} text-brand-primary hover:text-purple-400 transition-colors duration-300`} viewBox="0 0 206 61" xmlns="http://www.w3.org/2000/svg">
+  <svg className={`${className} text-brand-primary hover:text-purple-500 transition-colors duration-300`} viewBox="0 0 206 61" xmlns="http://www.w3.org/2000/svg">
     <g clipPath="url(#clip0_35_982)" fill="currentColor">
       <path d="M44.5008 0.690016V25.656C44.5008 26.0324 44.1876 26.3461 43.8118 26.3461H37.0787C36.7029 26.3461 36.3898 26.0324 36.3898 25.656V11.6048C36.3898 11.0403 35.7321 10.7266 35.2937 11.0716L22.7984 20.9828C22.5479 21.1709 22.2034 21.1709 21.9529 20.9828L9.17574 10.9775C8.73731 10.6325 8.07966 10.9775 8.07966 11.5107V25.656C8.07966 26.0324 7.76649 26.3461 7.3907 26.3461H0.688963C0.313165 26.3461 0 26.0324 0 25.656V0.690016C0 0.313644 0.313165 0 0.688963 0H7.86044C7.86044 0 8.14229 0.0627287 8.26756 0.125457L22.0155 10.6012C22.266 10.7893 22.6105 10.7893 22.8297 10.6012L36.2645 0.156822C36.2645 0.156822 36.5464 0 36.6716 0H43.8431C44.2189 0 44.5321 0.313644 44.5321 0.690016H44.5008Z"/>
       <path d="M85.8072 26.3461H48.9477C48.5719 26.3461 48.2587 26.0324 48.2587 25.656V0.690016C48.2587 0.313644 48.5719 0 48.9477 0H85.8072C86.183 0 86.4962 0.313644 86.4962 0.690016V25.656C86.4962 26.0324 86.183 26.3461 85.8072 26.3461ZM78.2286 18.3795V7.87245C78.2286 7.49608 77.9155 7.18244 77.5397 7.18244H57.2153C56.8395 7.18244 56.5263 7.49608 56.5263 7.87245V18.3795C56.5263 18.7559 56.8395 19.0695 57.2153 19.0695H77.5397C77.9155 19.0695 78.2286 18.7559 78.2286 18.3795Z"/>
@@ -70,7 +70,7 @@ const AppHeader = () => {
               variant="ghost" 
               size="sm"
               font="brockmann-medium"
-              className="text-purple-200 hover:text-purple-200/80 hover:bg-transparent px-3 py-2 text-sm"
+              className="text-purple-150 hover:text-purple-200 hover:bg-transparent px-3 py-2 text-sm"
             >
               <HelpCircle size={16} className="mr-2" />
               Learn More
@@ -83,7 +83,7 @@ const AppHeader = () => {
                 variant="default"
                 size="sm"
                 font="brockmann-medium"
-                className="bg-brand-primary hover:bg-brand-primary/90 text-white px-4 py-2 text-sm rounded-sm"
+                className="bg-brand-primary hover:bg-brand-primary/90 text-brand-primary-foreground px-4 py-2 text-sm rounded-sm"
               >
                 My Profile
               </Button>
@@ -93,7 +93,7 @@ const AppHeader = () => {
                 variant="default"
                 size="sm"
                 font="brockmann-medium"
-                className="bg-brand-primary hover:bg-brand-primary/90 text-white px-4 py-2 text-sm rounded-sm"
+                className="bg-brand-primary hover:bg-brand-primary/90 text-brand-primary-foreground px-4 py-2 text-sm rounded-sm"
               >
                 Login
               </Button>
@@ -120,7 +120,7 @@ const AppHeader = () => {
                 variant="default"
                 size="sm"
                 font="brockmann-medium"
-                className="bg-brand-primary hover:bg-brand-primary/90 text-white px-4 py-2 text-sm rounded-sm"
+                className="bg-brand-primary hover:bg-brand-primary/90 text-brand-primary-foreground px-4 py-2 text-sm rounded-sm"
               >
                 My Profile
               </Button>
@@ -130,7 +130,7 @@ const AppHeader = () => {
                 variant="default"
                 size="sm"
                 font="brockmann-medium"
-                className="bg-brand-primary hover:bg-brand-primary/90 text-white px-4 py-2 text-sm rounded-sm"
+                className="bg-brand-primary hover:bg-brand-primary/90 text-brand-primary-foreground px-4 py-2 text-sm rounded-sm"
               >
                 Login
               </Button>
@@ -142,7 +142,7 @@ const AppHeader = () => {
               variant="ghost" 
               size="sm"
               font="brockmann-medium"
-              className="text-purple-200 hover:text-purple-200/80 hover:bg-transparent px-3 py-2 text-sm"
+              className="text-purple-150 hover:text-purple-200 hover:bg-transparent px-3 py-2 text-sm"
             >
               <HelpCircle size={16} className="mr-2" />
               Learn More
@@ -168,7 +168,7 @@ const AppHeader = () => {
               variant="ghost" 
               size="sm"
               font="brockmann-medium"
-              className="text-purple-200 hover:text-purple-200/80 hover:bg-transparent px-3 py-2 text-sm"
+              className="text-purple-150 hover:text-purple-200 hover:bg-transparent px-3 py-2 text-sm"
             >
               <HelpCircle size={16} className="mr-2" />
               Learn More
@@ -181,7 +181,7 @@ const AppHeader = () => {
                 variant="default"
                 size="sm"
                 font="brockmann-medium"
-                className="bg-brand-primary hover:bg-brand-primary/90 text-white px-4 py-2 text-sm rounded-sm"
+                className="bg-brand-primary hover:bg-brand-primary/90 text-brand-primary-foreground px-4 py-2 text-sm rounded-sm"
               >
                 My Profile
               </Button>
@@ -191,7 +191,7 @@ const AppHeader = () => {
                 variant="default"
                 size="sm"
                 font="brockmann-medium"
-                className="bg-brand-primary hover:bg-brand-primary/90 text-white px-4 py-2 text-sm rounded-sm"
+                className="bg-brand-primary hover:bg-brand-primary/90 text-brand-primary-foreground px-4 py-2 text-sm rounded-sm"
               >
                 Login
               </Button>
