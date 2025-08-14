@@ -315,16 +315,19 @@ export const MultiplayerDraftInterface = ({
                 const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
                 const isCurrentTurn = pId === currentTurnId;
                 return <div key={participant.id} className="flex items-center gap-2 py-3 px-4 bg-white rounded-sm border-[0.5px] border-[#BDC3C2]">
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-base font-brockmann leading-6 tracking-wide text-[#2B2D2D]">{participant.participant_name}</span>
-                          {participant.is_host && <div className="px-3 py-1 bg-[#F8F7FF] rounded-full border-[0.5px] border-[#25015E]">
-                              <span className="text-xs font-semibold font-brockmann leading-4 text-[#100029]">Host</span>
-                            </div>}
-                          {isCurrentTurn && !isComplete && draftHasStarted && <div className="px-3 py-1 bg-[#25015E] rounded-full">
-                              <span className="text-xs font-semibold font-brockmann leading-4 text-white">Current Turn</span>
-                            </div>}
+                      <div className="flex-1 flex flex-col gap-1 pb-0.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 flex flex-col">
+                            <span className="font-semibold text-base font-brockmann leading-6 tracking-wide text-[#2B2D2D]">{participant.participant_name}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {participant.is_host && <div className="px-3 py-1 bg-[#F8F7FF] rounded-full border-[0.5px] border-[#25015E]">
+                                <span className="text-xs font-semibold font-brockmann leading-4 text-[#100029]">Host</span>
+                              </div>}
+                            {isCurrentTurn && !isComplete && draftHasStarted && <div className="px-3 py-1 bg-[#25015E] rounded-full">
+                                <span className="text-xs font-semibold font-brockmann leading-4 text-white">Current Turn</span>
+                              </div>}
+                          </div>
                         </div>
                         <div className="flex items-start gap-1">
                           <span className="text-xs font-normal font-brockmann leading-4 text-[#06C995]">
