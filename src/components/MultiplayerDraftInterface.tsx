@@ -20,6 +20,7 @@ import DraftBoard from '@/components/DraftBoard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DiagnosticInfo } from '@/components/DiagnosticInfo';
 import { getCleanActorName } from '@/lib/utils';
+
 interface MultiplayerDraftInterfaceProps {
   draftId?: string;
   initialData?: {
@@ -35,6 +36,7 @@ interface MultiplayerDraftInterfaceProps {
     picks: any[];
   };
 }
+
 export const MultiplayerDraftInterface = ({
   draftId,
   initialData,
@@ -119,12 +121,15 @@ export const MultiplayerDraftInterface = ({
       createDraft();
     }
   }, [initialData, draftId, participantId, createMultiplayerDraft, navigate, toast]);
+
   const handleMovieSelect = (movie: any) => {
     setSelectedMovie(movie);
   };
+
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
   };
+
   const confirmPick = async () => {
     if (!selectedMovie || !selectedCategory) {
       return;
@@ -138,6 +143,7 @@ export const MultiplayerDraftInterface = ({
       console.error('Failed to make pick in interface:', error);
     }
   };
+
   const copyInviteCode = async () => {
     if (!draft?.invite_code) return;
     try {
@@ -152,6 +158,7 @@ export const MultiplayerDraftInterface = ({
       console.error('Failed to copy invite code:', error);
     }
   };
+
   const getCurrentTurnPlayer = () => {
     if (!draft || !participants.length) return null;
 
@@ -178,6 +185,7 @@ export const MultiplayerDraftInterface = ({
 
   // Check if draft has been started (has turn order)
   const draftHasStarted = draft?.turn_order && draft.turn_order.length > 0;
+
   if (loading) {
     return <div className="min-h-screen bg-background p-4">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -190,6 +198,7 @@ export const MultiplayerDraftInterface = ({
         </div>
       </div>;
   }
+
   if (!participantId) {
     return <div className="max-w-4xl mx-auto p-6">
         <Card>
@@ -202,6 +211,7 @@ export const MultiplayerDraftInterface = ({
         </Card>
       </div>;
   }
+
   if (!draft) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
         <Card>
@@ -217,8 +227,10 @@ export const MultiplayerDraftInterface = ({
         </Card>
       </div>;
   }
+
   const currentTurnPlayer = getCurrentTurnPlayer();
   const isComplete = draft.is_complete;
+
   return <div className="min-h-screen" style={{
     background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'
   }}>
@@ -290,7 +302,7 @@ export const MultiplayerDraftInterface = ({
                   Join Code
                 </CardTitle>
               </div>
-              {draft.invite_code && <div className="flex items-center gap-2 min-w-[295px]">
+              {draft.invite_code && <div className="flex items-center gap-2 justify-end ml-auto">
                   <Badge variant="outline" className="font-mono text-lg px-3 py-1">
                     {draft.invite_code}
                   </Badge>
