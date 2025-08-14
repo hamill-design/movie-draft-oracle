@@ -284,11 +284,13 @@ export const MultiplayerDraftInterface = ({
           {/* Unified participants container with background treatment */}
           <div className="w-full bg-[#FCFFFF] p-6 rounded shadow-[0px_0px_3px_rgba(0,0,0,0.25)] flex flex-col gap-6">
             {/* Join Code section */}
-            <div className="flex items-center justify-between flex-wrap gap-4 flex-1">
-              <CardTitle className="text-2xl font-bold font-brockmann" style={{letterSpacing: '0.24px'}}>
-                Join Code
-              </CardTitle>
-              {draft.invite_code && <div className="flex items-center gap-2 min-w-[295px] ml-auto">
+            <div className="flex items-center flex-wrap gap-4">
+              <div className="flex-1">
+                <CardTitle className="text-2xl font-bold font-brockmann" style={{letterSpacing: '0.24px'}}>
+                  Join Code
+                </CardTitle>
+              </div>
+              {draft.invite_code && <div className="flex items-center gap-2 min-w-[295px]">
                   <Badge variant="outline" className="font-mono text-lg px-3 py-1">
                     {draft.invite_code}
                   </Badge>
