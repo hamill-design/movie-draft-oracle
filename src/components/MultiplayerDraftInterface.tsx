@@ -404,21 +404,26 @@ export const MultiplayerDraftInterface = ({
         </div>
 
         {/* Start Draft Button - Show only to host when conditions are met */}
-        {!draftHasStarted && participants.length >= 2 && !isComplete && isHost && <Card>
-            <CardContent className="p-6 text-center">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold mb-2">Ready to Start?</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {participants.length} players have joined. Click below to randomize turn order and start the draft!
-                  </p>
+        {!draftHasStarted && participants.length >= 2 && !isComplete && isHost && <div style={{width: '100%', height: '100%', padding: '24px', borderRadius: '8px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
+            <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '16px', display: 'flex'}}>
+              <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex'}}>
+                <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', display: 'flex'}}>
+                  <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '20px', fontFamily: 'Brockmann', fontWeight: '500', lineHeight: '28px', wordWrap: 'break-word'}}>Everybody Ready?</div>
                 </div>
-                <Button onClick={() => startDraft(draft.id)} className="w-full md:w-auto" disabled={loading}>
-                  {loading ? 'Starting...' : '🎲 Start Draft (Random Turn Order)'}
-                </Button>
+                <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', display: 'flex'}}>
+                  <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-600, #646968)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>{participants.length} players have joined. Click below to randomize turn order and start the draft!</div>
+                </div>
               </div>
-            </CardContent>
-          </Card>}
+              <div 
+                onClick={() => startDraft(draft.id)}
+                style={{paddingLeft: '32px', paddingRight: '32px', paddingTop: '16px', paddingBottom: '16px', background: 'var(--Purple-500, #680AFF)', borderRadius: '2px', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer'}}
+              >
+                <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--UI-Primary, white)', fontSize: '18px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', wordWrap: 'break-word'}}>
+                  {loading ? 'Starting...' : 'Start Draft'}
+                </div>
+              </div>
+            </div>
+          </div>}
 
         {/* Waiting for Players - Show when not enough players */}
         {!draftHasStarted && participants.length < 2 && <Card>
