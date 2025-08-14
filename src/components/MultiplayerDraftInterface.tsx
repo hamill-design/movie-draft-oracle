@@ -335,11 +335,7 @@ export const MultiplayerDraftInterface = ({
                       gap: '10px', 
                       display: 'inline-flex'
                     }}>
-                      <div style={{
-                        width: '16px', 
-                        flex: '1 1 0', 
-                        background: 'var(--Text-Primary, #2B2D2D)'
-                      }} />
+                      {copySuccess ? <Check size={16} color="#2B2D2D" /> : <Copy size={16} color="#2B2D2D" />}
                     </div>
                     <div style={{
                       textAlign: 'center', 
