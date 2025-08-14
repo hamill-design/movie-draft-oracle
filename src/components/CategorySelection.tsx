@@ -48,6 +48,16 @@ const CategorySelection = ({
     return '';
   };
 
+  const getCategoryDisplayName = (category: string) => {
+    if (category === 'Academy Award Nominee or Winner') {
+      return 'Academy Award';
+    }
+    if (category === 'Blockbuster (minimum of $50 Mil)') {
+      return 'Blockbuster';
+    }
+    return category;
+  };
+
   return (
     <div className="w-full p-6 bg-greyscale-blue-100 shadow-[0px_0px_3px_rgba(0,0,0,0.25)] rounded flex flex-col gap-6">
       {/* Header Section */}
@@ -103,7 +113,7 @@ const CategorySelection = ({
                 className="w-full px-6 py-3 bg-brand-primary rounded text-ui-primary text-sm font-brockmann font-medium leading-5 text-center"
                 title={getCategoryTooltip(category)}
               >
-                {category}
+                {getCategoryDisplayName(category)}
               </button>
             );
           }
@@ -117,7 +127,7 @@ const CategorySelection = ({
                 title={getCategoryTooltip(category)}
               >
                 <span className="text-greyscale-blue-800 text-sm font-brockmann font-medium leading-5 text-center">
-                  {category}
+                  {getCategoryDisplayName(category)}
                 </span>
                 <NAIcon className="w-4 h-4 text-text-primary" />
               </button>
@@ -131,7 +141,7 @@ const CategorySelection = ({
               className="w-full px-6 py-3 bg-white rounded border border-greyscale-blue-200 text-text-primary text-sm font-brockmann font-medium leading-5 text-center hover:bg-[#EDEBFF] hover:outline hover:outline-1 hover:outline-[#BCB2FF] hover:outline-offset-[-1px] hover:text-[#2B2D2D] hover:border-transparent"
               title={getCategoryTooltip(category)}
             >
-              {category}
+              {getCategoryDisplayName(category)}
             </button>
           );
         })}
