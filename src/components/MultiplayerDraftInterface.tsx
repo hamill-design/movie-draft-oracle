@@ -297,7 +297,7 @@ export const MultiplayerDraftInterface = ({
                   </div>
                 </div>
                 {!isMyTurn && draftHasStarted && (
-                  <div style={{alignSelf: 'stretch', paddingTop: '22px', paddingBottom: '24px', paddingLeft: '24px', paddingRight: '24px', background: 'var(--Greyscale-(Blue)-150, #EBF0EF)', borderRadius: '8px', outline: '1px var(--Greyscale-(Blue)-300, #BDC3C2) solid', outlineOffset: '-1px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex'}}>
+                  <div style={{width: '100%', height: '100%', padding: '24px', background: 'var(--Greyscale-(Blue)-150, #EBF0EF)', borderRadius: '8px', outline: '1px var(--Greyscale-(Blue)-300, #BDC3C2) solid', outlineOffset: '-1px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
                     <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '12px', display: 'flex'}}>
                       <div style={{width: '24px', padding: '2px', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '10px', display: 'flex'}}>
                         <div style={{width: '20px', height: '20px', background: 'var(--Greyscale-(Blue)-500, #828786)'}}></div>
@@ -518,17 +518,19 @@ export const MultiplayerDraftInterface = ({
                 </>
               </>}
 
-            {!isComplete && !isMyTurn && draftHasStarted && <Card>
-                <CardContent className="p-6 text-center">
-                  <div className="space-y-2">
-                    <Clock className="h-8 w-8 mx-auto text-muted-foreground" />
-                    <h3 className="font-semibold">Waiting for {currentTurnPlayer?.participant_name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      It's their turn to pick a movie. You'll be notified when it's your turn!
-                    </p>
+            {!isComplete && !isMyTurn && draftHasStarted && (
+              <div style={{width: '100%', height: '100%', padding: '24px', background: 'var(--Greyscale-(Blue)-150, #EBF0EF)', borderRadius: '8px', outline: '1px var(--Greyscale-(Blue)-300, #BDC3C2) solid', outlineOffset: '-1px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
+                <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '12px', display: 'flex'}}>
+                  <div style={{width: '24px', padding: '2px', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '10px', display: 'flex'}}>
+                    <div style={{width: '20px', height: '20px', background: 'var(--Greyscale-(Blue)-500, #828786)'}}></div>
                   </div>
-                </CardContent>
-              </Card>}
+                  <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '4px', display: 'flex'}}>
+                    <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-800, #2B2D2D)', fontSize: '16px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', letterSpacing: '0.32px', wordWrap: 'break-word'}}>Waiting for {currentTurnPlayer?.participant_name}</div>
+                    <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-500, #828786)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>It's their turn to make a pick</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
