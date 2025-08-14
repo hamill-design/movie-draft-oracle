@@ -454,7 +454,7 @@ const Home = () => {
                 <div className="text-center">
                   <Button
                     type="submit"
-                    className="bg-yellow-500 hover:bg-yellow-600 text-greyscale-blue-800 font-brockmann font-semibold px-6 py-3 text-base rounded-sm tracking-wide"
+                    className="bg-yellow-500 hover:bg-yellow-300 text-greyscale-blue-800 font-brockmann font-semibold px-6 py-3 text-base rounded-[2px] tracking-wide"
                     size="lg"
                   >
                     {draftMode === 'multiplayer' ? 'Create Multiplayer Draft' : 'Start Draft'}
