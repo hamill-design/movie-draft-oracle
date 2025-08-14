@@ -284,7 +284,7 @@ export const MultiplayerDraftInterface = ({
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between flex-wrap gap-4">
-                <CardTitle className="text-2xl font-bold font-brockmann">
+                <CardTitle className="text-2xl font-bold font-brockmann" style={{letterSpacing: '1%'}}>
                   Join Code
                 </CardTitle>
                 {draft.invite_code && <div className="flex items-center gap-2 min-w-[295px] ml-auto">
