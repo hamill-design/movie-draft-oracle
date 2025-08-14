@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Copy, Check, Users, Clock, Film, User, Calendar, Trophy } from 'lucide-react';
 import { MultiPersonIcon } from '@/components/icons/MultiPersonIcon';
+import { CopyIcon } from '@/components/icons/CopyIcon';
 import MovieSearch from '@/components/MovieSearch';
 import { DraftActorPortrait } from '@/components/DraftActorPortrait';
 import CategorySelection from '@/components/CategorySelection';
@@ -298,68 +299,71 @@ export const MultiplayerDraftInterface = ({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <CardTitle className="text-2xl font-bold font-brockmann">
-                  Join Code
-                </CardTitle>
-                {draft.invite_code && (
-                  <div className="flex items-center gap-2 min-w-[295px] ml-auto">
-                    <Badge variant="outline" className="font-mono text-lg px-3 py-1">
-                      {draft.invite_code}
-                    </Badge>
-                    <Button variant="outline" size="sm" onClick={copyInviteCode} className="flex items-center gap-2">
-                      {copySuccess ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                      {copySuccess ? 'Copied!' : 'Copy'}
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardHeader>
-            {/* Custom participants container matching StyledMultiplayerParticipants */}
-            <div className="w-full bg-[#FCFFFF] p-6 rounded border shadow-sm flex flex-col gap-4">
-              {/* Participants header matching StyledHeading4 */}
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center">
-                  <MultiPersonIcon className="w-5 h-5 text-[#680AFF]" />
+          {/* Unified Participants Container - matching StyledMultiplayerParticipants */}
+          <div className="w-full bg-[#FCFFFF] p-6 rounded shadow-[0px_0px_3px_rgba(0,0,0,0.25)] flex flex-col gap-6">
+            {/* Join Code Section - matching the top section from styled-components */}
+            <div className="flex items-center justify-between flex-wrap">
+              <span className="text-[#2B2D2D] text-2xl font-brockmann font-bold leading-6 tracking-[0.24px]">Join Code</span>
+              <div className="flex items-center gap-2 min-w-[295px] flex-col items-end">
+                <div className="flex items-center gap-2">
+                  {draft.invite_code && (
+                    <div className="px-[14px] py-1 bg-white rounded-full border border-[#D9E0DF] flex items-center">
+                      <span className="text-[#2B2D2D] text-lg font-replica-mono font-normal leading-7 tracking-[1.08px]">{draft.invite_code}</span>
+                    </div>
+                  )}
+                  <button 
+                    onClick={copyInviteCode}
+                    className="px-3 py-2 bg-white rounded-sm border border-[#D9E0DF] flex items-center gap-2"
+                  >
+                    <CopyIcon className="w-4 h-4" />
+                    <span className="text-[#2B2D2D] text-sm font-brockmann font-medium leading-5">{copySuccess ? 'Copied!' : 'Copy'}</span>
+                  </button>
                 </div>
-                <span className="text-xl font-medium font-brockmann leading-7 text-[#2B2D2D]">Participants</span>
+              </div>
+            </div>
+
+            {/* Participants Section - matching StyledFrame1 */}
+            <div className="flex flex-col gap-4">
+              {/* Participants header matching StyledHeading4 */}
+              <div className="w-[500px] h-7 flex items-center gap-2">
+                <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center">
+                  <div className="h-[18.18px] bg-[#680AFF] flex-1"></div>
+                </div>
+                <span className="text-[#2B2D2D] text-xl font-brockmann font-medium leading-7">Participants</span>
               </div>
               
-              {/* Participants list with proper gap */}
+              {/* Participants list - matching StyledContainer02 with 8px gap */}
               <div className="flex flex-col gap-2">
                 {participants.map(participant => {
                   const pId = participant.user_id || participant.guest_participant_id;
                   const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
                   const isCurrentTurn = pId === currentTurnId;
                   return (
-                    <div key={participant.id} className="flex items-center gap-2 py-3 px-4 bg-white rounded-sm border-[0.5px] border-[#BDC3C2]">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {participant.participant_name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-base font-brockmann leading-6 tracking-wide text-[#2B2D2D]">{participant.participant_name}</span>
-                          {participant.is_host && (
-                            <div className="px-3 py-1 bg-[#F8F7FF] rounded-full border-[0.5px] border-[#25015E]">
-                              <span className="text-xs font-semibold font-brockmann leading-4 text-[#100029]">Host</span>
-                            </div>
-                          )}
-                          {isCurrentTurn && !isComplete && draftHasStarted && (
-                            <div className="px-3 py-1 bg-[#25015E] rounded-full">
-                              <span className="text-xs font-semibold font-brockmann leading-4 text-white">Current Turn</span>
-                            </div>
-                          )}
+                    <div key={participant.id} className="py-3 px-4 pr-3 bg-white rounded-sm border-[0.5px] border-[#BDC3C2] flex items-center gap-2">
+                      <div className="flex-1 pb-0.5 flex flex-col gap-1">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 flex flex-col">
+                            <span className="text-[#2B2D2D] text-base font-brockmann font-semibold leading-6 tracking-[0.32px]">{participant.participant_name}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {participant.is_host && (
+                              <div className="px-3 py-1 bg-[#F8F7FF] rounded-full border-[0.5px] border-[#25015E] flex items-center">
+                                <span className="text-[#100029] text-xs font-brockmann font-semibold leading-4">Host</span>
+                              </div>
+                            )}
+                            {isCurrentTurn && !isComplete && draftHasStarted && (
+                              <div className="px-3 py-1 bg-[#25015E] rounded-full flex items-center">
+                                <span className="text-white text-xs font-brockmann font-semibold leading-4">Current Turn</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-start gap-1">
-                          <span className="text-xs font-normal font-brockmann leading-4 text-[#06C995]">
+                          <span className="text-[#06C995] text-xs font-brockmann font-normal leading-4">
                             {participant.status === 'joined' ? 'Joined' : participant.status}
                           </span>
                           {participant.user_id && (
-                            <span className="text-xs font-normal font-brockmann leading-4 text-[#828786]">
+                            <span className="text-[#828786] text-xs font-brockmann font-normal leading-4">
                               {participant.participant_name.toLowerCase().replace(/\s+/g, '')}@gmail.com
                             </span>
                           )}
@@ -370,7 +374,7 @@ export const MultiplayerDraftInterface = ({
                 })}
               </div>
             </div>
-          </Card>
+          </div>
         </div>
 
         {/* Start Draft Button - Show only to host when conditions are met */}
