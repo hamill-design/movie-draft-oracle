@@ -303,7 +303,7 @@ export const MultiplayerDraftInterface = ({
                 </CardTitle>
               </div>
               {draft.invite_code && <div className="flex items-center gap-2 justify-end ml-auto">
-                  <Badge variant="outline" className="font-mono text-lg px-3 py-1">
+                  <Badge variant="outline" className="font-mono text-lg px-3 py-1 bg-background text-foreground">
                     {draft.invite_code}
                   </Badge>
                   <button 
