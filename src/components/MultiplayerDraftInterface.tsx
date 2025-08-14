@@ -306,10 +306,56 @@ export const MultiplayerDraftInterface = ({
                   <Badge variant="outline" className="font-mono text-lg px-3 py-1">
                     {draft.invite_code}
                   </Badge>
-                  <Button variant="outline" size="sm" onClick={copyInviteCode} className="flex items-center gap-2">
-                    {copySuccess ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    {copySuccess ? 'Copied!' : 'Copy'}
-                  </Button>
+                  <div 
+                    onClick={copyInviteCode}
+                    style={{
+                      width: '100%', 
+                      height: '100%', 
+                      paddingLeft: '12px', 
+                      paddingRight: '12px', 
+                      paddingTop: '8px', 
+                      paddingBottom: '8px', 
+                      background: 'white', 
+                      borderRadius: '2px', 
+                      outline: '1px var(--Greyscale-(Blue)-200, #D9E0DF) solid', 
+                      outlineOffset: '-1px', 
+                      justifyContent: 'center', 
+                      alignItems: 'center', 
+                      gap: '8px', 
+                      display: 'inline-flex',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div style={{
+                      width: '16px', 
+                      height: '16px', 
+                      flexDirection: 'column', 
+                      justifyContent: 'center', 
+                      alignItems: 'center', 
+                      gap: '10px', 
+                      display: 'inline-flex'
+                    }}>
+                      <div style={{
+                        width: '16px', 
+                        flex: '1 1 0', 
+                        background: 'var(--Text-Primary, #2B2D2D)'
+                      }} />
+                    </div>
+                    <div style={{
+                      textAlign: 'center', 
+                      justifyContent: 'center', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      color: 'var(--Text-Primary, #2B2D2D)', 
+                      fontSize: '14px', 
+                      fontFamily: 'Brockmann', 
+                      fontWeight: '500', 
+                      lineHeight: '20px', 
+                      wordWrap: 'break-word'
+                    }}>
+                      {copySuccess ? 'Copied!' : 'Copy'}
+                    </div>
+                  </div>
                 </div>}
             </div>
             
