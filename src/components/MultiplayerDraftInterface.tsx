@@ -257,7 +257,7 @@ export const MultiplayerDraftInterface = ({
 
         {/* Status and Participants */}
         <div className="grid md:grid-cols-2 gap-6">
-          <div style={{width: '100%', height: '100%', padding: '24px', background: 'var(--Greyscale-(Blue)-100, #FCFFFF)', boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)', borderRadius: '4px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '24px', display: 'inline-flex'}}>
+          <div style={{width: '100%', height: '100%', padding: '24px', background: '#FCFFFF', boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)', borderRadius: '4px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '24px', display: 'inline-flex'}}>
             <div style={{alignSelf: 'stretch', justifyContent: 'flex-start', alignItems: 'center', gap: '8px', display: 'inline-flex'}}>
               <div style={{width: '24px', padding: '2px', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '10px', display: 'inline-flex'}}>
                 <div style={{width: '20px', height: '20px', background: 'var(--Brand-Primary, #680AFF)'}}></div>
