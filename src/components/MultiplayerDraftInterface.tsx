@@ -415,8 +415,8 @@ export const MultiplayerDraftInterface = ({
                             {participant.is_host && <div className="w-full h-full px-3 py-1 bg-[#F8F7FF] rounded-full" style={{outline: '0.50px #25015E solid', outlineOffset: '-0.50px', justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
                                 <div className="flex flex-col justify-center text-[#100029] text-xs font-brockmann font-semibold leading-4">Host</div>
                               </div>}
-                            {isCurrentTurn && !isComplete && draftHasStarted && <div className="px-3 py-1 bg-[#25015E] rounded-full">
-                                <span className="text-xs font-semibold font-brockmann leading-4 text-white">Current Turn</span>
+                            {isCurrentTurn && !isComplete && draftHasStarted && <div className="px-3 py-1 bg-[#25015E] rounded-full whitespace-nowrap">
+                                <span className="text-xs font-semibold font-brockmann leading-4 text-white">Your Pick</span>
                               </div>}
                           </div>
                         </div>
