@@ -20,6 +20,7 @@ import DraftBoard from '@/components/DraftBoard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DiagnosticInfo } from '@/components/DiagnosticInfo';
 import { getCleanActorName } from '@/lib/utils';
+
 interface MultiplayerDraftInterfaceProps {
   draftId?: string;
   initialData?: {
@@ -35,6 +36,7 @@ interface MultiplayerDraftInterfaceProps {
     picks: any[];
   };
 }
+
 export const MultiplayerDraftInterface = ({
   draftId,
   initialData,
@@ -60,6 +62,7 @@ export const MultiplayerDraftInterface = ({
     makePick,
     startDraft
   } = useMultiplayerDraft(draftId);
+
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -119,12 +122,15 @@ export const MultiplayerDraftInterface = ({
       createDraft();
     }
   }, [initialData, draftId, participantId, createMultiplayerDraft, navigate, toast]);
+
   const handleMovieSelect = (movie: any) => {
     setSelectedMovie(movie);
   };
+
   const handleCategorySelect = (category: string) => {
     setSelectedCategory(category);
   };
+
   const confirmPick = async () => {
     if (!selectedMovie || !selectedCategory) {
       return;
@@ -138,6 +144,7 @@ export const MultiplayerDraftInterface = ({
       console.error('Failed to make pick in interface:', error);
     }
   };
+
   const copyInviteCode = async () => {
     if (!draft?.invite_code) return;
     try {
@@ -152,6 +159,7 @@ export const MultiplayerDraftInterface = ({
       console.error('Failed to copy invite code:', error);
     }
   };
+
   const getCurrentTurnPlayer = () => {
     if (!draft || !participants.length) return null;
 
@@ -178,6 +186,7 @@ export const MultiplayerDraftInterface = ({
 
   // Check if draft has been started (has turn order)
   const draftHasStarted = draft?.turn_order && draft.turn_order.length > 0;
+
   if (loading) {
     return <div className="min-h-screen bg-background p-4">
         <div className="max-w-6xl mx-auto space-y-6">
@@ -190,6 +199,7 @@ export const MultiplayerDraftInterface = ({
         </div>
       </div>;
   }
+
   if (!participantId) {
     return <div className="max-w-4xl mx-auto p-6">
         <Card>
@@ -202,6 +212,7 @@ export const MultiplayerDraftInterface = ({
         </Card>
       </div>;
   }
+
   if (!draft) {
     return <div className="min-h-screen bg-background flex items-center justify-center">
         <Card>
@@ -217,8 +228,10 @@ export const MultiplayerDraftInterface = ({
         </Card>
       </div>;
   }
+
   const currentTurnPlayer = getCurrentTurnPlayer();
   const isComplete = draft.is_complete;
+
   return <div className="min-h-screen" style={{
     background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'
   }}>
@@ -284,20 +297,20 @@ export const MultiplayerDraftInterface = ({
           {/* Unified participants container with background treatment */}
           <div className="w-full bg-[#FCFFFF] p-6 rounded shadow-[0px_0px_3px_rgba(0,0,0,0.25)] flex flex-col gap-6">
             {/* Join Code section */}
-            <div className="flex items-center flex-wrap gap-4">
-              <div className="flex-1">
-                <CardTitle className="text-2xl font-bold font-brockmann" style={{letterSpacing: '0.24px'}}>
-                  Join Code
-                </CardTitle>
-              </div>
-              {draft.invite_code && <div className="flex items-center gap-2 min-w-[295px]">
-                  <Badge variant="outline" className="font-mono text-lg px-3 py-1">
-                    {draft.invite_code}
-                  </Badge>
-                  <Button variant="outline" size="sm" onClick={copyInviteCode} className="flex items-center gap-2">
-                    {copySuccess ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                    {copySuccess ? 'Copied!' : 'Copy'}
-                  </Button>
+            <div style={{width: '100%', height: '100%', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex', flexWrap: 'wrap', alignContent: 'center'}}>
+              <div style={{minWidth: 120, justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: 24, fontFamily: 'Brockmann', fontWeight: '700', lineHeight: 24, letterSpacing: 0.24, wordWrap: 'break-word'}}>Join Code</div>
+              {draft.invite_code && <div style={{width: 295, minWidth: 295, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-end', gap: 10, display: 'inline-flex'}}>
+                  <div style={{alignSelf: 'stretch', justifyContent: 'flex-end', alignItems: 'center', gap: 8, display: 'inline-flex'}}>
+                    <div style={{paddingLeft: 14, paddingRight: 14, paddingTop: 4, paddingBottom: 4, background: 'var(--UI-Primary, white)', borderRadius: 9999, outline: '1px var(--Greyscale-(Blue)-200, #D9E0DF) solid', outlineOffset: '-1px', justifyContent: 'flex-start', alignItems: 'center', display: 'flex'}}>
+                      <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: 18, fontFamily: 'Replica-Mono', fontWeight: '400', lineHeight: 28, letterSpacing: 1.08, wordWrap: 'break-word'}}>{draft.invite_code}</div>
+                    </div>
+                    <div onClick={copyInviteCode} style={{paddingLeft: 12, paddingRight: 12, paddingTop: 8, paddingBottom: 8, background: 'white', borderRadius: 2, outline: '1px var(--Greyscale-(Blue)-200, #D9E0DF) solid', outlineOffset: '-1px', justifyContent: 'center', alignItems: 'center', gap: 8, display: 'flex', cursor: 'pointer'}}>
+                      {copySuccess ? <Check style={{width: 16, height: 16}} /> : <Copy style={{width: 16, height: 16}} />}
+                      <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: 14, fontFamily: 'Brockmann', fontWeight: '500', lineHeight: 20, wordWrap: 'break-word'}}>
+                        {copySuccess ? 'Copied!' : 'Copy'}
+                      </div>
+                    </div>
+                  </div>
                 </div>}
             </div>
             
