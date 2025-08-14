@@ -306,7 +306,7 @@ export const MultiplayerDraftInterface = ({
                   <Badge variant="outline" className="font-mono text-lg px-3 py-1">
                     {draft.invite_code}
                   </Badge>
-                  <div 
+                  <button 
                     onClick={copyInviteCode}
                     style={{
                       width: '100%', 
@@ -323,7 +323,8 @@ export const MultiplayerDraftInterface = ({
                       alignItems: 'center', 
                       gap: '8px', 
                       display: 'inline-flex',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      border: 'none'
                     }}
                   >
                     <div style={{
@@ -351,7 +352,7 @@ export const MultiplayerDraftInterface = ({
                     }}>
                       {copySuccess ? 'Copied!' : 'Copy'}
                     </div>
-                  </div>
+                  </button>
                 </div>}
             </div>
             
