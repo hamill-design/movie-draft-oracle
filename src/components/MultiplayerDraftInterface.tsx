@@ -314,7 +314,7 @@ export const MultiplayerDraftInterface = ({
                 const pId = participant.user_id || participant.guest_participant_id;
                 const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
                 const isCurrentTurn = pId === currentTurnId;
-                return <div key={participant.id} className="flex items-center gap-2 py-3 px-4 bg-white border-[0.5px] border-[#BDC3C2]" style={{borderRadius: '2px'}}>
+                return <div key={participant.id} className="flex items-center gap-2 py-3 px-4 bg-white" style={{borderRadius: '2px', outline: '0.5px solid #BDC3C2', outlineOffset: '-0.5px'}}>
                       <div className="flex-1 flex flex-col gap-1 pb-0.5">
                         <div className="flex items-center justify-between">
                           <div className="flex-1 flex flex-col">
