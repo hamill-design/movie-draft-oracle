@@ -299,46 +299,49 @@ export const MultiplayerDraftInterface = ({
                 </div>}
             </div>
             
-            {/* Participants header matching StyledHeading4 */}
-            <div className="flex items-center gap-2 mb-4">
-            <div className="w-6 h-6 flex flex-col justify-center items-center">
-              <MultiPersonIcon className="w-6 h-6 text-[#680AFF]" />
-            </div>
-              <span className="text-xl font-medium font-brockmann leading-7 text-[#2B2D2D]">Participants</span>
-            </div>
-            
-            {/* Participants list with proper gap */}
-            <div className="flex flex-col gap-2">
-              {participants.map(participant => {
-              const pId = participant.user_id || participant.guest_participant_id;
-              const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
-              const isCurrentTurn = pId === currentTurnId;
-              return <div key={participant.id} className="flex items-center gap-2 py-3 px-4 bg-white" style={{borderRadius: '2px', outline: '0.5px solid #BDC3C2', outlineOffset: '-0.5px'}}>
-                    <div className="flex-1 flex flex-col gap-1 pb-0.5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1 flex flex-col">
-                          <span className="font-semibold text-base font-brockmann leading-6 tracking-wide text-[#2B2D2D]">{participant.participant_name}</span>
+            {/* Participants section */}
+            <div>
+              {/* Participants header matching StyledHeading4 */}
+              <div className="flex items-center gap-2 mb-4">
+              <div className="w-6 h-6 flex flex-col justify-center items-center">
+                <MultiPersonIcon className="w-6 h-6 text-[#680AFF]" />
+              </div>
+                <span className="text-xl font-medium font-brockmann leading-7 text-[#2B2D2D]">Participants</span>
+              </div>
+              
+              {/* Participants list with proper gap */}
+              <div className="flex flex-col gap-2">
+                {participants.map(participant => {
+                const pId = participant.user_id || participant.guest_participant_id;
+                const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
+                const isCurrentTurn = pId === currentTurnId;
+                return <div key={participant.id} className="flex items-center gap-2 py-3 px-4 bg-white" style={{borderRadius: '2px', outline: '0.5px solid #BDC3C2', outlineOffset: '-0.5px'}}>
+                      <div className="flex-1 flex flex-col gap-1 pb-0.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 flex flex-col">
+                            <span className="font-semibold text-base font-brockmann leading-6 tracking-wide text-[#2B2D2D]">{participant.participant_name}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {participant.is_host && <div className="w-full h-full px-3 py-1 bg-[#F8F7FF] rounded-full" style={{outline: '0.50px #25015E solid', outlineOffset: '-0.50px', justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
+                                <div className="flex flex-col justify-center text-[#100029] text-xs font-brockmann font-semibold leading-4">Host</div>
+                              </div>}
+                            {isCurrentTurn && !isComplete && draftHasStarted && <div className="px-3 py-1 bg-[#25015E] rounded-full">
+                                <span className="text-xs font-semibold font-brockmann leading-4 text-white">Current Turn</span>
+                              </div>}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          {participant.is_host && <div className="w-full h-full px-3 py-1 bg-[#F8F7FF] rounded-full" style={{outline: '0.50px #25015E solid', outlineOffset: '-0.50px', justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
-                              <div className="flex flex-col justify-center text-[#100029] text-xs font-brockmann font-semibold leading-4">Host</div>
-                            </div>}
-                          {isCurrentTurn && !isComplete && draftHasStarted && <div className="px-3 py-1 bg-[#25015E] rounded-full">
-                              <span className="text-xs font-semibold font-brockmann leading-4 text-white">Current Turn</span>
-                            </div>}
+                        <div className="flex items-start gap-1">
+                          <span className="text-xs font-normal font-brockmann leading-4 text-[#06C995]">
+                            {participant.status === 'joined' ? 'Joined' : participant.status}
+                          </span>
+                          {participant.user_id && <span className="text-xs font-normal font-brockmann leading-4 text-[#828786]">
+                              {participant.participant_name.toLowerCase().replace(/\s+/g, '')}@gmail.com
+                            </span>}
                         </div>
                       </div>
-                      <div className="flex items-start gap-1">
-                        <span className="text-xs font-normal font-brockmann leading-4 text-[#06C995]">
-                          {participant.status === 'joined' ? 'Joined' : participant.status}
-                        </span>
-                        {participant.user_id && <span className="text-xs font-normal font-brockmann leading-4 text-[#828786]">
-                            {participant.participant_name.toLowerCase().replace(/\s+/g, '')}@gmail.com
-                          </span>}
-                      </div>
-                    </div>
-                  </div>;
-            })}
+                    </div>;
+              })}
+              </div>
             </div>
           </div>
         </div>
