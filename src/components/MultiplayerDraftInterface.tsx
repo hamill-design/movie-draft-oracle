@@ -299,7 +299,7 @@ export const MultiplayerDraftInterface = ({
               </div>
             </CardHeader>
             {/* Custom participants container matching StyledMultiplayerParticipants */}
-            <div className="w-full bg-[#FCFFFF] p-6 rounded border shadow-sm flex flex-col gap-4">
+            <div className="w-full bg-[#FCFFFF] p-6 rounded shadow-[0px_0px_3px_rgba(0,0,0,0.25)] flex flex-col gap-4">
               {/* Participants header matching StyledHeading4 */}
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center">
