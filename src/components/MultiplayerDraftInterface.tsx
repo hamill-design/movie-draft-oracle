@@ -315,11 +315,7 @@ export const MultiplayerDraftInterface = ({
                 const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
                 const isCurrentTurn = pId === currentTurnId;
                 return <div key={participant.id} className="flex items-center gap-2 py-3 px-4 bg-white rounded-sm border-[0.5px] border-[#BDC3C2]">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>
-                          {participant.participant_name.charAt(0).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
+                      
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-base font-brockmann leading-6 tracking-wide text-[#2B2D2D]">{participant.participant_name}</span>
