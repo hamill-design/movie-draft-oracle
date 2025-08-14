@@ -499,35 +499,23 @@ export const MultiplayerDraftInterface = ({
           {/* Controls */}
           <div className="space-y-6">
             {!isComplete && isMyTurn && <>
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Film className="h-5 w-5" />
-                      Make Your Pick
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <MovieSearch theme={draft.theme} option={getCleanActorName(draft.option)} searchQuery={searchQuery} onSearchChange={setSearchQuery} movies={movies} loading={moviesLoading} onMovieSelect={handleMovieSelect} selectedMovie={selectedMovie} themeParameter={themeConstraint} />
+                <>
+                  <MovieSearch theme={draft.theme} option={getCleanActorName(draft.option)} searchQuery={searchQuery} onSearchChange={setSearchQuery} movies={movies} loading={moviesLoading} onMovieSelect={handleMovieSelect} selectedMovie={selectedMovie} themeParameter={themeConstraint} />
 
-                    
+                  <CategorySelection selectedMovie={selectedMovie} categories={draft.categories} selectedCategory={selectedCategory} onCategorySelect={handleCategorySelect} picks={picks.map(pick => ({
+                    playerId: participants.findIndex(p => p.participant_name === pick.player_name) + 1,
+                    playerName: pick.player_name,
+                    movie: {
+                      id: pick.movie_id,
+                      title: pick.movie_title,
+                      year: pick.movie_year,
+                      poster_path: pick.poster_path
+                    },
+                    category: pick.category
+                  }))} currentPlayerId={participants.findIndex(p => (p.user_id || p.guest_participant_id) === participantId) + 1} />
 
-                    <CategorySelection selectedMovie={selectedMovie} categories={draft.categories} selectedCategory={selectedCategory} onCategorySelect={handleCategorySelect} picks={picks.map(pick => ({
-                  playerId: participants.findIndex(p => p.participant_name === pick.player_name) + 1,
-                  playerName: pick.player_name,
-                  movie: {
-                    id: pick.movie_id,
-                    title: pick.movie_title,
-                    year: pick.movie_year,
-                    poster_path: pick.poster_path
-                  },
-                  category: pick.category
-                }))} currentPlayerId={participants.findIndex(p => (p.user_id || p.guest_participant_id) === participantId) + 1} />
-
-                    
-
-                    <PickConfirmation currentPlayerName={currentTurnPlayer?.participant_name || 'You'} selectedMovie={selectedMovie} selectedCategory={selectedCategory} onConfirm={confirmPick} />
-                  </CardContent>
-                </Card>
+                  <PickConfirmation currentPlayerName={currentTurnPlayer?.participant_name || 'You'} selectedMovie={selectedMovie} selectedCategory={selectedCategory} onConfirm={confirmPick} />
+                </>
               </>}
 
             {!isComplete && !isMyTurn && draftHasStarted && <Card>
