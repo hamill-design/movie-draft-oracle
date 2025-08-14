@@ -317,7 +317,7 @@ export const MultiplayerDraftInterface = ({
                 )}
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-6 py-2">
                 <div className="space-y-2">
                 <div style={{width: '100%', height: '100%', justifyContent: 'flex-start', alignItems: 'center', gap: 8, display: 'inline-flex'}}>
                   <div style={{width: 24, height: 24, padding: 2, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 10, display: 'inline-flex'}}>
