@@ -518,19 +518,6 @@ export const MultiplayerDraftInterface = ({
                 </>
               </>}
 
-            {!isComplete && !isMyTurn && draftHasStarted && (
-              <div style={{width: '100%', height: '100%', padding: '24px', background: 'var(--Greyscale-(Blue)-150, #EBF0EF)', borderRadius: '8px', outline: '1px var(--Greyscale-(Blue)-300, #BDC3C2) solid', outlineOffset: '-1px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
-                <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '12px', display: 'flex'}}>
-                  <div style={{width: '24px', padding: '2px', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '10px', display: 'flex'}}>
-                    <div style={{width: '20px', height: '20px', background: 'var(--Greyscale-(Blue)-500, #828786)'}}></div>
-                  </div>
-                  <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '4px', display: 'flex'}}>
-                    <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-800, #2B2D2D)', fontSize: '16px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', letterSpacing: '0.32px', wordWrap: 'break-word'}}>Waiting for {currentTurnPlayer?.participant_name}</div>
-                    <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-500, #828786)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>It's their turn to make a pick</div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
