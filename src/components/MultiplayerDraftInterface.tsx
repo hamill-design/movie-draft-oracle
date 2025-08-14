@@ -257,41 +257,74 @@ export const MultiplayerDraftInterface = ({
 
         {/* Status and Participants */}
         <div className="grid md:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                Draft Status
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isComplete ? <div className="text-center space-y-4">
-                  <div>
-                    <Badge variant="default" className="mb-2">Draft Complete</Badge>
-                    <p className="text-muted-foreground">All picks have been made!</p>
+          <div style={{width: '100%', height: '100%', padding: '24px', background: 'var(--Greyscale-(Blue)-100, #FCFFFF)', boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)', borderRadius: '4px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '24px', display: 'inline-flex'}}>
+            <div style={{alignSelf: 'stretch', justifyContent: 'flex-start', alignItems: 'center', gap: '8px', display: 'inline-flex'}}>
+              <div style={{width: '24px', padding: '2px', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '10px', display: 'inline-flex'}}>
+                <div style={{width: '20px', height: '20px', background: 'var(--Brand-Primary, #680AFF)'}}></div>
+              </div>
+              <div style={{flex: '1 1 0', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '20px', fontFamily: 'Brockmann', fontWeight: '500', lineHeight: '28px', wordWrap: 'break-word'}}>Draft Status</div>
+            </div>
+            
+            {isComplete ? (
+              <>
+                <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '12px', display: 'flex'}}>
+                  <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '16px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', wordWrap: 'break-word'}}>Draft Complete</div>
+                  <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-600, #646968)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>All picks have been made!</div>
+                </div>
+                <div 
+                  onClick={() => navigate(`/final-scores/${draft.id}?public=true`)}
+                  style={{alignSelf: 'stretch', paddingLeft: '24px', paddingRight: '24px', paddingTop: '12px', paddingBottom: '12px', background: 'var(--Purple-500, #680AFF)', borderRadius: '2px', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer'}}
+                >
+                  <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--UI-Primary, white)', fontSize: '16px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', wordWrap: 'break-word'}}>🏆 View Final Scores</div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '12px', display: 'flex'}}>
+                  <div style={{alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex'}}>
+                    <div style={{flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
+                      <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-600, #646968)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>Pick Number:</div>
+                    </div>
+                    <div style={{flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
+                      <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '500', lineHeight: '20px', wordWrap: 'break-word'}}>{draft.current_pick_number}</div>
+                    </div>
                   </div>
-                  <Button onClick={() => navigate(`/final-scores/${draft.id}?public=true`)} className="w-full md:w-auto">
-                    <Trophy className="mr-2 h-4 w-4 text-yellow-400" />
-                    View Final Scores
-                  </Button>
-                </div> : <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Current Turn:</span>
-                    <Badge variant={isMyTurn ? "default" : "secondary"}>
-                      {currentTurnPlayer?.participant_name || 'Unknown'}
-                    </Badge>
+                  <div style={{alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex'}}>
+                    <div style={{flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
+                      <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-600, #646968)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>Current Turn:</div>
+                    </div>
+                    <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '500', lineHeight: '20px', wordWrap: 'break-word'}}>{currentTurnPlayer?.participant_name || 'Unknown'}</div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Pick Number:</span>
-                    <span className="font-semibold">{draft.current_pick_number}</span>
+                </div>
+                {!isMyTurn && draftHasStarted && (
+                  <div style={{alignSelf: 'stretch', paddingTop: '22px', paddingBottom: '24px', paddingLeft: '24px', paddingRight: '24px', background: 'var(--Greyscale-(Blue)-150, #EBF0EF)', borderRadius: '8px', outline: '1px var(--Greyscale-(Blue)-300, #BDC3C2) solid', outlineOffset: '-1px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex'}}>
+                    <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '12px', display: 'flex'}}>
+                      <div style={{width: '24px', padding: '2px', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '10px', display: 'flex'}}>
+                        <div style={{width: '20px', height: '20px', background: 'var(--Greyscale-(Blue)-500, #828786)'}}></div>
+                      </div>
+                      <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '4px', display: 'flex'}}>
+                        <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-800, #2B2D2D)', fontSize: '16px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', letterSpacing: '0.32px', wordWrap: 'break-word'}}>Waiting for {currentTurnPlayer?.participant_name}</div>
+                        <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-500, #828786)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>It's their turn to make a pick</div>
+                      </div>
+                    </div>
                   </div>
-                  {isMyTurn && <div className="mt-4 p-3 bg-primary/10 rounded-lg">
-                      <p className="text-sm font-medium text-primary">🎬 It's your turn!</p>
-                      <p className="text-xs text-muted-foreground">Select a movie and category below</p>
-                    </div>}
-                </div>}
-            </CardContent>
-          </Card>
+                )}
+                {isMyTurn && (
+                  <div style={{alignSelf: 'stretch', paddingTop: '22px', paddingBottom: '24px', paddingLeft: '24px', paddingRight: '24px', background: 'var(--Purple-50, #F8F7FF)', borderRadius: '8px', outline: '1px var(--Purple-300, #907AFF) solid', outlineOffset: '-1px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex'}}>
+                    <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '12px', display: 'flex'}}>
+                      <div style={{width: '24px', padding: '2px', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '10px', display: 'flex'}}>
+                        <div style={{width: '20px', height: '20px', background: 'var(--Purple-500, #680AFF)'}}></div>
+                      </div>
+                      <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '4px', display: 'flex'}}>
+                        <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Purple-500, #680AFF)', fontSize: '16px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', letterSpacing: '0.32px', wordWrap: 'break-word'}}>🎬 It's your turn!</div>
+                        <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-500, #828786)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>Select a movie and category below</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
 
           {/* Unified participants container with background treatment */}
           <div className="w-full bg-[#FCFFFF] p-6 rounded shadow-[0px_0px_3px_rgba(0,0,0,0.25)] flex flex-col gap-6">
