@@ -321,8 +321,8 @@ export const MultiplayerDraftInterface = ({
                             <span className="font-semibold text-base font-brockmann leading-6 tracking-wide text-[#2B2D2D]">{participant.participant_name}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            {participant.is_host && <div className="px-3 py-1 bg-[#F8F7FF] rounded-full border-[0.5px] border-[#25015E]">
-                                <span className="text-xs font-semibold font-brockmann leading-4 text-[#100029]">Host</span>
+                            {participant.is_host && <div className="w-full h-full px-3 py-1 bg-[#F8F7FF] rounded-full" style={{outline: '0.50px #25015E solid', outlineOffset: '-0.50px', justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
+                                <div className="flex flex-col justify-center text-[#100029] text-xs font-brockmann font-semibold leading-4">Host</div>
                               </div>}
                             {isCurrentTurn && !isComplete && draftHasStarted && <div className="px-3 py-1 bg-[#25015E] rounded-full">
                                 <span className="text-xs font-semibold font-brockmann leading-4 text-white">Current Turn</span>
