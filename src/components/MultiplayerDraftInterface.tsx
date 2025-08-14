@@ -317,40 +317,59 @@ export const MultiplayerDraftInterface = ({
                 )}
               </div>
             </CardHeader>
-            <CardContent className="px-6 py-2">
-                <div className="space-y-2">
-                <div style={{width: '100%', height: '100%', justifyContent: 'flex-start', alignItems: 'center', gap: 8, display: 'inline-flex'}}>
-                  <div style={{width: 24, height: 24, padding: 2, flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 10, display: 'inline-flex'}}>
-                    <MultiPersonIcon className="w-5 h-5 text-[#680AFF]" />
-                  </div>
-                  <div style={{flex: '1 1 0', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: 20, fontFamily: 'Brockmann', fontWeight: '500', lineHeight: 28, wordWrap: 'break-word'}}>Participants</div>
+            {/* Custom participants container matching StyledMultiplayerParticipants */}
+            <div className="w-full bg-[#FCFFFF] p-6 rounded border shadow-sm flex flex-col gap-4">
+              {/* Participants header matching StyledHeading4 */}
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center">
+                  <MultiPersonIcon className="w-5 h-5 text-[#680AFF]" />
                 </div>
-                <div className="space-y-2">
-                  {participants.map(participant => {
-                    const pId = participant.user_id || participant.guest_participant_id;
-                    const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
-                    const isCurrentTurn = pId === currentTurnId;
-                    return <div key={participant.id} className="flex items-center gap-2 py-3 px-4 bg-white rounded-sm border border-border">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback>
-                              {participant.participant_name.charAt(0).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{participant.participant_name}</span>
-                              {participant.is_host && <Badge variant="outline" className="text-xs">Host</Badge>}
-                              {isCurrentTurn && !isComplete && draftHasStarted && <Badge variant="default" className="text-xs">Current Turn</Badge>}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {participant.status === 'joined' ? 'Joined' : participant.status}
-                            </div>
-                          </div>
-                        </div>;
-                  })}
-                </div>
+                <span className="text-xl font-medium font-brockmann leading-7 text-[#2B2D2D]">Participants</span>
               </div>
-            </CardContent>
+              
+              {/* Participants list with proper gap */}
+              <div className="flex flex-col gap-2">
+                {participants.map(participant => {
+                  const pId = participant.user_id || participant.guest_participant_id;
+                  const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
+                  const isCurrentTurn = pId === currentTurnId;
+                  return (
+                    <div key={participant.id} className="flex items-center gap-2 py-3 px-4 bg-white rounded-sm border-[0.5px] border-[#BDC3C2]">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {participant.participant_name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-base font-brockmann leading-6 tracking-wide text-[#2B2D2D]">{participant.participant_name}</span>
+                          {participant.is_host && (
+                            <div className="px-3 py-1 bg-[#F8F7FF] rounded-full border-[0.5px] border-[#25015E]">
+                              <span className="text-xs font-semibold font-brockmann leading-4 text-[#100029]">Host</span>
+                            </div>
+                          )}
+                          {isCurrentTurn && !isComplete && draftHasStarted && (
+                            <div className="px-3 py-1 bg-[#25015E] rounded-full">
+                              <span className="text-xs font-semibold font-brockmann leading-4 text-white">Current Turn</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-start gap-1">
+                          <span className="text-xs font-normal font-brockmann leading-4 text-[#06C995]">
+                            {participant.status === 'joined' ? 'Joined' : participant.status}
+                          </span>
+                          {participant.user_id && (
+                            <span className="text-xs font-normal font-brockmann leading-4 text-[#828786]">
+                              {participant.participant_name.toLowerCase().replace(/\s+/g, '')}@gmail.com
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </Card>
         </div>
 
