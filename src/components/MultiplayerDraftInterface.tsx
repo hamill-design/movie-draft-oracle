@@ -281,9 +281,8 @@ export const MultiplayerDraftInterface = ({
             </CardContent>
           </Card>
 
-          {/* Unified participants container with background treatment */}
-          <div className="w-full bg-[#FCFFFF] p-6 rounded shadow-[0px_0px_3px_rgba(0,0,0,0.25)] flex flex-col gap-6">
-            {/* Join Code section */}
+          {/* Join Code Container */}
+          <div className="w-full bg-[#FCFFFF] p-6 rounded shadow-[0px_0px_3px_rgba(0,0,0,0.25)]">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <CardTitle className="text-2xl font-bold font-brockmann" style={{letterSpacing: '0.24px'}}>
                 Join Code
@@ -298,12 +297,15 @@ export const MultiplayerDraftInterface = ({
                   </Button>
                 </div>}
             </div>
-            
+          </div>
+
+          {/* Participants Container */}
+          <div className="w-full bg-[#FCFFFF] p-6 rounded shadow-[0px_0px_3px_rgba(0,0,0,0.25)]">
             {/* Participants header matching StyledHeading4 */}
             <div className="flex items-center gap-2 mb-4">
-            <div className="w-6 h-6 flex flex-col justify-center items-center">
-              <MultiPersonIcon className="w-6 h-6 text-[#680AFF]" />
-            </div>
+              <div className="w-6 h-6 flex flex-col justify-center items-center">
+                <MultiPersonIcon className="w-6 h-6 text-[#680AFF]" />
+              </div>
               <span className="text-xl font-medium font-brockmann leading-7 text-[#2B2D2D]">Participants</span>
             </div>
             
