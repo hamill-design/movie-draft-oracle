@@ -301,9 +301,9 @@ export const MultiplayerDraftInterface = ({
             
             {/* Participants header matching StyledHeading4 */}
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center">
-                <MultiPersonIcon className="w-5 h-5 text-[#680AFF]" />
-              </div>
+            <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center">
+              <MultiPersonIcon className="w-6 h-6 text-[#680AFF]" />
+            </div>
               <span className="text-xl font-medium font-brockmann leading-7 text-[#2B2D2D]">Participants</span>
             </div>
             
