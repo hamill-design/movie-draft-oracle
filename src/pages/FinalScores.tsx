@@ -529,6 +529,7 @@ const FinalScores = () => {
                        height: '32px',
                        ...badgeStyle,
                        borderRadius: '9999px',
+                       overflow: 'hidden',
                        justifyContent: 'center',
                        alignItems: 'center',
                        display: 'flex'
