@@ -36,6 +36,7 @@ const FinalScores = () => {
   const [enrichingData, setEnrichingData] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
+  const [hoveredTeam, setHoveredTeam] = useState<string>('');
   
   const [isPublicView, setIsPublicView] = useState(false);
 
@@ -503,16 +504,23 @@ const FinalScores = () => {
                   <div
                     key={team.playerName}
                     onClick={() => setSelectedTeam(team.playerName)}
-                    className="group hover:bg-[var(--Purple-50,#F8F7FF)] hover:outline-[var(--Purple-100,#EDEBFF)]"
+                    onMouseEnter={() => setHoveredTeam(team.playerName)}
+                    onMouseLeave={() => setHoveredTeam('')}
                     style={{
                       alignSelf: 'stretch',
                       paddingTop: '16px',
                       paddingBottom: '16px',
                       paddingLeft: '16px',
                       paddingRight: '24px',
-                      background: selectedTeam === team.playerName ? 'var(--Purple-100, #EDEBFF)' : 'var(--UI-Primary, white)',
+                      background: selectedTeam === team.playerName 
+                        ? 'var(--Purple-100, #EDEBFF)' 
+                        : hoveredTeam === team.playerName 
+                          ? 'var(--Purple-50, #F8F7FF)' 
+                          : 'var(--UI-Primary, white)',
                       borderRadius: '8px',
-                      outline: selectedTeam === team.playerName ? '1px var(--Purple-200, #BCB2FF) solid' : '1px var(--Greyscale-(Blue)-200, #D9E0DF) solid',
+                      outline: selectedTeam === team.playerName 
+                        ? '1px var(--Purple-200, #BCB2FF) solid' 
+                        : '1px var(--Purple-100, #EDEBFF) solid',
                       outlineOffset: '-1px',
                       justifyContent: 'flex-start',
                       alignItems: 'center',
