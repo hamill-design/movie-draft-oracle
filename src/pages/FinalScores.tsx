@@ -305,20 +305,18 @@ const FinalScores = () => {
         color: 'var(--Greyscale-(Blue)-800, #2B2D2D)'
       };
     } else if (rank === 2) {
-      // Silver - 2nd place
+      // Silver - 2nd place with gradient border effect using wrapper approach
       return {
-        background: 'var(--Greyscale-300, #CCCCCC)',
-        outline: '2px var(--Greyscale-200, #E5E5E5) solid',
-        outlineOffset: '-2px',
+        background: 'linear-gradient(to bottom right, #E5E5E5, #666666)',
+        padding: '2px',
         color: 'var(--Greyscale-(Blue)-800, #2B2D2D)'
       };
     } else if (rank === 3) {
-      // Bronze - 3rd place
+      // Bronze - 3rd place with gradient border effect using wrapper approach
       return {
-        background: '#DE7E3E',
-        outline: '2px #FFAE78 solid',
-        outlineOffset: '-2px',
-        color: 'var(--Greyscale-(Blue)-800, #2B2D2D)'
+        background: 'linear-gradient(to bottom right, #FFAE78, #95430C)',
+        padding: '2px',
+        color: 'var(--Greyscale-(Blue)-50, #F8F8F8)'
       };
     } else {
       // 4th place and beyond - plain dark
@@ -532,12 +530,14 @@ const FinalScores = () => {
                        alignItems: 'center',
                        display: 'flex'
                      }}>
-                       {index === 0 ? (
-                         // First place with inner circle for proper gradient border
+                       {index <= 2 ? (
+                         // Top 3 places with inner circle for proper gradient border
                          <div style={{
                            width: '28px',
                            height: '28px',
-                           background: 'var(--Yellow-500, #FFD60A)',
+                           background: index === 0 ? 'var(--Yellow-500, #FFD60A)' : 
+                                      index === 1 ? 'var(--Greyscale-300, #CCCCCC)' : 
+                                      '#DE7E3E',
                            borderRadius: '9999px',
                            justifyContent: 'center',
                            alignItems: 'center',
