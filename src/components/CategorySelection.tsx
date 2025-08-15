@@ -87,9 +87,7 @@ const CategorySelection = ({
             {selectedMovie.isBlockbuster && (
               <div className="w-full flex flex-col">
                 <div className="w-full text-[#06C995] text-sm font-brockmann font-normal leading-5">
-                  Eligible for Blockbuster category 
-                  {selectedMovie.budget > 0 && ` (Budget: $${(selectedMovie.budget / 1000000).toFixed(0)}M)`}
-                  {selectedMovie.revenue > 0 && ` (Revenue: $${(selectedMovie.revenue / 1000000).toFixed(0)}M)`}
+                  Eligible for Blockbuster category
                 </div>
               </div>
             )}
