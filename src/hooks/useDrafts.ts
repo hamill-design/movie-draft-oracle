@@ -46,6 +46,7 @@ export const useDrafts = () => {
       const { data, error } = await supabase
         .from('drafts')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -57,6 +58,14 @@ export const useDrafts = () => {
     }
   };
 
+  const deleteDraft = async (draftId: string) => {
+    // Optimistically remove the draft from the UI
+    setDrafts(prevDrafts => prevDrafts.filter(draft => draft.id !== draftId));
+    
+    // Refetch to ensure consistency
+    await fetchDrafts();
+  };
+
   useEffect(() => {
     fetchDrafts();
   }, [user]);
@@ -65,6 +74,7 @@ export const useDrafts = () => {
     drafts,
     loading,
     error,
-    refetch: fetchDrafts
+    refetch: fetchDrafts,
+    deleteDraft
   };
 };

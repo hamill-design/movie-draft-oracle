@@ -29,7 +29,7 @@ import {
 const Profile = () => {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
-  const { drafts, loading: draftsLoading, refetch } = useDrafts();
+  const { drafts, loading: draftsLoading, refetch, deleteDraft } = useDrafts();
   const { toast } = useToast();
   const [profile, setProfile] = useState<any>(null);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -121,7 +121,7 @@ const Profile = () => {
         description: "Your draft has been successfully deleted.",
       });
 
-      refetch();
+      deleteDraft(draftToDelete);
       setShowDeleteDialog(false);
       setDraftToDelete(null);
     } catch (error: any) {
