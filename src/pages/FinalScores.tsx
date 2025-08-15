@@ -523,30 +523,58 @@ const FinalScores = () => {
                       cursor: 'pointer'
                     }}
                   >
-                    <div style={{
-                      width: '32px',
-                      height: '32px',
-                      ...badgeStyle,
-                      borderRadius: '9999px',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      display: 'flex'
-                    }}>
-                      <div style={{
-                        textAlign: 'center',
-                        justifyContent: 'center',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        color: badgeStyle.color,
-                        fontSize: '16px',
-                        fontFamily: 'Brockmann',
-                        fontWeight: '700',
-                        lineHeight: '24px',
-                        wordWrap: 'break-word'
-                      }}>
-                        {index + 1}
-                      </div>
-                    </div>
+                     <div style={{
+                       width: '32px',
+                       height: '32px',
+                       ...badgeStyle,
+                       borderRadius: '9999px',
+                       justifyContent: 'center',
+                       alignItems: 'center',
+                       display: 'flex'
+                     }}>
+                       {index === 0 ? (
+                         // First place with inner circle for gradient stroke effect
+                         <div style={{
+                           width: '28px',
+                           height: '28px',
+                           background: 'var(--Yellow-500, #FFD60A)',
+                           borderRadius: '9999px',
+                           justifyContent: 'center',
+                           alignItems: 'center',
+                           display: 'flex'
+                         }}>
+                           <div style={{
+                             textAlign: 'center',
+                             justifyContent: 'center',
+                             display: 'flex',
+                             flexDirection: 'column',
+                             color: badgeStyle.color,
+                             fontSize: '16px',
+                             fontFamily: 'Brockmann',
+                             fontWeight: '700',
+                             lineHeight: '24px',
+                             wordWrap: 'break-word'
+                           }}>
+                             {index + 1}
+                           </div>
+                         </div>
+                       ) : (
+                         <div style={{
+                           textAlign: 'center',
+                           justifyContent: 'center',
+                           display: 'flex',
+                           flexDirection: 'column',
+                           color: badgeStyle.color,
+                           fontSize: '16px',
+                           fontFamily: 'Brockmann',
+                           fontWeight: '700',
+                           lineHeight: '24px',
+                           wordWrap: 'break-word'
+                         }}>
+                           {index + 1}
+                         </div>
+                       )}
+                     </div>
                     <div style={{
                       flex: '1 1 0',
                       paddingBottom: '2px',
