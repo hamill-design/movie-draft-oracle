@@ -5,6 +5,7 @@ import { DollarIcon } from '@/components/icons/DollarIcon';
 import { RibbonIcon } from '@/components/icons/RibbonIcon';
 import { StarIcon } from '@/components/icons/StarIcon';
 import { FilmReelIcon } from '@/components/icons/FilmReelIcon';
+import { TrophyIcon } from '@/components/icons/TrophyIcon';
 
 interface MovieScoreCardProps {
   movieTitle: string;
@@ -341,9 +342,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
               {/* Oscar Status */}
               <div style={{ alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex' }}>
                 <div style={{ justifyContent: 'flex-start', alignItems: 'center', gap: '8px', display: 'flex' }}>
-                  <div style={{ width: '16px', height: '16px', padding: '2px', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '10px', display: 'inline-flex' }}>
-                    <div style={{ width: '12px', flex: '1 1 0', background: 'var(--Yellow-500, #FFD60A)' }}></div>
-                  </div>
+                   <TrophyIcon style={{ width: '16px', height: '16px', color: 'hsl(var(--yellow-500))' }} />
                   <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
                     <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', wordWrap: 'break-word' }}>
                       Oscar Status 
