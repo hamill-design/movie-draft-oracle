@@ -298,8 +298,11 @@ export const MultiplayerDraftInterface = ({
                   </div>
                 </div>
                 {!isMyTurn && draftHasStarted && (
-                  <div className="w-full h-full pt-[22px] pb-6 px-6 bg-greyscale-blue-150 rounded-lg border border-greyscale-blue-300 flex flex-col justify-start items-start">
-                    <div className="w-full flex flex-col justify-start items-center gap-3">
+                  <div 
+                    className="w-full h-full pt-[22px] pb-6 px-6 bg-greyscale-blue-150 rounded-lg border border-greyscale-blue-300 flex flex-col justify-center items-center"
+                    style={{ background: '#EBF0EF !important' }}
+                  >
+                    <div className="w-full flex flex-col justify-center items-center gap-3">
                       <div className="w-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
                         <ClockIcon className="w-5 h-5 text-greyscale-blue-500" />
                       </div>
