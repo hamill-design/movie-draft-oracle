@@ -1,13 +1,16 @@
 
+import React from 'react';
+
 interface IconProps {
   className?: string;
+  style?: React.CSSProperties;
   theme?: 'people' | 'year';
 }
 
-export function FilmReelIcon({ className, theme }: IconProps) {
+export function FilmReelIcon({ className, style, theme }: IconProps) {
   if (theme === 'people') {
     return (
-      <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg className={className} style={style} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M18 21V19C18 18.2044 17.6837 17.4415 17.1211 16.8789C16.5585 16.3163 15.7956 16 15 16H9C8.20435 16 7.44152 16.3163 6.87891 16.8789C6.3163 17.4415 6 18.2044 6 19V21C6 21.5523 5.55228 22 5 22C4.44772 22 4 21.5523 4 21V19C4 17.6739 4.52716 16.4025 5.46484 15.4648C6.40253 14.5272 7.67392 14 9 14H15C16.3261 14 17.5975 14.5272 18.5352 15.4648C19.4728 16.4025 20 17.6739 20 19V21C20 21.5523 19.5523 22 19 22C18.4477 22 18 21.5523 18 21Z" fill="currentColor" />
         <path d="M15 7C15 5.34315 13.6569 4 12 4C10.3431 4 9 5.34315 9 7C9 8.65685 10.3431 10 12 10C13.6569 10 15 8.65685 15 7ZM17 7C17 9.76142 14.7614 12 12 12C9.23858 12 7 9.76142 7 7C7 4.23858 9.23858 2 12 2C14.7614 2 17 4.23858 17 7Z" fill="currentColor" />
       </svg>
@@ -16,7 +19,7 @@ export function FilmReelIcon({ className, theme }: IconProps) {
 
   // Use the film reel SVG for default/year theme
   return (
-    <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg className={className} style={style} width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M20 5C20 4.44772 19.5523 4 19 4H5C4.44772 4 4 4.44772 4 5V19C4 19.5523 4.44772 20 5 20H19C19.5523 20 20 19.5523 20 19V5ZM22 19C22 20.6569 20.6569 22 19 22H5C3.34315 22 2 20.6569 2 19V5C2 3.34315 3.34315 2 5 2H19C20.6569 2 22 3.34315 22 5V19Z" fill="currentColor"/>
       <path d="M6 21V3C6 2.44772 6.44772 2 7 2C7.55228 2 8 2.44772 8 3V21C8 21.5523 7.55228 22 7 22C6.44772 22 6 21.5523 6 21Z" fill="currentColor"/>
       <path d="M7 6.5C7.55228 6.5 8 6.94772 8 7.5C8 8.05228 7.55228 8.5 7 8.5H3C2.44772 8.5 2 8.05228 2 7.5C2 6.94772 2.44772 6.5 3 6.5H7Z" fill="currentColor"/>
