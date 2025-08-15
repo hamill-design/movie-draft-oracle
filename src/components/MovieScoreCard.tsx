@@ -241,7 +241,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                       </div>
                     </div>
                   </div>
-                   <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: 'hsl(var(--greyscale-blue-100))', overflow: 'hidden', borderRadius: '9999px' }}>
+                   <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: 'hsl(var(--greyscale-blue-200))', overflow: 'hidden', borderRadius: '9999px' }}>
                     <div style={{ 
                       width: `${Math.min(((scoreBreakdown.boxOfficeScore / 200) * 100), 100)}%`, 
                       height: '8px', 
