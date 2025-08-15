@@ -611,7 +611,12 @@ const FinalScores = () => {
                         lineHeight: '20px',
                         wordWrap: 'break-word'
                       }}>
-                        {team.completedPicks}/{team.totalPicks} movies scored
+                         {(() => {
+                           const topMovie = team.picks
+                             .filter(pick => (pick as any).calculated_score > 0)
+                             .sort((a, b) => (b as any).calculated_score - (a as any).calculated_score)[0];
+                           return topMovie ? `Top Movie: ${topMovie.movie_title}` : `${team.completedPicks}/${team.totalPicks} movies scored`;
+                         })()}
                       </div>
                     </div>
                     <div style={{
