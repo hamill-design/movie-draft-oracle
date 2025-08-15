@@ -15,6 +15,16 @@ import BannerAd from '@/components/ads/BannerAd';
 import InlineAd from '@/components/ads/InlineAd';
 import { DraftActorPortrait } from '@/components/DraftActorPortrait';
 import { getCleanActorName } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -24,6 +34,8 @@ const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [draftToDelete, setDraftToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -68,20 +80,15 @@ const Profile = () => {
     });
   };
 
-  const handleDeleteDraft = async (draftId: string) => {
-    // Show confirmation dialog
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this draft? This action cannot be undone."
-    );
-    
-    if (!confirmDelete) return;
+  const handleDeleteDraft = async () => {
+    if (!draftToDelete) return;
 
     try {
       // First, delete all related draft picks
       const { error: picksError } = await supabase
         .from('draft_picks')
         .delete()
-        .eq('draft_id', draftId);
+        .eq('draft_id', draftToDelete);
 
       if (picksError) {
         console.error('Error deleting draft picks:', picksError);
@@ -92,7 +99,7 @@ const Profile = () => {
       const { error: participantsError } = await supabase
         .from('draft_participants')
         .delete()
-        .eq('draft_id', draftId);
+        .eq('draft_id', draftToDelete);
 
       if (participantsError) {
         console.error('Error deleting draft participants:', participantsError);
@@ -103,7 +110,7 @@ const Profile = () => {
       const { error: draftError } = await supabase
         .from('drafts')
         .delete()
-        .eq('id', draftId);
+        .eq('id', draftToDelete);
 
       if (draftError) {
         throw new Error(`Failed to delete draft: ${draftError.message}`);
@@ -115,6 +122,8 @@ const Profile = () => {
       });
 
       refetch();
+      setShowDeleteDialog(false);
+      setDraftToDelete(null);
     } catch (error: any) {
       console.error('Delete draft error:', error);
       toast({
@@ -122,7 +131,14 @@ const Profile = () => {
         description: error.message || "Failed to delete draft. Please try again.",
         variant: "destructive",
       });
+      setShowDeleteDialog(false);
+      setDraftToDelete(null);
     }
+  };
+
+  const openDeleteDialog = (draftId: string) => {
+    setDraftToDelete(draftId);
+    setShowDeleteDialog(true);
   };
 
   const handleSaveName = async () => {
@@ -386,7 +402,7 @@ const Profile = () => {
                         
                         {/* Delete Button */}
                         <button 
-                          onClick={() => handleDeleteDraft(draft.id)}
+                          onClick={() => openDeleteDialog(draft.id)}
                           className="px-3 py-2 rounded-sm justify-center items-center gap-2 inline-flex hover:bg-gray-100 transition-colors"
                         >
                           <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
@@ -406,6 +422,29 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Draft</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this draft? This action cannot be undone and will permanently remove all draft data including picks and participants.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteDraft}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Draft
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
