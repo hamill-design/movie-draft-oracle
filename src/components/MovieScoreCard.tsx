@@ -3,6 +3,7 @@ import React from 'react';
 import { calculateDetailedScore, getScoreColor, getScoreGrade, MovieScoringData } from '@/utils/scoreCalculator';
 import { DollarIcon } from '@/components/icons/DollarIcon';
 import { RibbonIcon } from '@/components/icons/RibbonIcon';
+import { StarIcon } from '@/components/icons/StarIcon';
 
 interface MovieScoreCardProps {
   movieTitle: string;
@@ -283,9 +284,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                 <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex' }}>
                   <div style={{ alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex' }}>
                     <div style={{ justifyContent: 'flex-start', alignItems: 'center', gap: '8px', display: 'flex' }}>
-                      <div style={{ width: '16px', height: '16px', padding: '2px', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '10px', display: 'inline-flex' }}>
-                        <div style={{ width: '12px', flex: '1 1 0', background: 'var(--Greyscale-(Blue)-500, #828786)' }}></div>
-                      </div>
+                       <StarIcon style={{ width: '16px', height: '16px', color: 'hsl(var(--greyscale-blue-500))' }} />
                       <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
                         <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', wordWrap: 'break-word' }}>
                           Metacritic
