@@ -294,6 +294,42 @@ const FinalScores = () => {
     return teams.sort((a, b) => b.totalScore - a.totalScore);
   };
 
+  const getRankingBadgeStyle = (index: number) => {
+    const rank = index + 1;
+    
+    if (rank === 1) {
+      // Gold - 1st place
+      return {
+        background: 'var(--Yellow-500, #FFD60A)',
+        outline: '2px var(--Yellow-200, #FFF2B2) solid',
+        outlineOffset: '-2px',
+        color: 'var(--Greyscale-(Blue)-800, #2B2D2D)'
+      };
+    } else if (rank === 2) {
+      // Silver - 2nd place
+      return {
+        background: 'var(--Greyscale-300, #CCCCCC)',
+        outline: '2px var(--Greyscale-200, #E5E5E5) solid',
+        outlineOffset: '-2px',
+        color: 'var(--Greyscale-(Blue)-800, #2B2D2D)'
+      };
+    } else if (rank === 3) {
+      // Bronze - 3rd place
+      return {
+        background: '#DE7E3E',
+        outline: '2px #FFAE78 solid',
+        outlineOffset: '-2px',
+        color: 'var(--Greyscale-(Blue)-800, #2B2D2D)'
+      };
+    } else {
+      // 4th place and beyond - plain dark
+      return {
+        background: 'var(--Greyscale-800, #4D4D4D)',
+        color: 'var(--UI-Primary, white)'
+      };
+    }
+  };
+
   const handleAuthRedirect = () => {
     toast({
       title: "Create Account",
@@ -464,124 +500,125 @@ const FinalScores = () => {
               gap: '16px',
               display: 'flex'
             }}>
-              {teamScores.map((team, index) => (
-                <div
-                  key={team.playerName}
-                  onClick={() => setSelectedTeam(team.playerName)}
-                  style={{
-                    alignSelf: 'stretch',
-                    paddingTop: '16px',
-                    paddingBottom: '16px',
-                    paddingLeft: '16px',
-                    paddingRight: '24px',
-                    background: selectedTeam === team.playerName ? 'var(--Purple-100, #EDEBFF)' : 'var(--UI-Primary, white)',
-                    borderRadius: '8px',
-                    outline: selectedTeam === team.playerName ? '1px var(--Purple-200, #BCB2FF) solid' : '1px var(--Greyscale-(Blue)-200, #D9E0DF) solid',
-                    outlineOffset: '-1px',
-                    justifyContent: 'flex-start',
-                    alignItems: 'center',
-                    gap: '16px',
-                    display: 'inline-flex',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    background: index === 0 ? 'var(--Yellow-500, #FFD60A)' : 'var(--Greyscale-300, #CCCCCC)',
-                    borderRadius: '9999px',
-                    outline: index === 0 ? '2px var(--Yellow-200, #FFF2B2) solid' : '2px var(--Greyscale-200, #E5E5E5) solid',
-                    outlineOffset: '-2px',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    display: 'flex'
-                  }}>
-                    <div style={{
-                      textAlign: 'center',
-                      justifyContent: 'center',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
-                      fontSize: '16px',
-                      fontFamily: 'Brockmann',
-                      fontWeight: '700',
-                      lineHeight: '24px',
-                      wordWrap: 'break-word'
-                    }}>
-                      {index + 1}
-                    </div>
-                  </div>
-                  <div style={{
-                    flex: '1 1 0',
-                    paddingBottom: '2px',
-                    flexDirection: 'column',
-                    justifyContent: 'flex-start',
-                    alignItems: 'flex-start',
-                    gap: '2px',
-                    display: 'inline-flex'
-                  }}>
-                    <div style={{
+              {teamScores.map((team, index) => {
+                const badgeStyle = getRankingBadgeStyle(index);
+                return (
+                  <div
+                    key={team.playerName}
+                    onClick={() => setSelectedTeam(team.playerName)}
+                    style={{
                       alignSelf: 'stretch',
-                      justifyContent: 'center',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      color: selectedTeam === team.playerName ? 'var(--Greyscale-(Blue)-800, #2B2D2D)' : 'var(--Text-Primary, #2B2D2D)',
-                      fontSize: '16px',
-                      fontFamily: 'Brockmann',
-                      fontWeight: '600',
-                      lineHeight: '24px',
-                      letterSpacing: '0.32px',
-                      wordWrap: 'break-word'
-                    }}>
-                      {team.playerName}
-                    </div>
-                    <div style={{
-                      alignSelf: 'stretch',
-                      justifyContent: 'center',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      color: selectedTeam === team.playerName ? 'var(--Greyscale-(Blue)-800, #2B2D2D)' : 'var(--Text-Primary, #2B2D2D)',
-                      fontSize: '14px',
-                      fontFamily: 'Brockmann',
-                      fontWeight: '400',
-                      lineHeight: '20px',
-                      wordWrap: 'break-word'
-                    }}>
-                      {team.completedPicks}/{team.totalPicks} movies scored
-                    </div>
-                  </div>
-                  <div style={{
-                    flexDirection: 'column',
-                    justifyContent: 'flex-start',
-                    alignItems: 'flex-start',
-                    display: 'inline-flex'
-                  }}>
-                    <div style={{
-                      alignSelf: 'stretch',
-                      flexDirection: 'column',
+                      paddingTop: '16px',
+                      paddingBottom: '16px',
+                      paddingLeft: '16px',
+                      paddingRight: '24px',
+                      background: selectedTeam === team.playerName ? 'var(--Purple-100, #EDEBFF)' : 'var(--UI-Primary, white)',
+                      borderRadius: '8px',
+                      outline: selectedTeam === team.playerName ? '1px var(--Purple-200, #BCB2FF) solid' : '1px var(--Greyscale-(Blue)-200, #D9E0DF) solid',
+                      outlineOffset: '-1px',
                       justifyContent: 'flex-start',
-                      alignItems: 'flex-end',
+                      alignItems: 'center',
+                      gap: '16px',
+                      display: 'inline-flex',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      ...badgeStyle,
+                      borderRadius: '9999px',
+                      justifyContent: 'center',
+                      alignItems: 'center',
                       display: 'flex'
                     }}>
                       <div style={{
-                        textAlign: 'right',
+                        textAlign: 'center',
                         justifyContent: 'center',
                         display: 'flex',
                         flexDirection: 'column',
-                        color: 'var(--Brand-Primary, #680AFF)',
-                        fontSize: '32px',
+                        color: badgeStyle.color,
+                        fontSize: '16px',
                         fontFamily: 'Brockmann',
-                        fontWeight: '500',
-                        lineHeight: '36px',
-                        letterSpacing: '1.28px',
+                        fontWeight: '700',
+                        lineHeight: '24px',
                         wordWrap: 'break-word'
                       }}>
-                        {team.totalScore.toFixed(1)}
+                        {index + 1}
+                      </div>
+                    </div>
+                    <div style={{
+                      flex: '1 1 0',
+                      paddingBottom: '2px',
+                      flexDirection: 'column',
+                      justifyContent: 'flex-start',
+                      alignItems: 'flex-start',
+                      gap: '2px',
+                      display: 'inline-flex'
+                    }}>
+                      <div style={{
+                        alignSelf: 'stretch',
+                        justifyContent: 'center',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        color: selectedTeam === team.playerName ? 'var(--Greyscale-(Blue)-800, #2B2D2D)' : 'var(--Text-Primary, #2B2D2D)',
+                        fontSize: '16px',
+                        fontFamily: 'Brockmann',
+                        fontWeight: '600',
+                        lineHeight: '24px',
+                        letterSpacing: '0.32px',
+                        wordWrap: 'break-word'
+                      }}>
+                        {team.playerName}
+                      </div>
+                      <div style={{
+                        alignSelf: 'stretch',
+                        justifyContent: 'center',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        color: selectedTeam === team.playerName ? 'var(--Greyscale-(Blue)-800, #2B2D2D)' : 'var(--Text-Primary, #2B2D2D)',
+                        fontSize: '14px',
+                        fontFamily: 'Brockmann',
+                        fontWeight: '400',
+                        lineHeight: '20px',
+                        wordWrap: 'break-word'
+                      }}>
+                        {team.completedPicks}/{team.totalPicks} movies scored
+                      </div>
+                    </div>
+                    <div style={{
+                      flexDirection: 'column',
+                      justifyContent: 'flex-start',
+                      alignItems: 'flex-start',
+                      display: 'inline-flex'
+                    }}>
+                      <div style={{
+                        alignSelf: 'stretch',
+                        flexDirection: 'column',
+                        justifyContent: 'flex-start',
+                        alignItems: 'flex-end',
+                        display: 'flex'
+                      }}>
+                        <div style={{
+                          textAlign: 'right',
+                          justifyContent: 'center',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          color: 'var(--Brand-Primary, #680AFF)',
+                          fontSize: '32px',
+                          fontFamily: 'Brockmann',
+                          fontWeight: '500',
+                          lineHeight: '36px',
+                          letterSpacing: '1.28px',
+                          wordWrap: 'break-word'
+                        }}>
+                          {team.totalScore.toFixed(1)}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
