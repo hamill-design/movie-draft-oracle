@@ -86,7 +86,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
               {/* Movie Info and Score */}
               <div style={{ flex: '1 1 0', justifyContent: 'space-between', alignItems: 'flex-start', display: 'flex', flexWrap: 'wrap', alignContent: 'flex-start' }}>
                 <div style={{ flex: '1 1 0', minWidth: '202px', flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', gap: '12px', display: 'inline-flex' }}>
-                  <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '12px', display: 'flex' }}>
+                  <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '4px', display: 'flex' }}>
                     <div style={{ 
                       alignSelf: 'stretch', 
                       justifyContent: 'center', 
