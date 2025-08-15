@@ -30,43 +30,6 @@ const TeamRoster: React.FC<TeamRosterProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Team Header */}
-      <Card className="bg-gray-800 border-gray-600">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <User className="text-yellow-400" size={24} />
-              <div>
-                <CardTitle className="text-white text-xl">{playerName}</CardTitle>
-                <p className="text-gray-400 text-sm">{picks.length} movies drafted</p>
-              </div>
-            </div>
-            <div className="text-right">
-              {teamRank && (
-                <div className="flex items-center gap-2 mb-2">
-                  <Trophy size={16} className="text-yellow-400" />
-                  <span className="text-gray-400 text-sm">Rank #{teamRank}</span>
-                </div>
-              )}
-              <div className="text-2xl font-bold text-yellow-400">
-                {teamTotal.toFixed(1)}
-              </div>
-              <div className="text-gray-400 text-sm">
-                Team Total ({getScoreGrade(teamTotal)})
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        
-        {validScores.length < picks.length && (
-          <CardContent>
-            <p className="text-yellow-400 text-sm">
-              ⚠️ {picks.length - validScores.length} movie(s) still being processed for scoring data
-            </p>
-          </CardContent>
-        )}
-      </Card>
-
       {/* Individual Movie Cards */}
       <div className="space-y-4">
         {sortedPicks.map((pick) => {
