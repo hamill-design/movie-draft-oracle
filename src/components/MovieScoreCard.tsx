@@ -140,27 +140,29 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
         {/* Pick Number and Category */}
         {pickNumber && category && (
           <div style={{ justifyContent: 'flex-start', alignItems: 'flex-start', gap: '6px', display: 'inline-flex' }}>
-            <div style={{ 
-              width: '100%', 
-              height: '100%', 
-              borderRadius: '99999px', 
-              outline: '1px var(--Brand-Primary, #680AFF) solid', 
-              outlineOffset: '-1px', 
-              flexDirection: 'column', 
-              justifyContent: 'center', 
-              alignItems: 'center', 
-              display: 'inline-flex' 
-            }}>
+            <div style={{ width: '28px', height: '28px' }}>
               <div style={{ 
-                textAlign: 'center', 
-                color: 'var(--Brand-Primary, #680AFF)', 
-                fontSize: '14px', 
-                fontFamily: 'Brockmann', 
-                fontWeight: 400, 
-                lineHeight: '16px', 
-                wordWrap: 'break-word' 
+                width: '100%', 
+                height: '100%', 
+                borderRadius: '99999px', 
+                outline: '1px var(--Brand-Primary, #680AFF) solid', 
+                outlineOffset: '-1px', 
+                flexDirection: 'column', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                display: 'inline-flex' 
               }}>
-                {pickNumber}
+                <div style={{ 
+                  textAlign: 'center', 
+                  color: 'var(--Brand-Primary, #680AFF)', 
+                  fontSize: '14px', 
+                  fontFamily: 'Brockmann', 
+                  fontWeight: 400, 
+                  lineHeight: '16px', 
+                  wordWrap: 'break-word' 
+                }}>
+                  {pickNumber}
+                </div>
               </div>
             </div>
             <div style={{ 
