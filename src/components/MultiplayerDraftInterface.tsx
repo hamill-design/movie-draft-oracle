@@ -500,7 +500,7 @@ export const MultiplayerDraftInterface = ({
             <div className="flex justify-center">
               <div 
                 onClick={() => navigate(`/final-scores/${draft.id}?public=true`)}
-                onMouseEnter={(e) => e.currentTarget.style.background = '#9333EA'}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#794DFF'}
                 onMouseLeave={(e) => e.currentTarget.style.background = 'var(--Purple-500, #680AFF)'}
                 style={{
                   paddingLeft: '24px', 
