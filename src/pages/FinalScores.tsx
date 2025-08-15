@@ -457,7 +457,7 @@ const FinalScores = () => {
             width: '100%',
             height: '100%',
             padding: '24px',
-            background: 'var(--Greyscale-(Blue)-100, #FCFFFF)',
+            background: 'hsl(var(--greyscale-blue-100))',
             boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)',
             borderRadius: '4px',
             flexDirection: 'column',
