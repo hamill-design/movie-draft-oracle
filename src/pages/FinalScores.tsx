@@ -298,12 +298,10 @@ const FinalScores = () => {
     const rank = index + 1;
     
     if (rank === 1) {
-      // Gold - 1st place with gradient border
+      // Gold - 1st place with gradient border effect using wrapper approach
       return {
-        background: 'var(--Yellow-500, #FFD60A)',
-        borderStyle: 'solid',
-        borderWidth: '2px',
-        borderImage: 'linear-gradient(to bottom right, #FFF2B2, #F0AA11) 1',
+        background: 'linear-gradient(to bottom right, #FFF2B2, #F0AA11)',
+        padding: '2px',
         color: 'var(--Greyscale-(Blue)-800, #2B2D2D)'
       };
     } else if (rank === 2) {
@@ -534,21 +532,49 @@ const FinalScores = () => {
                        alignItems: 'center',
                        display: 'flex'
                      }}>
-                       <div style={{
-                         textAlign: 'center',
-                         justifyContent: 'center',
-                         display: 'flex',
-                         flexDirection: 'column',
-                         color: badgeStyle.color,
-                         fontSize: '16px',
-                         fontFamily: 'Brockmann',
-                         fontWeight: '700',
-                         lineHeight: '24px',
-                         wordWrap: 'break-word'
-                       }}>
-                         {index + 1}
-                       </div>
-                     </div>
+                       {index === 0 ? (
+                         // First place with inner circle for proper gradient border
+                         <div style={{
+                           width: '28px',
+                           height: '28px',
+                           background: 'var(--Yellow-500, #FFD60A)',
+                           borderRadius: '9999px',
+                           justifyContent: 'center',
+                           alignItems: 'center',
+                           display: 'flex'
+                         }}>
+                           <div style={{
+                             textAlign: 'center',
+                             justifyContent: 'center',
+                             display: 'flex',
+                             flexDirection: 'column',
+                             color: badgeStyle.color,
+                             fontSize: '16px',
+                             fontFamily: 'Brockmann',
+                             fontWeight: '700',
+                             lineHeight: '24px',
+                             wordWrap: 'break-word'
+                           }}>
+                             {index + 1}
+                           </div>
+                         </div>
+                       ) : (
+                         <div style={{
+                           textAlign: 'center',
+                           justifyContent: 'center',
+                           display: 'flex',
+                           flexDirection: 'column',
+                           color: badgeStyle.color,
+                           fontSize: '16px',
+                           fontFamily: 'Brockmann',
+                           fontWeight: '700',
+                           lineHeight: '24px',
+                           wordWrap: 'break-word'
+                         }}>
+                           {index + 1}
+                          </div>
+                        )}
+                      </div>
                     <div style={{
                       flex: '1 1 0',
                       paddingBottom: '2px',
