@@ -221,7 +221,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
             </div>
 
             {/* Score Metrics */}
-            <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '7px', display: 'flex' }}>
+            <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '12px', display: 'flex' }}>
               
               {/* Box Office Profit */}
               {scoreBreakdown.availableComponents.includes('Box Office') && (
