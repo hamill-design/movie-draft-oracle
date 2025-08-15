@@ -420,60 +420,170 @@ const FinalScores = () => {
 
         <div className="space-y-6">
           {/* Leaderboard */}
-          <Card className="bg-gray-800 border-gray-600">
-            <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
-                <Trophy className="text-yellow-400" />
-                Team Rankings
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {teamScores.map((team, index) => (
-                  <div
-                    key={team.playerName}
-                    onClick={() => setSelectedTeam(team.playerName)}
-                    className={`flex items-center justify-between p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                      selectedTeam === team.playerName 
-                        ? 'bg-yellow-400/20 border-yellow-400/50' 
-                        : 'bg-gray-700 border-gray-600 hover:bg-gray-600/50'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                          index === 0
-                            ? 'bg-yellow-400 text-black'
-                            : index === 1
-                            ? 'bg-gray-400 text-black'
-                            : index === 2
-                            ? 'bg-amber-600 text-white'
-                            : 'bg-gray-600 text-white'
-                        }`}
-                      >
-                        {index + 1}
-                      </div>
-                      <div>
-                        <h3 className="text-white font-semibold">{team.playerName}</h3>
-                        <p className="text-gray-400 text-sm">
-                          {team.completedPicks}/{team.totalPicks} movies scored
-                        </p>
-                      </div>
+          <div style={{
+            width: '100%',
+            height: '100%',
+            padding: '24px',
+            background: 'var(--Greyscale-(Blue)-100, #FCFFFF)',
+            boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)',
+            borderRadius: '4px',
+            flexDirection: 'column',
+            justifyContent: 'flex-start',
+            alignItems: 'flex-start',
+            gap: '24px',
+            display: 'inline-flex'
+          }}>
+            <div style={{
+              alignSelf: 'stretch',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: '8px',
+              display: 'flex'
+            }}>
+              <div style={{
+                justifyContent: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                color: 'var(--Text-Primary, #2B2D2D)',
+                fontSize: '24px',
+                fontFamily: 'Brockmann',
+                fontWeight: '700',
+                lineHeight: '32px',
+                letterSpacing: '0.96px',
+                wordWrap: 'break-word'
+              }}>
+                FINAL SCORES
+              </div>
+            </div>
+            <div style={{
+              alignSelf: 'stretch',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              alignItems: 'flex-start',
+              gap: '16px',
+              display: 'flex'
+            }}>
+              {teamScores.map((team, index) => (
+                <div
+                  key={team.playerName}
+                  onClick={() => setSelectedTeam(team.playerName)}
+                  style={{
+                    alignSelf: 'stretch',
+                    paddingTop: '16px',
+                    paddingBottom: '16px',
+                    paddingLeft: '16px',
+                    paddingRight: '24px',
+                    background: selectedTeam === team.playerName ? 'var(--Purple-100, #EDEBFF)' : 'var(--UI-Primary, white)',
+                    borderRadius: '8px',
+                    outline: selectedTeam === team.playerName ? '1px var(--Purple-200, #BCB2FF) solid' : '1px var(--Greyscale-(Blue)-200, #D9E0DF) solid',
+                    outlineOffset: '-1px',
+                    justifyContent: 'flex-start',
+                    alignItems: 'center',
+                    gap: '16px',
+                    display: 'inline-flex',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    background: index === 0 ? 'var(--Yellow-500, #FFD60A)' : 'var(--Greyscale-300, #CCCCCC)',
+                    borderRadius: '9999px',
+                    outline: index === 0 ? '2px var(--Yellow-200, #FFF2B2) solid' : '2px var(--Greyscale-200, #E5E5E5) solid',
+                    outlineOffset: '-2px',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    display: 'flex'
+                  }}>
+                    <div style={{
+                      textAlign: 'center',
+                      justifyContent: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
+                      fontSize: '16px',
+                      fontFamily: 'Brockmann',
+                      fontWeight: '700',
+                      lineHeight: '24px',
+                      wordWrap: 'break-word'
+                    }}>
+                      {index + 1}
                     </div>
-                    
-                    <div className="text-right">
-                      <div className="text-xl font-bold text-yellow-400">
+                  </div>
+                  <div style={{
+                    flex: '1 1 0',
+                    paddingBottom: '2px',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-start',
+                    alignItems: 'flex-start',
+                    gap: '2px',
+                    display: 'inline-flex'
+                  }}>
+                    <div style={{
+                      alignSelf: 'stretch',
+                      justifyContent: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      color: selectedTeam === team.playerName ? 'var(--Greyscale-(Blue)-800, #2B2D2D)' : 'var(--Text-Primary, #2B2D2D)',
+                      fontSize: '16px',
+                      fontFamily: 'Brockmann',
+                      fontWeight: '600',
+                      lineHeight: '24px',
+                      letterSpacing: '0.32px',
+                      wordWrap: 'break-word'
+                    }}>
+                      {team.playerName}
+                    </div>
+                    <div style={{
+                      alignSelf: 'stretch',
+                      justifyContent: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      color: selectedTeam === team.playerName ? 'var(--Greyscale-(Blue)-800, #2B2D2D)' : 'var(--Text-Primary, #2B2D2D)',
+                      fontSize: '14px',
+                      fontFamily: 'Brockmann',
+                      fontWeight: '400',
+                      lineHeight: '20px',
+                      wordWrap: 'break-word'
+                    }}>
+                      {team.completedPicks}/{team.totalPicks} movies scored
+                    </div>
+                  </div>
+                  <div style={{
+                    flexDirection: 'column',
+                    justifyContent: 'flex-start',
+                    alignItems: 'flex-start',
+                    display: 'inline-flex'
+                  }}>
+                    <div style={{
+                      alignSelf: 'stretch',
+                      flexDirection: 'column',
+                      justifyContent: 'flex-start',
+                      alignItems: 'flex-end',
+                      display: 'flex'
+                    }}>
+                      <div style={{
+                        textAlign: 'right',
+                        justifyContent: 'center',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        color: 'var(--Brand-Primary, #680AFF)',
+                        fontSize: '32px',
+                        fontFamily: 'Brockmann',
+                        fontWeight: '500',
+                        lineHeight: '36px',
+                        letterSpacing: '1.28px',
+                        wordWrap: 'break-word'
+                      }}>
                         {team.totalScore.toFixed(1)}
-                      </div>
-                      <div className="text-gray-400 text-sm">
-                        Total Score
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* Selected Team Roster */}
           {selectedTeam && teamScores.find(t => t.playerName === selectedTeam) && (
