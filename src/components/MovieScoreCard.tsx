@@ -118,7 +118,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                     </div>
                   </div>
                 </div>
-                <div style={{ flex: '1 1 0', minWidth: '86px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-end', display: 'inline-flex' }}>
+                <div style={{ flex: '1 1 0', minWidth: '86px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-end', gap: '12px', display: 'inline-flex' }}>
                   <div style={{ 
                     textAlign: 'right', 
                     justifyContent: 'center', 
