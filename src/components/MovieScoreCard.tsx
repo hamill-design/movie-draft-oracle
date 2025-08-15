@@ -360,7 +360,9 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                     paddingRight: '12px', 
                     paddingTop: '4px', 
                     paddingBottom: '4px', 
-                    background: scoringData.oscarStatus === 'winner' ? 'var(--Yellow-500, #FFD60A)' : 'var(--Yellow-200, #FFF2B2)', 
+                     background: scoringData.oscarStatus === 'winner' ? 'hsl(var(--yellow-500))' : 
+                                scoringData.oscarStatus === 'nominee' ? 'hsl(var(--yellow-200))' : 
+                                'hsl(var(--greyscale-blue-200))',
                     borderRadius: '9999px', 
                     justifyContent: 'flex-start', 
                     alignItems: 'center', 
