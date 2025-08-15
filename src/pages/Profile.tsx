@@ -69,13 +69,45 @@ const Profile = () => {
   };
 
   const handleDeleteDraft = async (draftId: string) => {
+    // Show confirmation dialog
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this draft? This action cannot be undone."
+    );
+    
+    if (!confirmDelete) return;
+
     try {
-      const { error } = await supabase
+      // First, delete all related draft picks
+      const { error: picksError } = await supabase
+        .from('draft_picks')
+        .delete()
+        .eq('draft_id', draftId);
+
+      if (picksError) {
+        console.error('Error deleting draft picks:', picksError);
+        // Continue with deletion even if picks deletion fails
+      }
+
+      // Then, delete all related draft participants
+      const { error: participantsError } = await supabase
+        .from('draft_participants')
+        .delete()
+        .eq('draft_id', draftId);
+
+      if (participantsError) {
+        console.error('Error deleting draft participants:', participantsError);
+        // Continue with deletion even if participants deletion fails
+      }
+
+      // Finally, delete the draft itself
+      const { error: draftError } = await supabase
         .from('drafts')
         .delete()
         .eq('id', draftId);
 
-      if (error) throw error;
+      if (draftError) {
+        throw new Error(`Failed to delete draft: ${draftError.message}`);
+      }
 
       toast({
         title: "Draft deleted",
@@ -83,10 +115,11 @@ const Profile = () => {
       });
 
       refetch();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Delete draft error:', error);
       toast({
         title: "Error",
-        description: "Failed to delete draft. Please try again.",
+        description: error.message || "Failed to delete draft. Please try again.",
         variant: "destructive",
       });
     }
