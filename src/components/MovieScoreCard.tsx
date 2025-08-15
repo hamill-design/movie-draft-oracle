@@ -270,7 +270,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                       </div>
                     </div>
                   </div>
-                  <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: 'var(--Greyscale-(Blue)-200, #D9E0DF)', overflow: 'hidden', borderRadius: '9999px' }}>
+                   <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: 'hsl(var(--greyscale-blue-200))', overflow: 'hidden', borderRadius: '9999px' }}>
                     <div style={{ 
                       width: `${Math.min(((scoringData.rtCriticsScore || 0) / 100) * 100, 100)}%`, 
                       height: '8px', 
@@ -299,7 +299,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                       </div>
                     </div>
                   </div>
-                  <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: 'var(--Greyscale-(Blue)-200, #D9E0DF)', overflow: 'hidden', borderRadius: '9999px' }}>
+                   <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: 'hsl(var(--greyscale-blue-200))', overflow: 'hidden', borderRadius: '9999px' }}>
                     <div style={{ 
                       width: `${Math.min(((scoringData.metacriticScore || 0) / 100) * 100, 100)}%`, 
                       height: '8px', 
@@ -328,7 +328,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                       </div>
                     </div>
                   </div>
-                  <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: 'var(--Greyscale-(Blue)-200, #D9E0DF)', overflow: 'hidden', borderRadius: '9999px' }}>
+                  <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: 'hsl(var(--greyscale-blue-200))', overflow: 'hidden', borderRadius: '9999px' }}>
                     <div style={{ 
                       width: `${Math.min(((scoringData.imdbRating || 0) / 10) * 100, 100)}%`, 
                       height: '8px', 
