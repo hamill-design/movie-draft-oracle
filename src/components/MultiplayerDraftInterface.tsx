@@ -298,14 +298,14 @@ export const MultiplayerDraftInterface = ({
                   </div>
                 </div>
                 {!isMyTurn && draftHasStarted && (
-                  <div data-property-1="Default" style={{width: '100%', height: '100%', paddingTop: '22px', paddingBottom: '24px', paddingLeft: '24px', paddingRight: '24px', background: 'var(--Greyscale-(Blue)-150, #EBF0EF)', borderRadius: '8px', outline: '1px var(--Greyscale-(Blue)-300, #BDC3C2) solid', outlineOffset: '-1px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
+                  <div data-property-1="Default" style={{width: '100%', height: '100%', paddingTop: '22px', paddingBottom: '24px', paddingLeft: '24px', paddingRight: '24px', background: 'var(--greyscale-blue-150, #EBF0EF) !important', borderRadius: '8px', outline: '1px var(--greyscale-blue-300, #BDC3C2) solid', outlineOffset: '-1px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
                     <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '12px', display: 'flex'}}>
                       <div className="w-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
                         <ClockIcon className="w-5 h-5 text-greyscale-blue-500" />
                       </div>
                       <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '4px', display: 'flex'}}>
-                        <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-800, #2B2D2D)', fontSize: '16px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', letterSpacing: '0.32px', wordWrap: 'break-word'}}>Waiting for {currentTurnPlayer?.participant_name}</div>
-                        <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-500, #828786)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>It's their turn to make a pick</div>
+                        <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--greyscale-blue-800, #2B2D2D)', fontSize: '16px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', letterSpacing: '0.32px', wordWrap: 'break-word'}}>Waiting for {currentTurnPlayer?.participant_name}</div>
+                        <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--greyscale-blue-500, #828786)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>It's their turn to make a pick</div>
                       </div>
                     </div>
                   </div>
