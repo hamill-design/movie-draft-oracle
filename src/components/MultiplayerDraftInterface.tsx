@@ -304,7 +304,7 @@ export const MultiplayerDraftInterface = ({
                   >
                     <div className="w-full flex flex-col justify-center items-center gap-3">
                       <div className="w-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
-                        <ClockIcon className="w-5 h-5 text-greyscale-blue-500" />
+                        <ClockIcon className="w-6 h-6 text-greyscale-blue-500" />
                       </div>
                       <div className="w-full flex flex-col justify-start items-center gap-1">
                         <div className="w-full text-center text-greyscale-blue-800 text-base font-brockmann font-semibold leading-6 tracking-wide">
