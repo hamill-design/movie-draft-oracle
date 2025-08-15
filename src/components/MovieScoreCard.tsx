@@ -141,12 +141,8 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
         {pickNumber && category && (
           <div style={{ justifyContent: 'flex-start', alignItems: 'flex-start', gap: '6px', display: 'inline-flex' }}>
             <div style={{ 
-              width: '28px', 
-              height: '28px', 
-              paddingTop: '5px', 
-              paddingBottom: '5px', 
-              paddingLeft: '7.50px', 
-              paddingRight: '9px', 
+              width: '100%', 
+              height: '100%', 
               borderRadius: '99999px', 
               outline: '1px var(--Brand-Primary, #680AFF) solid', 
               outlineOffset: '-1px', 
@@ -158,11 +154,10 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
               <div style={{ 
                 textAlign: 'center', 
                 color: 'var(--Brand-Primary, #680AFF)', 
-                fontSize: '18px', 
+                fontSize: '14px', 
                 fontFamily: 'Brockmann', 
-                fontStyle: 'italic', 
                 fontWeight: 400, 
-                lineHeight: '18px', 
+                lineHeight: '16px', 
                 wordWrap: 'break-word' 
               }}>
                 {pickNumber}
