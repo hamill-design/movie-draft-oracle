@@ -390,7 +390,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
 
           {/* Box Office Data */}
           {(scoringData.budget || scoringData.revenue) && (
-            <div style={{ alignSelf: 'stretch', paddingTop: '12px', borderTop: '1px var(--Greyscale-(Blue)-700, #474B4B) solid', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex' }}>
+            <div style={{ alignSelf: 'stretch', paddingTop: '12px', borderTop: '1px hsl(var(--greyscale-blue-700)) solid', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex' }}>
               <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex' }}>
                 <div style={{ 
                   alignSelf: 'stretch', 
