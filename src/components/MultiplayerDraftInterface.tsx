@@ -527,7 +527,7 @@ export const MultiplayerDraftInterface = ({
                   lineHeight: '24px', 
                   wordWrap: 'break-word'
                 }}>
-                  <Trophy size={20} />
+                  <Trophy size={20} color="#FFD60A" />
                   View Final Scores
                 </div>
               </div>
