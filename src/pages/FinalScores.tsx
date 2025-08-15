@@ -503,6 +503,7 @@ const FinalScores = () => {
                   <div
                     key={team.playerName}
                     onClick={() => setSelectedTeam(team.playerName)}
+                    className="group hover:bg-[var(--Purple-50,#F8F7FF)] hover:outline-[var(--Purple-100,#EDEBFF)]"
                     style={{
                       alignSelf: 'stretch',
                       paddingTop: '16px',
