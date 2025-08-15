@@ -272,12 +272,6 @@ export const MultiplayerDraftInterface = ({
                   <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '16px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', wordWrap: 'break-word'}}>Draft Complete</div>
                   <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-600, #646968)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>All picks have been made!</div>
                 </div>
-                <div 
-                  onClick={() => navigate(`/final-scores/${draft.id}?public=true`)}
-                  style={{alignSelf: 'stretch', paddingLeft: '24px', paddingRight: '24px', paddingTop: '12px', paddingBottom: '12px', background: 'var(--Purple-500, #680AFF)', borderRadius: '2px', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer'}}
-                >
-                  <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--UI-Primary, white)', fontSize: '16px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', wordWrap: 'break-word'}}>🏆 View Final Scores</div>
-                </div>
               </>
             ) : (
               <>
@@ -500,6 +494,42 @@ export const MultiplayerDraftInterface = ({
             name: currentTurnPlayer.participant_name
           } : undefined} />
           </div>
+
+          {/* View Final Scores Button - Show when draft is complete */}
+          {isComplete && (
+            <div className="flex justify-center">
+              <div 
+                onClick={() => navigate(`/final-scores/${draft.id}?public=true`)}
+                style={{
+                  paddingLeft: '24px', 
+                  paddingRight: '24px', 
+                  paddingTop: '12px', 
+                  paddingBottom: '12px', 
+                  background: 'var(--Purple-500, #680AFF)', 
+                  borderRadius: '2px', 
+                  justifyContent: 'center', 
+                  alignItems: 'center', 
+                  display: 'inline-flex', 
+                  cursor: 'pointer'
+                }}
+              >
+                <div style={{
+                  textAlign: 'center', 
+                  justifyContent: 'center', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  color: 'var(--UI-Primary, white)', 
+                  fontSize: '16px', 
+                  fontFamily: 'Brockmann', 
+                  fontWeight: '600', 
+                  lineHeight: '24px', 
+                  wordWrap: 'break-word'
+                }}>
+                  🏆 View Final Scores
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Controls */}
           <div className="space-y-6">
