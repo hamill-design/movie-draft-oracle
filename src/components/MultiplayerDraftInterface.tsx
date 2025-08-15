@@ -517,7 +517,9 @@ export const MultiplayerDraftInterface = ({
                   textAlign: 'center', 
                   justifyContent: 'center', 
                   display: 'flex', 
-                  flexDirection: 'column', 
+                  flexDirection: 'row', 
+                  alignItems: 'center',
+                  gap: '8px',
                   color: 'var(--UI-Primary, white)', 
                   fontSize: '16px', 
                   fontFamily: 'Brockmann', 
@@ -525,7 +527,8 @@ export const MultiplayerDraftInterface = ({
                   lineHeight: '24px', 
                   wordWrap: 'break-word'
                 }}>
-                  🏆 View Final Scores
+                  <Trophy size={20} />
+                  View Final Scores
                 </div>
               </div>
             </div>
