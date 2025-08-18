@@ -87,7 +87,7 @@ const createShareImageHTML = (draftData: DraftData): string => {
             <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
               <div style="align-self: stretch; justify-content: flex-start; align-items: flex-start; gap: 16px; display: inline-flex">
                 <div style="width: 200px; height: 298px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
-                  <img style="align-self: stretch; flex: 1 1 0; position: relative; border-radius: 2px; border: 0.50px ${colors.text} solid" src="${movie.poster || 'https://placehold.co/200x298/EDEBFF/680AFF?text=No+Image'}" crossorigin="anonymous" />
+                  <img style="align-self: stretch; flex: 1 1 0; position: relative; border-radius: 2px; border: 0.50px ${colors.text} solid" src="${movie.poster || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI5OCIgdmlld0JveD0iMCAwIDIwMCAyOTgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjk4IiBmaWxsPSIjRURFQkZGIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTQ5IiBmaWxsPSIjNjgwQUZGIiBmb250LXNpemU9IjE2IiBmb250LWZhbWlseT0iQXJpYWwiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K'}" />
                 </div>
                 <div style="flex: 1 1 0; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: inline-flex">
                   <div style="flex-direction: column; justify-content: center; align-items: flex-start; gap: 24px; display: flex">
@@ -180,11 +180,11 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
       height: container.scrollHeight,
       scale: 1,
       backgroundColor: '#FCFFFF',
-      useCORS: false, // Disable CORS to avoid issues
-      allowTaint: true,
+      useCORS: false,
+      allowTaint: false, // Set to false since we're using base64 images
       logging: false,
       foreignObjectRendering: false,
-      imageTimeout: 10000,
+      imageTimeout: 5000,
       removeContainer: false
     });
     
@@ -226,23 +226,67 @@ const loadFonts = async (): Promise<void> => {
   }
 };
 
-// Helper function to wait for images to load
-const waitForImages = (container: HTMLElement): Promise<void> => {
+// Helper function to convert image URL to base64
+const convertImageToBase64 = async (url: string): Promise<string> => {
+  try {
+    const response = await fetch(url, { 
+      mode: 'cors',
+      headers: {
+        'Accept': 'image/*'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.status}`);
+    }
+    
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.warn('Failed to convert image to base64:', url, error);
+    // Return a placeholder base64 image
+    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI5OCIgdmlld0JveD0iMCAwIDIwMCAyOTgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjk4IiBmaWxsPSIjRURFQkZGIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTQ5IiBmaWxsPSIjNjgwQUZGIiBmb250LXNpemU9IjE2IiBmb250LWZhbWlseT0iQXJpYWwiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K';
+  }
+};
+
+// Helper function to wait for images to load and convert external ones to base64
+const waitForImages = async (container: HTMLElement): Promise<void> => {
   const images = container.querySelectorAll('img');
+  
+  for (const img of Array.from(images)) {
+    const src = img.getAttribute('src');
+    if (src && (src.startsWith('http://') || src.startsWith('https://'))) {
+      try {
+        console.log('Converting external image to base64:', src);
+        const base64Url = await convertImageToBase64(src);
+        img.src = base64Url;
+        console.log('Successfully converted image to base64');
+      } catch (error) {
+        console.warn('Failed to convert image, using fallback:', error);
+        img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI5OCIgdmlld0JveD0iMCAwIDIwMCAyOTgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjk4IiBmaWxsPSIjRURFQkZGIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTQ5IiBmaWxsPSIjNjgwQUZGIiBmb250LXNpemU9IjE2IiBmb250LWZhbWlseT0iQXJpYWwiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K';
+      }
+    }
+  }
+  
+  // Wait for all images to finish loading
   const imagePromises = Array.from(images).map(img => {
     return new Promise<void>((resolve) => {
       if (img.complete) {
         resolve();
       } else {
         img.onload = () => resolve();
-        img.onerror = () => resolve(); // Continue even if image fails to load
-        // Timeout after 5 seconds
-        setTimeout(() => resolve(), 5000);
+        img.onerror = () => resolve();
+        setTimeout(() => resolve(), 3000);
       }
     });
   });
   
-  return Promise.all(imagePromises).then(() => {});
+  await Promise.all(imagePromises);
 };
 
 export const downloadImage = (dataUrl: string, filename: string) => {
