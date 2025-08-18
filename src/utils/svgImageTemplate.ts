@@ -168,18 +168,25 @@ const generateMovieSection = async (movie: any, title: string, yOffset: number) 
 export const generateShareImageSVG = async (data: ShareImageData): Promise<string> => {
   const sortedTeamScores = data.teamScores.sort((a, b) => b.totalScore - a.totalScore);
   
-  // Smart title highlighting - find player name to highlight
-  const titleWords = data.title.split(' ');
+  // Always structure title as "THE [NAME] DRAFT" for consistency
+  let titleParts = data.title.split(' ');
+  let processedTitle: string;
   let highlightIndex = -1;
   
-  // Look for patterns like "THE [NAME] DRAFT" or "[NAME] DRAFT"
-  if (titleWords.length >= 3 && titleWords[0].toUpperCase() === 'THE' && titleWords[titleWords.length - 1].toUpperCase() === 'DRAFT') {
-    // Pattern: "THE [NAME] DRAFT" - highlight middle word(s)
-    highlightIndex = 1;
-  } else if (titleWords.length >= 2 && titleWords[titleWords.length - 1].toUpperCase() === 'DRAFT') {
-    // Pattern: "[NAME] DRAFT" - highlight first word(s)
-    highlightIndex = 0;
+  // If title doesn't start with "THE" and end with "DRAFT", format it properly
+  if (titleParts[0].toUpperCase() !== 'THE' || titleParts[titleParts.length - 1].toUpperCase() !== 'DRAFT') {
+    // Extract the main name part (remove "THE" and "DRAFT" if present)
+    const nameWords = titleParts.filter(word => 
+      word.toUpperCase() !== 'THE' && word.toUpperCase() !== 'DRAFT'
+    );
+    processedTitle = `THE ${nameWords.join(' ')} DRAFT`;
+    highlightIndex = 1; // Highlight the name part
+  } else {
+    processedTitle = data.title;
+    highlightIndex = 1; // Highlight the middle part
   }
+  
+  const titleWords = processedTitle.split(' ');
 
   // Convert movie posters to base64 if they exist - ensure they're always data URLs
   const [firstPickPoster, bestMoviePoster] = await Promise.all([
@@ -338,7 +345,14 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
           margin: 0;
         }
         
-        .movie-bottom {
+        .movie-top-section {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          align-items: flex-start;
+        }
+        
+        .movie-pick-category {
           display: flex;
           align-items: center;
           gap: 16px;
@@ -374,8 +388,8 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
           font-size: 48px;
           font-weight: 500;
           color: #680AFF;
-          margin-left: auto;
           margin: 0;
+          text-align: right;
         }
       ]]>
     </style>
@@ -417,15 +431,15 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
         <div class="movie-card">
           <img class="movie-poster" src="${firstPickPoster}" alt="${data.firstPick.title} poster" />
           <div class="movie-info">
-            <div>
+            <div class="movie-top-section">
               <h3 class="movie-title">${data.firstPick.title}</h3>
               <p class="movie-details">${data.firstPick.year ? `${data.firstPick.year} • ` : ''}${data.firstPick.genre || ''}</p>
+              <div class="movie-pick-category">
+                <div class="pick-circle">${data.firstPick.pickNumber || '1'}</div>
+                ${data.firstPick.category ? `<div class="category-badge">${data.firstPick.category}</div>` : ''}
+              </div>
             </div>
-            <div class="movie-bottom">
-              <div class="pick-circle">${data.firstPick.pickNumber || '1'}</div>
-              ${data.firstPick.category ? `<div class="category-badge">${data.firstPick.category}</div>` : ''}
-              <div class="movie-score">${data.firstPick.score.toFixed(2)}</div>
-            </div>
+            <div class="movie-score">${data.firstPick.score.toFixed(2)}</div>
           </div>
         </div>
       </div>
@@ -438,15 +452,15 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
         <div class="movie-card">
           <img class="movie-poster" src="${bestMoviePoster}" alt="${data.bestMovie.title} poster" />
           <div class="movie-info">
-            <div>
+            <div class="movie-top-section">
               <h3 class="movie-title">${data.bestMovie.title}</h3>
               <p class="movie-details">${data.bestMovie.year ? `${data.bestMovie.year} • ` : ''}${data.bestMovie.genre || ''}</p>
+              <div class="movie-pick-category">
+                <div class="pick-circle">${data.bestMovie.pickNumber || '1'}</div>
+                ${data.bestMovie.category ? `<div class="category-badge">${data.bestMovie.category}</div>` : ''}
+              </div>
             </div>
-            <div class="movie-bottom">
-              <div class="pick-circle">${data.bestMovie.pickNumber || '1'}</div>
-              ${data.bestMovie.category ? `<div class="category-badge">${data.bestMovie.category}</div>` : ''}
-              <div class="movie-score">${data.bestMovie.score.toFixed(2)}</div>
-            </div>
+            <div class="movie-score">${data.bestMovie.score.toFixed(2)}</div>
           </div>
         </div>
       </div>
