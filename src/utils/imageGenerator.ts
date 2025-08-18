@@ -53,43 +53,51 @@ const createShareImageHTML = (draftData: DraftData): string => {
     yellow500: '#FFD60A'
   };
 
-  // Embed custom fonts directly in the HTML template
+  // Embed custom fonts with additional constraints for better rendering
   const fontStyles = `
     <style>
+      * {
+        box-sizing: border-box;
+      }
       @font-face {
         font-family: 'Brockmann';
         src: url('/fonts/brockmann/brockmann-regular.woff2') format('woff2');
         font-weight: 400;
         font-style: normal;
-        font-display: swap;
+        font-display: block;
       }
       @font-face {
         font-family: 'Brockmann';
         src: url('/fonts/brockmann/brockmann-medium.woff2') format('woff2');
         font-weight: 500;
         font-style: normal;
-        font-display: swap;
+        font-display: block;
       }
       @font-face {
         font-family: 'Brockmann';
         src: url('/fonts/brockmann/brockmann-semibold.woff2') format('woff2');
         font-weight: 600;
         font-style: normal;
-        font-display: swap;
+        font-display: block;
       }
       @font-face {
         font-family: 'Brockmann';
         src: url('/fonts/brockmann/brockmann-bold.woff2') format('woff2');
         font-weight: 700;
         font-style: normal;
-        font-display: swap;
+        font-display: block;
       }
       @font-face {
         font-family: 'CHANEY';
-        src: url('/fonts/chaney/chaney-regular.woff2') format('woff2');
+        src: url('/fonts/chaney/chaney-extended.woff2') format('woff2');
         font-weight: 400;
         font-style: normal;
-        font-display: swap;
+        font-display: block;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Brockmann', serif;
       }
     </style>
   `;
@@ -159,27 +167,30 @@ const createShareImageHTML = (draftData: DraftData): string => {
   };
 
   return `
-    ${fontStyles}
-    <div style="width: 100%; height: 100%; padding-left: 24px; padding-right: 24px; padding-top: 112px; padding-bottom: 112px; background: linear-gradient(140deg, ${colors.gradientStart} 0%, ${colors.gradientMid} 50%, ${colors.gradientEnd} 100%); overflow: hidden; flex-direction: column; justify-content: center; align-items: center; gap: 48px; display: inline-flex">
-      <div style="text-align: center; justify-content: center; display: flex; flex-direction: column">
-        <span style="color: ${colors.text}; font-size: 64px; font-family: CHANEY; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word">THE</span>
-        <span style="color: ${colors.purple500}; font-size: 64px; font-family: CHANEY; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word"> ${winner?.playerName || 'DRAFT'} </span>
-        <span style="color: ${colors.text}; font-size: 64px; font-family: CHANEY; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word">DRAFT</span>
-      </div>
-      <div style="width: 998px; padding: 24px; border-radius: 4px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: flex">
-        <div style="align-self: stretch; flex-direction: column; justify-content: center; align-items: center; gap: 8px; display: flex">
-          <div style="justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 48px; font-family: Brockmann; font-weight: 700; line-height: 36px; letter-spacing: 1.92px; word-wrap: break-word">TOP SCORES</div>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      ${fontStyles}
+    </head>
+    <body style="margin: 0; padding: 0; width: 1080px; height: auto;">
+      <div style="width: 1080px; height: auto; padding-left: 24px; padding-right: 24px; padding-top: 112px; padding-bottom: 112px; background: linear-gradient(140deg, ${colors.gradientStart} 0%, ${colors.gradientMid} 50%, ${colors.gradientEnd} 100%); overflow: hidden; flex-direction: column; justify-content: center; align-items: center; gap: 48px; display: inline-flex">
+        <div style="text-align: center; justify-content: center; display: flex; flex-direction: column"><span style="color: ${colors.text}; font-size: 64px; font-family: CHANEY; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word">THE</span><span style="color: ${colors.purple500}; font-size: 64px; font-family: CHANEY; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word"> ${winner?.playerName || 'Chris Evans'} </span><span style="color: ${colors.text}; font-size: 64px; font-family: CHANEY; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word">DRAFT</span></div>
+        <div style="width: 998px; padding: 24px; border-radius: 4px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: flex">
+          <div style="align-self: stretch; flex-direction: column; justify-content: center; align-items: center; gap: 8px; display: flex">
+            <div style="justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 48px; font-family: Brockmann; font-weight: 700; line-height: 36px; letter-spacing: 1.92px; word-wrap: break-word">TOP SCORES</div>
+          </div>
+          <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 16px; display: flex">
+            ${teamScoreItems}
+          </div>
         </div>
-        <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 16px; display: flex">
-          ${teamScoreItems}
+        ${createMovieSection(draftData.firstPick, 'FIRST PICK')}
+        ${createMovieSection(draftData.bestMovie, 'HIGHEST SCORER')}
+        <div data-:hover="false" data-property-1="Long" style="width: 728px; justify-content: flex-start; align-items: flex-start; gap: 10px; display: inline-flex">
+          <div style="flex: 1 1 0; height: 45.02px; background: ${colors.primary}"></div>
         </div>
       </div>
-      ${createMovieSection(draftData.firstPick, 'FIRST PICK')}
-      ${createMovieSection(draftData.bestMovie, 'HIGHEST SCORER')}
-      <div data-:hover="false" data-property-1="Long" style="width: 728px; justify-content: flex-start; align-items: flex-start; gap: 10px; display: inline-flex">
-        <div style="flex: 1 1 0; height: 45.02px; background: ${colors.primary}"></div>
-      </div>
-    </div>
+    </body>
+    </html>
   `;
 };
 
@@ -187,61 +198,68 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
   try {
     console.log('Generating share image with data:', draftData);
     
-    // Create a temporary container
-    const container = document.createElement('div');
-    container.style.position = 'absolute';
-    container.style.left = '-9999px';
-    container.style.top = '-9999px';
-    container.style.width = '1080px';
-    container.style.height = 'auto';
-    
-    // Load fonts before generating image
+    // Load fonts first
     await loadFonts();
     
-    // Set the HTML content
+    // Create a temporary iframe for isolated rendering
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.left = '-9999px';
+    iframe.style.top = '-9999px';
+    iframe.style.width = '1080px';
+    iframe.style.height = 'auto';
+    iframe.style.border = 'none';
+    
+    document.body.appendChild(iframe);
+    
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!iframeDoc) {
+      throw new Error('Could not access iframe document');
+    }
+    
+    // Set the HTML content in the iframe
     const htmlContent = createShareImageHTML(draftData);
     console.log('Generated HTML content length:', htmlContent.length);
-    container.innerHTML = htmlContent;
+    iframeDoc.open();
+    iframeDoc.write(htmlContent);
+    iframeDoc.close();
     
-    // Append to body temporarily
-    document.body.appendChild(container);
+    // Wait for fonts and images to load
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    await waitForImages(iframeDoc.body);
     
-    // Wait for images to load
-    await waitForImages(container);
+    const targetElement = iframeDoc.body.firstElementChild as HTMLElement;
+    if (!targetElement) {
+      throw new Error('No target element found');
+    }
     
-    console.log('Container dimensions:', container.scrollWidth, 'x', container.scrollHeight);
+    console.log('Container dimensions:', targetElement.scrollWidth, 'x', targetElement.scrollHeight);
     
-    // Wait a bit more for fonts to fully render
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Wait additional time for fonts to fully render
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     console.log('Starting canvas generation...');
-    // Generate the image with simplified settings
-    const canvas = await html2canvas(container, {
+    // Generate the image
+    const canvas = await html2canvas(targetElement, {
       width: 1080,
-      height: container.scrollHeight,
+      height: targetElement.scrollHeight,
       scale: 1,
       backgroundColor: '#FCFFFF',
       useCORS: false,
       allowTaint: false,
-      logging: true, // Enable logging for debugging
+      logging: false,
       foreignObjectRendering: false,
-      imageTimeout: 10000, // Increased timeout
-      removeContainer: false,
-      onclone: (clonedDoc, element) => {
-        // Log cloned content for debugging
-        console.log('Cloned document ready, element height:', element.scrollHeight);
-        const textElements = element.querySelectorAll('*');
-        console.log('Text elements found:', textElements.length);
-      }
+      imageTimeout: 15000,
+      removeContainer: false
     });
     
     console.log('Canvas generated successfully:', canvas.width, 'x', canvas.height);
     
-    // Remove the temporary container
-    document.body.removeChild(container);
+    // Remove the temporary iframe
+    document.body.removeChild(iframe);
     
-    // Convert to JPG data URL
-    return canvas.toDataURL('image/jpeg', 0.9);
+    // Convert to PNG for better quality
+    return canvas.toDataURL('image/png', 1.0);
   } catch (error) {
     console.error('Error generating share image:', error);
     throw error;
@@ -252,25 +270,23 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
 const loadFonts = async (): Promise<void> => {
   console.log('Loading custom fonts...');
   try {
-    // Load all custom font variants
+    // Load specific font variants that we use
     const fontPromises = [
-      document.fonts.load('400 16px "Brockmann"'),
-      document.fonts.load('500 16px "Brockmann"'),
-      document.fonts.load('600 16px "Brockmann"'),
-      document.fonts.load('700 16px "Brockmann"'),
-      document.fonts.load('400 16px "Chaney"'),
-      document.fonts.load('400 16px "Chaney Wide"'),
-      document.fonts.load('400 16px "Chaney Extended"'),
-      document.fonts.load('400 16px "Chaney Ultra Extended"')
+      document.fonts.load('400 64px "CHANEY"'),
+      document.fonts.load('400 48px "Brockmann"'),
+      document.fonts.load('500 32px "Brockmann"'),
+      document.fonts.load('600 36px "Brockmann"'),
+      document.fonts.load('700 48px "Brockmann"'),
+      document.fonts.load('700 16px "Brockmann"')
     ];
 
     await Promise.allSettled(fontPromises);
     
-    // Wait for document.fonts.ready to ensure all fonts are fully loaded
+    // Wait for document.fonts.ready
     await document.fonts.ready;
     
     // Additional wait to ensure fonts are applied
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     console.log('All custom fonts loaded successfully');
     console.log('Available fonts:', Array.from(document.fonts).map(f => f.family));
@@ -308,7 +324,7 @@ const convertImageToBase64 = async (url: string): Promise<string> => {
 };
 
 // Helper function to wait for images to load and convert external ones to base64
-const waitForImages = async (container: HTMLElement): Promise<void> => {
+const waitForImages = async (container: HTMLElement | Document): Promise<void> => {
   const images = container.querySelectorAll('img');
   
   for (const img of Array.from(images)) {
@@ -329,12 +345,12 @@ const waitForImages = async (container: HTMLElement): Promise<void> => {
   // Wait for all images to finish loading
   const imagePromises = Array.from(images).map(img => {
     return new Promise<void>((resolve) => {
-      if (img.complete) {
+      if (img.complete && img.naturalWidth > 0) {
         resolve();
       } else {
         img.onload = () => resolve();
         img.onerror = () => resolve();
-        setTimeout(() => resolve(), 3000);
+        setTimeout(() => resolve(), 5000);
       }
     });
   });
