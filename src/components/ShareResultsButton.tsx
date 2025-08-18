@@ -5,7 +5,7 @@ import { ShareIcon } from '@/components/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { downloadImage } from '@/utils/imageGenerator';
-import { useDOMImageRenderer } from '@/hooks/useDOMImageRenderer';
+import { useSVGImageRenderer } from '@/hooks/useSVGImageRenderer';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 
 interface TeamScore {
@@ -40,7 +40,7 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
   const [showShareMenu, setShowShareMenu] = useState(false);
   const { toast } = useToast();
   const { makeDraftPublic } = useDraftOperations();
-  const { renderToCanvas } = useDOMImageRenderer();
+  const { renderToCanvas } = useSVGImageRenderer();
 
   const handleShareResults = async () => {
     try {
