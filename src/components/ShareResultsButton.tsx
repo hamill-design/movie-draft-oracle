@@ -4,7 +4,8 @@ import { Download, RefreshCw, Copy, Link } from 'lucide-react';
 import { ShareIcon } from '@/components/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
-import { generateShareImage, downloadImage } from '@/utils/imageGenerator';
+import { downloadImage } from '@/utils/imageGenerator';
+import { useShareImageRenderer } from '@/hooks/useShareImageRenderer';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 
 interface TeamScore {
@@ -39,6 +40,7 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
   const [showShareMenu, setShowShareMenu] = useState(false);
   const { toast } = useToast();
   const { makeDraftPublic } = useDraftOperations();
+  const { renderToCanvas } = useShareImageRenderer();
 
   const handleShareResults = async () => {
     try {
@@ -85,9 +87,9 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
         firstPick
       };
 
-      console.log('Draft data being sent to generator:', draftData);
-      const imageDataUrl = await generateShareImage(draftData);
-      const filename = `${draftTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_final_scores.jpg`;
+      console.log('Draft data being sent to renderer:', draftData);
+      const imageDataUrl = await renderToCanvas(draftData);
+      const filename = `${draftTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_final_scores.png`;
       
       downloadImage(imageDataUrl, filename);
       
