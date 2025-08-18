@@ -52,35 +52,49 @@ const generateMovieSection = async (movie: any, title: string, yOffset: number) 
   
   const posterBase64 = movie.poster ? await convertImageToBase64(movie.poster) : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI5OCIgZmlsbD0iI0Y1RjVGNSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjRjVGNUY1Ii8+PC9zdmc+';
   
+  const PADDING = 40;
+  const CARD_PADDING = 28;
+  
   return `
-    <g transform="translate(0, ${yOffset})">
+    <g transform="translate(${PADDING}, ${yOffset})">
       <!-- Section Header -->
-      <text x="540" y="64" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">${title}</text>
+      <text x="500" y="64" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">${title}</text>
       
       <!-- Card Background -->
-      <rect x="41" y="104" width="998" height="220" fill="white" stroke="#BCB2FF" stroke-width="1" rx="8"/>
+      <rect x="0" y="104" width="${1000 - PADDING * 2}" height="220" fill="white" stroke="#BCB2FF" stroke-width="1" rx="8"/>
       
-      <!-- Movie Poster -->
-      <image x="69" y="132" width="132" height="196" href="${posterBase64}"/>
-      
-      <!-- Movie Title -->
-      <text x="225" y="180" fill="#2B2D2D" class="brockmann-semibold" font-size="36">${movie.title}</text>
-      
-      <!-- Movie Details -->
-      <text x="225" y="212" fill="#2B2D2D" class="brockmann" font-size="22">${movie.year ? `${movie.year} • ` : ''}${movie.genre || ''}</text>
-      
-      <!-- Pick Number Circle -->
-      <circle cx="253" cy="260" r="22" fill="none" stroke="#680AFF" stroke-width="2"/>
-      <text x="253" y="269" text-anchor="middle" fill="#680AFF" class="brockmann" font-size="26">${movie.pickNumber || '1'}</text>
-      
-      <!-- Category Badge -->
-      ${movie.category ? `
-        <rect x="299" y="238" width="${Math.max(movie.category.length * 14 + 28, 80)}" height="44" fill="#BCB2FF" rx="8"/>
-        <text x="313" y="266" fill="#3B0394" class="brockmann-medium" font-size="20">${movie.category}</text>
-      ` : ''}
-      
-      <!-- Score -->
-      <text x="1015" y="288" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="48">${movie.score.toFixed(2)}</text>
+      <!-- Card Content Group with Padding -->
+      <g transform="translate(${CARD_PADDING}, ${104 + CARD_PADDING})">
+        <!-- Movie Poster -->
+        <image x="0" y="0" width="132" height="164" href="${posterBase64}"/>
+        
+        <!-- Movie Info Group -->
+        <g transform="translate(156, 0)">
+          <!-- Movie Title -->
+          <text x="0" y="48" fill="#2B2D2D" class="brockmann-semibold" font-size="32">${movie.title}</text>
+          
+          <!-- Movie Details -->
+          <text x="0" y="80" fill="#2B2D2D" class="brockmann" font-size="20">${movie.year ? `${movie.year} • ` : ''}${movie.genre || ''}</text>
+          
+          <!-- Bottom Row: Pick Number and Category -->
+          <g transform="translate(0, 128)">
+            <!-- Pick Number Circle -->
+            <circle cx="16" cy="16" r="16" fill="none" stroke="#680AFF" stroke-width="2"/>
+            <text x="16" y="22" text-anchor="middle" fill="#680AFF" class="brockmann" font-size="20">${movie.pickNumber || '1'}</text>
+            
+            <!-- Category Badge -->
+            ${movie.category ? `
+              <g transform="translate(52, 0)">
+                <rect x="0" y="0" width="${Math.max(movie.category.length * 12 + 24, 80)}" height="32" fill="#BCB2FF" rx="6"/>
+                <text x="12" y="22" fill="#3B0394" class="brockmann-medium" font-size="16">${movie.category}</text>
+              </g>
+            ` : ''}
+          </g>
+        </g>
+        
+        <!-- Score -->
+        <text x="${1000 - PADDING * 2 - CARD_PADDING * 2}" y="156" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="44">${movie.score.toFixed(2)}</text>
+      </g>
     </g>
   `;
 };
@@ -101,9 +115,18 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
     highlightIndex = 0;
   }
   
-  // Fixed positions for 1920px height with proper spacing
-  const firstPickY = 740;
-  const bestMovieY = 1200;
+  // SVG Layout Constants - Using consistent padding and spacing
+  const PADDING = 40;
+  const SECTION_SPACING = 100;
+  const CARD_SPACING = 16;
+  const CARD_PADDING = 28;
+  
+  // Calculate positions with proper spacing
+  const titleY = 180;
+  const topScoresHeaderY = titleY + SECTION_SPACING + 40;
+  const topScoresStartY = topScoresHeaderY + 64;
+  const firstPickY = topScoresStartY + (3 * 96) + SECTION_SPACING;
+  const bestMovieY = firstPickY + 364 + SECTION_SPACING;
   
   // Load fonts and generate sections
   const [fontCSS, firstPickSection, bestMovieSection] = await Promise.all([
@@ -133,33 +156,41 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
   <!-- Background -->
   <rect width="100%" height="100%" fill="url(#backgroundGradient)"/>
   
-  <!-- Title -->
-  <text x="540" y="180" text-anchor="middle" class="chaney" font-size="72" letter-spacing="2.88px">
-    ${titleWords.map((word, index) => `<tspan fill="${index === highlightIndex ? '#680AFF' : '#2B2D2D'}">${word}${index < titleWords.length - 1 ? ' ' : ''}</tspan>`).join('')}
-  </text>
-  
-  <!-- TOP SCORES Section -->
-  <g>
-    <!-- Section Header -->
-    <text x="540" y="320" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">TOP SCORES</text>
+  <!-- Main Content Group with Padding -->
+  <g transform="translate(${PADDING}, 0)">
+    <!-- Title -->
+    <text x="500" y="${titleY}" text-anchor="middle" class="chaney" font-size="72" letter-spacing="2.88px">
+      ${titleWords.map((word, index) => `<tspan fill="${index === highlightIndex ? '#680AFF' : '#2B2D2D'}">${word}${index < titleWords.length - 1 ? ' ' : ''}</tspan>`).join('')}
+    </text>
     
-    <!-- Score Cards -->
-    ${sortedTeamScores.slice(0, 3).map((team, index) => `
-      <g>
-        <!-- Card Background -->
-        <rect x="41" y="${360 + index * 96}" width="998" height="80" fill="white" stroke="#EDEBFF" stroke-width="1" rx="8"/>
-        
-        <!-- Rank Circle -->
-        <circle cx="85" r="18" cy="${400 + index * 96}" fill="#FFD60A"/>
-        <text x="85" y="${408 + index * 96}" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="18">${index + 1}</text>
-        
-        <!-- Player Name -->
-        <text x="125" y="${412 + index * 96}" fill="#2B2D2D" class="brockmann-medium" font-size="36">${team.playerName}</text>
-        
-        <!-- Score -->
-        <text x="1015" y="${412 + index * 96}" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="52">${team.totalScore.toFixed(1)}</text>
+    <!-- TOP SCORES Section -->
+    <g transform="translate(0, ${topScoresHeaderY})">
+      <!-- Section Header -->
+      <text x="500" y="0" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">TOP SCORES</text>
+      
+      <!-- Score Cards Group -->
+      <g transform="translate(0, 64)">
+        ${sortedTeamScores.slice(0, 3).map((team, index) => `
+          <g transform="translate(0, ${index * (80 + CARD_SPACING)})">
+            <!-- Card Background -->
+            <rect x="0" y="0" width="${1000 - PADDING * 2}" height="80" fill="white" stroke="#EDEBFF" stroke-width="1" rx="8"/>
+            
+            <!-- Card Content Group with Padding -->
+            <g transform="translate(${CARD_PADDING}, ${CARD_PADDING})">
+              <!-- Rank Circle -->
+              <circle cx="16" cy="12" r="16" fill="#FFD60A"/>
+              <text x="16" y="18" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="16">${index + 1}</text>
+              
+              <!-- Player Name -->
+              <text x="56" y="18" fill="#2B2D2D" class="brockmann-medium" font-size="32">${team.playerName}</text>
+              
+              <!-- Score -->
+              <text x="${1000 - PADDING * 2 - CARD_PADDING}" y="18" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="48">${team.totalScore.toFixed(1)}</text>
+            </g>
+          </g>
+        `).join('')}
       </g>
-    `).join('')}
+    </g>
   </g>
   
   <!-- Movie Sections -->
