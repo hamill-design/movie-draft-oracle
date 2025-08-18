@@ -35,7 +35,7 @@ const ShareImageComponent: React.FC<ShareImageComponentProps> = ({ data }) => {
   
   return (
     <div style={{
-      width: '1046px', 
+      width: '1080px', 
       height: '100%', 
       paddingLeft: 24, 
       paddingRight: 24, 
@@ -54,7 +54,7 @@ const ShareImageComponent: React.FC<ShareImageComponentProps> = ({ data }) => {
         <span style={{
           color: '#2B2D2D', 
           fontSize: 64, 
-          fontFamily: 'CHANEY', 
+          fontFamily: 'Chaney', 
           fontWeight: '400', 
           lineHeight: '64px', 
           letterSpacing: 2.56, 

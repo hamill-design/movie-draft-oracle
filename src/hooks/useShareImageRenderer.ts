@@ -34,6 +34,7 @@ interface ShareImageData {
 
 const loadFonts = async (): Promise<void> => {
   const fonts = [
+    // Brockmann fonts
     new FontFace('Brockmann', 'url(/fonts/brockmann/brockmann-regular.woff2)', {
       weight: '400',
       style: 'normal',
@@ -50,13 +51,36 @@ const loadFonts = async (): Promise<void> => {
       weight: '700',
       style: 'normal',
     }),
+    // CHANEY fonts
+    new FontFace('Chaney', 'url(/fonts/chaney/chaney-regular.woff2)', {
+      weight: '400',
+      style: 'normal',
+    }),
+    new FontFace('Chaney', 'url(/fonts/chaney/chaney-wide.woff2)', {
+      weight: '500',
+      style: 'normal',
+    }),
+    new FontFace('Chaney', 'url(/fonts/chaney/chaney-extended.woff2)', {
+      weight: '600',
+      style: 'normal',
+    }),
+    new FontFace('Chaney', 'url(/fonts/chaney/chaney-ultraextended.woff2)', {
+      weight: '700',
+      style: 'normal',
+    }),
   ];
 
   try {
+    console.log('Loading fonts...');
     const loadedFonts = await Promise.all(fonts.map(font => font.load()));
     loadedFonts.forEach(font => document.fonts.add(font));
     await document.fonts.ready;
-    console.log('All custom fonts loaded successfully');
+    
+    // Verify fonts are loaded
+    const availableFonts = Array.from(document.fonts).map(font => `${font.family} ${font.weight}`);
+    console.log('All custom fonts loaded successfully:', availableFonts);
+    console.log('Brockmann loaded:', document.fonts.check('16px Brockmann'));
+    console.log('Chaney loaded:', document.fonts.check('16px Chaney'));
   } catch (error) {
     console.warn('Error loading fonts:', error);
   }
@@ -151,8 +175,8 @@ export const useShareImageRenderer = () => {
             // Wait for images to load and convert external ones
             await waitForImages(container);
             
-            // Additional wait for fonts and layout
-            await new Promise(r => setTimeout(r, 1000));
+            // Additional wait for fonts and layout - increased for better reliability
+            await new Promise(r => setTimeout(r, 2000));
             
             const targetElement = container.firstElementChild as HTMLElement;
             if (!targetElement) {
