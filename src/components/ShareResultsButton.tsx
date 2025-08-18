@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, RefreshCw, Copy, Link } from 'lucide-react';
@@ -124,7 +123,7 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
             paddingBottom: '12px',
             background: 'var(--UI-Primary, white)',
             borderRadius: '2px',
-            outline: '1px var(--Greyscale-(Blue)-200, #D9E0DF) solid',
+            outline: '1px hsl(var(--greyscale-blue-200)) solid',
             outlineOffset: '-1px',
             justifyContent: 'center',
             alignItems: 'center',
@@ -137,7 +136,6 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
           <div style={{
             width: '24px',
             height: '24px',
-            padding: '0px',
             flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
