@@ -14,6 +14,7 @@ export { NAIcon } from './NAIcon';
 export { PasswordIcon } from './PasswordIcon';
 export { RibbonIcon } from './RibbonIcon';
 export { SearchIcon } from './SearchIcon';
+export { ShareIcon } from './ShareIcon';
 export { StarIcon } from './StarIcon';
 export { TrashIcon } from './TrashIcon';
 export { TrophyIcon } from './TrophyIcon';

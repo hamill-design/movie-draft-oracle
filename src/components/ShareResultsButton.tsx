@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Share, Download, RefreshCw, Copy, Link } from 'lucide-react';
+import { Download, RefreshCw, Copy, Link } from 'lucide-react';
+import { ShareIcon } from '@/components/icons';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 import { generateShareImage, downloadImage } from '@/utils/imageGenerator';
@@ -146,7 +147,7 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
             {generating ? (
               <RefreshCw size={18} className="animate-spin" style={{ color: 'var(--Greyscale-(Blue)-800, #2B2D2D)' }} />
             ) : (
-              <Share size={18} style={{ color: 'var(--Greyscale-(Blue)-800, #2B2D2D)' }} />
+              <ShareIcon className="text-foreground" />
             )}
           </div>
           <div style={{
