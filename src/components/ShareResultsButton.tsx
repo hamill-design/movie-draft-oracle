@@ -112,23 +112,59 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
   return (
     <Popover open={showShareMenu} onOpenChange={setShowShareMenu}>
       <PopoverTrigger asChild>
-        <Button
+        <button
           disabled={generating || teamScores.length === 0}
-          className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
-          size="lg"
+          style={{
+            width: '100%',
+            height: '100%',
+            paddingLeft: '24px',
+            paddingRight: '24px',
+            paddingTop: '12px',
+            paddingBottom: '12px',
+            background: 'var(--UI-Primary, white)',
+            borderRadius: '2px',
+            outline: '1px var(--Greyscale-(Blue)-200, #D9E0DF) solid',
+            outlineOffset: '-1px',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '16px',
+            display: 'inline-flex',
+            border: 'none',
+            cursor: 'pointer'
+          }}
         >
-          {generating ? (
-            <>
-              <RefreshCw size={20} className="animate-spin" />
-              Generating...
-            </>
-          ) : (
-            <>
-              <Share size={20} />
-              Share Results
-            </>
-          )}
-        </Button>
+          <div style={{
+            width: '16px',
+            height: '16px',
+            padding: '2px',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '10px',
+            display: 'inline-flex'
+          }}>
+            {generating ? (
+              <RefreshCw size={18} className="animate-spin" style={{ color: 'var(--Greyscale-(Blue)-800, #2B2D2D)' }} />
+            ) : (
+              <Share size={18} style={{ color: 'var(--Greyscale-(Blue)-800, #2B2D2D)' }} />
+            )}
+          </div>
+          <div style={{
+            textAlign: 'center',
+            justifyContent: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            color: 'var(--Text-Primary, #2B2D2D)',
+            fontSize: '16px',
+            fontFamily: 'Brockmann',
+            fontWeight: '600',
+            lineHeight: '24px',
+            letterSpacing: '0.32px',
+            wordWrap: 'break-word'
+          }}>
+            {generating ? 'Generating...' : 'Share Results'}
+          </div>
+        </button>
       </PopoverTrigger>
       <PopoverContent className="w-60 p-3" align="end">
         <div className="space-y-2">
