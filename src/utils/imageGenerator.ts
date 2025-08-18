@@ -38,7 +38,7 @@ const createShareImageHTML = (draftData: DraftData): string => {
   const topTeams = draftData.teamScores.slice(0, 3);
   const winner = topTeams[0];
   
-  // Use actual color values instead of CSS variables for HTML2Canvas compatibility
+  // Use system fonts for debugging to isolate font rendering issues
   const colors = {
     background: '#FCFFFF',
     gradientStart: '#FCFFFF',
@@ -54,62 +54,54 @@ const createShareImageHTML = (draftData: DraftData): string => {
     yellow500: '#FFD60A'
   };
   
-  // Create team score items
+  // Create team score items with simplified layout
   const teamScoreItems = topTeams.map((team, index) => `
-    <div style="align-self: stretch; padding-left: 24px; padding-right: 24px; padding-top: 36px; padding-bottom: 36px; background: ${colors.white}; border-radius: 8px; outline: 1px ${colors.purple100} solid; outline-offset: -1px; justify-content: space-between; align-items: center; display: inline-flex">
-      <div style="flex: 1 1 0; justify-content: flex-start; align-items: center; gap: 16px; display: flex">
-        <div style="width: 32px; height: 32px; background: ${colors.yellow500}; border-radius: 9999px; justify-content: center; align-items: center; display: flex">
-          <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 16px; font-family: 'Brockmann', sans-serif; font-weight: 700; line-height: 24px; word-wrap: break-word">${index + 1}</div>
+    <div style="padding: 36px 24px; background: ${colors.white}; border-radius: 8px; border: 1px solid ${colors.purple100}; margin-bottom: 16px; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="width: 32px; height: 32px; background: ${colors.yellow500}; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <span style="color: ${colors.text}; font-size: 16px; font-family: Arial, sans-serif; font-weight: bold;">${index + 1}</span>
+          </div>
+          <div>
+            <div style="color: ${colors.text}; font-size: 32px; font-family: Arial, sans-serif; font-weight: 500; line-height: 1.2;">${team.playerName}</div>
+          </div>
         </div>
-        <div style="flex: 1 1 0; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 2px; display: inline-flex">
-          <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 32px; font-family: 'Brockmann', sans-serif; font-weight: 500; line-height: 24px; word-wrap: break-word">${team.playerName}</div>
-        </div>
-      </div>
-      <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
-        <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-end; display: flex">
-          <div style="text-align: right; justify-content: center; display: flex; flex-direction: column; color: ${colors.purple500}; font-size: 48px; font-family: 'Brockmann', sans-serif; font-weight: 500; line-height: 32px; word-wrap: break-word">${team.totalScore.toFixed(1)}</div>
+        <div>
+          <div style="color: ${colors.purple500}; font-size: 48px; font-family: Arial, sans-serif; font-weight: 500; line-height: 1; text-align: right;">${team.totalScore.toFixed(1)}</div>
         </div>
       </div>
     </div>
   `).join('');
 
-  // Create movie section if we have first pick or best movie data
+  // Create movie section with simplified layout and system fonts
   const createMovieSection = (movie: any, title: string) => {
     if (!movie) return '';
     
     return `
-      <div style="width: 998px; padding: 36px; border-radius: 4px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 36px; display: flex">
-        <div style="align-self: stretch; flex-direction: column; justify-content: center; align-items: center; gap: 8px; display: flex">
-          <div style="justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 48px; font-family: 'Chaney', 'Impact', sans-serif; font-weight: 700; line-height: 36px; letter-spacing: 1.92px; word-wrap: break-word">${title}</div>
+      <div style="width: 998px; padding: 36px; border-radius: 4px; margin-bottom: 24px;">
+        <div style="text-align: center; margin-bottom: 36px;">
+          <h2 style="color: ${colors.text}; font-size: 48px; font-family: Arial, sans-serif; font-weight: bold; margin: 0; letter-spacing: 1.5px;">${title}</h2>
         </div>
-        <div style="align-self: stretch; padding: 24px; background: ${colors.white}; border-radius: 4px; outline: 1px ${colors.purple200} solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: flex">
-          <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
-            <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
-              <div style="align-self: stretch; justify-content: flex-start; align-items: flex-start; gap: 16px; display: inline-flex">
-                <div style="width: 200px; height: 298px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
-                  <img style="align-self: stretch; flex: 1 1 0; position: relative; border-radius: 2px; border: 0.50px ${colors.text} solid" src="${movie.poster || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI5OCIgdmlld0JveD0iMCAwIDIwMCAyOTgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjk4IiBmaWxsPSIjRURFQkZGIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTQ5IiBmaWxsPSIjNjgwQUZGIiBmb250LXNpemU9IjE2IiBmb250LWZhbWlseT0iQXJpYWwiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K'}" />
-                </div>
-                <div style="flex: 1 1 0; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: inline-flex">
-                  <div style="flex-direction: column; justify-content: center; align-items: flex-start; gap: 24px; display: flex">
-                    <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 4px; display: flex">
-                      <div style="justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 36px; font-family: 'Brockmann', sans-serif; font-weight: 600; line-height: 48px; word-wrap: break-word">${movie.title}</div>
-                      <div style="width: 561px; justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 24px; font-family: 'Brockmann', sans-serif; font-weight: 400; line-height: 40px; word-wrap: break-word">${movie.year || 'Unknown'} • ${movie.genre || 'Movie'}</div>
-                    </div>
-                    <div style="justify-content: flex-start; align-items: flex-start; gap: 12px; display: inline-flex">
-                      <div style="width: 52px; height: 52px; padding-top: 9.29px; padding-bottom: 9.29px; padding-left: 13.93px; padding-right: 16.71px; border-radius: 185712.42px; outline: 1.86px ${colors.primary} solid; outline-offset: -1.86px; flex-direction: column; justify-content: center; align-items: center; display: inline-flex">
-                        <div style="text-align: center; color: ${colors.primary}; font-size: 33.43px; font-family: 'Brockmann', sans-serif; font-weight: 400; line-height: 33.43px; word-wrap: break-word">${movie.pickNumber || '?'}</div>
-                      </div>
-                      <div style="padding-left: 16px; padding-right: 16px; padding-top: 8px; padding-bottom: 8px; background: ${colors.purple200}; border-radius: 8px; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: inline-flex">
-                        <div style="justify-content: center; display: flex; flex-direction: column; color: ${colors.purple700}; font-size: 24px; font-family: 'Brockmann', sans-serif; font-weight: 500; line-height: 36px; word-wrap: break-word">${movie.category || 'Category'}</div>
-                      </div>
-                    </div>
+        <div style="padding: 24px; background: ${colors.white}; border-radius: 4px; border: 1px solid ${colors.purple200};">
+          <div style="display: flex; gap: 16px; align-items: flex-start;">
+            <div style="width: 200px; height: 298px; flex-shrink: 0;">
+              <img style="width: 100%; height: 100%; object-fit: cover; border-radius: 2px; border: 1px solid ${colors.text};" src="${movie.poster || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI5OCIgdmlld0JveD0iMCAwIDIwMCAyOTgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyMDAiIGhlaWdodD0iMjk4IiBmaWxsPSIjRURFQkZGIi8+Cjx0ZXh0IHg9IjEwMCIgeT0iMTQ5IiBmaWxsPSIjNjgwQUZGIiBmb250LXNpemU9IjE2IiBmb250LWZhbWlseT0iQXJpYWwiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K'}" alt="${movie.title || 'Movie poster'}" />
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; height: 298px;">
+              <div>
+                <h3 style="color: ${colors.text}; font-size: 36px; font-family: Arial, sans-serif; font-weight: 600; margin: 0 0 8px 0; line-height: 1.2;">${movie.title}</h3>
+                <p style="color: ${colors.text}; font-size: 24px; font-family: Arial, sans-serif; font-weight: 400; margin: 0 0 24px 0;">${movie.year || 'Unknown'} • ${movie.genre || 'Movie'}</p>
+                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 24px;">
+                  <div style="width: 52px; height: 52px; border: 2px solid ${colors.primary}; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <span style="color: ${colors.primary}; font-size: 24px; font-family: Arial, sans-serif; font-weight: 400;">${movie.pickNumber || '?'}</span>
                   </div>
-                  <div style="flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
-                    <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-end; display: flex">
-                      <div style="text-align: right; justify-content: center; display: flex; flex-direction: column; color: ${colors.purple500}; font-size: 48px; font-family: 'Brockmann', sans-serif; font-weight: 500; line-height: 56px; word-wrap: break-word">${movie.score.toFixed(2)}</div>
-                    </div>
+                  <div style="padding: 8px 16px; background: ${colors.purple200}; border-radius: 8px;">
+                    <span style="color: ${colors.purple700}; font-size: 24px; font-family: Arial, sans-serif; font-weight: 500;">${movie.category || 'Category'}</span>
                   </div>
                 </div>
+              </div>
+              <div style="text-align: right;">
+                <div style="color: ${colors.purple500}; font-size: 48px; font-family: Arial, sans-serif; font-weight: 500; line-height: 1;">${movie.score.toFixed(2)}</div>
               </div>
             </div>
           </div>
@@ -119,24 +111,27 @@ const createShareImageHTML = (draftData: DraftData): string => {
   };
 
   return `
-    <div style="width: 100%; height: 100%; padding-left: 24px; padding-right: 24px; padding-top: 112px; padding-bottom: 112px; background: linear-gradient(140deg, ${colors.gradientStart} 0%, ${colors.gradientMid} 50%, ${colors.gradientEnd} 100%); overflow: hidden; flex-direction: column; justify-content: center; align-items: center; gap: 48px; display: inline-flex">
-      <div style="text-align: center; justify-content: center; display: flex; flex-direction: column">
-        <span style="color: ${colors.text}; font-size: 64px; font-family: 'Chaney', 'Impact', sans-serif; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word">THE</span>
-        <span style="color: ${colors.purple500}; font-size: 64px; font-family: 'Chaney', 'Impact', sans-serif; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word"> ${winner?.playerName || 'DRAFT'} </span>
-        <span style="color: ${colors.text}; font-size: 64px; font-family: 'Chaney', 'Impact', sans-serif; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word">DRAFT</span>
+    <div style="width: 1080px; min-height: 1400px; padding: 112px 24px; background: linear-gradient(140deg, ${colors.gradientStart} 0%, ${colors.gradientMid} 50%, ${colors.gradientEnd} 100%); box-sizing: border-box;">
+      <div style="text-align: center; margin-bottom: 48px;">
+        <div style="color: ${colors.text}; font-size: 64px; font-family: Arial, sans-serif; font-weight: bold; line-height: 1; margin-bottom: 8px; letter-spacing: 2px;">THE</div>
+        <div style="color: ${colors.purple500}; font-size: 64px; font-family: Arial, sans-serif; font-weight: bold; line-height: 1; margin-bottom: 8px; letter-spacing: 2px;">${winner?.playerName || 'DRAFT'}</div>
+        <div style="color: ${colors.text}; font-size: 64px; font-family: Arial, sans-serif; font-weight: bold; line-height: 1; letter-spacing: 2px;">DRAFT</div>
       </div>
-      <div style="width: 998px; padding: 24px; border-radius: 4px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: flex">
-        <div style="align-self: stretch; flex-direction: column; justify-content: center; align-items: center; gap: 8px; display: flex">
-          <div style="justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 48px; font-family: 'Brockmann', 'Arial', sans-serif; font-weight: 700; line-height: 36px; letter-spacing: 1.92px; word-wrap: break-word">TOP SCORES</div>
+      
+      <div style="width: 100%; max-width: 998px; margin: 0 auto 48px auto; padding: 24px; border-radius: 4px;">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h2 style="color: ${colors.text}; font-size: 48px; font-family: Arial, sans-serif; font-weight: bold; margin: 0; letter-spacing: 1.5px;">TOP SCORES</h2>
         </div>
-        <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 16px; display: flex">
+        <div>
           ${teamScoreItems}
         </div>
       </div>
+      
       ${createMovieSection(draftData.firstPick, 'FIRST PICK')}
       ${createMovieSection(draftData.bestMovie, 'HIGHEST SCORER')}
-      <div style="width: 728px; justify-content: flex-start; align-items: flex-start; gap: 10px; display: inline-flex">
-        <div style="flex: 1 1 0; height: 45.02px; background: ${colors.primary}"></div>
+      
+      <div style="width: 728px; margin: 24px auto 0 auto;">
+        <div style="height: 8px; background: ${colors.primary}; border-radius: 4px;"></div>
       </div>
     </div>
   `;
@@ -174,18 +169,24 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
     await new Promise(resolve => setTimeout(resolve, 500));
     
     console.log('Starting canvas generation...');
-    // Generate the image
+    // Generate the image with simplified settings
     const canvas = await html2canvas(container, {
       width: 1080,
       height: container.scrollHeight,
       scale: 1,
       backgroundColor: '#FCFFFF',
       useCORS: false,
-      allowTaint: false, // Set to false since we're using base64 images
-      logging: false,
+      allowTaint: false,
+      logging: true, // Enable logging for debugging
       foreignObjectRendering: false,
-      imageTimeout: 5000,
-      removeContainer: false
+      imageTimeout: 10000, // Increased timeout
+      removeContainer: false,
+      onclone: (clonedDoc, element) => {
+        // Log cloned content for debugging
+        console.log('Cloned document ready, element height:', element.scrollHeight);
+        const textElements = element.querySelectorAll('*');
+        console.log('Text elements found:', textElements.length);
+      }
     });
     
     console.log('Canvas generated successfully:', canvas.width, 'x', canvas.height);
@@ -201,28 +202,15 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
   }
 };
 
-// Helper function to load fonts
+// Helper function to load fonts - simplified to use system fonts for debugging
 const loadFonts = async (): Promise<void> => {
   console.log('Loading fonts...');
-  const fontPromises = [
-    document.fonts.load('400 48px "Chaney", "Impact", sans-serif'),
-    document.fonts.load('700 48px "Chaney", "Impact", sans-serif'),
-    document.fonts.load('400 48px "Brockmann", "Arial", sans-serif'),
-    document.fonts.load('500 48px "Brockmann", "Arial", sans-serif'),
-    document.fonts.load('600 48px "Brockmann", "Arial", sans-serif'),
-    document.fonts.load('700 48px "Brockmann", "Arial", sans-serif')
-  ];
-  
   try {
-    await Promise.all(fontPromises);
-    await document.fonts.ready;
-    console.log('All fonts loaded successfully');
-    // Extra wait to ensure fonts are fully rendered
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Use system fonts for debugging - no custom font loading needed
+    await new Promise(resolve => setTimeout(resolve, 100));
+    console.log('System fonts ready');
   } catch (error) {
-    console.warn('Font loading failed, continuing with fallback fonts:', error);
-    // Still wait a bit for fallback fonts
-    await new Promise(resolve => setTimeout(resolve, 300));
+    console.warn('Font loading failed:', error);
   }
 };
 
