@@ -430,7 +430,27 @@ const FinalScores = () => {
                 lineHeight: '64px', 
                 wordWrap: 'break-word'
               }}>
-                {draft.title}
+                THE
+              </span>
+              <span style={{
+                color: 'var(--Brand-Primary, #680AFF)', 
+                fontSize: '64px', 
+                fontFamily: 'CHANEY', 
+                fontWeight: '400', 
+                lineHeight: '64px', 
+                wordWrap: 'break-word'
+              }}>
+                {' '}{draft.title}{' '}
+              </span>
+              <span style={{
+                color: 'var(--Greyscale-(Blue)-800, #2B2D2D)', 
+                fontSize: '64px', 
+                fontFamily: 'CHANEY', 
+                fontWeight: '400', 
+                lineHeight: '64px', 
+                wordWrap: 'break-word'
+              }}>
+                DRAFT
               </span>
               {enrichingData && (
                 <p className="text-yellow-400 text-sm mt-1 flex items-center gap-2 justify-center">
