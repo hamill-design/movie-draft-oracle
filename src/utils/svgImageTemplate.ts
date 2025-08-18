@@ -117,28 +117,13 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
     // Pattern: "[NAME] DRAFT" - highlight first word(s)
     highlightIndex = 0;
   }
+
+  // Convert movie posters to base64 if they exist
+  const firstPickPoster = data.firstPick?.poster ? await convertImageToBase64(data.firstPick.poster) : '';
+  const bestMoviePoster = data.bestMovie?.poster ? await convertImageToBase64(data.bestMovie.poster) : '';
   
-  // SVG Layout Constants - Matching HTML design
-  const MAIN_PADDING_X = 24;
-  const MAIN_PADDING_Y = 112;
-  const SECTION_SPACING = 48;
-  const CARD_SPACING = 16;
-  const SCORE_CARD_PADDING_X = 24;
-  const SCORE_CARD_PADDING_Y = 36;
-  
-  // Calculate positions with proper spacing
-  const titleY = MAIN_PADDING_Y + 64;
-  const topScoresHeaderY = titleY + SECTION_SPACING + 32;
-  const topScoresStartY = topScoresHeaderY + 56;
-  const firstPickY = topScoresStartY + (3 * (72 + CARD_SPACING)) + SECTION_SPACING;
-  const bestMovieY = firstPickY + 446 + SECTION_SPACING;
-  
-  // Load fonts and generate sections
-  const [fontCSS, firstPickSection, bestMovieSection] = await Promise.all([
-    generateFontCSS(),
-    data.firstPick ? generateMovieSection(data.firstPick, 'FIRST PICK', firstPickY) : Promise.resolve(''),
-    data.bestMovie ? generateMovieSection(data.bestMovie, 'HIGHEST SCORER', bestMovieY) : Promise.resolve('')
-  ]);
+  // Load fonts
+  const fontCSS = await generateFontCSS();
   
   return `
 <svg width="1080" height="1920" xmlns="http://www.w3.org/2000/svg">
@@ -154,6 +139,179 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
     <style>
       <![CDATA[
         ${fontCSS}
+        
+        .main-container {
+          display: flex;
+          flex-direction: column;
+          padding: 112px 24px 24px 24px;
+          gap: 48px;
+          font-family: 'Brockmann', Arial, sans-serif;
+        }
+        
+        .title {
+          font-family: 'Chaney', serif;
+          font-size: 64px;
+          font-weight: 400;
+          letter-spacing: 2.56px;
+          text-align: center;
+          color: #2B2D2D;
+          margin: 0;
+        }
+        
+        .title .highlight {
+          color: #680AFF;
+        }
+        
+        .section {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+        
+        .section-title {
+          font-family: 'Brockmann', Arial, sans-serif;
+          font-size: 48px;
+          font-weight: 700;
+          letter-spacing: 1.92px;
+          text-align: center;
+          color: #2B2D2D;
+          margin: 0;
+        }
+        
+        .scores-container {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        
+        .score-card {
+          display: flex;
+          align-items: center;
+          padding: 36px 24px;
+          background: white;
+          border: 1px solid #EDEBFF;
+          border-radius: 8px;
+          gap: 16px;
+        }
+        
+        .rank-circle {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'Brockmann', Arial, sans-serif;
+          font-size: 16px;
+          font-weight: 700;
+          color: #2B2D2D;
+          border: 2px solid;
+          flex-shrink: 0;
+        }
+        
+        .rank-1 { background: #FFD60A; border-color: #FFF2B2; }
+        .rank-2 { background: #CCCCCC; border-color: #E5E5E5; }
+        .rank-3 { background: #DE7E3E; border-color: #FFAE78; }
+        
+        .player-name {
+          font-family: 'Brockmann', Arial, sans-serif;
+          font-size: 32px;
+          font-weight: 500;
+          color: #2B2D2D;
+          flex-grow: 1;
+          margin: 0;
+        }
+        
+        .player-score {
+          font-family: 'Brockmann', Arial, sans-serif;
+          font-size: 48px;
+          font-weight: 500;
+          color: #680AFF;
+          margin: 0;
+        }
+        
+        .movie-card {
+          display: flex;
+          padding: 24px;
+          background: white;
+          border: 1px solid #BCB2FF;
+          border-radius: 4px;
+          gap: 16px;
+          align-items: flex-start;
+        }
+        
+        .movie-poster {
+          width: 200px;
+          height: 298px;
+          background: #F5F5F5;
+          border-radius: 4px;
+          flex-shrink: 0;
+        }
+        
+        .movie-info {
+          display: flex;
+          flex-direction: column;
+          flex-grow: 1;
+          height: 298px;
+          justify-content: space-between;
+        }
+        
+        .movie-title {
+          font-family: 'Brockmann', Arial, sans-serif;
+          font-size: 36px;
+          font-weight: 600;
+          color: #2B2D2D;
+          margin: 0;
+          line-height: 1.2;
+        }
+        
+        .movie-details {
+          font-family: 'Brockmann', Arial, sans-serif;
+          font-size: 24px;
+          font-weight: 400;
+          color: #2B2D2D;
+          margin: 0;
+        }
+        
+        .movie-bottom {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+        
+        .pick-circle {
+          width: 52px;
+          height: 52px;
+          border: 1.86px solid #680AFF;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'Brockmann', Arial, sans-serif;
+          font-size: 33px;
+          font-weight: 400;
+          color: #680AFF;
+          flex-shrink: 0;
+        }
+        
+        .category-badge {
+          padding: 8px 16px;
+          background: #BCB2FF;
+          border-radius: 8px;
+          font-family: 'Brockmann', Arial, sans-serif;
+          font-size: 24px;
+          font-weight: 500;
+          color: #3B0394;
+        }
+        
+        .movie-score {
+          font-family: 'Brockmann', Arial, sans-serif;
+          font-size: 48px;
+          font-weight: 500;
+          color: #680AFF;
+          margin-left: auto;
+          margin: 0;
+        }
       ]]>
     </style>
   </defs>
@@ -161,61 +319,75 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
   <!-- Background -->
   <rect width="100%" height="100%" fill="url(#backgroundGradient)"/>
   
-  <!-- Main Content Group with Padding -->
-  <g transform="translate(${MAIN_PADDING_X}, ${MAIN_PADDING_Y})">
-    <!-- Title -->
-    <text x="516" y="${titleY - MAIN_PADDING_Y}" text-anchor="middle" class="chaney" font-size="64" letter-spacing="2.56px">
-      ${titleWords.map((word, index) => `<tspan fill="${index === highlightIndex ? '#680AFF' : '#2B2D2D'}">${word}${index < titleWords.length - 1 ? ' ' : ''}</tspan>`).join('')}
-    </text>
-    
-    <!-- TOP SCORES Section Container -->
-    <g transform="translate(0, ${topScoresHeaderY - MAIN_PADDING_Y})">
-      <!-- Section Background Container -->
-      <rect x="0" y="0" width="998" height="${3 * (72 + CARD_SPACING) + 48}" fill="transparent" rx="4"/>
+  <!-- Main content using foreignObject -->
+  <foreignObject x="0" y="0" width="1080" height="1920">
+    <div xmlns="http://www.w3.org/1999/xhtml" class="main-container">
+      <!-- Title -->
+      <h1 class="title">
+        ${titleWords.map((word, index) => 
+          index === highlightIndex 
+            ? `<span class="highlight">${word}</span>` 
+            : word
+        ).join(' ')}
+      </h1>
       
-      <!-- Section Content with Padding -->
-      <g transform="translate(24, 24)">
-        <!-- Section Header -->
-        <text x="475" y="44" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">TOP SCORES</text>
-        
-        <!-- Score Cards Group -->
-        <g transform="translate(0, 68)">
-          ${sortedTeamScores.slice(0, 3).map((team, index) => {
-            const rankColors = [
-              { bg: '#FFD60A', outline: '#FFF2B2' }, // Gold
-              { bg: '#CCCCCC', outline: '#E5E5E5' }, // Silver  
-              { bg: '#DE7E3E', outline: '#FFAE78' }  // Bronze
-            ];
-            const colors = rankColors[index] || rankColors[2];
-            
-            return `
-            <g transform="translate(0, ${index * (72 + CARD_SPACING)})">
-              <!-- Card Background -->
-              <rect x="0" y="0" width="950" height="72" fill="white" stroke="#EDEBFF" stroke-width="1" rx="8"/>
-              
-              <!-- Card Content Group with Padding -->
-              <g transform="translate(${SCORE_CARD_PADDING_X}, ${SCORE_CARD_PADDING_Y})">
-                <!-- Rank Circle -->
-                <circle cx="16" cy="0" r="16" fill="${colors.bg}" stroke="${colors.outline}" stroke-width="2"/>
-                <text x="16" y="6" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="16">${index + 1}</text>
-                
-                <!-- Player Name -->
-                <text x="48" y="6" fill="#2B2D2D" class="brockmann-medium" font-size="32">${team.playerName}</text>
-                
-                <!-- Score -->
-                <text x="902" y="16" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="48">${team.totalScore.toFixed(1)}</text>
-              </g>
-            </g>
-          `;
-          }).join('')}
-        </g>
-      </g>
-    </g>
-  </g>
-  
-  <!-- Movie Sections -->
-  ${firstPickSection}
-  ${bestMovieSection}
+      <!-- TOP SCORES Section -->
+      <div class="section">
+        <h2 class="section-title">TOP SCORES</h2>
+        <div class="scores-container">
+          ${sortedTeamScores.slice(0, 3).map((team, index) => `
+            <div class="score-card">
+              <div class="rank-circle rank-${index + 1}">${index + 1}</div>
+              <div class="player-name">${team.playerName}</div>
+              <div class="player-score">${team.totalScore.toFixed(1)}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      
+      ${data.firstPick ? `
+      <!-- FIRST PICK Section -->
+      <div class="section">
+        <h2 class="section-title">FIRST PICK</h2>
+        <div class="movie-card">
+          <div class="movie-poster" style="background-image: url('${firstPickPoster}'); background-size: cover; background-position: center;"></div>
+          <div class="movie-info">
+            <div>
+              <h3 class="movie-title">${data.firstPick.title}</h3>
+              <p class="movie-details">${data.firstPick.year ? `${data.firstPick.year} • ` : ''}${data.firstPick.genre || ''}</p>
+            </div>
+            <div class="movie-bottom">
+              <div class="pick-circle">${data.firstPick.pickNumber || '1'}</div>
+              ${data.firstPick.category ? `<div class="category-badge">${data.firstPick.category}</div>` : ''}
+              <div class="movie-score">${data.firstPick.score.toFixed(2)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      ` : ''}
+      
+      ${data.bestMovie ? `
+      <!-- HIGHEST SCORER Section -->
+      <div class="section">
+        <h2 class="section-title">HIGHEST SCORER</h2>
+        <div class="movie-card">
+          <div class="movie-poster" style="background-image: url('${bestMoviePoster}'); background-size: cover; background-position: center;"></div>
+          <div class="movie-info">
+            <div>
+              <h3 class="movie-title">${data.bestMovie.title}</h3>
+              <p class="movie-details">${data.bestMovie.year ? `${data.bestMovie.year} • ` : ''}${data.bestMovie.genre || ''}</p>
+            </div>
+            <div class="movie-bottom">
+              <div class="pick-circle">${data.bestMovie.pickNumber || '1'}</div>
+              ${data.bestMovie.category ? `<div class="category-badge">${data.bestMovie.category}</div>` : ''}
+              <div class="movie-score">${data.bestMovie.score.toFixed(2)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      ` : ''}
+    </div>
+  </foreignObject>
   
   <!-- Logo -->
   <g transform="translate(326, 1820)">
