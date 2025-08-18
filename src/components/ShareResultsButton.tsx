@@ -135,9 +135,9 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
           }}
         >
           <div style={{
-            width: '16px',
-            height: '16px',
-            padding: '2px',
+            width: '24px',
+            height: '24px',
+            padding: '0px',
             flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
@@ -145,7 +145,7 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
             display: 'inline-flex'
           }}>
             {generating ? (
-              <RefreshCw size={18} className="animate-spin" style={{ color: 'var(--Greyscale-(Blue)-800, #2B2D2D)' }} />
+              <RefreshCw size={24} className="animate-spin" style={{ color: 'var(--Greyscale-(Blue)-800, #2B2D2D)' }} />
             ) : (
               <ShareIcon className="text-foreground" />
             )}
