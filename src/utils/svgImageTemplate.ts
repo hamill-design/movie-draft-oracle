@@ -32,33 +32,81 @@ interface ShareImageData {
 }
 
 const convertImageToBase64 = async (url: string): Promise<string> => {
+  const placeholder = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI5OCIgZmlsbD0iI0Y1RjVGNSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjRjVGNUY1Ii8+PC9zdmc+';
+  
   try {
-    if (!url) return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI5OCIgZmlsbD0iI0Y1RjVGNSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjRjVGNUY1Ii8+PC9zdmc+';
-    
-    // If it's already a data URL, return it
-    if (url.startsWith('data:')) return url;
-    
-    const response = await fetch(url, {
-      mode: 'cors',
-      headers: {
-        'Accept': 'image/*'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+    if (!url || url.trim() === '') {
+      console.log('Empty URL provided, using placeholder');
+      return placeholder;
     }
     
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
+    // If it's already a data URL, return it
+    if (url.startsWith('data:')) {
+      console.log('URL is already a data URL');
+      return url;
+    }
+    
+    console.log('Converting image to base64:', url);
+    
+    // Create image element to test if it loads
+    const testImg = new Image();
+    testImg.crossOrigin = 'anonymous';
+    
+    const imageLoadPromise = new Promise<string>((resolve, reject) => {
+      testImg.onload = async () => {
+        try {
+          // Create canvas to convert image to base64
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            throw new Error('Could not get canvas context');
+          }
+          
+          canvas.width = testImg.width;
+          canvas.height = testImg.height;
+          ctx.drawImage(testImg, 0, 0);
+          
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+          console.log('Successfully converted image to base64');
+          resolve(dataUrl);
+        } catch (canvasError) {
+          console.warn('Canvas conversion failed, trying fetch method:', canvasError);
+          // Fallback to fetch method
+          try {
+            const response = await fetch(url, {
+              mode: 'cors',
+              headers: { 'Accept': 'image/*' }
+            });
+            
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const blob = await response.blob();
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(new Error('FileReader failed'));
+            reader.readAsDataURL(blob);
+          } catch (fetchError) {
+            reject(fetchError);
+          }
+        }
+      };
+      
+      testImg.onerror = () => reject(new Error('Image failed to load'));
     });
+    
+    // Set timeout for image loading
+    const timeoutPromise = new Promise<string>((_, reject) => {
+      setTimeout(() => reject(new Error('Image load timeout')), 10000);
+    });
+    
+    testImg.src = url;
+    
+    return await Promise.race([imageLoadPromise, timeoutPromise]);
+    
   } catch (error) {
     console.warn('Failed to convert image to base64:', url, error);
-    return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI5OCIgZmlsbD0iI0Y1RjVGNSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjRjVGNUY1Ii8+PC9zdmc+'; // Gray placeholder
+    return placeholder;
   }
 };
 

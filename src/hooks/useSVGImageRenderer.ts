@@ -34,7 +34,6 @@ interface ShareImageData {
 
 const svgToCanvas = async (svgString: string): Promise<HTMLCanvasElement> => {
   return new Promise((resolve, reject) => {
-    // Create an image element to load the SVG
     const img = new Image();
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -44,38 +43,47 @@ const svgToCanvas = async (svgString: string): Promise<HTMLCanvasElement> => {
       return;
     }
     
-    img.onload = () => {
-      // Set canvas size to match image
-      canvas.width = img.width;
-      canvas.height = img.height;
+    // Set CORS to anonymous to prevent tainting
+    img.crossOrigin = 'anonymous';
+    
+    const handleLoad = () => {
+      try {
+        // Set canvas size to match image (default 1080x1920 if dimensions are 0)
+        canvas.width = img.width || 1080;
+        canvas.height = img.height || 1920;
+        
+        // Clear canvas and draw the image
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
+        
+        console.log('Canvas rendered successfully:', canvas.width, 'x', canvas.height);
+        resolve(canvas);
+      } catch (error) {
+        console.error('Error drawing image to canvas:', error);
+        reject(new Error(`Failed to draw image to canvas: ${error}`));
+      }
+    };
+    
+    const handleError = (error: any) => {
+      console.error('Image load error:', error);
+      reject(new Error(`Failed to load SVG image: ${error}`));
+    };
+    
+    // Set event handlers before setting src
+    img.onload = handleLoad;
+    img.onerror = handleError;
+    
+    try {
+      // Convert SVG string to data URL directly (no blob URL to avoid CORS issues)
+      const encodedSvg = btoa(unescape(encodeURIComponent(svgString)));
+      const dataUrl = `data:image/svg+xml;base64,${encodedSvg}`;
       
-      // Draw the image onto the canvas
-      ctx.drawImage(img, 0, 0);
-      resolve(canvas);
-    };
-    
-    img.onerror = (error) => {
-      reject(new Error(`Failed to load SVG image: ${error}`));
-    };
-    
-    // Convert SVG string to data URL
-    const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-    const url = URL.createObjectURL(svgBlob);
-    img.src = url;
-    
-    // Clean up URL after image loads or fails
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-      resolve(canvas);
-    };
-    
-    img.onerror = (error) => {
-      URL.revokeObjectURL(url);
-      reject(new Error(`Failed to load SVG image: ${error}`));
-    };
+      console.log('Loading SVG as data URL...');
+      img.src = dataUrl;
+    } catch (error) {
+      console.error('Error creating SVG data URL:', error);
+      reject(new Error(`Failed to create SVG data URL: ${error}`));
+    }
   });
 };
 
