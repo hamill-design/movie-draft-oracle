@@ -50,7 +50,12 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
         .map(pick => ({
           title: pick.movie_title,
           score: (pick as any).calculated_score!,
-          playerName: pick.player_name
+          playerName: pick.player_name,
+          poster: (pick as any).poster_path ? `https://image.tmdb.org/t/p/w500${(pick as any).poster_path}` : undefined,
+          year: (pick as any).movie_year,
+          genre: (pick as any).movie_genre,
+          category: (pick as any).category,
+          pickNumber: (pick as any).pick_order
         }));
       
       const bestMovie = moviesWithScores.length > 0 
@@ -59,11 +64,25 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
           )
         : undefined;
 
+      // Find the first pick (pick_order === 1)
+      const firstPickData = picks.find(pick => (pick as any).pick_order === 1);
+      const firstPick = firstPickData ? {
+        title: firstPickData.movie_title,
+        score: (firstPickData as any).calculated_score || 0,
+        playerName: firstPickData.player_name,
+        poster: (firstPickData as any).poster_path ? `https://image.tmdb.org/t/p/w500${(firstPickData as any).poster_path}` : undefined,
+        year: (firstPickData as any).movie_year,
+        genre: (firstPickData as any).movie_genre,
+        category: (firstPickData as any).category,
+        pickNumber: (firstPickData as any).pick_order
+      } : undefined;
+
       const draftData = {
         title: draftTitle,
         teamScores,
         totalMovies: picks.length,
-        bestMovie
+        bestMovie,
+        firstPick
       };
 
       const imageDataUrl = await generateShareImage(draftData);
