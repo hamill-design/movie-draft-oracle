@@ -38,7 +38,6 @@ const createShareImageHTML = (draftData: DraftData): string => {
   const topTeams = draftData.teamScores.slice(0, 3);
   const winner = topTeams[0];
   
-  // Use system fonts for debugging to isolate font rendering issues
   const colors = {
     background: '#FCFFFF',
     gradientStart: '#FCFFFF',
@@ -53,34 +52,96 @@ const createShareImageHTML = (draftData: DraftData): string => {
     purple700: '#3B0394',
     yellow500: '#FFD60A'
   };
+
+  // Embed custom fonts directly in the HTML template
+  const fontStyles = `
+    <style>
+      @font-face {
+        font-family: 'Brockmann';
+        src: url('/fonts/brockmann/brockmann-regular.woff2') format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Brockmann';
+        src: url('/fonts/brockmann/brockmann-medium.woff2') format('woff2');
+        font-weight: 500;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Brockmann';
+        src: url('/fonts/brockmann/brockmann-semibold.woff2') format('woff2');
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Brockmann';
+        src: url('/fonts/brockmann/brockmann-bold.woff2') format('woff2');
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Chaney';
+        src: url('/fonts/chaney/chaney-regular.woff2') format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Chaney Wide';
+        src: url('/fonts/chaney/chaney-wide.woff2') format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Chaney Extended';
+        src: url('/fonts/chaney/chaney-extended.woff2') format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Chaney Ultra Extended';
+        src: url('/fonts/chaney/chaney-ultraextended.woff2') format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+    </style>
+  `;
   
-  // Create team score items with simplified layout
+  // Create team score items with custom fonts
   const teamScoreItems = topTeams.map((team, index) => `
     <div style="padding: 36px 24px; background: ${colors.white}; border-radius: 8px; border: 1px solid ${colors.purple100}; margin-bottom: 16px; overflow: hidden;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: 16px;">
           <div style="width: 32px; height: 32px; background: ${colors.yellow500}; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-            <span style="color: ${colors.text}; font-size: 16px; font-family: Arial, sans-serif; font-weight: bold;">${index + 1}</span>
+            <span style="color: ${colors.text}; font-size: 16px; font-family: 'Brockmann', Arial, sans-serif; font-weight: 600;">${index + 1}</span>
           </div>
           <div>
-            <div style="color: ${colors.text}; font-size: 32px; font-family: Arial, sans-serif; font-weight: 500; line-height: 1.2;">${team.playerName}</div>
+            <div style="color: ${colors.text}; font-size: 32px; font-family: 'Brockmann', Arial, sans-serif; font-weight: 500; line-height: 1.2;">${team.playerName}</div>
           </div>
         </div>
         <div>
-          <div style="color: ${colors.purple500}; font-size: 48px; font-family: Arial, sans-serif; font-weight: 500; line-height: 1; text-align: right;">${team.totalScore.toFixed(1)}</div>
+          <div style="color: ${colors.purple500}; font-size: 48px; font-family: 'Brockmann', Arial, sans-serif; font-weight: 600; line-height: 1; text-align: right;">${team.totalScore.toFixed(1)}</div>
         </div>
       </div>
     </div>
   `).join('');
 
-  // Create movie section with simplified layout and system fonts
+  // Create movie section with custom fonts
   const createMovieSection = (movie: any, title: string) => {
     if (!movie) return '';
     
     return `
       <div style="width: 998px; padding: 36px; border-radius: 4px; margin-bottom: 24px;">
         <div style="text-align: center; margin-bottom: 36px;">
-          <h2 style="color: ${colors.text}; font-size: 48px; font-family: Arial, sans-serif; font-weight: bold; margin: 0; letter-spacing: 1.5px;">${title}</h2>
+          <h2 style="color: ${colors.text}; font-size: 48px; font-family: 'Chaney Wide', Arial, sans-serif; font-weight: 400; margin: 0; letter-spacing: 1.5px;">${title}</h2>
         </div>
         <div style="padding: 24px; background: ${colors.white}; border-radius: 4px; border: 1px solid ${colors.purple200};">
           <div style="display: flex; gap: 16px; align-items: flex-start;">
@@ -89,19 +150,19 @@ const createShareImageHTML = (draftData: DraftData): string => {
             </div>
             <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; height: 298px;">
               <div>
-                <h3 style="color: ${colors.text}; font-size: 36px; font-family: Arial, sans-serif; font-weight: 600; margin: 0 0 8px 0; line-height: 1.2;">${movie.title}</h3>
-                <p style="color: ${colors.text}; font-size: 24px; font-family: Arial, sans-serif; font-weight: 400; margin: 0 0 24px 0;">${movie.year || 'Unknown'} • ${movie.genre || 'Movie'}</p>
+                <h3 style="color: ${colors.text}; font-size: 36px; font-family: 'Brockmann', Arial, sans-serif; font-weight: 600; margin: 0 0 8px 0; line-height: 1.2;">${movie.title}</h3>
+                <p style="color: ${colors.text}; font-size: 24px; font-family: 'Brockmann', Arial, sans-serif; font-weight: 400; margin: 0 0 24px 0;">${movie.year || 'Unknown'} • ${movie.genre || 'Movie'}</p>
                 <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 24px;">
                   <div style="width: 52px; height: 52px; border: 2px solid ${colors.primary}; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                    <span style="color: ${colors.primary}; font-size: 24px; font-family: Arial, sans-serif; font-weight: 400;">${movie.pickNumber || '?'}</span>
+                    <span style="color: ${colors.primary}; font-size: 24px; font-family: 'Brockmann', Arial, sans-serif; font-weight: 600;">${movie.pickNumber || '?'}</span>
                   </div>
                   <div style="padding: 8px 16px; background: ${colors.purple200}; border-radius: 8px;">
-                    <span style="color: ${colors.purple700}; font-size: 24px; font-family: Arial, sans-serif; font-weight: 500;">${movie.category || 'Category'}</span>
+                    <span style="color: ${colors.purple700}; font-size: 24px; font-family: 'Brockmann', Arial, sans-serif; font-weight: 500;">${movie.category || 'Category'}</span>
                   </div>
                 </div>
               </div>
               <div style="text-align: right;">
-                <div style="color: ${colors.purple500}; font-size: 48px; font-family: Arial, sans-serif; font-weight: 500; line-height: 1;">${movie.score.toFixed(2)}</div>
+                <div style="color: ${colors.purple500}; font-size: 48px; font-family: 'Brockmann', Arial, sans-serif; font-weight: 600; line-height: 1;">${movie.score.toFixed(2)}</div>
               </div>
             </div>
           </div>
@@ -111,16 +172,17 @@ const createShareImageHTML = (draftData: DraftData): string => {
   };
 
   return `
+    ${fontStyles}
     <div style="width: 1080px; min-height: 1400px; padding: 112px 24px; background: linear-gradient(140deg, ${colors.gradientStart} 0%, ${colors.gradientMid} 50%, ${colors.gradientEnd} 100%); box-sizing: border-box;">
       <div style="text-align: center; margin-bottom: 48px;">
-        <div style="color: ${colors.text}; font-size: 64px; font-family: Arial, sans-serif; font-weight: bold; line-height: 1; margin-bottom: 8px; letter-spacing: 2px;">THE</div>
-        <div style="color: ${colors.purple500}; font-size: 64px; font-family: Arial, sans-serif; font-weight: bold; line-height: 1; margin-bottom: 8px; letter-spacing: 2px;">${winner?.playerName || 'DRAFT'}</div>
-        <div style="color: ${colors.text}; font-size: 64px; font-family: Arial, sans-serif; font-weight: bold; line-height: 1; letter-spacing: 2px;">DRAFT</div>
+        <div style="color: ${colors.text}; font-size: 64px; font-family: 'Chaney Extended', Arial, sans-serif; font-weight: 400; line-height: 1; margin-bottom: 8px; letter-spacing: 2px;">THE</div>
+        <div style="color: ${colors.purple500}; font-size: 64px; font-family: 'Chaney Extended', Arial, sans-serif; font-weight: 400; line-height: 1; margin-bottom: 8px; letter-spacing: 2px;">${winner?.playerName || 'DRAFT'}</div>
+        <div style="color: ${colors.text}; font-size: 64px; font-family: 'Chaney Extended', Arial, sans-serif; font-weight: 400; line-height: 1; letter-spacing: 2px;">DRAFT</div>
       </div>
       
       <div style="width: 100%; max-width: 998px; margin: 0 auto 48px auto; padding: 24px; border-radius: 4px;">
         <div style="text-align: center; margin-bottom: 24px;">
-          <h2 style="color: ${colors.text}; font-size: 48px; font-family: Arial, sans-serif; font-weight: bold; margin: 0; letter-spacing: 1.5px;">TOP SCORES</h2>
+          <h2 style="color: ${colors.text}; font-size: 48px; font-family: 'Chaney Wide', Arial, sans-serif; font-weight: 400; margin: 0; letter-spacing: 1.5px;">TOP SCORES</h2>
         </div>
         <div>
           ${teamScoreItems}
@@ -202,15 +264,34 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
   }
 };
 
-// Helper function to load fonts - simplified to use system fonts for debugging
+// Helper function to load custom fonts
 const loadFonts = async (): Promise<void> => {
-  console.log('Loading fonts...');
+  console.log('Loading custom fonts...');
   try {
-    // Use system fonts for debugging - no custom font loading needed
-    await new Promise(resolve => setTimeout(resolve, 100));
-    console.log('System fonts ready');
+    // Load all custom font variants
+    const fontPromises = [
+      document.fonts.load('400 16px "Brockmann"'),
+      document.fonts.load('500 16px "Brockmann"'),
+      document.fonts.load('600 16px "Brockmann"'),
+      document.fonts.load('700 16px "Brockmann"'),
+      document.fonts.load('400 16px "Chaney"'),
+      document.fonts.load('400 16px "Chaney Wide"'),
+      document.fonts.load('400 16px "Chaney Extended"'),
+      document.fonts.load('400 16px "Chaney Ultra Extended"')
+    ];
+
+    await Promise.allSettled(fontPromises);
+    
+    // Wait for document.fonts.ready to ensure all fonts are fully loaded
+    await document.fonts.ready;
+    
+    // Additional wait to ensure fonts are applied
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    console.log('All custom fonts loaded successfully');
+    console.log('Available fonts:', Array.from(document.fonts).map(f => f.family));
   } catch (error) {
-    console.warn('Font loading failed:', error);
+    console.warn('Custom font loading failed, falling back to system fonts:', error);
   }
 };
 
