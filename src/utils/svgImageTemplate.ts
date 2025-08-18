@@ -33,7 +33,22 @@ interface ShareImageData {
 
 const convertImageToBase64 = async (url: string): Promise<string> => {
   try {
-    const response = await fetch(url);
+    if (!url) return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI5OCIgZmlsbD0iI0Y1RjVGNSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjRjVGNUY1Ii8+PC9zdmc+';
+    
+    // If it's already a data URL, return it
+    if (url.startsWith('data:')) return url;
+    
+    const response = await fetch(url, {
+      mode: 'cors',
+      headers: {
+        'Accept': 'image/*'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
     const blob = await response.blob();
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
