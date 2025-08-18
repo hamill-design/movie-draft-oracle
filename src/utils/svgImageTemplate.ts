@@ -55,32 +55,32 @@ const generateMovieSection = async (movie: any, title: string, yOffset: number) 
   return `
     <g transform="translate(0, ${yOffset})">
       <!-- Section Header -->
-      <text x="540" y="60" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">${title}</text>
+      <text x="540" y="64" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">${title}</text>
       
       <!-- Card Background -->
-      <rect x="41" y="96" width="998" height="200" fill="white" stroke="#BCB2FF" stroke-width="1" rx="4"/>
+      <rect x="41" y="104" width="998" height="220" fill="white" stroke="#BCB2FF" stroke-width="1" rx="8"/>
       
       <!-- Movie Poster -->
-      <image x="65" y="120" width="120" height="178" href="${posterBase64}"/>
+      <image x="69" y="132" width="132" height="196" href="${posterBase64}"/>
       
       <!-- Movie Title -->
-      <text x="201" y="168" fill="#2B2D2D" class="brockmann-semibold" font-size="32">${movie.title}</text>
+      <text x="225" y="180" fill="#2B2D2D" class="brockmann-semibold" font-size="36">${movie.title}</text>
       
       <!-- Movie Details -->
-      <text x="201" y="198" fill="#2B2D2D" class="brockmann" font-size="20">${movie.year ? `${movie.year} • ` : ''}${movie.genre || ''}</text>
+      <text x="225" y="212" fill="#2B2D2D" class="brockmann" font-size="22">${movie.year ? `${movie.year} • ` : ''}${movie.genre || ''}</text>
       
       <!-- Pick Number Circle -->
-      <circle cx="227" cy="240" r="20" fill="none" stroke="#680AFF" stroke-width="1.86"/>
-      <text x="227" y="248" text-anchor="middle" fill="#680AFF" class="brockmann" font-size="24">${movie.pickNumber || '1'}</text>
+      <circle cx="253" cy="260" r="22" fill="none" stroke="#680AFF" stroke-width="2"/>
+      <text x="253" y="269" text-anchor="middle" fill="#680AFF" class="brockmann" font-size="26">${movie.pickNumber || '1'}</text>
       
       <!-- Category Badge -->
       ${movie.category ? `
-        <rect x="269" y="220" width="${movie.category.length * 12 + 24}" height="40" fill="#BCB2FF" rx="6"/>
-        <text x="281" y="244" fill="#3B0394" class="brockmann-medium" font-size="18">${movie.category}</text>
+        <rect x="299" y="238" width="${Math.max(movie.category.length * 14 + 28, 80)}" height="44" fill="#BCB2FF" rx="8"/>
+        <text x="313" y="266" fill="#3B0394" class="brockmann-medium" font-size="20">${movie.category}</text>
       ` : ''}
       
       <!-- Score -->
-      <text x="1015" y="260" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="42">${movie.score.toFixed(2)}</text>
+      <text x="1015" y="288" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="48">${movie.score.toFixed(2)}</text>
     </g>
   `;
 };
@@ -88,12 +88,22 @@ const generateMovieSection = async (movie: any, title: string, yOffset: number) 
 export const generateShareImageSVG = async (data: ShareImageData): Promise<string> => {
   const sortedTeamScores = data.teamScores.sort((a, b) => b.totalScore - a.totalScore);
   
-  // Split title for purple highlighting
+  // Smart title highlighting - find player name to highlight
   const titleWords = data.title.split(' ');
+  let highlightIndex = -1;
   
-  // Fixed positions for 1920px height
-  const firstPickY = 700;
-  const bestMovieY = 1150;
+  // Look for patterns like "THE [NAME] DRAFT" or "[NAME] DRAFT"
+  if (titleWords.length >= 3 && titleWords[0].toUpperCase() === 'THE' && titleWords[titleWords.length - 1].toUpperCase() === 'DRAFT') {
+    // Pattern: "THE [NAME] DRAFT" - highlight middle word(s)
+    highlightIndex = 1;
+  } else if (titleWords.length >= 2 && titleWords[titleWords.length - 1].toUpperCase() === 'DRAFT') {
+    // Pattern: "[NAME] DRAFT" - highlight first word(s)
+    highlightIndex = 0;
+  }
+  
+  // Fixed positions for 1920px height with proper spacing
+  const firstPickY = 740;
+  const bestMovieY = 1200;
   
   // Load fonts and generate sections
   const [fontCSS, firstPickSection, bestMovieSection] = await Promise.all([
@@ -124,30 +134,30 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
   <rect width="100%" height="100%" fill="url(#backgroundGradient)"/>
   
   <!-- Title -->
-  <text x="540" y="176" text-anchor="middle" class="chaney" font-size="64" letter-spacing="2.56px">
-    ${titleWords.map((word, index) => `<tspan fill="${index === 1 ? '#680AFF' : '#2B2D2D'}">${word}${index < titleWords.length - 1 ? ' ' : ''}</tspan>`).join('')}
+  <text x="540" y="180" text-anchor="middle" class="chaney" font-size="72" letter-spacing="2.88px">
+    ${titleWords.map((word, index) => `<tspan fill="${index === highlightIndex ? '#680AFF' : '#2B2D2D'}">${word}${index < titleWords.length - 1 ? ' ' : ''}</tspan>`).join('')}
   </text>
   
   <!-- TOP SCORES Section -->
   <g>
     <!-- Section Header -->
-    <text x="540" y="300" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">TOP SCORES</text>
+    <text x="540" y="320" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">TOP SCORES</text>
     
     <!-- Score Cards -->
     ${sortedTeamScores.slice(0, 3).map((team, index) => `
       <g>
         <!-- Card Background -->
-        <rect x="41" y="${336 + index * 88}" width="998" height="72" fill="white" stroke="#EDEBFF" stroke-width="1" rx="8"/>
+        <rect x="41" y="${360 + index * 96}" width="998" height="80" fill="white" stroke="#EDEBFF" stroke-width="1" rx="8"/>
         
         <!-- Rank Circle -->
-        <circle cx="81" r="16" cy="${372 + index * 88}" fill="#FFD60A"/>
-        <text x="81" y="${380 + index * 88}" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="16">${index + 1}</text>
+        <circle cx="85" r="18" cy="${400 + index * 96}" fill="#FFD60A"/>
+        <text x="85" y="${408 + index * 96}" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="18">${index + 1}</text>
         
         <!-- Player Name -->
-        <text x="113" y="${388 + index * 88}" fill="#2B2D2D" class="brockmann-medium" font-size="32">${team.playerName}</text>
+        <text x="125" y="${412 + index * 96}" fill="#2B2D2D" class="brockmann-medium" font-size="36">${team.playerName}</text>
         
         <!-- Score -->
-        <text x="1015" y="${388 + index * 88}" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="48">${team.totalScore.toFixed(1)}</text>
+        <text x="1015" y="${412 + index * 96}" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="52">${team.totalScore.toFixed(1)}</text>
       </g>
     `).join('')}
   </g>
@@ -157,7 +167,7 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
   ${bestMovieSection}
   
   <!-- Logo -->
-  <g transform="translate(326, 1780)">
+  <g transform="translate(326, 1820)">
     <svg width="428" height="27" viewBox="0 0 428 27" fill="none">
       <path d="M44.5008 0.690016V25.656C44.5008 26.0324 44.1876 26.3461 43.8118 26.3461H37.0787C36.7029 26.3461 36.3898 26.0324 36.3898 25.656V11.6048C36.3898 11.0403 35.7321 10.7266 35.2937 11.0716L22.7984 20.9828C22.5479 21.1709 22.2034 21.1709 21.9529 20.9828L9.17574 10.9775C8.73731 10.6325 8.07966 10.9775 8.07966 11.5107V25.656C8.07966 26.0324 7.76649 26.3461 7.3907 26.3461H0.688963C0.313165 26.3461 0 26.0324 0 25.656V0.690016C0 0.313644 0.313165 0 0.688963 0H7.86044C7.86044 0 8.14229 0.0627287 8.26756 0.125457L22.0155 10.6012C22.266 10.7893 22.6105 10.7893 22.8297 10.6012L36.2645 0.156822C36.2645 0.156822 36.5464 0 36.6716 0H43.8431C44.2189 0 44.5321 0.313644 44.5321 0.690016H44.5008Z" fill="#680AFF"/>
       <path d="M85.5485 26.3461H48.689C48.3132 26.3461 48 26.0324 48 25.656V0.690016C48 0.313644 48.3132 0 48.689 0H85.5485C85.9243 0 86.2375 0.313644 86.2375 0.690016V25.656C86.2375 26.0324 85.9243 26.3461 85.5485 26.3461ZM77.9699 18.3795V7.87245C77.9699 7.49608 77.6567 7.18244 77.2809 7.18244H56.9565C56.5807 7.18244 56.2676 7.49608 56.2676 7.87245V18.3795C56.2676 18.7559 56.5807 19.0695 56.9565 19.0695H77.2809C77.6567 19.0695 77.9699 18.7559 77.9699 18.3795Z" fill="#680AFF"/>
