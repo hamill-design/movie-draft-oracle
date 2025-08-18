@@ -171,7 +171,8 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
   // Always structure title as "THE [NAME] DRAFT" for consistency
   let titleParts = data.title.split(' ');
   let processedTitle: string;
-  let highlightIndex = -1;
+  let highlightStartIndex = -1;
+  let highlightEndIndex = -1;
   
   // If title doesn't start with "THE" and end with "DRAFT", format it properly
   if (titleParts[0].toUpperCase() !== 'THE' || titleParts[titleParts.length - 1].toUpperCase() !== 'DRAFT') {
@@ -180,10 +181,12 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
       word.toUpperCase() !== 'THE' && word.toUpperCase() !== 'DRAFT'
     );
     processedTitle = `THE ${nameWords.join(' ')} DRAFT`;
-    highlightIndex = 1; // Highlight the name part
+    highlightStartIndex = 1;
+    highlightEndIndex = nameWords.length; // Highlight all name words
   } else {
     processedTitle = data.title;
-    highlightIndex = 1; // Highlight the middle part
+    highlightStartIndex = 1;
+    highlightEndIndex = titleParts.length - 2; // Highlight everything except "THE" and "DRAFT"
   }
   
   const titleWords = processedTitle.split(' ');
@@ -404,7 +407,7 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
       <!-- Title -->
       <h1 class="title">
         ${titleWords.map((word, index) => 
-          index === highlightIndex 
+          index >= highlightStartIndex && index <= highlightEndIndex
             ? `<span class="highlight">${word}</span>` 
             : word
         ).join(' ')}
@@ -469,8 +472,8 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
   </foreignObject>
   
   <!-- Logo -->
-  <g transform="translate(326, 1820)">
-    <svg width="428" height="27" viewBox="0 0 428 27" fill="none">
+  <g transform="translate(176, 1820)">
+    <svg width="728" height="21.5" viewBox="0 0 428 27" fill="none">
       <path d="M44.5008 0.690016V25.656C44.5008 26.0324 44.1876 26.3461 43.8118 26.3461H37.0787C36.7029 26.3461 36.3898 26.0324 36.3898 25.656V11.6048C36.3898 11.0403 35.7321 10.7266 35.2937 11.0716L22.7984 20.9828C22.5479 21.1709 22.2034 21.1709 21.9529 20.9828L9.17574 10.9775C8.73731 10.6325 8.07966 10.9775 8.07966 11.5107V25.656C8.07966 26.0324 7.76649 26.3461 7.3907 26.3461H0.688963C0.313165 26.3461 0 26.0324 0 25.656V0.690016C0 0.313644 0.313165 0 0.688963 0H7.86044C7.86044 0 8.14229 0.0627287 8.26756 0.125457L22.0155 10.6012C22.266 10.7893 22.6105 10.7893 22.8297 10.6012L36.2645 0.156822C36.2645 0.156822 36.5464 0 36.6716 0H43.8431C44.2189 0 44.5321 0.313644 44.5321 0.690016H44.5008Z" fill="#680AFF"/>
       <path d="M85.5485 26.3461H48.689C48.3132 26.3461 48 26.0324 48 25.656V0.690016C48 0.313644 48.3132 0 48.689 0H85.5485C85.9243 0 86.2375 0.313644 86.2375 0.690016V25.656C86.2375 26.0324 85.9243 26.3461 85.5485 26.3461ZM77.9699 18.3795V7.87245C77.9699 7.49608 77.6567 7.18244 77.2809 7.18244H56.9565C56.5807 7.18244 56.2676 7.49608 56.2676 7.87245V18.3795C56.2676 18.7559 56.5807 19.0695 56.9565 19.0695H77.2809C77.6567 19.0695 77.9699 18.7559 77.9699 18.3795Z" fill="#680AFF"/>
       <path d="M127.302 0.940931L116.247 25.907C116.153 26.1579 115.902 26.3147 115.621 26.3147H100.338V26.1265L89.1894 0.940931C89.0015 0.50183 89.3147 0 89.8158 0H97.1438C97.4257 0 97.6449 0.156822 97.7701 0.407737L105.599 18.6618C105.693 18.9127 105.944 19.0695 106.226 19.0695H110.203C110.485 19.0695 110.704 18.9127 110.829 18.6618L118.627 0.407737C118.721 0.156822 118.971 0 119.253 0H126.675C127.176 0 127.49 0.50183 127.302 0.940931Z" fill="#680AFF"/>
@@ -483,9 +486,6 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
       <path d="M401.976 0.75273C401.976 0.376358 402.289 0.0627136 402.665 0.0627136H416.288C423.021 0.0627136 427.436 4.61055 427.436 10.2248C427.436 13.4239 425.996 16.3095 423.459 18.1599C423.177 18.3795 423.083 18.7559 423.271 19.0695L427.405 25.3424C427.687 25.7815 427.405 26.4088 426.841 26.4088H418.918C418.668 26.4088 418.448 26.2833 418.323 26.0638L415.16 20.7005C415.035 20.4809 414.816 20.3555 414.565 20.3555H410.933C410.557 20.3555 410.244 20.6691 410.244 21.0455V25.7188C410.244 26.0951 409.93 26.4088 409.555 26.4088H402.602C402.227 26.4088 401.913 26.0951 401.913 25.7188V0.75273H401.976ZM416.288 13.1103C417.853 13.1103 419.169 11.8243 419.169 10.2248C419.169 8.62518 417.853 7.33925 416.288 7.33925H410.964C410.588 7.33925 410.275 7.65289 410.275 8.02926V12.4516C410.275 12.828 410.588 13.1416 410.964 13.1416H416.288V13.1103Z" fill="#680AFF"/>
     </svg>
   </g>
-  
-  <!-- Footer Bar -->
-  <rect x="0" y="1912" width="1080" height="8" fill="#680AFF"/>
 </svg>
   `.trim();
 };
