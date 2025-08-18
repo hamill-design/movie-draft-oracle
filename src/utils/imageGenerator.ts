@@ -144,6 +144,8 @@ const createShareImageHTML = (draftData: DraftData): string => {
 
 export const generateShareImage = async (draftData: DraftData): Promise<string> => {
   try {
+    console.log('Generating share image with data:', draftData);
+    
     // Create a temporary container
     const container = document.createElement('div');
     container.style.position = 'absolute';
@@ -156,7 +158,9 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
     await loadFonts();
     
     // Set the HTML content
-    container.innerHTML = createShareImageHTML(draftData);
+    const htmlContent = createShareImageHTML(draftData);
+    console.log('Generated HTML content length:', htmlContent.length);
+    container.innerHTML = htmlContent;
     
     // Append to body temporarily
     document.body.appendChild(container);
@@ -164,22 +168,26 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
     // Wait for images to load
     await waitForImages(container);
     
+    console.log('Container dimensions:', container.scrollWidth, 'x', container.scrollHeight);
+    
     // Generate the image
     const canvas = await html2canvas(container, {
       width: 1080,
       height: container.scrollHeight,
-      scale: 2,
+      scale: 1,
       backgroundColor: '#FCFFFF',
       useCORS: true,
-      allowTaint: true,
-      foreignObjectRendering: true
+      allowTaint: false,
+      logging: true
     });
+    
+    console.log('Canvas generated successfully:', canvas.width, 'x', canvas.height);
     
     // Remove the temporary container
     document.body.removeChild(container);
     
-    // Convert to data URL
-    return canvas.toDataURL('image/png', 1.0);
+    // Convert to JPG data URL
+    return canvas.toDataURL('image/jpeg', 0.9);
   } catch (error) {
     console.error('Error generating share image:', error);
     throw error;

@@ -85,8 +85,9 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
         firstPick
       };
 
+      console.log('Draft data being sent to generator:', draftData);
       const imageDataUrl = await generateShareImage(draftData);
-      const filename = `${draftTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_final_scores.png`;
+      const filename = `${draftTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_final_scores.jpg`;
       
       downloadImage(imageDataUrl, filename);
       
