@@ -24,7 +24,7 @@ export const generateFontCSS = async (): Promise<string> => {
     { family: 'Brockmann', weight: 500, path: '/fonts/brockmann/brockmann-medium.woff2' },
     { family: 'Brockmann', weight: 600, path: '/fonts/brockmann/brockmann-semibold.woff2' },
     { family: 'Brockmann', weight: 700, path: '/fonts/brockmann/brockmann-bold.woff2' },
-    { family: 'Chaney', weight: 400, path: '/fonts/chaney/chaney-extended.woff2' },
+    { family: 'CHANEY', weight: 400, path: '/fonts/chaney/chaney-regular.woff2' },
   ];
 
   const fontFaces: string[] = [];
@@ -69,7 +69,7 @@ export const generateFontCSS = async (): Promise<string> => {
       font-family: 'Brockmann', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
     }
     .chaney { 
-      font-family: 'Chaney', 'Impact', 'Arial Black', -apple-system, BlinkMacSystemFont, sans-serif; 
+      font-family: 'CHANEY', 'Impact', 'Arial Black', -apple-system, BlinkMacSystemFont, sans-serif; 
       font-weight: 400; 
     }
     .brockmann { 
