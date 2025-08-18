@@ -130,7 +130,16 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
             gap: '16px',
             display: 'inline-flex',
             border: 'none',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'hsl(var(--purple-100))';
+            e.currentTarget.style.outline = '1px hsl(var(--purple-200)) solid';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--UI-Primary, white)';
+            e.currentTarget.style.outline = '1px hsl(var(--greyscale-blue-200)) solid';
           }}
         >
           <div style={{
