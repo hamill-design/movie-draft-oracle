@@ -80,7 +80,7 @@ const createShareImageHTML = (draftData: DraftData): string => {
     return `
       <div style="width: 998px; padding: 36px; border-radius: 4px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 36px; display: flex">
         <div style="align-self: stretch; flex-direction: column; justify-content: center; align-items: center; gap: 8px; display: flex">
-          <div style="justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 48px; font-family: 'CHANEY', sans-serif; font-weight: 700; line-height: 36px; letter-spacing: 1.92px; word-wrap: break-word">${title}</div>
+          <div style="justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 48px; font-family: 'Chaney', 'Impact', sans-serif; font-weight: 700; line-height: 36px; letter-spacing: 1.92px; word-wrap: break-word">${title}</div>
         </div>
         <div style="align-self: stretch; padding: 24px; background: ${colors.white}; border-radius: 4px; outline: 1px ${colors.purple200} solid; outline-offset: -1px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: flex">
           <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; display: flex">
@@ -121,13 +121,13 @@ const createShareImageHTML = (draftData: DraftData): string => {
   return `
     <div style="width: 100%; height: 100%; padding-left: 24px; padding-right: 24px; padding-top: 112px; padding-bottom: 112px; background: linear-gradient(140deg, ${colors.gradientStart} 0%, ${colors.gradientMid} 50%, ${colors.gradientEnd} 100%); overflow: hidden; flex-direction: column; justify-content: center; align-items: center; gap: 48px; display: inline-flex">
       <div style="text-align: center; justify-content: center; display: flex; flex-direction: column">
-        <span style="color: ${colors.text}; font-size: 64px; font-family: 'CHANEY', sans-serif; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word">THE</span>
-        <span style="color: ${colors.purple500}; font-size: 64px; font-family: 'CHANEY', sans-serif; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word"> ${winner?.playerName || 'DRAFT'} </span>
-        <span style="color: ${colors.text}; font-size: 64px; font-family: 'CHANEY', sans-serif; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word">DRAFT</span>
+        <span style="color: ${colors.text}; font-size: 64px; font-family: 'Chaney', 'Impact', sans-serif; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word">THE</span>
+        <span style="color: ${colors.purple500}; font-size: 64px; font-family: 'Chaney', 'Impact', sans-serif; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word"> ${winner?.playerName || 'DRAFT'} </span>
+        <span style="color: ${colors.text}; font-size: 64px; font-family: 'Chaney', 'Impact', sans-serif; font-weight: 400; line-height: 64px; letter-spacing: 2.56px; word-wrap: break-word">DRAFT</span>
       </div>
       <div style="width: 998px; padding: 24px; border-radius: 4px; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 24px; display: flex">
         <div style="align-self: stretch; flex-direction: column; justify-content: center; align-items: center; gap: 8px; display: flex">
-          <div style="justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 48px; font-family: 'Brockmann', sans-serif; font-weight: 700; line-height: 36px; letter-spacing: 1.92px; word-wrap: break-word">TOP SCORES</div>
+          <div style="justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 48px; font-family: 'Brockmann', 'Arial', sans-serif; font-weight: 700; line-height: 36px; letter-spacing: 1.92px; word-wrap: break-word">TOP SCORES</div>
         </div>
         <div style="align-self: stretch; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 16px; display: flex">
           ${teamScoreItems}
@@ -170,15 +170,22 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
     
     console.log('Container dimensions:', container.scrollWidth, 'x', container.scrollHeight);
     
+    // Wait a bit more for fonts to fully render
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    console.log('Starting canvas generation...');
     // Generate the image
     const canvas = await html2canvas(container, {
       width: 1080,
       height: container.scrollHeight,
       scale: 1,
       backgroundColor: '#FCFFFF',
-      useCORS: true,
-      allowTaint: false,
-      logging: true
+      useCORS: false, // Disable CORS to avoid issues
+      allowTaint: true,
+      logging: false,
+      foreignObjectRendering: false,
+      imageTimeout: 10000,
+      removeContainer: false
     });
     
     console.log('Canvas generated successfully:', canvas.width, 'x', canvas.height);
@@ -196,18 +203,26 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
 
 // Helper function to load fonts
 const loadFonts = async (): Promise<void> => {
+  console.log('Loading fonts...');
   const fontPromises = [
-    document.fonts.load('400 16px CHANEY'),
-    document.fonts.load('700 16px Brockmann'),
-    document.fonts.load('500 16px Brockmann'),
-    document.fonts.load('600 16px Brockmann')
+    document.fonts.load('400 48px "Chaney", "Impact", sans-serif'),
+    document.fonts.load('700 48px "Chaney", "Impact", sans-serif'),
+    document.fonts.load('400 48px "Brockmann", "Arial", sans-serif'),
+    document.fonts.load('500 48px "Brockmann", "Arial", sans-serif'),
+    document.fonts.load('600 48px "Brockmann", "Arial", sans-serif'),
+    document.fonts.load('700 48px "Brockmann", "Arial", sans-serif')
   ];
   
   try {
     await Promise.all(fontPromises);
     await document.fonts.ready;
+    console.log('All fonts loaded successfully');
+    // Extra wait to ensure fonts are fully rendered
+    await new Promise(resolve => setTimeout(resolve, 500));
   } catch (error) {
     console.warn('Font loading failed, continuing with fallback fonts:', error);
+    // Still wait a bit for fallback fonts
+    await new Promise(resolve => setTimeout(resolve, 300));
   }
 };
 
