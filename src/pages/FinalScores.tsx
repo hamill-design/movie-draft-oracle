@@ -395,47 +395,49 @@ const FinalScores = () => {
     <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-white">Final Scores</h1>
-              <p className="text-gray-400">{draft.title}</p>
-              {enrichingData && (
-                <p className="text-yellow-400 text-sm mt-1 flex items-center gap-2">
-                  <RefreshCw size={14} className="animate-spin" />
-                  Processing movie data automatically...
-                </p>
-              )}
+        <div style={{ width: '100%', height: '100%', padding: '24px', borderRadius: '8px', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex', flexWrap: 'wrap', alignContent: 'flex-start' }}>
+          <div style={{ flex: '1 1 0', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '24px', display: 'inline-flex' }}>
+            <div style={{ alignSelf: 'stretch', minWidth: '310px', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column' }}>
+              <span style={{ color: 'hsl(var(--foreground))', fontSize: '64px', fontFamily: 'CHANEY', fontWeight: '400', lineHeight: '64px', wordWrap: 'break-word' }}>THE</span>
+              <span style={{ color: 'hsl(var(--primary))', fontSize: '64px', fontFamily: 'CHANEY', fontWeight: '400', lineHeight: '64px', wordWrap: 'break-word' }}> {draft.title} </span>
+              <span style={{ color: 'hsl(var(--foreground))', fontSize: '64px', fontFamily: 'CHANEY', fontWeight: '400', lineHeight: '64px', wordWrap: 'break-word' }}>DRAFT</span>
             </div>
+            {enrichingData && (
+              <p className="text-yellow-400 text-sm flex items-center gap-2 self-center">
+                <RefreshCw size={14} className="animate-spin" />
+                Processing movie data automatically...
+              </p>
+            )}
           </div>
+        </div>
+
+        {/* Buttons Section - Moved Below Header */}
+        <div className="flex justify-center gap-3 mb-8">
+          {/* Save Draft Button for Guest Users and Anonymous Viewers */}
+          {(isGuest || isPublicView) && !user && (
+            <Button
+              onClick={handleAuthRedirect}
+              className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+            >
+              Save Draft
+            </Button>
+          )}
           
-          <div className="flex gap-3">
-            {/* Save Draft Button for Guest Users and Anonymous Viewers */}
-            {(isGuest || isPublicView) && !user && (
-              <Button
-                onClick={handleAuthRedirect}
-                className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
-              >
-                Save Draft
-              </Button>
-            )}
-            
-            {/* Save Draft Button for Authenticated Users */}
-            {user && !isPublicView && getDraftDataForSave() && (
-              <SaveDraftButton draftData={getDraftDataForSave()!} />
-            )}
-            
-            {/* Share Results Button */}
-            {teamScores.length > 0 && !enrichingData && (
-              <ShareResultsButton
-                draftTitle={draft.title}
-                teamScores={teamScores}
-                picks={picks}
-                draftId={draftId!}
-                isPublicView={isPublicView}
-              />
-            )}
-          </div>
+          {/* Save Draft Button for Authenticated Users */}
+          {user && !isPublicView && getDraftDataForSave() && (
+            <SaveDraftButton draftData={getDraftDataForSave()!} />
+          )}
+          
+          {/* Share Results Button */}
+          {teamScores.length > 0 && !enrichingData && (
+            <ShareResultsButton
+              draftTitle={draft.title}
+              teamScores={teamScores}
+              picks={picks}
+              draftId={draftId!}
+              isPublicView={isPublicView}
+            />
+          )}
         </div>
 
 
