@@ -194,7 +194,7 @@ const createShareImageHTML = (draftData: DraftData): string => {
   `;
 };
 
-export const generateShareImage = async (draftData: DraftData): Promise<string> => {
+export const generateShareImage = async (draftData: DraftData, debugMode: boolean = false): Promise<string> => {
   try {
     console.log('Generating share image with data:', draftData);
     
@@ -204,11 +204,13 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
     // Create a temporary iframe for isolated rendering
     const iframe = document.createElement('iframe');
     iframe.style.position = 'absolute';
-    iframe.style.left = '-9999px';
-    iframe.style.top = '-9999px';
+    iframe.style.left = debugMode ? '0px' : '-9999px';
+    iframe.style.top = debugMode ? '0px' : '-9999px';
     iframe.style.width = '1080px';
     iframe.style.height = 'auto';
-    iframe.style.border = 'none';
+    iframe.style.border = debugMode ? '2px solid red' : 'none';
+    iframe.style.zIndex = debugMode ? '9999' : 'auto';
+    iframe.style.backgroundColor = debugMode ? 'white' : 'transparent';
     
     document.body.appendChild(iframe);
     
@@ -220,6 +222,13 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
     // Set the HTML content in the iframe
     const htmlContent = createShareImageHTML(draftData);
     console.log('Generated HTML content length:', htmlContent.length);
+    
+    if (debugMode) {
+      console.log('=== DEBUG MODE: Generated HTML ===');
+      console.log(htmlContent);
+      console.log('=== END DEBUG HTML ===');
+    }
+    
     iframeDoc.open();
     iframeDoc.write(htmlContent);
     iframeDoc.close();
@@ -235,6 +244,37 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
     
     console.log('Container dimensions:', targetElement.scrollWidth, 'x', targetElement.scrollHeight);
     
+    if (debugMode) {
+      console.log('=== DEBUG MODE: Element Styles ===');
+      console.log('Target Element:', targetElement);
+      console.log('Computed Styles:', window.getComputedStyle(targetElement));
+      console.log('Font Family Used:', window.getComputedStyle(targetElement).fontFamily);
+      
+      // Log all text elements and their computed styles
+      const textElements = targetElement.querySelectorAll('*');
+      textElements.forEach((el, index) => {
+        const styles = window.getComputedStyle(el);
+        if (el.textContent?.trim()) {
+          console.log(`Text Element ${index}:`, {
+            text: el.textContent.trim(),
+            fontFamily: styles.fontFamily,
+            fontSize: styles.fontSize,
+            fontWeight: styles.fontWeight,
+            color: styles.color,
+            display: styles.display,
+            width: styles.width,
+            height: styles.height
+          });
+        }
+      });
+      console.log('=== END DEBUG STYLES ===');
+      
+      // If debug mode, don't continue with image generation - just show the HTML
+      if (debugMode) {
+        throw new Error('DEBUG_MODE_STOP: Check the iframe rendering above');
+      }
+    }
+    
     // Wait additional time for fonts to fully render
     await new Promise(resolve => setTimeout(resolve, 1000));
     
@@ -247,7 +287,7 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
       backgroundColor: '#FCFFFF',
       useCORS: false,
       allowTaint: false,
-      logging: false,
+      logging: debugMode,
       foreignObjectRendering: false,
       imageTimeout: 15000,
       removeContainer: false
@@ -255,14 +295,19 @@ export const generateShareImage = async (draftData: DraftData): Promise<string> 
     
     console.log('Canvas generated successfully:', canvas.width, 'x', canvas.height);
     
-    // Remove the temporary iframe
-    document.body.removeChild(iframe);
+    // Remove the temporary iframe (unless debug mode)
+    if (!debugMode) {
+      document.body.removeChild(iframe);
+    }
     
     // Convert to PNG for better quality
     return canvas.toDataURL('image/png', 1.0);
   } catch (error) {
     console.error('Error generating share image:', error);
-    throw error;
+    if (error.message !== 'DEBUG_MODE_STOP: Check the iframe rendering above') {
+      throw error;
+    }
+    return ''; // Return empty string for debug mode
   }
 };
 
@@ -358,7 +403,24 @@ const waitForImages = async (container: HTMLElement | Document): Promise<void> =
   await Promise.all(imagePromises);
 };
 
-export const downloadImage = (dataUrl: string, filename: string) => {
+// Debug mode utility function
+export const debugShareImageHTML = async (draftData: DraftData): Promise<void> => {
+  try {
+    console.log('=== STARTING DEBUG MODE ===');
+    await generateShareImage(draftData, true);
+  } catch (error) {
+    if (error.message === 'DEBUG_MODE_STOP: Check the iframe rendering above') {
+      console.log('=== DEBUG MODE COMPLETE ===');
+      console.log('Check the red-bordered iframe above to see how the HTML renders');
+      console.log('The iframe will remain visible for inspection');
+    } else {
+      console.error('Debug mode error:', error);
+    }
+  }
+};
+
+// Utility function to download the image
+export const downloadImage = (dataUrl: string, filename: string = 'draft-results.png'): void => {
   const link = document.createElement('a');
   link.download = filename;
   link.href = dataUrl;
