@@ -133,9 +133,11 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
     highlightIndex = 0;
   }
 
-  // Convert movie posters to base64 if they exist
-  const firstPickPoster = data.firstPick?.poster ? await convertImageToBase64(data.firstPick.poster) : '';
-  const bestMoviePoster = data.bestMovie?.poster ? await convertImageToBase64(data.bestMovie.poster) : '';
+  // Convert movie posters to base64 if they exist - ensure they're always data URLs
+  const [firstPickPoster, bestMoviePoster] = await Promise.all([
+    data.firstPick?.poster ? convertImageToBase64(data.firstPick.poster) : Promise.resolve('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI5OCIgZmlsbD0iI0Y1RjVGNSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjRjVGNUY1Ii8+PC9zdmc+'),
+    data.bestMovie?.poster ? convertImageToBase64(data.bestMovie.poster) : Promise.resolve('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI5OCIgZmlsbD0iI0Y1RjVGNSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjRjVGNUY1Ci8+PC9zdmc+')
+  ]);
   
   // Load fonts
   const fontCSS = await generateFontCSS();
@@ -255,13 +257,13 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
           align-items: flex-start;
         }
         
-        .movie-poster {
-          width: 200px;
-          height: 298px;
-          background: #F5F5F5;
-          border-radius: 4px;
-          flex-shrink: 0;
-        }
+         .movie-poster {
+           width: 200px;
+           height: 298px;
+           object-fit: cover;
+           border-radius: 4px;
+           flex-shrink: 0;
+         }
         
         .movie-info {
           display: flex;
@@ -365,7 +367,7 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
       <div class="section">
         <h2 class="section-title">FIRST PICK</h2>
         <div class="movie-card">
-          <div class="movie-poster" style="background-image: url('${firstPickPoster}'); background-size: cover; background-position: center;"></div>
+          <img class="movie-poster" src="${firstPickPoster}" alt="${data.firstPick.title} poster" />
           <div class="movie-info">
             <div>
               <h3 class="movie-title">${data.firstPick.title}</h3>
@@ -386,7 +388,7 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
       <div class="section">
         <h2 class="section-title">HIGHEST SCORER</h2>
         <div class="movie-card">
-          <div class="movie-poster" style="background-image: url('${bestMoviePoster}'); background-size: cover; background-position: center;"></div>
+          <img class="movie-poster" src="${bestMoviePoster}" alt="${data.bestMovie.title} poster" />
           <div class="movie-info">
             <div>
               <h3 class="movie-title">${data.bestMovie.title}</h3>
