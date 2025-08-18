@@ -130,7 +130,7 @@ const ShareImageComponent: React.FC<ShareImageComponentProps> = ({ data }) => {
                 <div style={{flex: '1 1 0', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 2, display: 'inline-flex'}}>
                   <div style={{
                     alignSelf: 'stretch', 
-                    justifyContent: 'center', 
+                    justifyContent: 'flex-start', 
                     display: 'flex', 
                     flexDirection: 'column', 
                     color: '#2B2D2D', 
@@ -215,7 +215,7 @@ const ShareImageComponent: React.FC<ShareImageComponentProps> = ({ data }) => {
                     <div style={{flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', gap: 24, display: 'flex'}}>
                       <div style={{flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 4, display: 'flex'}}>
                         <div style={{
-                          justifyContent: 'center', 
+                          justifyContent: 'flex-start', 
                           display: 'flex', 
                           flexDirection: 'column', 
                           color: '#2B2D2D', 
@@ -228,8 +228,7 @@ const ShareImageComponent: React.FC<ShareImageComponentProps> = ({ data }) => {
                           {data.firstPick.title}
                         </div>
                         <div style={{
-                          width: 561, 
-                          justifyContent: 'center', 
+                          justifyContent: 'flex-start', 
                           display: 'flex', 
                           flexDirection: 'column', 
                           color: '#2B2D2D', 
@@ -374,7 +373,7 @@ const ShareImageComponent: React.FC<ShareImageComponentProps> = ({ data }) => {
                     <div style={{flexDirection: 'column', justifyContent: 'center', alignItems: 'flex-start', gap: 24, display: 'flex'}}>
                       <div style={{flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: 4, display: 'flex'}}>
                         <div style={{
-                          justifyContent: 'center', 
+                          justifyContent: 'flex-start', 
                           display: 'flex', 
                           flexDirection: 'column', 
                           color: '#2B2D2D', 
@@ -387,8 +386,7 @@ const ShareImageComponent: React.FC<ShareImageComponentProps> = ({ data }) => {
                           {data.bestMovie.title}
                         </div>
                         <div style={{
-                          width: 561, 
-                          justifyContent: 'center', 
+                          justifyContent: 'flex-start', 
                           display: 'flex', 
                           flexDirection: 'column', 
                           color: '#2B2D2D', 
