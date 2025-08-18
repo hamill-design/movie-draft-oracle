@@ -52,48 +52,51 @@ const generateMovieSection = async (movie: any, title: string, yOffset: number) 
   
   const posterBase64 = movie.poster ? await convertImageToBase64(movie.poster) : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjI5OCIgZmlsbD0iI0Y1RjVGNSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjRjVGNUY1Ii8+PC9zdmc+';
   
-  const PADDING = 40;
-  const CARD_PADDING = 28;
+  const SECTION_PADDING = 24;
+  const CARD_PADDING = 24;
   
   return `
-    <g transform="translate(${PADDING}, ${yOffset})">
+    <g transform="translate(${SECTION_PADDING}, ${yOffset})">
       <!-- Section Header -->
-      <text x="500" y="64" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">${title}</text>
+      <text x="499" y="64" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">${title}</text>
       
-      <!-- Card Background -->
-      <rect x="0" y="104" width="${1000 - PADDING * 2}" height="220" fill="white" stroke="#BCB2FF" stroke-width="1" rx="8"/>
-      
-      <!-- Card Content Group with Padding -->
-      <g transform="translate(${CARD_PADDING}, ${104 + CARD_PADDING})">
-        <!-- Movie Poster -->
-        <image x="0" y="0" width="132" height="164" href="${posterBase64}"/>
+      <!-- Section Container with Padding -->
+      <g transform="translate(0, 100)">
+        <!-- Card Background -->
+        <rect x="0" y="0" width="950" height="346" fill="white" stroke="#BCB2FF" stroke-width="1" rx="4"/>
         
-        <!-- Movie Info Group -->
-        <g transform="translate(156, 0)">
-          <!-- Movie Title -->
-          <text x="0" y="48" fill="#2B2D2D" class="brockmann-semibold" font-size="32">${movie.title}</text>
+        <!-- Card Content Group with Padding -->
+        <g transform="translate(${CARD_PADDING}, ${CARD_PADDING})">
+          <!-- Movie Poster -->
+          <image x="0" y="0" width="200" height="298" href="${posterBase64}"/>
           
-          <!-- Movie Details -->
-          <text x="0" y="80" fill="#2B2D2D" class="brockmann" font-size="20">${movie.year ? `${movie.year} • ` : ''}${movie.genre || ''}</text>
-          
-          <!-- Bottom Row: Pick Number and Category -->
-          <g transform="translate(0, 128)">
-            <!-- Pick Number Circle -->
-            <circle cx="16" cy="16" r="16" fill="none" stroke="#680AFF" stroke-width="2"/>
-            <text x="16" y="22" text-anchor="middle" fill="#680AFF" class="brockmann" font-size="20">${movie.pickNumber || '1'}</text>
+          <!-- Movie Info Group -->
+          <g transform="translate(216, 0)">
+            <!-- Movie Title -->
+            <text x="0" y="60" fill="#2B2D2D" class="brockmann-semibold" font-size="36">${movie.title}</text>
             
-            <!-- Category Badge -->
-            ${movie.category ? `
-              <g transform="translate(52, 0)">
-                <rect x="0" y="0" width="${Math.max(movie.category.length * 12 + 24, 80)}" height="32" fill="#BCB2FF" rx="6"/>
-                <text x="12" y="22" fill="#3B0394" class="brockmann-medium" font-size="16">${movie.category}</text>
-              </g>
-            ` : ''}
+            <!-- Movie Details -->
+            <text x="0" y="100" fill="#2B2D2D" class="brockmann" font-size="24">${movie.year ? `${movie.year} • ` : ''}${movie.genre || ''}</text>
+            
+            <!-- Bottom Row: Pick Number and Category -->
+            <g transform="translate(0, 148)">
+              <!-- Pick Number Circle -->
+              <circle cx="26" cy="26" r="26" fill="none" stroke="#680AFF" stroke-width="1.86"/>
+              <text x="26" y="35" text-anchor="middle" fill="#680AFF" class="brockmann" font-size="33">${movie.pickNumber || '1'}</text>
+              
+              <!-- Category Badge -->
+              ${movie.category ? `
+                <g transform="translate(64, 0)">
+                  <rect x="0" y="8" width="${Math.max(movie.category.length * 10 + 32, 180)}" height="36" fill="#BCB2FF" rx="8"/>
+                  <text x="16" y="32" fill="#3B0394" class="brockmann-medium" font-size="24">${movie.category}</text>
+                </g>
+              ` : ''}
+            </g>
+            
+            <!-- Score -->
+            <text x="561" y="274" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="48">${movie.score.toFixed(2)}</text>
           </g>
         </g>
-        
-        <!-- Score -->
-        <text x="${1000 - PADDING * 2 - CARD_PADDING * 2}" y="156" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="44">${movie.score.toFixed(2)}</text>
       </g>
     </g>
   `;
@@ -115,18 +118,20 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
     highlightIndex = 0;
   }
   
-  // SVG Layout Constants - Using consistent padding and spacing
-  const PADDING = 40;
-  const SECTION_SPACING = 100;
+  // SVG Layout Constants - Matching HTML design
+  const MAIN_PADDING_X = 24;
+  const MAIN_PADDING_Y = 112;
+  const SECTION_SPACING = 48;
   const CARD_SPACING = 16;
-  const CARD_PADDING = 28;
+  const SCORE_CARD_PADDING_X = 24;
+  const SCORE_CARD_PADDING_Y = 36;
   
   // Calculate positions with proper spacing
-  const titleY = 180;
-  const topScoresHeaderY = titleY + SECTION_SPACING + 40;
-  const topScoresStartY = topScoresHeaderY + 64;
-  const firstPickY = topScoresStartY + (3 * 96) + SECTION_SPACING;
-  const bestMovieY = firstPickY + 364 + SECTION_SPACING;
+  const titleY = MAIN_PADDING_Y + 64;
+  const topScoresHeaderY = titleY + SECTION_SPACING + 32;
+  const topScoresStartY = topScoresHeaderY + 56;
+  const firstPickY = topScoresStartY + (3 * (72 + CARD_SPACING)) + SECTION_SPACING;
+  const bestMovieY = firstPickY + 446 + SECTION_SPACING;
   
   // Load fonts and generate sections
   const [fontCSS, firstPickSection, bestMovieSection] = await Promise.all([
@@ -157,38 +162,53 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
   <rect width="100%" height="100%" fill="url(#backgroundGradient)"/>
   
   <!-- Main Content Group with Padding -->
-  <g transform="translate(${PADDING}, 0)">
+  <g transform="translate(${MAIN_PADDING_X}, ${MAIN_PADDING_Y})">
     <!-- Title -->
-    <text x="500" y="${titleY}" text-anchor="middle" class="chaney" font-size="72" letter-spacing="2.88px">
+    <text x="516" y="${titleY - MAIN_PADDING_Y}" text-anchor="middle" class="chaney" font-size="64" letter-spacing="2.56px">
       ${titleWords.map((word, index) => `<tspan fill="${index === highlightIndex ? '#680AFF' : '#2B2D2D'}">${word}${index < titleWords.length - 1 ? ' ' : ''}</tspan>`).join('')}
     </text>
     
-    <!-- TOP SCORES Section -->
-    <g transform="translate(0, ${topScoresHeaderY})">
-      <!-- Section Header -->
-      <text x="500" y="0" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">TOP SCORES</text>
+    <!-- TOP SCORES Section Container -->
+    <g transform="translate(0, ${topScoresHeaderY - MAIN_PADDING_Y})">
+      <!-- Section Background Container -->
+      <rect x="0" y="0" width="998" height="${3 * (72 + CARD_SPACING) + 48}" fill="transparent" rx="4"/>
       
-      <!-- Score Cards Group -->
-      <g transform="translate(0, 64)">
-        ${sortedTeamScores.slice(0, 3).map((team, index) => `
-          <g transform="translate(0, ${index * (80 + CARD_SPACING)})">
-            <!-- Card Background -->
-            <rect x="0" y="0" width="${1000 - PADDING * 2}" height="80" fill="white" stroke="#EDEBFF" stroke-width="1" rx="8"/>
+      <!-- Section Content with Padding -->
+      <g transform="translate(24, 24)">
+        <!-- Section Header -->
+        <text x="475" y="44" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">TOP SCORES</text>
+        
+        <!-- Score Cards Group -->
+        <g transform="translate(0, 68)">
+          ${sortedTeamScores.slice(0, 3).map((team, index) => {
+            const rankColors = [
+              { bg: '#FFD60A', outline: '#FFF2B2' }, // Gold
+              { bg: '#CCCCCC', outline: '#E5E5E5' }, // Silver  
+              { bg: '#DE7E3E', outline: '#FFAE78' }  // Bronze
+            ];
+            const colors = rankColors[index] || rankColors[2];
             
-            <!-- Card Content Group with Padding -->
-            <g transform="translate(${CARD_PADDING}, ${CARD_PADDING})">
-              <!-- Rank Circle -->
-              <circle cx="16" cy="12" r="16" fill="#FFD60A"/>
-              <text x="16" y="18" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="16">${index + 1}</text>
+            return `
+            <g transform="translate(0, ${index * (72 + CARD_SPACING)})">
+              <!-- Card Background -->
+              <rect x="0" y="0" width="950" height="72" fill="white" stroke="#EDEBFF" stroke-width="1" rx="8"/>
               
-              <!-- Player Name -->
-              <text x="56" y="18" fill="#2B2D2D" class="brockmann-medium" font-size="32">${team.playerName}</text>
-              
-              <!-- Score -->
-              <text x="${1000 - PADDING * 2 - CARD_PADDING}" y="18" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="48">${team.totalScore.toFixed(1)}</text>
+              <!-- Card Content Group with Padding -->
+              <g transform="translate(${SCORE_CARD_PADDING_X}, ${SCORE_CARD_PADDING_Y})">
+                <!-- Rank Circle -->
+                <circle cx="16" cy="0" r="16" fill="${colors.bg}" stroke="${colors.outline}" stroke-width="2"/>
+                <text x="16" y="6" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="16">${index + 1}</text>
+                
+                <!-- Player Name -->
+                <text x="48" y="6" fill="#2B2D2D" class="brockmann-medium" font-size="32">${team.playerName}</text>
+                
+                <!-- Score -->
+                <text x="902" y="16" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="48">${team.totalScore.toFixed(1)}</text>
+              </g>
             </g>
-          </g>
-        `).join('')}
+          `;
+          }).join('')}
+        </g>
       </g>
     </g>
   </g>
