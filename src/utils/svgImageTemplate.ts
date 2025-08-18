@@ -53,32 +53,32 @@ const generateMovieSection = async (movie: any, title: string, yOffset: number) 
   return `
     <g transform="translate(0, ${yOffset})">
       <!-- Section Header -->
-      <text x="540" y="60" text-anchor="middle" fill="#2B2D2D" font-family="Brockmann" font-weight="700" font-size="48" letter-spacing="1.92px">${title}</text>
+      <text x="540" y="60" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">${title}</text>
       
       <!-- Card Background -->
-      <rect x="41" y="96" width="998" height="370" fill="white" stroke="#BCB2FF" stroke-width="1" rx="4"/>
+      <rect x="41" y="96" width="998" height="200" fill="white" stroke="#BCB2FF" stroke-width="1" rx="4"/>
       
       <!-- Movie Poster -->
-      <image x="65" y="120" width="200" height="298" href="${posterBase64}"/>
+      <image x="65" y="120" width="120" height="178" href="${posterBase64}"/>
       
       <!-- Movie Title -->
-      <text x="281" y="168" fill="#2B2D2D" font-family="Brockmann" font-weight="600" font-size="36">${movie.title}</text>
+      <text x="201" y="168" fill="#2B2D2D" class="brockmann-semibold" font-size="32">${movie.title}</text>
       
       <!-- Movie Details -->
-      <text x="281" y="208" fill="#2B2D2D" font-family="Brockmann" font-weight="400" font-size="24">${movie.year ? `${movie.year} • ` : ''}${movie.genre || ''}</text>
+      <text x="201" y="198" fill="#2B2D2D" class="brockmann" font-size="20">${movie.year ? `${movie.year} • ` : ''}${movie.genre || ''}</text>
       
       <!-- Pick Number Circle -->
-      <circle cx="307" cy="260" r="26" fill="none" stroke="#680AFF" stroke-width="1.86"/>
-      <text x="307" y="272" text-anchor="middle" fill="#680AFF" font-family="Brockmann" font-weight="400" font-size="33">${movie.pickNumber || '1'}</text>
+      <circle cx="227" cy="240" r="20" fill="none" stroke="#680AFF" stroke-width="1.86"/>
+      <text x="227" y="248" text-anchor="middle" fill="#680AFF" class="brockmann" font-size="24">${movie.pickNumber || '1'}</text>
       
       <!-- Category Badge -->
       ${movie.category ? `
-        <rect x="369" y="236" width="${movie.category.length * 14 + 32}" height="52" fill="#BCB2FF" rx="8"/>
-        <text x="385" y="268" fill="#3B0394" font-family="Brockmann" font-weight="500" font-size="24">${movie.category}</text>
+        <rect x="269" y="220" width="${movie.category.length * 12 + 24}" height="40" fill="#BCB2FF" rx="6"/>
+        <text x="281" y="244" fill="#3B0394" class="brockmann-medium" font-size="18">${movie.category}</text>
       ` : ''}
       
       <!-- Score -->
-      <text x="1015" y="400" text-anchor="end" fill="#680AFF" font-family="Brockmann" font-weight="500" font-size="48">${movie.score.toFixed(2)}</text>
+      <text x="1015" y="260" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="42">${movie.score.toFixed(2)}</text>
     </g>
   `;
 };
@@ -89,19 +89,15 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
   // Split title for purple highlighting
   const titleWords = data.title.split(' ');
   
-  // Calculate positions and heights
-  let currentY = 600; // Start after scores section
-  const firstPickSection = data.firstPick ? await generateMovieSection(data.firstPick, 'FIRST PICK', currentY) : '';
-  if (data.firstPick) currentY += 500;
+  // Fixed positions for 1920px height
+  const firstPickY = 700;
+  const bestMovieY = 1150;
   
-  const bestMovieSection = data.bestMovie ? await generateMovieSection(data.bestMovie, 'HIGHEST SCORER', currentY) : '';
-  if (data.bestMovie) currentY += 500;
-  
-  // Calculate total height
-  const totalHeight = currentY + 50;
+  const firstPickSection = data.firstPick ? await generateMovieSection(data.firstPick, 'FIRST PICK', firstPickY) : '';
+  const bestMovieSection = data.bestMovie ? await generateMovieSection(data.bestMovie, 'HIGHEST SCORER', bestMovieY) : '';
   
   return `
-<svg width="1080" height="${totalHeight}" xmlns="http://www.w3.org/2000/svg">
+<svg width="1080" height="1920" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <!-- Gradient Background -->
     <linearGradient id="backgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -110,33 +106,16 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
       <stop offset="100%" stop-color="#FCFFFF"/>
     </linearGradient>
     
-    <!-- Fonts -->
+    <!-- Embedded Fonts -->
     <style>
-      @font-face {
-        font-family: 'Brockmann';
-        src: url('/fonts/brockmann/brockmann-regular.woff2') format('woff2');
-        font-weight: 400;
-      }
-      @font-face {
-        font-family: 'Brockmann';
-        src: url('/fonts/brockmann/brockmann-medium.woff2') format('woff2');
-        font-weight: 500;
-      }
-      @font-face {
-        font-family: 'Brockmann';
-        src: url('/fonts/brockmann/brockmann-semibold.woff2') format('woff2');
-        font-weight: 600;
-      }
-      @font-face {
-        font-family: 'Brockmann';
-        src: url('/fonts/brockmann/brockmann-bold.woff2') format('woff2');
-        font-weight: 700;
-      }
-      @font-face {
-        font-family: 'Chaney';
-        src: url('/fonts/chaney/chaney-regular.woff2') format('woff2');
-        font-weight: 400;
-      }
+      <![CDATA[
+        text { font-family: 'Arial', sans-serif; }
+        .chaney { font-family: 'Arial Black', 'Arial', sans-serif; font-weight: 900; }
+        .brockmann { font-family: 'Arial', sans-serif; }
+        .brockmann-medium { font-family: 'Arial', sans-serif; font-weight: 500; }
+        .brockmann-semibold { font-family: 'Arial', sans-serif; font-weight: 600; }
+        .brockmann-bold { font-family: 'Arial', sans-serif; font-weight: 700; }
+      ]]>
     </style>
   </defs>
   
@@ -144,14 +123,14 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
   <rect width="100%" height="100%" fill="url(#backgroundGradient)"/>
   
   <!-- Title -->
-  <text x="540" y="176" text-anchor="middle" font-family="Chaney" font-weight="400" font-size="64" letter-spacing="2.56px">
+  <text x="540" y="176" text-anchor="middle" class="chaney" font-size="64" letter-spacing="2.56px">
     ${titleWords.map((word, index) => `<tspan fill="${index === 1 ? '#680AFF' : '#2B2D2D'}">${word}${index < titleWords.length - 1 ? ' ' : ''}</tspan>`).join('')}
   </text>
   
   <!-- TOP SCORES Section -->
   <g>
     <!-- Section Header -->
-    <text x="540" y="300" text-anchor="middle" fill="#2B2D2D" font-family="Brockmann" font-weight="700" font-size="48" letter-spacing="1.92px">TOP SCORES</text>
+    <text x="540" y="300" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="48" letter-spacing="1.92px">TOP SCORES</text>
     
     <!-- Score Cards -->
     ${sortedTeamScores.slice(0, 3).map((team, index) => `
@@ -161,13 +140,13 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
         
         <!-- Rank Circle -->
         <circle cx="81" r="16" cy="${372 + index * 88}" fill="#FFD60A"/>
-        <text x="81" y="${380 + index * 88}" text-anchor="middle" fill="#2B2D2D" font-family="Brockmann" font-weight="700" font-size="16">${index + 1}</text>
+        <text x="81" y="${380 + index * 88}" text-anchor="middle" fill="#2B2D2D" class="brockmann-bold" font-size="16">${index + 1}</text>
         
         <!-- Player Name -->
-        <text x="113" y="${388 + index * 88}" fill="#2B2D2D" font-family="Brockmann" font-weight="500" font-size="32">${team.playerName}</text>
+        <text x="113" y="${388 + index * 88}" fill="#2B2D2D" class="brockmann-medium" font-size="32">${team.playerName}</text>
         
         <!-- Score -->
-        <text x="1015" y="${388 + index * 88}" text-anchor="end" fill="#680AFF" font-family="Brockmann" font-weight="500" font-size="48">${team.totalScore.toFixed(1)}</text>
+        <text x="1015" y="${388 + index * 88}" text-anchor="end" fill="#680AFF" class="brockmann-medium" font-size="48">${team.totalScore.toFixed(1)}</text>
       </g>
     `).join('')}
   </g>
@@ -177,7 +156,7 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
   ${bestMovieSection}
   
   <!-- Footer Bar -->
-  <rect x="0" y="${totalHeight - 8}" width="1080" height="8" fill="#680AFF"/>
+  <rect x="0" y="1912" width="1080" height="8" fill="#680AFF"/>
 </svg>
   `.trim();
 };
