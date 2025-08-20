@@ -1,9 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Film, Mail, Lock, User, AlertCircle, ArrowLeft } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -126,162 +123,336 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
-      <Card className="w-full max-w-md bg-greyscale-800 border-greyscale-600">
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Film className="text-yellow-400" size={32} />
-            <CardTitle className="text-2xl text-greyscale-100">Movie Draft League</CardTitle>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'var(--Greyscale-(Blue)-100, #FCFFFF)'}}>
+      <div className="w-full max-w-md" style={{
+        background: 'var(--Greyscale-(Blue)-100, #FCFFFF)',
+        boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)',
+        borderRadius: '4px',
+        overflow: 'hidden'
+      }}>
+        <div style={{ padding: '24px' }}>
+          <div style={{ paddingTop: '6px', marginBottom: '24px' }}>
+            <div style={{ 
+              textAlign: 'center',
+              color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
+              fontSize: '20px',
+              fontFamily: 'Brockmann',
+              fontWeight: '500',
+              lineHeight: '28px'
+            }}>
+              User Login
+            </div>
           </div>
-          <p className="text-greyscale-300">
-            {isResetMode ? 'Reset your password' : (isLogin ? 'Welcome back!' : 'Create your account')}
-          </p>
-        </CardHeader>
-        <CardContent>
-          {isResetMode ? (
-            <form onSubmit={handlePasswordReset} className="space-y-4">
-              {error && (
-                <div className="flex items-center gap-2 p-3 bg-error-red-900/50 border border-error-red-600 rounded text-error-red-200 text-sm">
-                  <AlertCircle size={16} />
-                  {error}
-                </div>
-              )}
-              
-              <div className="space-y-2">
-                <label className="text-greyscale-300 text-sm font-medium">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-greyscale-400" />
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-greyscale-700 border-greyscale-600 text-greyscale-100 placeholder-greyscale-400"
-                    required
-                  />
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-yellow-400 text-greyscale-1000 hover:bg-yellow-500 font-semibold"
-              >
-                {loading ? 'Sending...' : 'Send Reset Email'}
-              </Button>
-
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={resetForm}
-                className="w-full text-yellow-400 hover:text-yellow-300 hover:bg-transparent"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Sign In
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleAuth} className="space-y-4">
-              {error && (
-                <div className="flex items-center gap-2 p-3 bg-error-red-900/50 border border-error-red-600 rounded text-error-red-200 text-sm">
-                  <AlertCircle size={16} />
-                  {error}
-                </div>
-              )}
-              
-              <div className="space-y-2">
-                <label className="text-greyscale-300 text-sm font-medium">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-3 h-4 w-4 text-greyscale-400" />
-                  <Input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10 bg-greyscale-700 border-greyscale-600 text-greyscale-100 placeholder-greyscale-400"
-                    required
-                  />
-                </div>
-              </div>
-
-              {!isLogin && (
-                <div className="space-y-2">
-                  <label className="text-greyscale-300 text-sm font-medium">Name</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 h-4 w-4 text-greyscale-400" />
-                    <Input
-                      type="text"
-                      placeholder="Enter your name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="pl-10 bg-greyscale-700 border-greyscale-600 text-greyscale-100 placeholder-greyscale-400"
-                      required={!isLogin}
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {isResetMode ? (
+              <form onSubmit={handlePasswordReset} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {error && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px',
+                    background: '#FEE2E2',
+                    border: '1px solid #EF4444',
+                    borderRadius: '4px',
+                    color: '#DC2626',
+                    fontSize: '14px'
+                  }}>
+                    <AlertCircle size={16} />
+                    {error}
+                  </div>
+                )}
+                
+                <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                  <div style={{ 
+                    color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '500',
+                    lineHeight: '20px'
+                  }}>Email</div>
+                  <div style={{
+                    padding: '12px 16px',
+                    background: 'var(--UI-Primary, white)',
+                    borderRadius: '2px',
+                    border: '1px solid var(--Greyscale-(Blue)-400, #9CA3A2)'
+                  }}>
+                    <input
+                      type="email"
+                      placeholder="Enter Email Address"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      style={{
+                        width: '100%',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
+                        fontSize: '14px',
+                        fontFamily: 'Brockmann',
+                        fontWeight: '500',
+                        lineHeight: '20px'
+                      }}
+                      required
                     />
                   </div>
                 </div>
-              )}
 
-              <div className="space-y-2">
-                <label className="text-greyscale-300 text-sm font-medium">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-greyscale-400" />
-                  <Input
-                    type="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 bg-greyscale-700 border-greyscale-600 text-greyscale-100 placeholder-greyscale-400"
-                    required
-                    minLength={6}
-                  />
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    padding: '12px 24px',
+                    background: 'var(--Brand-Primary, #680AFF)',
+                    borderRadius: '2px',
+                    border: 'none',
+                    color: 'var(--UI-BG, #FFFFF7)',
+                    fontSize: '16px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '600',
+                    lineHeight: '24px',
+                    letterSpacing: '0.32px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.7 : 1
+                  }}
+                >
+                  {loading ? 'Sending...' : 'Send Reset Email'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  style={{
+                    padding: '6px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--Brand-Primary, #680AFF)',
+                    fontSize: '16px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '600',
+                    lineHeight: '24px',
+                    letterSpacing: '0.32px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Back to Sign In
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {error && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px',
+                    background: '#FEE2E2',
+                    border: '1px solid #EF4444',
+                    borderRadius: '4px',
+                    color: '#DC2626',
+                    fontSize: '14px'
+                  }}>
+                    <AlertCircle size={16} />
+                    {error}
+                  </div>
+                )}
+                
+                <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                  <div style={{ 
+                    color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '500',
+                    lineHeight: '20px'
+                  }}>Email</div>
+                  <div style={{
+                    padding: '12px 16px',
+                    background: 'var(--UI-Primary, white)',
+                    borderRadius: '2px',
+                    border: '1px solid var(--Greyscale-(Blue)-400, #9CA3A2)'
+                  }}>
+                    <input
+                      type="email"
+                      placeholder="Enter Email Address"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      style={{
+                        width: '100%',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
+                        fontSize: '14px',
+                        fontFamily: 'Brockmann',
+                        fontWeight: '500',
+                        lineHeight: '20px'
+                      }}
+                      required
+                    />
+                  </div>
                 </div>
+
+                {!isLogin && (
+                  <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                    <div style={{ 
+                      color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
+                      fontSize: '14px',
+                      fontFamily: 'Brockmann',
+                      fontWeight: '500',
+                      lineHeight: '20px'
+                    }}>Name</div>
+                    <div style={{
+                      padding: '12px 16px',
+                      background: 'var(--UI-Primary, white)',
+                      borderRadius: '2px',
+                      border: '1px solid var(--Greyscale-(Blue)-400, #9CA3A2)'
+                    }}>
+                      <input
+                        type="text"
+                        placeholder="Enter Your Name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        style={{
+                          width: '100%',
+                          border: 'none',
+                          outline: 'none',
+                          background: 'transparent',
+                          color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
+                          fontSize: '14px',
+                          fontFamily: 'Brockmann',
+                          fontWeight: '500',
+                          lineHeight: '20px'
+                        }}
+                        required={!isLogin}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                  <div style={{ 
+                    color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '500',
+                    lineHeight: '20px'
+                  }}>Password</div>
+                  <div style={{
+                    padding: '12px 16px',
+                    background: 'var(--UI-Primary, white)',
+                    borderRadius: '2px',
+                    border: '1px solid var(--Greyscale-(Blue)-400, #9CA3A2)'
+                  }}>
+                    <input
+                      type="password"
+                      placeholder="Enter Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      style={{
+                        width: '100%',
+                        border: 'none',
+                        outline: 'none',
+                        background: 'transparent',
+                        color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
+                        fontSize: '14px',
+                        fontFamily: 'Brockmann',
+                        fontWeight: '500',
+                        lineHeight: '20px'
+                      }}
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                </div>
+
+                {isLogin && (
+                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsResetMode(true)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--Greyscale-(Blue)-500, #828786)',
+                        fontSize: '16px',
+                        fontFamily: 'Brockmann',
+                        fontWeight: '400',
+                        lineHeight: '24px',
+                        cursor: 'pointer',
+                        padding: '0'
+                      }}
+                    >
+                      Forgot your password?
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  style={{
+                    padding: '12px 24px',
+                    background: 'var(--Brand-Primary, #680AFF)',
+                    borderRadius: '2px',
+                    border: 'none',
+                    color: 'var(--UI-BG, #FFFFF7)',
+                    fontSize: '16px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '600',
+                    lineHeight: '24px',
+                    letterSpacing: '0.32px',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    opacity: loading ? 0.7 : 1
+                  }}
+                >
+                  {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Sign Up')}
+                </button>
+              </form>
+            )}
+
+            {!isResetMode && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ 
+                  textAlign: 'center',
+                  color: 'var(--Greyscale-(Blue)-500, #828786)',
+                  fontSize: '14px',
+                  fontFamily: 'Brockmann',
+                  fontWeight: '400',
+                  lineHeight: '20px'
+                }}>
+                  {isLogin ? "Don't have an account?" : "Already have an account?"}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsLogin(!isLogin);
+                    setError('');
+                    setEmail('');
+                    setPassword('');
+                    setName('');
+                  }}
+                  style={{
+                    height: '40px',
+                    padding: '6px 16px 8px 16px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--Brand-Primary, #680AFF)',
+                    fontSize: '16px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '600',
+                    lineHeight: '24px',
+                    letterSpacing: '0.32px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {isLogin ? 'Create account' : 'Sign in instead'}
+                </button>
               </div>
-
-              {isLogin && (
-                <div className="flex justify-end">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setIsResetMode(true)}
-                    className="text-sm text-yellow-400 hover:text-yellow-300 hover:bg-transparent p-0 h-auto"
-                  >
-                    Forgot your password?
-                  </Button>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-yellow-400 text-greyscale-1000 hover:bg-yellow-500 font-semibold"
-              >
-                {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Sign Up')}
-              </Button>
-            </form>
-          )}
-
-          {!isResetMode && (
-            <div className="mt-6 text-center">
-              <p className="text-greyscale-400 text-sm">
-                {isLogin ? "Don't have an account?" : "Already have an account?"}
-              </p>
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setError('');
-                  setEmail('');
-                  setPassword('');
-                  setName('');
-                }}
-                className="text-yellow-400 hover:text-yellow-300 hover:bg-transparent"
-              >
-                {isLogin ? 'Create account' : 'Sign in instead'}
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
