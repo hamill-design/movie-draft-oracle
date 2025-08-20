@@ -218,7 +218,7 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
         .main-container {
           display: flex;
           flex-direction: column;
-          padding: 136px 24px 88px 24px;
+          padding: 160px 24px 88px 24px;
           gap: 48px;
           font-family: 'Brockmann', Arial, sans-serif;
         }
