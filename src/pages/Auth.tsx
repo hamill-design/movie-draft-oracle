@@ -138,7 +138,9 @@ const Auth = () => {
               fontSize: '20px',
               fontFamily: 'Brockmann',
               fontWeight: '500',
-              lineHeight: '28px'
+              lineHeight: '28px',
+              background: 'var(--Greyscale-(Blue)-100, #FCFFFF)',
+              padding: '8px'
             }}>
               User Login
             </div>
