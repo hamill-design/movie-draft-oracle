@@ -123,23 +123,23 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'var(--Greyscale-(Blue)-100, #FCFFFF)'}}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'hsl(var(--greyscale-blue-100))'}}>
       <div className="w-full max-w-md" style={{
-        background: 'var(--Greyscale-(Blue)-100, #FCFFFF)',
+        background: 'hsl(var(--greyscale-blue-100))',
         boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)',
         borderRadius: '4px',
         overflow: 'hidden'
       }}>
-        <div style={{ padding: '24px', background: 'var(--Greyscale-(Blue)-100, #FCFFFF)' }}>
+        <div style={{ padding: '24px', background: 'hsl(var(--greyscale-blue-100))' }}>
           <div style={{ paddingTop: '6px', marginBottom: '24px' }}>
             <div style={{ 
               textAlign: 'center',
-              color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
+              color: 'hsl(var(--greyscale-blue-800))',
               fontSize: '20px',
               fontFamily: 'Brockmann',
               fontWeight: '500',
               lineHeight: '28px',
-              background: 'var(--Greyscale-(Blue)-100, #FCFFFF)',
+              background: 'hsl(var(--greyscale-blue-100))',
               padding: '8px'
             }}>
               User Login
@@ -166,80 +166,80 @@ const Auth = () => {
                   </div>
                 )}
                 
-                <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
-                  <div style={{ 
-                    color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
-                    fontSize: '14px',
-                    fontFamily: 'Brockmann',
-                    fontWeight: '500',
-                    lineHeight: '20px'
-                  }}>Email</div>
-                  <div style={{
-                    padding: '12px 16px',
-                    background: 'var(--UI-Primary, white)',
-                    borderRadius: '2px',
-                    border: '1px solid var(--Greyscale-(Blue)-400, #9CA3A2)'
-                  }}>
-                    <input
-                      type="email"
-                      placeholder="Enter Email Address"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      style={{
-                        width: '100%',
-                        border: 'none',
-                        outline: 'none',
-                        background: 'transparent',
-                        color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
-                        fontSize: '14px',
-                        fontFamily: 'Brockmann',
-                        fontWeight: '500',
-                        lineHeight: '20px'
-                      }}
-                      required
-                    />
-                  </div>
-                </div>
+                 <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                   <div style={{ 
+                     color: 'hsl(var(--greyscale-blue-800))',
+                     fontSize: '14px',
+                     fontFamily: 'Brockmann',
+                     fontWeight: '500',
+                     lineHeight: '20px'
+                   }}>Email</div>
+                   <div style={{
+                     padding: '12px 16px',
+                     background: 'hsl(var(--ui-primary))',
+                     borderRadius: '2px',
+                     border: '1px solid hsl(var(--greyscale-blue-400))'
+                   }}>
+                     <input
+                       type="email"
+                       placeholder="Enter Email Address"
+                       value={email}
+                       onChange={(e) => setEmail(e.target.value)}
+                       style={{
+                         width: '100%',
+                         border: 'none',
+                         outline: 'none',
+                         background: 'transparent',
+                         color: 'hsl(var(--greyscale-blue-800))',
+                         fontSize: '14px',
+                         fontFamily: 'Brockmann',
+                         fontWeight: '500',
+                         lineHeight: '20px'
+                       }}
+                       required
+                     />
+                   </div>
+                 </div>
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    padding: '12px 24px',
-                    background: 'var(--Brand-Primary, #680AFF)',
-                    borderRadius: '2px',
-                    border: 'none',
-                    color: 'var(--UI-BG, #FFFFF7)',
-                    fontSize: '16px',
-                    fontFamily: 'Brockmann',
-                    fontWeight: '600',
-                    lineHeight: '24px',
-                    letterSpacing: '0.32px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.7 : 1
-                  }}
-                >
-                  {loading ? 'Sending...' : 'Send Reset Email'}
-                </button>
+                 <button
+                   type="submit"
+                   disabled={loading}
+                   style={{
+                     padding: '12px 24px',
+                     background: 'hsl(var(--brand-primary))',
+                     borderRadius: '2px',
+                     border: 'none',
+                     color: 'hsl(var(--ui-bg))',
+                     fontSize: '16px',
+                     fontFamily: 'Brockmann',
+                     fontWeight: '600',
+                     lineHeight: '24px',
+                     letterSpacing: '0.32px',
+                     cursor: loading ? 'not-allowed' : 'pointer',
+                     opacity: loading ? 0.7 : 1
+                   }}
+                 >
+                   {loading ? 'Sending...' : 'Send Reset Email'}
+                 </button>
 
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  style={{
-                    padding: '6px 16px',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--Brand-Primary, #680AFF)',
-                    fontSize: '16px',
-                    fontFamily: 'Brockmann',
-                    fontWeight: '600',
-                    lineHeight: '24px',
-                    letterSpacing: '0.32px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Back to Sign In
-                </button>
+                 <button
+                   type="button"
+                   onClick={resetForm}
+                   style={{
+                     padding: '6px 16px',
+                     background: 'transparent',
+                     border: 'none',
+                     color: 'hsl(var(--brand-primary))',
+                     fontSize: '16px',
+                     fontFamily: 'Brockmann',
+                     fontWeight: '600',
+                     lineHeight: '24px',
+                     letterSpacing: '0.32px',
+                     cursor: 'pointer'
+                   }}
+                 >
+                   Back to Sign In
+                 </button>
               </form>
             ) : (
               <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -260,196 +260,196 @@ const Auth = () => {
                   </div>
                 )}
                 
-                <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
-                  <div style={{ 
-                    color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
-                    fontSize: '14px',
-                    fontFamily: 'Brockmann',
-                    fontWeight: '500',
-                    lineHeight: '20px'
-                  }}>Email</div>
-                  <div style={{
-                    padding: '12px 16px',
-                    background: 'var(--UI-Primary, white)',
-                    borderRadius: '2px',
-                    border: '1px solid var(--Greyscale-(Blue)-400, #9CA3A2)'
-                  }}>
-                    <input
-                      type="email"
-                      placeholder="Enter Email Address"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      style={{
-                        width: '100%',
-                        border: 'none',
-                        outline: 'none',
-                        background: 'transparent',
-                        color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
-                        fontSize: '14px',
-                        fontFamily: 'Brockmann',
-                        fontWeight: '500',
-                        lineHeight: '20px'
-                      }}
-                      required
-                    />
-                  </div>
-                </div>
+                 <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                   <div style={{ 
+                     color: 'hsl(var(--greyscale-blue-800))',
+                     fontSize: '14px',
+                     fontFamily: 'Brockmann',
+                     fontWeight: '500',
+                     lineHeight: '20px'
+                   }}>Email</div>
+                   <div style={{
+                     padding: '12px 16px',
+                     background: 'hsl(var(--ui-primary))',
+                     borderRadius: '2px',
+                     border: '1px solid hsl(var(--greyscale-blue-400))'
+                   }}>
+                     <input
+                       type="email"
+                       placeholder="Enter Email Address"
+                       value={email}
+                       onChange={(e) => setEmail(e.target.value)}
+                       style={{
+                         width: '100%',
+                         border: 'none',
+                         outline: 'none',
+                         background: 'transparent',
+                         color: 'hsl(var(--greyscale-blue-800))',
+                         fontSize: '14px',
+                         fontFamily: 'Brockmann',
+                         fontWeight: '500',
+                         lineHeight: '20px'
+                       }}
+                       required
+                     />
+                   </div>
+                 </div>
 
                 {!isLogin && (
-                  <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
-                    <div style={{ 
-                      color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
-                      fontSize: '14px',
-                      fontFamily: 'Brockmann',
-                      fontWeight: '500',
-                      lineHeight: '20px'
-                    }}>Name</div>
-                    <div style={{
-                      padding: '12px 16px',
-                      background: 'var(--UI-Primary, white)',
-                      borderRadius: '2px',
-                      border: '1px solid var(--Greyscale-(Blue)-400, #9CA3A2)'
-                    }}>
-                      <input
-                        type="text"
-                        placeholder="Enter Your Name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        style={{
-                          width: '100%',
-                          border: 'none',
-                          outline: 'none',
-                          background: 'transparent',
-                          color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
-                          fontSize: '14px',
-                          fontFamily: 'Brockmann',
-                          fontWeight: '500',
-                          lineHeight: '20px'
-                        }}
-                        required={!isLogin}
-                      />
-                    </div>
-                  </div>
+                   <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                     <div style={{ 
+                       color: 'hsl(var(--greyscale-blue-800))',
+                       fontSize: '14px',
+                       fontFamily: 'Brockmann',
+                       fontWeight: '500',
+                       lineHeight: '20px'
+                     }}>Name</div>
+                     <div style={{
+                       padding: '12px 16px',
+                       background: 'hsl(var(--ui-primary))',
+                       borderRadius: '2px',
+                       border: '1px solid hsl(var(--greyscale-blue-400))'
+                     }}>
+                       <input
+                         type="text"
+                         placeholder="Enter Your Name"
+                         value={name}
+                         onChange={(e) => setName(e.target.value)}
+                         style={{
+                           width: '100%',
+                           border: 'none',
+                           outline: 'none',
+                           background: 'transparent',
+                           color: 'hsl(var(--greyscale-blue-800))',
+                           fontSize: '14px',
+                           fontFamily: 'Brockmann',
+                           fontWeight: '500',
+                           lineHeight: '20px'
+                         }}
+                         required={!isLogin}
+                       />
+                     </div>
+                   </div>
                 )}
 
-                <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
-                  <div style={{ 
-                    color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
-                    fontSize: '14px',
-                    fontFamily: 'Brockmann',
-                    fontWeight: '500',
-                    lineHeight: '20px'
-                  }}>Password</div>
-                  <div style={{
-                    padding: '12px 16px',
-                    background: 'var(--UI-Primary, white)',
-                    borderRadius: '2px',
-                    border: '1px solid var(--Greyscale-(Blue)-400, #9CA3A2)'
-                  }}>
-                    <input
-                      type="password"
-                      placeholder="Enter Password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      style={{
-                        width: '100%',
-                        border: 'none',
-                        outline: 'none',
-                        background: 'transparent',
-                        color: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
-                        fontSize: '14px',
-                        fontFamily: 'Brockmann',
-                        fontWeight: '500',
-                        lineHeight: '20px'
-                      }}
-                      required
-                      minLength={6}
-                    />
-                  </div>
-                </div>
+                 <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
+                   <div style={{ 
+                     color: 'hsl(var(--greyscale-blue-800))',
+                     fontSize: '14px',
+                     fontFamily: 'Brockmann',
+                     fontWeight: '500',
+                     lineHeight: '20px'
+                   }}>Password</div>
+                   <div style={{
+                     padding: '12px 16px',
+                     background: 'hsl(var(--ui-primary))',
+                     borderRadius: '2px',
+                     border: '1px solid hsl(var(--greyscale-blue-400))'
+                   }}>
+                     <input
+                       type="password"
+                       placeholder="Enter Password"
+                       value={password}
+                       onChange={(e) => setPassword(e.target.value)}
+                       style={{
+                         width: '100%',
+                         border: 'none',
+                         outline: 'none',
+                         background: 'transparent',
+                         color: 'hsl(var(--greyscale-blue-800))',
+                         fontSize: '14px',
+                         fontFamily: 'Brockmann',
+                         fontWeight: '500',
+                         lineHeight: '20px'
+                       }}
+                       required
+                       minLength={6}
+                     />
+                   </div>
+                 </div>
 
                 {isLogin && (
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <button
-                      type="button"
-                      onClick={() => setIsResetMode(true)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--Greyscale-(Blue)-500, #828786)',
-                        fontSize: '16px',
-                        fontFamily: 'Brockmann',
-                        fontWeight: '400',
-                        lineHeight: '24px',
-                        cursor: 'pointer',
-                        padding: '0'
-                      }}
-                    >
-                      Forgot your password?
-                    </button>
+                     <button
+                       type="button"
+                       onClick={() => setIsResetMode(true)}
+                       style={{
+                         background: 'transparent',
+                         border: 'none',
+                         color: 'hsl(var(--greyscale-blue-500))',
+                         fontSize: '16px',
+                         fontFamily: 'Brockmann',
+                         fontWeight: '400',
+                         lineHeight: '24px',
+                         cursor: 'pointer',
+                         padding: '0'
+                       }}
+                     >
+                       Forgot your password?
+                     </button>
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{
-                    padding: '12px 24px',
-                    background: 'var(--Brand-Primary, #680AFF)',
-                    borderRadius: '2px',
-                    border: 'none',
-                    color: 'var(--UI-BG, #FFFFF7)',
-                    fontSize: '16px',
-                    fontFamily: 'Brockmann',
-                    fontWeight: '600',
-                    lineHeight: '24px',
-                    letterSpacing: '0.32px',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    opacity: loading ? 0.7 : 1
-                  }}
-                >
-                  {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Sign Up')}
-                </button>
+                 <button
+                   type="submit"
+                   disabled={loading}
+                   style={{
+                     padding: '12px 24px',
+                     background: 'hsl(var(--brand-primary))',
+                     borderRadius: '2px',
+                     border: 'none',
+                     color: 'hsl(var(--ui-bg))',
+                     fontSize: '16px',
+                     fontFamily: 'Brockmann',
+                     fontWeight: '600',
+                     lineHeight: '24px',
+                     letterSpacing: '0.32px',
+                     cursor: loading ? 'not-allowed' : 'pointer',
+                     opacity: loading ? 0.7 : 1
+                   }}
+                 >
+                   {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Sign Up')}
+                 </button>
               </form>
             )}
 
             {!isResetMode && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ 
-                  textAlign: 'center',
-                  color: 'var(--Greyscale-(Blue)-500, #828786)',
-                  fontSize: '14px',
-                  fontFamily: 'Brockmann',
-                  fontWeight: '400',
-                  lineHeight: '20px'
-                }}>
-                  {isLogin ? "Don't have an account?" : "Already have an account?"}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsLogin(!isLogin);
-                    setError('');
-                    setEmail('');
-                    setPassword('');
-                    setName('');
-                  }}
-                  style={{
-                    height: '40px',
-                    padding: '6px 16px 8px 16px',
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--Brand-Primary, #680AFF)',
-                    fontSize: '16px',
-                    fontFamily: 'Brockmann',
-                    fontWeight: '600',
-                    lineHeight: '24px',
-                    letterSpacing: '0.32px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {isLogin ? 'Create account' : 'Sign in instead'}
-                </button>
+                 <div style={{ 
+                   textAlign: 'center',
+                   color: 'hsl(var(--greyscale-blue-500))',
+                   fontSize: '14px',
+                   fontFamily: 'Brockmann',
+                   fontWeight: '400',
+                   lineHeight: '20px'
+                 }}>
+                   {isLogin ? "Don't have an account?" : "Already have an account?"}
+                 </div>
+                 <button
+                   type="button"
+                   onClick={() => {
+                     setIsLogin(!isLogin);
+                     setError('');
+                     setEmail('');
+                     setPassword('');
+                     setName('');
+                   }}
+                   style={{
+                     height: '40px',
+                     padding: '6px 16px 8px 16px',
+                     background: 'transparent',
+                     border: 'none',
+                     color: 'hsl(var(--brand-primary))',
+                     fontSize: '16px',
+                     fontFamily: 'Brockmann',
+                     fontWeight: '600',
+                     lineHeight: '24px',
+                     letterSpacing: '0.32px',
+                     cursor: 'pointer'
+                   }}
+                 >
+                   {isLogin ? 'Create account' : 'Sign in instead'}
+                 </button>
               </div>
             )}
           </div>
