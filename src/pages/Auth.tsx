@@ -123,7 +123,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'hsl(var(--greyscale-blue-100))'}}>
+    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-[hsl(var(--ui-bg))] to-[hsl(var(--greyscale-blue-200))]">
       <div className="w-full max-w-md" style={{
         background: 'hsl(var(--greyscale-blue-100))',
         boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)',
