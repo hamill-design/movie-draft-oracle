@@ -130,7 +130,7 @@ const Auth = () => {
         borderRadius: '4px',
         overflow: 'hidden'
       }}>
-        <div style={{ padding: '24px' }}>
+        <div style={{ padding: '24px', background: 'var(--Greyscale-(Blue)-100, #FCFFFF)' }}>
           <div style={{ paddingTop: '6px', marginBottom: '24px' }}>
             <div style={{ 
               textAlign: 'center',
