@@ -92,8 +92,8 @@ const ShareImageComponent: React.FC<ShareImageComponentProps> = ({ data }) => {
               alignSelf: 'stretch', 
               paddingLeft: 24, 
               paddingRight: 24, 
-              paddingTop: 36, 
-              paddingBottom: 36, 
+              paddingTop: 28, 
+              paddingBottom: 28,
               background: 'white', 
               borderRadius: 8, 
               outline: '1px #EDEBFF solid', 
@@ -104,8 +104,8 @@ const ShareImageComponent: React.FC<ShareImageComponentProps> = ({ data }) => {
             }}>
               <div style={{flex: '1 1 0', justifyContent: 'flex-start', alignItems: 'center', gap: 16, display: 'flex'}}>
                 <div style={{
-                  width: 32, 
-                  height: 32, 
+                  width: 48, 
+                  height: 48, 
                   background: '#FFD60A', 
                   borderRadius: 9999, 
                   justifyContent: 'center', 
@@ -118,10 +118,10 @@ const ShareImageComponent: React.FC<ShareImageComponentProps> = ({ data }) => {
                     display: 'flex', 
                     flexDirection: 'column', 
                     color: '#2B2D2D', 
-                    fontSize: 16, 
+                    fontSize: 24, 
                     fontFamily: 'Brockmann', 
                     fontWeight: '700', 
-                    lineHeight: '24px', 
+                    lineHeight: '32px', 
                     wordWrap: 'break-word'
                   }}>
                     {index + 1}
