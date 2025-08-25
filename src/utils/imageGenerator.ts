@@ -104,10 +104,10 @@ const createShareImageHTML = (draftData: DraftData): string => {
   
   // Create team score items matching exact HTML structure
   const teamScoreItems = topTeams.map((team, index) => `
-    <div style="align-self: stretch; padding-left: 24px; padding-right: 24px; padding-top: 36px; padding-bottom: 36px; background: ${colors.white}; border-radius: 8px; outline: 1px ${colors.purple100} solid; outline-offset: -1px; justify-content: space-between; align-items: center; display: inline-flex">
+    <div style="align-self: stretch; padding-left: 24px; padding-right: 24px; padding-top: 28px; padding-bottom: 28px; background: ${colors.white}; border-radius: 8px; outline: 1px ${colors.purple100} solid; outline-offset: -1px; justify-content: space-between; align-items: center; display: inline-flex">
       <div style="flex: 1 1 0; justify-content: flex-start; align-items: center; gap: 16px; display: flex">
-        <div style="width: 32px; height: 32px; background: ${colors.yellow500}; border-radius: 9999px; justify-content: center; align-items: center; display: flex">
-          <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 16px; font-family: Brockmann; font-weight: 700; line-height: 24px; word-wrap: break-word">${index + 1}</div>
+        <div style="width: 48px; height: 48px; background: ${colors.yellow500}; border-radius: 9999px; justify-content: center; align-items: center; display: flex">
+          <div style="text-align: center; justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 24px; font-family: Brockmann; font-weight: 700; line-height: 32px; word-wrap: break-word">${index + 1}</div>
         </div>
         <div style="flex: 1 1 0; flex-direction: column; justify-content: flex-start; align-items: flex-start; gap: 2px; display: inline-flex">
           <div style="align-self: stretch; justify-content: center; display: flex; flex-direction: column; color: ${colors.text}; font-size: 32px; font-family: Brockmann; font-weight: 500; line-height: 24px; word-wrap: break-word">${team.playerName}</div>
