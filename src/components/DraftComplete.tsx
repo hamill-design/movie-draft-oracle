@@ -24,27 +24,29 @@ const DraftComplete = () => {
 
   return (
     <Card className="bg-greyscale-800 border-greyscale-600">
-      <CardContent className="pt-6">
-        <div className="text-center space-y-4">
-          <Film className="mx-auto text-yellow-400" size={64} />
-          <h2 className="text-2xl font-bold text-greyscale-100">Draft Complete!</h2>
-          <p className="text-greyscale-300">All players have made their selections.</p>
-          
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+      <CardContent className="p-6 rounded-lg">
+        <div className="w-full h-full flex flex-col justify-start items-start">
+          <div className="self-stretch flex flex-col justify-start items-center gap-4">
+            <div className="self-stretch flex flex-col justify-start items-start gap-2">
+              <div className="self-stretch flex flex-col justify-start items-center">
+                <div className="text-center flex flex-col justify-center text-foreground text-xl font-brockmann-medium leading-7">
+                  Draft Complete!
+                </div>
+              </div>
+              <div className="self-stretch flex flex-col justify-start items-center">
+                <div className="self-stretch text-center flex flex-col justify-center text-muted-foreground text-sm font-brockmann leading-5">
+                  All players have made their selections.
+                </div>
+              </div>
+            </div>
             <Button
               onClick={handleViewScores}
-              className="bg-yellow-400 hover:bg-yellow-500 text-greyscale-1000 font-semibold"
+              className="px-3 py-2 bg-primary rounded-sm flex justify-center items-center gap-2"
             >
-              <Trophy className="mr-2" size={16} />
-              View Final Scores
-            </Button>
-            
-            <Button
-              onClick={() => navigate('/')}
-              variant="outline"
-              className="border-greyscale-600 text-greyscale-300 hover:bg-greyscale-700"
-            >
-              Start New Draft
+              <Trophy className="w-4 h-4 text-yellow-500" />
+              <span className="text-center text-primary-foreground text-sm font-brockmann-medium leading-5">
+                View Final Scores
+              </span>
             </Button>
           </div>
         </div>
