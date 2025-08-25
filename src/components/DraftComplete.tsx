@@ -22,7 +22,7 @@ const DraftComplete = () => {
   };
 
   return (
-    <div className="border border-greyscale-600 p-6 rounded-lg">
+    <div className="p-6 rounded-lg">
       <div className="w-full h-full flex flex-col justify-start items-start">
         <div className="self-stretch flex flex-col justify-start items-center gap-4">
           <div className="self-stretch flex flex-col justify-start items-start gap-2">
