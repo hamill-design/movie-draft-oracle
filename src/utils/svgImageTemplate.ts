@@ -263,7 +263,7 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
         .score-card {
           display: flex;
           align-items: center;
-          padding: 24px;
+          padding: 20px;
           background: white;
           border: 1px solid #EDEBFF;
           border-radius: 8px;
@@ -271,14 +271,14 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
         }
         
         .rank-circle {
-          width: 32px;
-          height: 32px;
+          width: 48px;
+          height: 48px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
           font-family: 'Brockmann', Arial, sans-serif;
-          font-size: 16px;
+          font-size: 24px;
           font-weight: 700;
           color: #2B2D2D;
           border: 2px solid;
