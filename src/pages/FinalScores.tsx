@@ -402,9 +402,8 @@ const FinalScores = () => {
           borderRadius: '8px', 
           justifyContent: 'flex-start', 
           alignItems: 'flex-start', 
-          display: 'inline-flex', 
-          flexWrap: 'wrap', 
-          alignContent: 'flex-start'
+          display: 'flex', 
+          flexDirection: 'column'
         }}>
           <div style={{
             flex: '1 1 0', 
@@ -412,7 +411,7 @@ const FinalScores = () => {
             justifyContent: 'flex-start', 
             alignItems: 'flex-start', 
             gap: '24px', 
-            display: 'inline-flex'
+            display: 'flex'
           }}>
             <div style={{
               alignSelf: 'stretch', 
@@ -422,36 +421,24 @@ const FinalScores = () => {
               display: 'flex', 
               flexDirection: 'column'
             }}>
-              <span style={{
+              <div style={{
                 color: 'var(--Greyscale-(Blue)-800, #2B2D2D)', 
                 fontSize: '64px', 
                 fontFamily: 'CHANEY', 
                 fontWeight: '400', 
                 lineHeight: '64px', 
-                wordWrap: 'break-word'
+                whiteSpace: 'nowrap',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                flexWrap: 'nowrap'
               }}>
-                THE
-              </span>
-              <span style={{
-                color: 'var(--Brand-Primary, #680AFF)', 
-                fontSize: '64px', 
-                fontFamily: 'CHANEY', 
-                fontWeight: '400', 
-                lineHeight: '64px', 
-                wordWrap: 'break-word'
-              }}>
-                {' '}{draft.title}{' '}
-              </span>
-              <span style={{
-                color: 'var(--Greyscale-(Blue)-800, #2B2D2D)', 
-                fontSize: '64px', 
-                fontFamily: 'CHANEY', 
-                fontWeight: '400', 
-                lineHeight: '64px', 
-                wordWrap: 'break-word'
-              }}>
-                DRAFT
-              </span>
+                <span>THE</span>
+                <span style={{ color: 'var(--Brand-Primary, #680AFF)', margin: '0 0.5ch' }}>
+                  {draft.title}
+                </span>
+                <span>DRAFT</span>
+              </div>
               {enrichingData && (
                 <p className="text-yellow-400 text-sm mt-1 flex items-center gap-2 justify-center">
                   <RefreshCw size={14} className="animate-spin" />
