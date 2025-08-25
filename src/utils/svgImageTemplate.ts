@@ -210,6 +210,20 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
       <stop offset="100%" stop-color="#FCFFFF"/>
     </linearGradient>
     
+    <!-- Rank Badge Gradients -->
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF2B2"/>
+      <stop offset="100%" stop-color="#F0AA11"/>
+    </linearGradient>
+    <linearGradient id="silverGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E5E5E5"/>
+      <stop offset="100%" stop-color="#666666"/>
+    </linearGradient>
+    <linearGradient id="bronzeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFAE78"/>
+      <stop offset="100%" stop-color="#95430C"/>
+    </linearGradient>
+    
     <!-- Embedded Fonts -->
     <style>
       <![CDATA[
@@ -281,13 +295,14 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
           font-size: 24px;
           font-weight: 700;
           color: #2B2D2D;
-          border: 2px solid;
+          border: 3px solid;
           flex-shrink: 0;
         }
         
-        .rank-1 { background: #FFD60A; border-color: #FFF2B2; }
-        .rank-2 { background: #CCCCCC; border-color: #E5E5E5; }
-        .rank-3 { background: #DE7E3E; border-color: #FFAE78; }
+        .rank-1 { border-color: url(#goldGradient); }
+        .rank-2 { border-color: url(#silverGradient); }
+        .rank-3 { border-color: url(#bronzeGradient); }
+        .rank-4, .rank-5, .rank-6, .rank-7, .rank-8 { border-color: #4D4D4D; }
         
         .player-name {
           font-family: 'Brockmann', Arial, sans-serif;
