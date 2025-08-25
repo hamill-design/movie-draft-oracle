@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -305,65 +305,65 @@ export type Database = {
       }
       create_guest_multiplayer_draft: {
         Args: {
-          p_guest_session_id: string
-          p_title: string
-          p_theme: string
-          p_option: string
           p_categories: string[]
-          p_participants: string[]
+          p_guest_session_id: string
+          p_option: string
           p_participant_name: string
+          p_participants: string[]
+          p_theme: string
+          p_title: string
         }
         Returns: {
-          draft_id: string
-          draft_user_id: string
-          draft_guest_session_id: string
-          draft_title: string
-          draft_theme: string
-          draft_option: string
           draft_categories: string[]
-          draft_participants: string[]
-          draft_is_multiplayer: boolean
-          draft_invite_code: string
+          draft_created_at: string
           draft_current_pick_number: number
           draft_current_turn_user_id: string
-          draft_is_complete: boolean
-          draft_turn_order: Json
           draft_draft_order: string[]
-          draft_created_at: string
+          draft_guest_session_id: string
+          draft_id: string
+          draft_invite_code: string
+          draft_is_complete: boolean
+          draft_is_multiplayer: boolean
+          draft_option: string
+          draft_participants: string[]
+          draft_theme: string
+          draft_title: string
+          draft_turn_order: Json
           draft_updated_at: string
+          draft_user_id: string
           participants_data: Json
           picks_data: Json
         }[]
       }
       create_multiplayer_draft_unified: {
         Args: {
-          p_participant_id: string
-          p_title: string
-          p_theme: string
-          p_option: string
           p_categories: string[]
-          p_participants: string[]
+          p_option: string
+          p_participant_id: string
           p_participant_name: string
+          p_participants: string[]
+          p_theme: string
+          p_title: string
         }
         Returns: {
-          draft_id: string
-          draft_user_id: string
-          draft_guest_session_id: string
-          draft_title: string
-          draft_theme: string
-          draft_option: string
           draft_categories: string[]
-          draft_participants: string[]
-          draft_is_multiplayer: boolean
-          draft_invite_code: string
-          draft_current_pick_number: number
-          draft_current_turn_user_id: string
-          draft_current_turn_participant_id: string
-          draft_is_complete: boolean
-          draft_turn_order: Json
-          draft_draft_order: string[]
           draft_created_at: string
+          draft_current_pick_number: number
+          draft_current_turn_participant_id: string
+          draft_current_turn_user_id: string
+          draft_draft_order: string[]
+          draft_guest_session_id: string
+          draft_id: string
+          draft_invite_code: string
+          draft_is_complete: boolean
+          draft_is_multiplayer: boolean
+          draft_option: string
+          draft_participants: string[]
+          draft_theme: string
+          draft_title: string
+          draft_turn_order: Json
           draft_updated_at: string
+          draft_user_id: string
           participants_data: Json
           picks_data: Json
         }[]
@@ -376,6 +376,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_oscar_cache_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          entries_needing_refresh: number
+          nominees: number
+          none_status: number
+          total_entries: number
+          winners: number
+        }[]
+      }
       is_draft_participant: {
         Args: { draft_id_param: string }
         Returns: boolean
@@ -387,48 +397,48 @@ export type Database = {
       join_draft_by_invite_code_guest: {
         Args: {
           invite_code_param: string
-          participant_name_param: string
           p_guest_session_id?: string
+          participant_name_param: string
         }
         Returns: {
-          participant_id: string
-          draft_id: string
-          draft_title: string
-          draft_theme: string
-          draft_option: string
           draft_categories: string[]
-          draft_participants: string[]
-          draft_is_multiplayer: boolean
-          draft_invite_code: string
+          draft_created_at: string
           draft_current_pick_number: number
           draft_current_turn_user_id: string
+          draft_id: string
+          draft_invite_code: string
           draft_is_complete: boolean
+          draft_is_multiplayer: boolean
+          draft_option: string
+          draft_participants: string[]
+          draft_theme: string
+          draft_title: string
           draft_turn_order: Json
-          draft_created_at: string
           draft_updated_at: string
+          participant_id: string
         }[]
       }
       load_draft_unified: {
         Args: { p_draft_id: string; p_participant_id: string }
         Returns: {
-          draft_id: string
-          draft_user_id: string
-          draft_guest_session_id: string
-          draft_title: string
-          draft_theme: string
-          draft_option: string
           draft_categories: string[]
-          draft_participants: string[]
-          draft_is_multiplayer: boolean
-          draft_invite_code: string
-          draft_current_pick_number: number
-          draft_current_turn_user_id: string
-          draft_current_turn_participant_id: string
-          draft_is_complete: boolean
-          draft_turn_order: Json
-          draft_draft_order: string[]
           draft_created_at: string
+          draft_current_pick_number: number
+          draft_current_turn_participant_id: string
+          draft_current_turn_user_id: string
+          draft_draft_order: string[]
+          draft_guest_session_id: string
+          draft_id: string
+          draft_invite_code: string
+          draft_is_complete: boolean
+          draft_is_multiplayer: boolean
+          draft_option: string
+          draft_participants: string[]
+          draft_theme: string
+          draft_title: string
+          draft_turn_order: Json
           draft_updated_at: string
+          draft_user_id: string
           participants_data: Json
           picks_data: Json
         }[]
@@ -436,65 +446,72 @@ export type Database = {
       load_draft_with_guest_access: {
         Args: { p_draft_id: string; p_guest_session_id?: string }
         Returns: {
-          draft_id: string
-          draft_user_id: string
-          draft_guest_session_id: string
-          draft_title: string
-          draft_theme: string
-          draft_option: string
           draft_categories: string[]
-          draft_participants: string[]
-          draft_is_multiplayer: boolean
-          draft_invite_code: string
+          draft_created_at: string
           draft_current_pick_number: number
           draft_current_turn_user_id: string
-          draft_is_complete: boolean
-          draft_turn_order: Json
           draft_draft_order: string[]
-          draft_created_at: string
+          draft_guest_session_id: string
+          draft_id: string
+          draft_invite_code: string
+          draft_is_complete: boolean
+          draft_is_multiplayer: boolean
+          draft_option: string
+          draft_participants: string[]
+          draft_theme: string
+          draft_title: string
+          draft_turn_order: Json
           draft_updated_at: string
+          draft_user_id: string
           participants_data: Json
           picks_data: Json
         }[]
       }
       make_multiplayer_pick: {
         Args: {
+          p_category: string
           p_draft_id: string
+          p_movie_genre: string
           p_movie_id: number
           p_movie_title: string
           p_movie_year: number
-          p_movie_genre: string
-          p_category: string
           p_poster_path?: string
         }
         Returns: {
-          success: boolean
           message: string
           new_pick_number: number
           next_turn_user_id: string
+          success: boolean
         }[]
       }
       make_multiplayer_pick_unified: {
         Args: {
+          p_category: string
           p_draft_id: string
-          p_participant_id: string
+          p_movie_genre: string
           p_movie_id: number
           p_movie_title: string
           p_movie_year: number
-          p_movie_genre: string
-          p_category: string
+          p_participant_id: string
           p_poster_path?: string
         }
         Returns: {
-          success: boolean
           message: string
           new_pick_number: number
           next_turn_participant_id: string
+          success: boolean
         }[]
       }
       migrate_guest_drafts_to_user: {
         Args: { p_guest_session_id: string }
         Returns: undefined
+      }
+      refresh_oscar_cache_for_questionable_entries: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          entries_found: number
+          refreshed_count: number
+        }[]
       }
       set_guest_session_context: {
         Args: { session_id: string }
@@ -503,46 +520,46 @@ export type Database = {
       start_multiplayer_draft: {
         Args: { p_draft_id: string; p_guest_session_id?: string }
         Returns: {
-          draft_id: string
-          draft_user_id: string
-          draft_guest_session_id: string
-          draft_title: string
-          draft_theme: string
-          draft_option: string
           draft_categories: string[]
-          draft_participants: string[]
-          draft_is_multiplayer: boolean
-          draft_invite_code: string
+          draft_created_at: string
           draft_current_pick_number: number
           draft_current_turn_user_id: string
-          draft_is_complete: boolean
-          draft_turn_order: Json
           draft_draft_order: string[]
-          draft_created_at: string
+          draft_guest_session_id: string
+          draft_id: string
+          draft_invite_code: string
+          draft_is_complete: boolean
+          draft_is_multiplayer: boolean
+          draft_option: string
+          draft_participants: string[]
+          draft_theme: string
+          draft_title: string
+          draft_turn_order: Json
           draft_updated_at: string
+          draft_user_id: string
         }[]
       }
       start_multiplayer_draft_unified: {
         Args: { p_draft_id: string; p_participant_id: string }
         Returns: {
-          draft_id: string
-          draft_user_id: string
-          draft_guest_session_id: string
-          draft_title: string
-          draft_theme: string
-          draft_option: string
           draft_categories: string[]
-          draft_participants: string[]
-          draft_is_multiplayer: boolean
-          draft_invite_code: string
-          draft_current_pick_number: number
-          draft_current_turn_user_id: string
-          draft_current_turn_participant_id: string
-          draft_is_complete: boolean
-          draft_turn_order: Json
-          draft_draft_order: string[]
           draft_created_at: string
+          draft_current_pick_number: number
+          draft_current_turn_participant_id: string
+          draft_current_turn_user_id: string
+          draft_draft_order: string[]
+          draft_guest_session_id: string
+          draft_id: string
+          draft_invite_code: string
+          draft_is_complete: boolean
+          draft_is_multiplayer: boolean
+          draft_option: string
+          draft_participants: string[]
+          draft_theme: string
+          draft_title: string
+          draft_turn_order: Json
           draft_updated_at: string
+          draft_user_id: string
         }[]
       }
     }
