@@ -39,7 +39,7 @@ const DraftComplete = () => {
           </div>
           <Button
             onClick={handleViewScores}
-            className="px-3 py-2 bg-purple-500 hover:bg-purple-400 rounded-[2px] flex justify-center items-center gap-2"
+            className="px-[12px] py-2 bg-purple-500 hover:bg-purple-400 rounded-[2px] flex justify-center items-center gap-2"
           >
             <Trophy className="w-4 h-4 text-yellow-500" />
             <span className="text-center text-primary-foreground text-sm font-brockmann-medium leading-5">
