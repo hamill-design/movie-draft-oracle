@@ -23,7 +23,7 @@ const DraftComplete = () => {
   };
 
   return (
-    <Card className="border-greyscale-600">
+    <Card className="border-greyscale-600 bg-transparent">
       <CardContent className="p-6 rounded-lg">
         <div className="w-full h-full flex flex-col justify-start items-start">
           <div className="self-stretch flex flex-col justify-start items-center gap-4">
