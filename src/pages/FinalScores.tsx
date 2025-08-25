@@ -400,8 +400,8 @@ const FinalScores = () => {
           height: '100%', 
           padding: '24px', 
           borderRadius: '8px', 
-          justifyContent: 'flex-start', 
-          alignItems: 'flex-start', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
           display: 'flex', 
           flexDirection: 'column'
         }}>
