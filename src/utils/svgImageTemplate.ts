@@ -210,6 +210,19 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
       <stop offset="100%" stop-color="#FCFFFF"/>
     </linearGradient>
     
+    <!-- Rank Badge Gradients -->
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFF2B2"/>
+      <stop offset="100%" stop-color="#F0AA11"/>
+    </linearGradient>
+    <linearGradient id="silverGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E5E5E5"/>
+      <stop offset="100%" stop-color="#666666"/>
+    </linearGradient>
+    <linearGradient id="bronzeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFAE78"/>
+      <stop offset="100%" stop-color="#95430C"/>
+    </linearGradient>
     
     <!-- Embedded Fonts -->
     <style>
@@ -274,7 +287,7 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
         .rank-circle {
           width: 48px;
           height: 48px;
-          border-radius: 50%;
+          position: relative;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -282,14 +295,40 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
           font-size: 24px;
           font-weight: 700;
           color: #2B2D2D;
-          border: 3px solid;
           flex-shrink: 0;
         }
         
-        .rank-1 { background: #FFD60A; border-color: #FFF2B2; color: #2B2D2D; }
-        .rank-2 { background: #CCCCCC; border-color: #E5E5E5; color: #2B2D2D; }
-        .rank-3 { background: #DE7E3E; border-color: #FFAE78; color: #2B2D2D; }
-        .rank-4, .rank-5, .rank-6, .rank-7, .rank-8 { border-color: #4D4D4D; }
+        .rank-circle::before {
+          content: '';
+          position: absolute;
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          z-index: 1;
+        }
+        
+        .rank-circle::after {
+          content: '';
+          position: absolute;
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          z-index: 2;
+        }
+        
+        .rank-circle span {
+          position: relative;
+          z-index: 3;
+        }
+        
+        .rank-1::before { background: linear-gradient(to bottom right, #FFF2B2, #F0AA11); }
+        .rank-1::after { background: #FFD60A; }
+        .rank-2::before { background: linear-gradient(to bottom right, #E5E5E5, #666666); }
+        .rank-2::after { background: #CCCCCC; }
+        .rank-3::before { background: linear-gradient(to bottom right, #FFAE78, #95430C); }
+        .rank-3::after { background: #DE7E3E; }
+        .rank-4::before, .rank-5::before, .rank-6::before, .rank-7::before, .rank-8::before { background: #4D4D4D; }
+        .rank-4::after, .rank-5::after, .rank-6::after, .rank-7::after, .rank-8::after { background: white; }
         
         .player-name {
           font-family: 'Brockmann', Arial, sans-serif;
@@ -422,7 +461,7 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
         <div class="scores-container">
           ${sortedTeamScores.slice(0, 3).map((team, index) => `
             <div class="score-card">
-              <div class="rank-circle rank-${index + 1}">${index + 1}</div>
+              <div class="rank-circle rank-${index + 1}"><span>${index + 1}</span></div>
               <div class="player-name">${team.playerName}</div>
               <div class="player-score">${team.totalScore.toFixed(1)}</div>
             </div>
