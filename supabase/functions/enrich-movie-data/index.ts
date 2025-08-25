@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
     console.log(`Processing: ${movieTitle} (${movieYear}) - ID: ${movieId}`)
 
     // Get API keys
-    const omdbApiKey = Deno.env.get('OMDB')
+    const omdbApiKey = Deno.env.get('OMDB_API_KEY')
     const tmdbApiKey = Deno.env.get('TMDB')
     
     console.log(`API Keys - OMDB: ${omdbApiKey ? 'SET' : 'MISSING'}, TMDB: ${tmdbApiKey ? 'SET' : 'MISSING'}`)
