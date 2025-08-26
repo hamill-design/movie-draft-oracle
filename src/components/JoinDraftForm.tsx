@@ -141,7 +141,7 @@ export const JoinDraftForm = () => {
         <button
           type="submit"
           disabled={isButtonDisabled}
-          className="self-stretch px-6 py-3 bg-brand-primary rounded flex justify-center items-center disabled:opacity-50"
+          className="self-stretch px-6 py-3 bg-brand-primary hover:bg-purple-400 disabled:bg-greyscale-blue-200 disabled:text-greyscale-blue-300 rounded flex justify-center items-center"
         >
           <div className="text-center flex flex-col justify-center text-primary-foreground text-base font-semibold leading-6 tracking-wide font-brockmann">
             {(loading || isJoining) ? 'Joining...' : 'Join Draft'}
