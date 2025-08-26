@@ -3,35 +3,34 @@ import { Separator } from "@/components/ui/separator";
 
 const Footer = () => {
   return (
-    <footer className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container py-6">
-        <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
-          <p className="text-sm text-muted-foreground">
-            © 2024 Movie Draft Oracle. All rights reserved.
-          </p>
+    <footer className="border-t border-brand-primary bg-greyscale-blue-900 backdrop-blur-sm">
+      <div className="w-full px-6 py-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex-1 min-w-80 flex flex-col items-center justify-center">
+            <p className="text-sm font-brockmann font-normal text-greyscale-blue-200 leading-5">
+              © 2024 Movie Draft Oracle. All rights reserved.
+            </p>
+          </div>
           
-          <div className="flex flex-col items-center gap-4 md:flex-row">
-            <div className="flex items-center gap-4 text-sm">
+          <div className="flex-1 min-w-80 flex items-center justify-center gap-4">
+            <div className="w-80 min-w-80 flex items-center justify-center gap-4">
               <Link 
                 to="/privacy-policy" 
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
               >
                 Privacy Policy
               </Link>
-              <Separator orientation="vertical" className="h-4" />
+              <Separator orientation="vertical" className="h-4 bg-greyscale-blue-200" />
               <Link 
                 to="/terms-of-service" 
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
               >
                 Terms of Service
               </Link>
-            </div>
-            
-            <div className="flex items-center gap-2 text-sm">
-              <Separator orientation="vertical" className="h-4 hidden md:block" />
+              <Separator orientation="vertical" className="h-4 bg-greyscale-blue-200" />
               <a 
                 href="mailto:support@moviedraftoracle.com" 
-                className="text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
               >
                 Support
               </a>
