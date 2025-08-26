@@ -13,7 +13,7 @@ const Footer = () => {
           </div>
           
           <div className="flex-1 min-w-80 flex items-center justify-center gap-4">
-            <div className="w-80 min-w-80 flex items-center justify-center gap-4">
+            <div className="w-80 min-w-80 flex items-center justify-center gap-4 flex-nowrap whitespace-nowrap">
               <Link 
                 to="/privacy-policy" 
                 className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
