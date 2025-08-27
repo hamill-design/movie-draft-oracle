@@ -78,12 +78,12 @@ const LearnMore = () => {
                   </h3>
                 </div>
                 <div className="self-stretch flex flex-col items-start gap-2">
-                  <div className="self-stretch text-text-primary text-sm font-brockmann font-normal leading-5 tracking-normal">
-                    Players take turns in order selecting movies<br/>
-                    Search and pick movies that match your theme<br/>
-                    Each player builds their roster of films<br/>
-                    Continue until everyone has selected their movies
-                  </div>
+                  <ol className="self-stretch text-text-primary text-sm font-brockmann font-normal leading-5 tracking-normal space-y-2 list-decimal list-inside">
+                    <li>Players take turns in order selecting movies</li>
+                    <li>Search and pick movies that match your theme</li>
+                    <li>Each player builds their roster of films</li>
+                    <li>Continue until everyone has selected their movies</li>
+                  </ol>
                 </div>
               </div>
             </div>
