@@ -1,16 +1,9 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
-import AppHeader from '@/components/AppHeader';
-import Footer from '@/components/Footer';
 
 const LearnMore = () => {
   return (
-    <div className="w-full h-full bg-ui-primary flex flex-col">
-      <AppHeader />
-      
-      {/* Main Content */}
-      <main className="w-full min-h-screen pb-16 bg-ui-primary flex flex-col items-center gap-16">
+    <div className="w-full min-h-screen pb-16 bg-ui-primary flex flex-col items-center gap-16">
         {/* Hero Section */}
         <section className="self-stretch px-6 py-20 bg-gradient-to-br from-ui-primary via-purple-50 to-ui-primary flex flex-col items-center">
           <div className="w-full max-w-7xl px-6 flex flex-col items-center gap-6">
@@ -128,11 +121,8 @@ const LearnMore = () => {
             </div>
           </div>
         </section>
-      </main>
-
-      <Footer />
-    </div>
-  );
+      </div>
+    );
 };
 
 export default LearnMore;
