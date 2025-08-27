@@ -112,11 +112,11 @@ const LearnMore = () => {
                 </h3>
               </div>
               <div className="self-stretch flex items-start gap-4">
-                <div className="flex-1 text-text-primary text-sm font-brockmann font-normal leading-5 tracking-normal">
-                  Balance popular hits with hidden gems<br/>
-                  Pay attention to what others are selecting<br/>
-                  Have fun and discover new movies!
-                </div>
+                <ul className="flex-1 text-text-primary text-sm font-brockmann font-normal leading-5 tracking-normal space-y-2 list-disc list-inside">
+                  <li>Balance popular hits with hidden gems</li>
+                  <li>Pay attention to what others are selecting</li>
+                  <li>Have fun and discover new movies!</li>
+                </ul>
               </div>
             </div>
           </div>
