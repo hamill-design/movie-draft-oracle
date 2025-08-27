@@ -59,12 +59,12 @@ const LearnMore = () => {
                   </h3>
                 </div>
                 <div className="self-stretch flex flex-col items-start gap-2">
-                  <div className="self-stretch text-text-primary text-sm font-brockmann font-normal leading-5 tracking-normal">
-                    Choose a draft theme (by Person or by Year)<br/>
-                    Select your specific option (actor/director or year)<br/>
-                    Add all players who will participate<br/>
-                    Choose your scoring categories and draft style
-                  </div>
+                  <ol className="self-stretch text-text-primary text-sm font-brockmann font-normal leading-5 tracking-normal space-y-2 list-decimal list-inside">
+                    <li>Choose a draft theme (by Person or by Year)</li>
+                    <li>Select your specific option (actor/director or year)</li>
+                    <li>Add all players who will participate</li>
+                    <li>Choose your scoring categories and draft style</li>
+                  </ol>
                 </div>
               </div>
             </div>
