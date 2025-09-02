@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { CheckboxIcon } from '@/components/icons';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface DraftSetupForm {
   participants: string[];
@@ -12,7 +13,7 @@ interface CategoriesFormProps {
   categories: string[];
 }
 
-const CustomCheckbox = ({ 
+const CategoryCheckbox = ({ 
   id, 
   category, 
   isChecked, 
@@ -23,88 +24,20 @@ const CustomCheckbox = ({
   isChecked: boolean; 
   onToggle: (checked: boolean) => void; 
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
-
-  const getCheckboxStyle = () => {
-    if (isChecked) {
-      return {
-        width: 16,
-        height: 16,
-        background: isHovered ? 'hsl(var(--purple-400))' : 'var(--Brand-Primary, #680AFF)',
-        borderRadius: 4,
-        outline: '1px var(--Purple-300, #907AFF) solid',
-        outlineOffset: '-1px',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 10,
-        display: 'flex'
-      };
-    } else {
-      return {
-        width: 16,
-        height: 16,
-        borderRadius: 4,
-        outline: '1px var(--Purple-300, #907AFF) solid',
-        outlineOffset: '-1px',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 10,
-        display: 'flex'
-      };
-    }
-  };
-
-  const getCheckmarkElement = () => {
-    if (isChecked || isHovered) {
-      const strokeColor = isChecked ? 'white' : 'var(--Purple-300, #907AFF)';
-      return (
-        <svg width="9.33" height="6.42" viewBox="0 0 12 8" fill="none">
-          <path 
-            d="M10.6667 0.791687L4.25 7.20835L1.33333 4.29169" 
-            stroke={strokeColor} 
-            strokeWidth="1.16667" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          />
-        </svg>
-      );
-    }
-    return null;
-  };
-
-  const checkmarkElement = getCheckmarkElement();
-
   return (
-    <div 
-      className="cursor-pointer"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={() => onToggle(!isChecked)}
-      style={{
-        width: '100%',
-        height: 20,
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-        gap: 8,
-        display: 'flex',
-        paddingTop: '0px',
-        paddingBottom: '0px'
-      }}
-    >
-      <div style={getCheckboxStyle()}>
-        {checkmarkElement}
-      </div>
-      <span style={{
-        color: 'hsl(var(--text-primary))',
-        fontSize: 14,
-        fontFamily: 'Brockmann',
-        fontWeight: '500',
-        lineHeight: '16px',
-        margin: 0,
-        padding: 0
-      }}>
+    <div className="flex items-center space-x-2">
+      <Checkbox
+        id={id}
+        checked={isChecked}
+        onCheckedChange={onToggle}
+        className="h-4 w-4"
+      />
+      <label
+        htmlFor={id}
+        className="text-sm font-medium leading-4 text-foreground font-brockmann cursor-pointer"
+      >
         {category}
-      </span>
+      </label>
     </div>
   );
 };
@@ -147,7 +80,7 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
         }}
       >
         {categories.map((category) => (
-          <CustomCheckbox
+          <CategoryCheckbox
             key={category}
             id={category}
             category={category}
