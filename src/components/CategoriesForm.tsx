@@ -141,8 +141,8 @@ const CategoriesForm = ({ form, categories }: CategoriesFormProps) => {
         style={{
           width: '100%',
           display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '16px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '20px',
           alignItems: 'start'
         }}
       >
