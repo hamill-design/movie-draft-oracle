@@ -75,12 +75,12 @@ export const calculateDetailedScore = (data: MovieScoringData): ScoreBreakdown =
     ? componentScores.reduce((sum, score) => sum + score, 0) / componentScores.length
     : 0;
 
-  // Oscar Bonus - Added after averaging (+10 for nomination, +20 for winner)
+  // Oscar Bonus - Added after averaging (+5 for nomination, +10 for winner)
   let oscarBonus = 0;
   if (data.oscarStatus === 'winner') {
-    oscarBonus = 20;
-  } else if (data.oscarStatus === 'nominee') {
     oscarBonus = 10;
+  } else if (data.oscarStatus === 'nominee') {
+    oscarBonus = 5;
   }
   availableComponents.push('Oscar Status');
 
