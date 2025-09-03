@@ -295,6 +295,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_new_movie_score: {
+        Args: {
+          p_budget: number
+          p_imdb_rating: number
+          p_metacritic_score: number
+          p_oscar_status: string
+          p_revenue: number
+          p_rt_critics_score: number
+        }
+        Returns: number
+      }
       can_access_draft: {
         Args: { p_draft_id: string; p_participant_id: string }
         Returns: boolean
