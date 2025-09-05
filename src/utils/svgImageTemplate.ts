@@ -4,7 +4,7 @@ interface ShareImageData {
   title: string;
   teamScores: Array<{
     playerName: string;
-    totalScore: number;
+    averageScore: number;
     completedPicks: number;
     totalPicks: number;
   }>;
@@ -166,7 +166,7 @@ const generateMovieSection = async (movie: any, title: string, yOffset: number) 
 };
 
 export const generateShareImageSVG = async (data: ShareImageData): Promise<string> => {
-  const sortedTeamScores = data.teamScores.sort((a, b) => b.totalScore - a.totalScore);
+  const sortedTeamScores = data.teamScores.sort((a, b) => b.averageScore - a.averageScore);
   
   // Always structure title as "THE [NAME] DRAFT" for consistency
   let titleParts = data.title.split(' ');
@@ -463,7 +463,7 @@ export const generateShareImageSVG = async (data: ShareImageData): Promise<strin
             <div class="score-card">
               <div class="rank-circle rank-${index + 1}"><span>${index + 1}</span></div>
               <div class="player-name">${team.playerName}</div>
-              <div class="player-score">${team.totalScore.toFixed(1)}</div>
+              <div class="player-score">${team.averageScore.toFixed(1)}</div>
             </div>
           `).join('')}
         </div>

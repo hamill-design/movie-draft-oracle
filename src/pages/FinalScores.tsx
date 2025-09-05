@@ -17,7 +17,7 @@ import { getScoreColor, getScoreGrade } from '@/utils/scoreCalculator';
 interface TeamScore {
   playerName: string;
   picks: DraftPick[];
-  totalScore: number;
+  averageScore: number;
   completedPicks: number;
   totalPicks: number;
 }
@@ -278,21 +278,21 @@ const FinalScores = () => {
         .filter(pick => (pick as any).calculated_score !== null && (pick as any).calculated_score !== undefined)
         .map(pick => (pick as any).calculated_score!);
       
-      const totalScore = validScores.length > 0 
-        ? validScores.reduce((sum: number, score: number) => sum + score, 0)
+      const averageScore = validScores.length > 0 
+        ? validScores.reduce((sum: number, score: number) => sum + score, 0) / validScores.length
         : 0;
 
       teams.push({
         playerName,
         picks: playerPicks,
-        totalScore,
+        averageScore,
         completedPicks: validScores.length,
         totalPicks: playerPicks.length
       });
     });
 
-    // Sort by total score (descending)
-    return teams.sort((a, b) => b.totalScore - a.totalScore);
+    // Sort by average score (descending)
+    return teams.sort((a, b) => b.averageScore - a.averageScore);
   };
 
   const getRankingBadgeStyle = (index: number) => {
@@ -694,7 +694,7 @@ const FinalScores = () => {
                           letterSpacing: '1.28px',
                           wordWrap: 'break-word'
                         }}>
-                          {team.totalScore.toFixed(1)}
+                          {team.averageScore.toFixed(1)}
                         </div>
                       </div>
                     </div>

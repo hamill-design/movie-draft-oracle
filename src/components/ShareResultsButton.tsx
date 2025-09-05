@@ -10,7 +10,7 @@ import { useDraftOperations } from '@/hooks/useDraftOperations';
 
 interface TeamScore {
   playerName: string;
-  totalScore: number;
+  averageScore: number;
   completedPicks: number;
   totalPicks: number;
 }

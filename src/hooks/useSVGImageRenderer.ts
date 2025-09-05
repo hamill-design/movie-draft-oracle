@@ -5,7 +5,7 @@ interface ShareImageData {
   title: string;
   teamScores: Array<{
     playerName: string;
-    totalScore: number;
+    averageScore: number;
     completedPicks: number;
     totalPicks: number;
   }>;
