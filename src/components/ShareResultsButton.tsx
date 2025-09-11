@@ -202,7 +202,7 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
             onClick={handleShareResults}
             disabled={generating}
             variant="outline"
-            className="w-full justify-start"
+            className="w-full justify-start font-brockmann"
           >
             <Download size={16} className="mr-2" />
             Download Image
@@ -211,7 +211,7 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
           <Button
             onClick={handleCopyPublicLink}
             variant="outline"
-            className="w-full justify-start"
+            className="w-full justify-start font-brockmann"
           >
             <Link size={16} className="mr-2" />
             Copy Public Link
