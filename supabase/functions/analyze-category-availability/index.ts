@@ -125,6 +125,11 @@ async function analyzeCategoryMovies(
   const movies = movieData?.movies || [];
   console.log(`Fetched ${movies.length} movies for analysis`);
 
+  // Log a few sample movies to understand the data structure
+  if (movies.length > 0) {
+    console.log('Sample movie data structure:', JSON.stringify(movies[0], null, 2));
+  }
+
   // Filter movies that match the category
   const eligibleMovies = movies.filter((movie: any) => 
     isMovieEligibleForCategory(movie, category)
@@ -142,6 +147,9 @@ async function analyzeCategoryMovies(
   const available = movieCount >= requiredCount;
 
   console.log(`Category ${category}: ${movieCount} movies found, ${requiredCount} required`);
+  if (movieCount > 0) {
+    console.log(`Sample eligible movies: ${sampleMovies.join(', ')}`);
+  }
 
   return {
     categoryId: category,
