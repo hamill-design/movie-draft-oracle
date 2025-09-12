@@ -16,6 +16,7 @@ import { ClockIcon } from '@/components/icons/ClockIcon';
 import MovieSearch from '@/components/MovieSearch';
 import { DraftActorPortrait } from '@/components/DraftActorPortrait';
 import CategorySelection from '@/components/CategorySelection';
+import EnhancedCategorySelection from '@/components/EnhancedCategorySelection';
 import PickConfirmation from '@/components/PickConfirmation';
 import DraftBoard from '@/components/DraftBoard';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -543,7 +544,7 @@ export const MultiplayerDraftInterface = ({
                 <>
                   <MovieSearch theme={draft.theme} option={getCleanActorName(draft.option)} searchQuery={searchQuery} onSearchChange={setSearchQuery} movies={movies} loading={moviesLoading} onMovieSelect={handleMovieSelect} selectedMovie={selectedMovie} themeParameter={themeConstraint} />
 
-                  <CategorySelection selectedMovie={selectedMovie} categories={draft.categories} selectedCategory={selectedCategory} onCategorySelect={handleCategorySelect} picks={picks.map(pick => ({
+                  <EnhancedCategorySelection selectedMovie={selectedMovie} categories={draft.categories} selectedCategory={selectedCategory} onCategorySelect={handleCategorySelect} picks={picks.map(pick => ({
                     playerId: participants.findIndex(p => p.participant_name === pick.player_name) + 1,
                     playerName: pick.player_name,
                     movie: {

@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.fix-movie-years]
 verify_jwt = false
+
+[functions.analyze-category-availability]
+verify_jwt = false

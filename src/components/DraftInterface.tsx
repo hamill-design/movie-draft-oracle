@@ -9,7 +9,8 @@ import { useAuth } from '@/contexts/AuthContext';
 
 import DraftBoard from './DraftBoard';
 import MovieSearch from './MovieSearch';
-import CategorySelection from './CategorySelection';
+import CategorySelection from '@/components/CategorySelection';
+import EnhancedCategorySelection from '@/components/EnhancedCategorySelection';
 import PickConfirmation from './PickConfirmation';
 import DraftComplete from './DraftComplete';
 import { MultiplayerDraftInterface } from './MultiplayerDraftInterface';
@@ -206,7 +207,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
             themeParameter={themeConstraint}
           />
 
-          <CategorySelection
+          <EnhancedCategorySelection
             selectedMovie={selectedMovie}
             categories={draftState.categories}
             selectedCategory={selectedCategory}

@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ActorPortrait } from '@/components/ActorPortrait';
 import { useDraftCategories } from '@/hooks/useDraftCategories';
 import CategoriesForm from '@/components/CategoriesForm';
+import EnhancedCategoriesForm from '@/components/EnhancedCategoriesForm';
 import { JoinDraftForm } from '@/components/JoinDraftForm';
 import { HeaderIcon3 } from '@/components/HeaderIcon3';
 import { Form } from '@/components/ui/form';
@@ -448,7 +449,12 @@ const Home = () => {
           {isStepVisible('categories') && (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleStartDraft)} className="space-y-8">
-                <CategoriesForm form={form} categories={categories} />
+                <EnhancedCategoriesForm 
+                  form={form} 
+                  categories={categories}
+                  theme={theme}
+                  playerCount={Math.max(participants.length, draftMode === 'multiplayer' ? 2 : 1)}
+                />
 
                 {/* Start Draft Button */}
                 <div className="text-center">
