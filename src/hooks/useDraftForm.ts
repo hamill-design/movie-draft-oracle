@@ -37,7 +37,8 @@ export const useDraftForm = () => {
     if (!state.theme) return 'theme';
     if (!state.selectedOption) return 'option';
     if (!state.draftMode) return 'mode';
-    // Participants are now optional - go to categories after mode selection
+    // For multiplayer, require at least one participant before categories
+    if (state.draftMode === 'multiplayer' && state.participants.length === 0) return 'participants';
     return 'categories';
   }, [state]);
 
@@ -51,7 +52,7 @@ export const useDraftForm = () => {
       case 'mode':
         return Boolean(state.draftMode);
       case 'participants':
-        return true; // Participants are now optional
+        return state.draftMode === 'single' || state.participants.length > 0;
       case 'categories':
         return true; // Categories are handled by the form component
       case 'ready':

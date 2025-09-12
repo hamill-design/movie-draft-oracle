@@ -113,11 +113,12 @@ export class CategoryValidationService {
   public validateCategoriesForDraft(
     categories: string[],
     theme: string,
-    playerCount: number
+    playerCount: number,
+    selectedOption?: string
   ): Promise<CategoryAnalysisResponse> {
     return this.analyzeCategoryAvailability({
       theme,
-      option: '', // Will be filled by edge function
+      option: selectedOption || '',
       categories,
       playerCount
     });

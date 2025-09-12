@@ -454,6 +454,9 @@ const Home = () => {
                   categories={categories}
                   theme={theme}
                   playerCount={Math.max(participants.length, draftMode === 'multiplayer' ? 2 : 1)}
+                  selectedOption={selectedOption}
+                  draftMode={draftMode}
+                  participants={participants}
                 />
 
                 {/* Start Draft Button */}

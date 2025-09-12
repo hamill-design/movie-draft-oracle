@@ -15,6 +15,9 @@ interface EnhancedCategoriesFormProps {
   categories: string[];
   theme: string;
   playerCount: number;
+  selectedOption?: string;
+  draftMode?: 'single' | 'multiplayer';
+  participants?: string[];
 }
 
 const CategoryStatusIcon = ({ status }: { status: 'sufficient' | 'limited' | 'insufficient' }) => {
@@ -198,25 +201,44 @@ const CustomCheckbox = ({
   );
 };
 
-const EnhancedCategoriesForm = ({ form, categories, theme, playerCount }: EnhancedCategoriesFormProps) => {
+const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selectedOption, draftMode, participants = [] }: EnhancedCategoriesFormProps) => {
   const [analysisResult, setAnalysisResult] = useState<CategoryAnalysisResponse | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  // Validation guards to ensure proper setup before analysis
+  const canAnalyze = () => {
+    if (!theme || !selectedOption || categories.length === 0) return false;
+    
+    // For multiplayer, ensure participants are configured
+    if (draftMode === 'multiplayer' && participants.length === 0) return false;
+    
+    // Ensure proper player count
+    if (playerCount <= 0) return false;
+    
+    return true;
+  };
+
   useEffect(() => {
-    if (categories.length > 0 && theme && playerCount > 0) {
+    if (canAnalyze()) {
       analyzeCategories();
+    } else {
+      // Clear previous results if conditions aren't met
+      setAnalysisResult(null);
+      setIsAnalyzing(false);
     }
-  }, [categories, theme, playerCount]);
+  }, [categories, theme, playerCount, selectedOption, draftMode, participants.length]);
 
   const analyzeCategories = async () => {
+    if (!canAnalyze()) return;
+    
     setIsAnalyzing(true);
     try {
-      const result = await categoryValidationService.analyzeCategoryAvailability({
-        theme,
-        option: '', // Will be filled by the service
+      const result = await categoryValidationService.validateCategoriesForDraft(
         categories,
-        playerCount
-      });
+        theme,
+        playerCount,
+        selectedOption
+      );
       setAnalysisResult(result);
     } catch (error) {
       console.error('Failed to analyze categories:', error);
@@ -274,8 +296,19 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount }: Enhanc
         </span>
       </div>
 
+      {/* Validation Status Message */}
+      {!canAnalyze() && (
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <p className="text-sm text-blue-800 font-brockmann">
+            {!selectedOption && "Please select a person or year first."}
+            {selectedOption && draftMode === 'multiplayer' && participants.length === 0 && "Add participants to analyze category availability."}
+            {selectedOption && categories.length === 0 && "Categories will be analyzed once available."}
+          </p>
+        </div>
+      )}
+
       {/* Analysis Status */}
-      {summaryStats && (
+      {summaryStats && canAnalyze() && (
         <div className="flex items-center gap-4 p-3 bg-white rounded-md">
           <div className="flex items-center gap-2">
             <CategoryStatusIcon status="sufficient" />
