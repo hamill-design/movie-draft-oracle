@@ -56,9 +56,8 @@ export class CategoryValidationService {
       
       // Return fallback data with estimated counts
       const fallbackResults = request.categories.map(category => {
-        const config = getCategoryConfig(category);
         const estimatedCount = this.estimateMovieCount(category, request.theme);
-        const requiredCount = config?.minMoviesRequired(request.playerCount) || request.playerCount * 1.5;
+        const requiredCount = request.playerCount; // Minimum: 1 movie per player
         
         return {
           categoryId: category,
@@ -66,7 +65,7 @@ export class CategoryValidationService {
           movieCount: estimatedCount,
           sampleMovies: [],
           reason: estimatedCount < requiredCount ? 'Insufficient movies available' : undefined,
-          status: this.getStatusFromCount(estimatedCount, requiredCount)
+          status: this.getStatusFromCount(estimatedCount, request.playerCount)
         } as CategoryAvailabilityResult;
       });
 
@@ -100,10 +99,10 @@ export class CategoryValidationService {
     return estimates[category] || 50;
   }
 
-  private getStatusFromCount(count: number, required: number): 'sufficient' | 'limited' | 'insufficient' {
-    if (count >= required * 1.5) return 'sufficient';
-    if (count >= required) return 'limited';
-    return 'insufficient';
+  private getStatusFromCount(count: number, playerCount: number): 'sufficient' | 'limited' | 'insufficient' {
+    if (count >= playerCount * 2) return 'sufficient'; // Green: Plenty of movies
+    if (count >= playerCount) return 'limited';        // Yellow: Limited but sufficient  
+    return 'insufficient';                             // Red: Insufficient
   }
 
   public clearCache(): void {

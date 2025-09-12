@@ -138,7 +138,7 @@ async function analyzeCategoryMovies(
     .slice(0, 5)
     .map((movie: any) => movie.title);
 
-  const status = getStatusFromCount(movieCount, requiredCount);
+  const status = getStatusFromCount(movieCount, playerCount);
   const available = movieCount >= requiredCount;
 
   console.log(`Category ${category}: ${movieCount} movies found, ${requiredCount} required`);
@@ -206,33 +206,12 @@ function isMovieEligibleForCategory(movie: any, category: string): boolean {
 }
 
 function calculateRequiredMovies(category: string, playerCount: number): number {
-  // Buffer calculation: need more movies than players for good choices
-  const baseMultiplier = 1.5;
-  
-  // Category-specific adjustments
-  const categoryMultipliers: Record<string, number> = {
-    'Action/Adventure': 1.5,
-    'Comedy': 1.6,
-    'Drama/Romance': 1.7,
-    'Sci-Fi/Fantasy': 1.4,
-    'Animated': 1.3,
-    'Horror/Thriller': 1.3,
-    "70's": 1.2,
-    "80's": 1.3,
-    "90's": 1.4,
-    "2000's": 1.5,
-    "2010's": 1.6,
-    "2020's": 1.2,
-    'Academy Award Nominee or Winner': 1.3,
-    'Blockbuster (minimum of $50 Mil)': 1.4
-  };
-
-  const multiplier = categoryMultipliers[category] || baseMultiplier;
-  return Math.max(Math.ceil(playerCount * multiplier), 6);
+  // Minimum requirement: 1 movie per player
+  return playerCount;
 }
 
-function getStatusFromCount(count: number, required: number): 'sufficient' | 'limited' | 'insufficient' {
-  if (count >= required * 1.5) return 'sufficient';
-  if (count >= required) return 'limited';
-  return 'insufficient';
+function getStatusFromCount(count: number, playerCount: number): 'sufficient' | 'limited' | 'insufficient' {
+  if (count >= playerCount * 2) return 'sufficient'; // Green: Plenty of movies
+  if (count >= playerCount) return 'limited';        // Yellow: Limited but sufficient  
+  return 'insufficient';                             // Red: Insufficient
 }
