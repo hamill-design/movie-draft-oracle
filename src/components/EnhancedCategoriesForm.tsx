@@ -307,23 +307,6 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
         </div>
       )}
 
-      {/* Analysis Status */}
-      {summaryStats && canAnalyze() && (
-        <div className="flex items-center gap-4 p-3 bg-white rounded-md">
-          <div className="flex items-center gap-2">
-            <CategoryStatusIcon status="sufficient" />
-            <span className="text-sm text-text-secondary">{summaryStats.sufficient} Excellent</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <CategoryStatusIcon status="limited" />
-            <span className="text-sm text-text-secondary">{summaryStats.limited} Limited</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <CategoryStatusIcon status="insufficient" />
-            <span className="text-sm text-text-secondary">{summaryStats.insufficient} Insufficient</span>
-          </div>
-        </div>
-      )}
       
       {/* Categories List */}
       <div 
