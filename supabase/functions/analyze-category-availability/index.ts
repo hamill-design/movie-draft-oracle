@@ -154,27 +154,49 @@ async function analyzeCategoryMovies(
 }
 
 function isMovieEligibleForCategory(movie: any, category: string): boolean {
-  const genre = movie.genre?.toLowerCase() || '';
-  const year = movie.year || movie.release_date ? new Date(movie.release_date).getFullYear() : 0;
+  // Extract year from movie data
+  let year = 0;
+  if (movie.year) {
+    year = movie.year;
+  } else if (movie.release_date) {
+    year = new Date(movie.release_date).getFullYear();
+  }
+
+  // Handle genre data - it could be a string or array
+  let genreString = '';
+  if (typeof movie.genre === 'string') {
+    genreString = movie.genre.toLowerCase();
+  } else if (Array.isArray(movie.genres)) {
+    // Handle TMDB genre array format
+    genreString = movie.genres.map((g: any) => g.name || g).join(' ').toLowerCase();
+  } else if (Array.isArray(movie.genre)) {
+    genreString = movie.genre.join(' ').toLowerCase();
+  }
+
+  // Log movie details for debugging (only first few movies to avoid spam)
+  if (Math.random() < 0.05) { // Log ~5% of movies
+    console.log(`Movie: ${movie.title}, Year: ${year}, Genre: "${genreString}", HasOscar: ${movie.hasOscar}, Revenue: ${movie.revenue}, Budget: ${movie.budget}`);
+  }
 
   switch (category) {
     case 'Action/Adventure':
-      return genre.includes('action') || genre.includes('adventure');
+      return genreString.includes('action') || genreString.includes('adventure');
     
     case 'Animated':
-      return genre.includes('animation') || genre.includes('animated');
+      return genreString.includes('animation') || genreString.includes('animated');
     
     case 'Comedy':
-      return genre.includes('comedy');
+      return genreString.includes('comedy');
     
     case 'Drama/Romance':
-      return genre.includes('drama') || genre.includes('romance');
+      return genreString.includes('drama') || genreString.includes('romance');
     
     case 'Sci-Fi/Fantasy':
-      return genre.includes('sci-fi') || genre.includes('science fiction') || genre.includes('fantasy');
+      return genreString.includes('sci-fi') || genreString.includes('science fiction') || 
+             genreString.includes('fantasy') || genreString.includes('science');
     
     case 'Horror/Thriller':
-      return genre.includes('horror') || genre.includes('thriller');
+      return genreString.includes('horror') || genreString.includes('thriller');
     
     case "70's":
       return year >= 1970 && year <= 1979;
@@ -195,12 +217,13 @@ function isMovieEligibleForCategory(movie: any, category: string): boolean {
       return year >= 2020 && year <= 2029;
     
     case 'Academy Award Nominee or Winner':
-      return movie.hasOscar || movie.oscar_status === 'winner' || movie.oscar_status === 'nominee';
+      return movie.hasOscar === true || movie.oscar_status === 'winner' || movie.oscar_status === 'nominee';
     
     case 'Blockbuster (minimum of $50 Mil)':
-      return movie.isBlockbuster || (movie.revenue && movie.revenue >= 50000000);
+      return movie.isBlockbuster === true || (movie.revenue && movie.revenue >= 50000000);
     
     default:
+      console.log(`Unknown category: ${category}`);
       return false;
   }
 }
