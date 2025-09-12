@@ -29,10 +29,10 @@ const CategoryStatusIcon = ({ status }: { status: 'sufficient' | 'limited' | 'in
 
   const getStatusSymbol = () => {
     switch (status) {
-      case 'sufficient': return '✓';
-      case 'limited': return '⚠';
-      case 'insufficient': return '✗';
-      default: return '?';
+      case 'sufficient': return '';
+      case 'limited': return '';
+      case 'insufficient': return '';
+      default: return '';
     }
   };
 
@@ -178,7 +178,7 @@ const CustomCheckbox = ({
           margin: 0,
           padding: 0
         }}>
-          {config?.icon} {category}
+          {category}
         </span>
 
         {isAnalyzing && (
@@ -319,7 +319,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount }: Enhanc
       {analysisResult && analysisResult.results.some(r => r.status === 'insufficient') && (
         <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
           <p className="text-sm text-yellow-800 font-brockmann">
-            ⚠️ Some categories have limited movie options. Consider selecting different categories for better draft variety.
+            Some categories have limited movie options. Consider selecting different categories for better draft variety.
           </p>
         </div>
       )}
