@@ -122,7 +122,7 @@ async function analyzeCategoryMovies(
     throw error;
   }
 
-  const movies = movieData?.movies || [];
+  const movies = movieData?.results || [];
   console.log(`Fetched ${movies.length} movies for analysis`);
 
   // Log a few sample movies to understand the data structure
