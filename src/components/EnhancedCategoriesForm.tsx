@@ -331,14 +331,6 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
         ))}
       </div>
 
-      {/* Warning for insufficient categories */}
-      {analysisResult && analysisResult.results.some(r => r.status === 'insufficient') && (
-        <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-          <p className="text-sm text-yellow-800 font-brockmann">
-            Some categories have limited movie options. Consider selecting different categories for better draft variety.
-          </p>
-        </div>
-      )}
     </div>
   );
 };
