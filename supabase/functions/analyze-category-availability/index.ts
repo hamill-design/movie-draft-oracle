@@ -90,14 +90,31 @@ async function analyzeCategoryMovies(
   playerCount: number
 ): Promise<CategoryAvailabilityResult> {
   
+  // Map theme and option to proper fetch-movies parameters
+  let fetchParams: any = {
+    fetchAll: true,
+    limit: 1000
+  };
+
+  if (theme === 'people' && option) {
+    fetchParams.category = 'person';
+    fetchParams.searchQuery = option;
+    console.log(`Analyzing for person: ${option}`);
+  } else if (theme === 'year' && option) {
+    fetchParams.category = 'year';
+    fetchParams.searchQuery = option;
+    console.log(`Analyzing for year: ${option}`);
+  } else {
+    // For 'all' theme or when no specific option, get all movies
+    fetchParams.category = 'all';
+    console.log('Analyzing for all movies');
+  }
+
+  console.log('Fetch params:', fetchParams);
+
   // Call the existing fetch-movies function to get comprehensive movie data
   const { data: movieData, error } = await supabase.functions.invoke('fetch-movies', {
-    body: {
-      query: option,
-      theme: theme,
-      fetchAll: true, // Get all movies for analysis
-      limit: 1000 // High limit for analysis
-    }
+    body: fetchParams
   });
 
   if (error) {
