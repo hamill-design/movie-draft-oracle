@@ -66,7 +66,7 @@ const CategoryButton = ({
       title={tooltip}
     >
       <div className="flex items-center justify-center gap-2">
-        <span className={isDisabled ? "text-greyscale-blue-800" : ""}>
+        <span className={isDisabled ? "text-greyscale-blue-800 text-sm font-brockmann font-medium" : "text-sm font-brockmann font-medium"}>
           {getCategoryDisplayName(category)}
         </span>
         {isDisabled && <NAIcon className="w-4 h-4 text-text-primary" />}
