@@ -84,14 +84,14 @@ const EnhancedCategorySelection = ({
   picks,
   currentPlayerId
 }: EnhancedCategorySelectionProps) => {
+  if (!selectedMovie) return null;
+
   const [houseOverrideEnabled, setHouseOverrideEnabled] = useState(false);
 
   // Reset house override when movie changes
   useEffect(() => {
     setHouseOverrideEnabled(false);
   }, [selectedMovie?.id]);
-
-  if (!selectedMovie) return null;
 
   // Get eligible categories for the selected movie
   const eligibleCategories = useMemo(() => 
