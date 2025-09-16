@@ -186,14 +186,9 @@ const CustomCheckbox = ({
     return tooltip;
   };
 
-  const topPosition = 20 + (index * 29); // 20px starting position + 29px spacing
-
   return (
     <div 
       style={{
-        left: '22px',
-        top: `${topPosition}px`,
-        position: 'absolute',
         justifyContent: 'flex-start',
         alignItems: 'center',
         gap: '8px',
@@ -335,10 +330,11 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
 
   const summaryStats = getSummaryStats();
 
-  const containerHeight = Math.max(140, 40 + (categories.length * 29));
-
   return (
-    <div className="w-full flex flex-col gap-6">
+    <div 
+      className="w-full bg-greyscale-blue-100 rounded-lg flex flex-col"
+      style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)', padding: '24px', gap: '24px'}}
+    >
       {/* Header */}
       <div className="flex items-center gap-2">
         <div className="flex justify-center items-center" style={{ width: '24px', height: '24px', padding: '2px' }}>
@@ -360,15 +356,14 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
         </div>
       )}
 
-      {/* Categories Container */}
+      {/* Categories Grid */}
       <div 
         style={{
           width: '100%',
-          height: `${containerHeight}px`,
-          position: 'relative',
-          overflow: 'hidden',
-          borderRadius: '5px',
-          border: '1px #9747FF solid'
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '20px',
+          alignItems: 'start'
         }}
       >
         {categories.map((category, index) => (
