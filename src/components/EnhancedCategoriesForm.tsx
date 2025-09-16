@@ -62,7 +62,8 @@ const CustomCheckbox = ({
   isChecked, 
   onToggle,
   availability,
-  isAnalyzing
+  isAnalyzing,
+  index
 }: { 
   id: string; 
   category: string; 
@@ -70,6 +71,7 @@ const CustomCheckbox = ({
   onToggle: (checked: boolean) => void; 
   availability?: CategoryAvailabilityResult;
   isAnalyzing: boolean;
+  index: number;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const config = getCategoryConfig(category);
@@ -78,14 +80,14 @@ const CustomCheckbox = ({
 
   const getCheckboxStyle = () => {
     let baseStyle = {
-      width: 16,
-      height: 16,
-      borderRadius: 4,
+      width: '16px',
+      height: '16px',
+      borderRadius: '4px',
       outline: '1px var(--Purple-300, #907AFF) solid',
       outlineOffset: '-1px',
       justifyContent: 'center',
       alignItems: 'center',
-      gap: 10,
+      gap: '10px',
       display: 'flex'
     };
     
@@ -101,7 +103,7 @@ const CustomCheckbox = ({
     if (isChecked) {
       return {
         ...baseStyle,
-        background: isHovered ? 'hsl(var(--purple-400))' : 'var(--Brand-Primary, #680AFF)',
+        background: 'var(--Brand-Primary, #680AFF)',
       };
     } else {
       return baseStyle;
@@ -111,21 +113,58 @@ const CustomCheckbox = ({
   const getCheckmarkElement = () => {
     if (isDisabled) return null;
     
-    if (isChecked || isHovered) {
-      const strokeColor = isChecked ? 'white' : 'var(--Purple-300, #907AFF)';
+    if (isChecked) {
       return (
-        <svg width="9.33" height="6.42" viewBox="0 0 12 8" fill="none">
-          <path 
-            d="M10.6667 0.791687L4.25 7.20835L1.33333 4.29169" 
-            stroke={strokeColor} 
-            strokeWidth="1.16667" 
-            strokeLinecap="round" 
-            strokeLinejoin="round"
-          />
-        </svg>
+        <div style={{
+          width: '9.33px',
+          height: '6.42px',
+          outline: '1.17px var(--UI-Primary, white) solid',
+          outlineOffset: '-0.58px'
+        }} />
       );
     }
+    
+    if (isHovered && !isChecked) {
+      return (
+        <div style={{
+          width: '9.33px',
+          height: '6.42px',
+          outline: '1.17px var(--Purple-300, #907AFF) solid',
+          outlineOffset: '-0.58px'
+        }} />
+      );
+    }
+    
     return null;
+  };
+
+  const getCountBadgeStyle = () => {
+    if (!availability) return { display: 'none' };
+    
+    let backgroundColor = 'var(--Utility-Colors-Positive-Green-200, #ADF2CC)';
+    let borderColor = 'var(--Utility-Colors-Positive-Green-500, #13CE66)';
+    
+    if (availability.status === 'limited') {
+      backgroundColor = 'var(--Utility-Colors-Warning-Yellow-200, #FFF2CC)';
+      borderColor = 'var(--Utility-Colors-Warning-Yellow-500, #FFB800)';
+    } else if (availability.status === 'insufficient') {
+      backgroundColor = 'var(--Utility-Colors-Negative-Red-200, #FFCCCC)';
+      borderColor = 'var(--Utility-Colors-Negative-Red-500, #FF4444)';
+    }
+    
+    return {
+      paddingLeft: '4px',
+      paddingRight: '4px',
+      paddingTop: '2px',
+      paddingBottom: '2px',
+      background: backgroundColor,
+      borderRadius: '4px',
+      outline: `1px ${borderColor} solid`,
+      outlineOffset: '-1px',
+      justifyContent: 'flex-start',
+      alignItems: 'center',
+      display: 'flex'
+    };
   };
 
   const getTooltipText = () => {
@@ -147,56 +186,71 @@ const CustomCheckbox = ({
     return tooltip;
   };
 
+  const topPosition = 20 + (index * 29); // 20px starting position + 29px spacing
+
   return (
     <div 
-      className="cursor-pointer"
+      style={{
+        left: '22px',
+        top: `${topPosition}px`,
+        position: 'absolute',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        gap: '8px',
+        display: 'inline-flex',
+        cursor: isDisabled ? 'not-allowed' : 'pointer',
+        opacity: isDisabled ? 0.6 : 1
+      }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => !isDisabled && onToggle(!isChecked)}
       title={getTooltipText()}
-      style={{
-        width: '100%',
-        height: 20,
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-        gap: 8,
-        display: 'flex',
-        paddingTop: '0px',
-        paddingBottom: '0px',
-        opacity: isDisabled ? 0.6 : 1,
-        cursor: isDisabled ? 'not-allowed' : 'pointer'
-      }}
     >
       <div style={getCheckboxStyle()}>
         {getCheckmarkElement()}
       </div>
       
-      <div className="flex items-center gap-2 flex-1">
-        <span style={{
-          color: 'hsl(var(--text-primary))',
-          fontSize: 14,
+      <div style={{
+        flexDirection: 'column',
+        justifyContent: 'flex-start',
+        alignItems: 'flex-start',
+        display: 'inline-flex'
+      }}>
+        <div style={{
+          justifyContent: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          color: 'var(--Text-Primary, #2B2D2D)',
+          fontSize: '14px',
           fontFamily: 'Brockmann',
           fontWeight: '500',
-          lineHeight: '16px',
-          margin: 0,
-          padding: 0
+          lineHeight: '20px',
+          wordWrap: 'break-word'
         }}>
           {category}
-        </span>
-
-        {isAnalyzing && (
-          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-brand-primary"></div>
-        )}
-
-        {availability && !isAnalyzing && (
-          <div className="flex items-center gap-1">
-            <CategoryStatusIcon status={availability.status} />
-            <span className="text-xs text-text-secondary">
-              {availability.movieCount}
-            </span>
-          </div>
-        )}
+        </div>
       </div>
+      
+      {isAnalyzing ? (
+        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-brand-primary ml-2"></div>
+      ) : (
+        <div style={getCountBadgeStyle()}>
+          <div style={{
+            textAlign: 'center',
+            justifyContent: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            color: 'var(--Text-Primary, #2B2D2D)',
+            fontSize: '12px',
+            fontFamily: 'Brockmann',
+            fontWeight: '400',
+            lineHeight: '16px',
+            wordWrap: 'break-word'
+          }}>
+            {availability?.movieCount || '00'}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -281,11 +335,10 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
 
   const summaryStats = getSummaryStats();
 
+  const containerHeight = Math.max(140, 40 + (categories.length * 29));
+
   return (
-    <div 
-      className="w-full bg-greyscale-blue-100 rounded-lg flex flex-col"
-      style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)', padding: '24px', gap: '24px'}}
-    >
+    <div className="w-full flex flex-col gap-6">
       {/* Header */}
       <div className="flex items-center gap-2">
         <div className="flex justify-center items-center" style={{ width: '24px', height: '24px', padding: '2px' }}>
@@ -307,18 +360,18 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
         </div>
       )}
 
-      
-      {/* Categories List */}
+      {/* Categories Container */}
       <div 
         style={{
           width: '100%',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '20px',
-          alignItems: 'start'
+          height: `${containerHeight}px`,
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: '5px',
+          border: '1px #9747FF solid'
         }}
       >
-        {categories.map((category) => (
+        {categories.map((category, index) => (
           <CustomCheckbox
             key={category}
             id={category}
@@ -327,10 +380,10 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
             onToggle={(checked) => handleCategoryToggle(category, checked)}
             availability={getAvailabilityForCategory(category)}
             isAnalyzing={isAnalyzing}
+            index={index}
           />
         ))}
       </div>
-
     </div>
   );
 };
