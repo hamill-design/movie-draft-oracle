@@ -113,25 +113,18 @@ const CustomCheckbox = ({
   const getCheckmarkElement = () => {
     if (isDisabled) return null;
     
-    if (isChecked) {
+    if (isChecked || isHovered) {
+      const strokeColor = isChecked ? 'white' : 'var(--Purple-300, #907AFF)';
       return (
-        <div style={{
-          width: '9.33px',
-          height: '6.42px',
-          outline: '1.17px var(--UI-Primary, white) solid',
-          outlineOffset: '-0.58px'
-        }} />
-      );
-    }
-    
-    if (isHovered && !isChecked) {
-      return (
-        <div style={{
-          width: '9.33px',
-          height: '6.42px',
-          outline: '1.17px var(--Purple-300, #907AFF) solid',
-          outlineOffset: '-0.58px'
-        }} />
+        <svg width="9.33" height="6.42" viewBox="0 0 12 8" fill="none">
+          <path 
+            d="M10.6667 0.791687L4.25 7.20835L1.33333 4.29169" 
+            stroke={strokeColor} 
+            strokeWidth="1.16667" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+          />
+        </svg>
       );
     }
     
