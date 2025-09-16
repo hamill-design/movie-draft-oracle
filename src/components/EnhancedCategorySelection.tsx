@@ -99,12 +99,12 @@ const EnhancedCategorySelection = ({
     let tooltip = `${category}\n${config?.description || ''}`;
     
     if (category === 'Academy Award Nominee or Winner' && selectedMovie.hasOscar) {
-      tooltip += '\n✓ This movie has Academy Award nominations or wins';
+      tooltip += '\nThis movie has Academy Award nominations or wins';
     }
     if (category === 'Blockbuster (minimum of $50 Mil)' && selectedMovie.isBlockbuster) {
       const budget = selectedMovie.budget ? `$${(selectedMovie.budget / 1000000).toFixed(0)}M budget` : '';
       const revenue = selectedMovie.revenue ? `$${(selectedMovie.revenue / 1000000).toFixed(0)}M revenue` : '';
-      tooltip += `\n✓ This movie is eligible: ${budget}${budget && revenue ? ', ' : ''}${revenue}`;
+      tooltip += `\nThis movie is eligible: ${budget}${budget && revenue ? ', ' : ''}${revenue}`;
     }
     
     return tooltip;
@@ -114,9 +114,9 @@ const EnhancedCategorySelection = ({
     const isAlreadyPicked = picks.some(p => p.playerId === currentPlayerId && p.category === category);
     const isEligible = eligibleCategories.includes(category);
     
-    if (isAlreadyPicked) return { status: 'picked', icon: '✓', color: '#828786' };
-    if (!isEligible) return { status: 'ineligible', icon: '✗', color: '#FF4444' };
-    return { status: 'eligible', icon: '✓', color: '#06C995' };
+    if (isAlreadyPicked) return { status: 'picked', icon: '', color: '#828786' };
+    if (!isEligible) return { status: 'ineligible', icon: '', color: '#FF4444' };
+    return { status: 'eligible', icon: '', color: '#06C995' };
   };
 
   const sortedCategories = useMemo(() => {
@@ -159,19 +159,16 @@ const EnhancedCategorySelection = ({
             <div className="flex flex-wrap gap-2 mt-2">
               {selectedMovie.hasOscar && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-full">
-                  <span className="text-xs">🏆</span>
                   <span className="text-xs text-purple-700 font-brockmann">Oscar Eligible</span>
                 </div>
               )}
               {selectedMovie.isBlockbuster && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-green-100 rounded-full">
-                  <span className="text-xs">💰</span>
                   <span className="text-xs text-green-700 font-brockmann">Blockbuster</span>
                 </div>
               )}
               {selectedMovie.genre && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded-full">
-                  <span className="text-xs">🎭</span>
                   <span className="text-xs text-blue-700 font-brockmann">{selectedMovie.genre}</span>
                 </div>
               )}
@@ -206,7 +203,6 @@ const EnhancedCategorySelection = ({
       {eligibleCategories.length === 0 && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-md">
           <div className="flex items-center gap-2">
-            <span className="text-red-500">⚠️</span>
             <span className="text-red-700 font-brockmann font-medium">
               No eligible categories found
             </span>

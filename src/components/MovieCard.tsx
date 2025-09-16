@@ -55,7 +55,7 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, onDraft, onRemove }) => {
                 Remove
               </Button>
               <Badge className="bg-positive-green-600 text-greyscale-100 px-3 py-1">
-                Drafted ✓
+                Drafted
               </Badge>
             </div>
           ) : (
