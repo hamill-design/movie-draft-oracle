@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { getEligibleCategories } from '@/utils/movieCategoryUtils';
 import { SearchIcon } from '@/components/icons/SearchIcon';
 import { CheckboxIcon } from '@/components/icons/CheckboxIcon';
@@ -83,6 +84,13 @@ const EnhancedCategorySelection = ({
   picks,
   currentPlayerId
 }: EnhancedCategorySelectionProps) => {
+  const [houseOverrideEnabled, setHouseOverrideEnabled] = useState(false);
+
+  // Reset house override when movie changes
+  useEffect(() => {
+    setHouseOverrideEnabled(false);
+  }, [selectedMovie?.id]);
+
   if (!selectedMovie) return null;
 
   // Get eligible categories for the selected movie
@@ -135,12 +143,23 @@ const EnhancedCategorySelection = ({
     <div className="w-full p-6 bg-greyscale-blue-100 shadow-[0px_0px_3px_rgba(0,0,0,0.25)] rounded flex flex-col gap-6">
       {/* Header Section */}
       <div className="w-full h-full flex flex-col gap-1.5">
-        <div className="w-full flex items-center gap-2">
-          <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
-            <CheckboxIcon className="w-6 h-6 text-[#680AFF]" />
+        <div className="w-full flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
+              <CheckboxIcon className="w-6 h-6 text-[#680AFF]" />
+            </div>
+            <div className="flex-1 text-[#2B2D2D] text-xl font-brockmann font-medium leading-7">
+              Select Category for {selectedMovie.title}
+            </div>
           </div>
-          <div className="flex-1 text-[#2B2D2D] text-xl font-brockmann font-medium leading-7">
-            Select Category for {selectedMovie.title}
+          
+          {/* House Override Toggle */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-brockmann text-text-secondary">House Override</span>
+            <Switch
+              checked={houseOverrideEnabled}
+              onCheckedChange={setHouseOverrideEnabled}
+            />
           </div>
         </div>
         
@@ -179,7 +198,7 @@ const EnhancedCategorySelection = ({
         {sortedCategories.map((category) => {
           const isAlreadyPicked = picks.some(p => p.playerId === currentPlayerId && p.category === category);
           const isEligible = eligibleCategories.includes(category);
-          const isDisabled = isAlreadyPicked || !isEligible;
+          const isDisabled = isAlreadyPicked || (!isEligible && !houseOverrideEnabled);
           const isSelected = selectedCategory === category;
           
           return (
