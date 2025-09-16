@@ -66,9 +66,6 @@ const CategoryButton = ({
       title={tooltip}
     >
       <div className="flex items-center justify-center gap-2">
-        {config?.icon && (
-          <span className="text-sm">{config.icon}</span>
-        )}
         <span className={isDisabled ? "text-greyscale-blue-800" : ""}>
           {getCategoryDisplayName(category)}
         </span>
