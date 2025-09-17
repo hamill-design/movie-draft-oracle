@@ -223,7 +223,7 @@ const EnhancedCategorySelection = ({
               No eligible categories found
             </span>
           </div>
-          <p className="text-red-600 text-sm mt-1">
+          <p className="text-red-600 text-sm mt-1 font-brockmann">
             This movie doesn't match any of the available categories. Please select a different movie that better fits your draft's theme and categories.
           </p>
         </div>
