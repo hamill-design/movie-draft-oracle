@@ -128,7 +128,12 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
       console.error('Auto-save failed:', error);
       // Only show error toast for non-RLS policy violations
       // RLS errors typically happen for guest users and are expected
-      if (error?.code !== '42501') {
+      // Check both direct code property and nested message content
+      const isRLSError = error?.code === '42501' || 
+                        error?.message?.includes('row-level security policy') ||
+                        (typeof error === 'object' && JSON.stringify(error).includes('42501'));
+      
+      if (!isRLSError) {
         toast({
           title: "Auto-save failed",
           description: "Your draft couldn't be saved automatically. Please try again.",
