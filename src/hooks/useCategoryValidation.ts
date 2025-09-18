@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { categoryValidationService } from '@/services/categoryValidationService';
+import { progressiveCategoryService } from '@/services/progressiveCategoryService';
 import { CategoryAnalysisResponse } from '@/types/categoryTypes';
 
 export const useCategoryValidation = (
@@ -70,7 +71,8 @@ export const useCategoryValidation = (
   }, [analysisResult, getAvailabilityForCategory]);
 
   const refreshAnalysis = useCallback(() => {
-    categoryValidationService.clearCache();
+    categoryValidationService.clearAllCaches();
+    progressiveCategoryService.clearAllCaches();
     analyzeCategories();
   }, [analyzeCategories]);
 

@@ -161,12 +161,33 @@ async function analyzeCategoryMovies(
 }
 
 function isMovieEligibleForCategory(movie: any, category: string): boolean {
-  // Extract year from movie data
+  // Extract year from movie data with enhanced logic
   let year = 0;
-  if (movie.year) {
+  
+  // Try multiple approaches to extract year
+  if (movie.year && movie.year > 1900) {
     year = movie.year;
   } else if (movie.release_date) {
-    year = new Date(movie.release_date).getFullYear();
+    try {
+      const releaseYear = new Date(movie.release_date).getFullYear();
+      if (releaseYear > 1900 && releaseYear <= new Date().getFullYear() + 5) {
+        year = releaseYear;
+      }
+    } catch (error) {
+      // Try parsing just the year from the date string
+      const yearMatch = movie.release_date.match(/(\d{4})/);
+      if (yearMatch) {
+        const parsedYear = parseInt(yearMatch[1]);
+        if (parsedYear > 1900 && parsedYear <= new Date().getFullYear() + 5) {
+          year = parsedYear;
+        }
+      }
+    }
+  }
+  
+  // Log year extraction for debugging decade categories
+  if (category.includes("'s") && Math.random() < 0.1) {
+    console.log(`Year extraction for ${movie.title}: extracted=${year}, raw_year=${movie.year}, release_date=${movie.release_date}`);
   }
 
   // Handle genre data - it could be a string or array
@@ -183,6 +204,14 @@ function isMovieEligibleForCategory(movie: any, category: string): boolean {
   // Log movie details for debugging (only first few movies to avoid spam)
   if (Math.random() < 0.05) { // Log ~5% of movies
     console.log(`Movie: ${movie.title}, Year: ${year}, Genre: "${genreString}", HasOscar: ${movie.hasOscar}, Revenue: ${movie.revenue}, Budget: ${movie.budget}`);
+  }
+
+  // Special logging for 50's category debugging
+  if (category === "50's") {
+    const isMatch = year >= 1950 && year <= 1959;
+    if (isMatch || Math.random() < 0.05) {
+      console.log(`50's category check: ${movie.title} (${year}) - ${isMatch ? 'MATCH' : 'NO MATCH'}`);
+    }
   }
 
   switch (category) {
