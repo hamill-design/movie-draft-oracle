@@ -205,6 +205,18 @@ function isMovieEligibleForCategory(movie: any, category: string): boolean {
     case 'Horror/Thriller':
       return genreString.includes('horror') || genreString.includes('thriller');
     
+    case "30's":
+      return year >= 1930 && year <= 1939;
+    
+    case "40's":
+      return year >= 1940 && year <= 1949;
+    
+    case "50's":
+      return year >= 1950 && year <= 1959;
+    
+    case "60's":
+      return year >= 1960 && year <= 1969;
+    
     case "70's":
       return year >= 1970 && year <= 1979;
     

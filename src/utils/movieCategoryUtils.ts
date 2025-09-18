@@ -18,6 +18,18 @@ export const getEligibleCategories = (movie: Movie, allCategories: string[]): st
   const eligibleCategories: string[] = [];
 
   // Year-based categories
+  if (movie.year >= 1930 && movie.year <= 1939) {
+    eligibleCategories.push("30's");
+  }
+  if (movie.year >= 1940 && movie.year <= 1949) {
+    eligibleCategories.push("40's");
+  }
+  if (movie.year >= 1950 && movie.year <= 1959) {
+    eligibleCategories.push("50's");
+  }
+  if (movie.year >= 1960 && movie.year <= 1969) {
+    eligibleCategories.push("60's");
+  }
   if (movie.year >= 1970 && movie.year <= 1979) {
     eligibleCategories.push("70's");
   }

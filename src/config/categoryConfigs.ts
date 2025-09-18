@@ -79,6 +79,62 @@ export const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
     popularity: 'medium',
     icon: '👻'
   },
+  "30's": {
+    id: '30s',
+    name: "30's",
+    description: 'Movies from the 1930s',
+    minMoviesRequired: (playerCount) => Math.max(playerCount * 1.0, 4),
+    validationRules: [
+      { type: 'minMovies', config: { minimum: 4 } },
+      { type: 'yearRange', config: { start: 1930, end: 1939 } },
+      { type: 'themeCompatible', config: { themes: ['people'] } }
+    ],
+    themes: ['people'],
+    popularity: 'low',
+    icon: '🎞️'
+  },
+  "40's": {
+    id: '40s',
+    name: "40's",
+    description: 'Movies from the 1940s',
+    minMoviesRequired: (playerCount) => Math.max(playerCount * 1.0, 5),
+    validationRules: [
+      { type: 'minMovies', config: { minimum: 5 } },
+      { type: 'yearRange', config: { start: 1940, end: 1949 } },
+      { type: 'themeCompatible', config: { themes: ['people'] } }
+    ],
+    themes: ['people'],
+    popularity: 'low',
+    icon: '🎬'
+  },
+  "50's": {
+    id: '50s',
+    name: "50's",
+    description: 'Movies from the 1950s',
+    minMoviesRequired: (playerCount) => Math.max(playerCount * 1.1, 5),
+    validationRules: [
+      { type: 'minMovies', config: { minimum: 5 } },
+      { type: 'yearRange', config: { start: 1950, end: 1959 } },
+      { type: 'themeCompatible', config: { themes: ['people'] } }
+    ],
+    themes: ['people'],
+    popularity: 'low',
+    icon: '🎭'
+  },
+  "60's": {
+    id: '60s',
+    name: "60's",
+    description: 'Movies from the 1960s',
+    minMoviesRequired: (playerCount) => Math.max(playerCount * 1.1, 6),
+    validationRules: [
+      { type: 'minMovies', config: { minimum: 6 } },
+      { type: 'yearRange', config: { start: 1960, end: 1969 } },
+      { type: 'themeCompatible', config: { themes: ['people'] } }
+    ],
+    themes: ['people'],
+    popularity: 'low',
+    icon: '🕺'
+  },
   "70's": {
     id: '70s',
     name: "70's",
