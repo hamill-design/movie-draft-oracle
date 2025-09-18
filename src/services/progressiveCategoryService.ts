@@ -108,6 +108,10 @@ export class ProgressiveCategoryService {
       'Sci-Fi/Fantasy': 80,
       'Animated': 60,
       'Horror/Thriller': 70,
+      "30's": 15,
+      "40's": 25,
+      "50's": 35,
+      "60's": 45,
       "70's": 40,
       "80's": 60,
       "90's": 100,
@@ -140,6 +144,18 @@ export class ProgressiveCategoryService {
 
   public clearCache(): void {
     this.cache.clear();
+  }
+
+  public clearAllCaches(): void {
+    this.cache.clear();
+    // Clear localStorage cache as well for fresh analysis
+    if (typeof localStorage !== 'undefined') {
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('category_validation_cache')) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
   }
 }
 
