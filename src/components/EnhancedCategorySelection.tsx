@@ -229,21 +229,6 @@ const EnhancedCategorySelection = ({
         </div>
       )}
 
-      {/* Category availability legend */}
-      <div className="flex items-center justify-center gap-6 pt-2 border-t border-greyscale-blue-200">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-          <span className="text-xs text-text-secondary">Eligible</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-          <span className="text-xs text-text-secondary">Already Picked</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-          <span className="text-xs text-text-secondary">Not Eligible</span>
-        </div>
-      </div>
     </div>
   );
 };
