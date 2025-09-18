@@ -126,11 +126,15 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
       console.log('Draft auto-saved successfully');
     } catch (error) {
       console.error('Auto-save failed:', error);
-      toast({
-        title: "Auto-save failed",
-        description: "Your draft couldn't be saved automatically. Please try again.",
-        variant: "destructive"
-      });
+      // Only show error toast for non-RLS policy violations
+      // RLS errors typically happen for guest users and are expected
+      if (error?.code !== '42501') {
+        toast({
+          title: "Auto-save failed",
+          description: "Your draft couldn't be saved automatically. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
