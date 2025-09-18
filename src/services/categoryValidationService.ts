@@ -5,7 +5,9 @@ import { getCategoryConfig } from '@/config/categoryConfigs';
 export class CategoryValidationService {
   private static instance: CategoryValidationService;
   private cache = new Map<string, CategoryAnalysisResponse>();
-  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  private localStorageCache = 'category_validation_cache';
+  private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+  private readonly LOCAL_CACHE_DURATION = 60 * 60 * 1000; // 1 hour for localStorage
 
   public static getInstance(): CategoryValidationService {
     if (!CategoryValidationService.instance) {
@@ -22,12 +24,50 @@ export class CategoryValidationService {
     return Date.now() - timestamp < this.CACHE_DURATION;
   }
 
+  private isValidLocalCache(timestamp: number): boolean {
+    return Date.now() - timestamp < this.LOCAL_CACHE_DURATION;
+  }
+
+  private getFromLocalStorage(cacheKey: string): CategoryAnalysisResponse | null {
+    try {
+      const stored = localStorage.getItem(`${this.localStorageCache}_${cacheKey}`);
+      if (!stored) return null;
+      
+      const parsed = JSON.parse(stored);
+      if (this.isValidLocalCache(parsed.analysisTimestamp)) {
+        return parsed;
+      } else {
+        localStorage.removeItem(`${this.localStorageCache}_${cacheKey}`);
+        return null;
+      }
+    } catch {
+      return null;
+    }
+  }
+
+  private setToLocalStorage(cacheKey: string, response: CategoryAnalysisResponse): void {
+    try {
+      localStorage.setItem(`${this.localStorageCache}_${cacheKey}`, JSON.stringify(response));
+    } catch {
+      // Ignore localStorage errors (e.g., quota exceeded)
+    }
+  }
+
   public async analyzeCategoryAvailability(request: CategoryAnalysisRequest): Promise<CategoryAnalysisResponse> {
     const cacheKey = this.getCacheKey(request);
-    const cached = this.cache.get(cacheKey);
     
+    // Check memory cache first
+    const cached = this.cache.get(cacheKey);
     if (cached && this.isValidCache(cached.analysisTimestamp)) {
       return { ...cached, cacheHit: true };
+    }
+
+    // Check localStorage cache
+    const localCached = this.getFromLocalStorage(cacheKey);
+    if (localCached) {
+      // Also store in memory cache for faster access
+      this.cache.set(cacheKey, localCached);
+      return { ...localCached, cacheHit: true };
     }
 
     try {
@@ -47,8 +87,9 @@ export class CategoryValidationService {
         cacheHit: false
       };
 
-      // Cache the response
+      // Cache the response in both memory and localStorage
       this.cache.set(cacheKey, response);
+      this.setToLocalStorage(cacheKey, response);
 
       return response;
     } catch (error) {

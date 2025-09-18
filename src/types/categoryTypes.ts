@@ -21,6 +21,8 @@ export interface CategoryAvailabilityResult {
   sampleMovies: string[];
   reason?: string;
   status: 'sufficient' | 'limited' | 'insufficient';
+  isEstimate?: boolean;
+  timestamp?: number;
 }
 
 export interface CategoryAnalysisRequest {

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { CheckboxIcon } from '@/components/icons';
 import { categoryValidationService } from '@/services/categoryValidationService';
+import { progressiveCategoryService } from '@/services/progressiveCategoryService';
 import { CategoryAnalysisResponse, CategoryAvailabilityResult } from '@/types/categoryTypes';
 import { getCategoryConfig } from '@/config/categoryConfigs';
 
@@ -235,7 +236,7 @@ const CustomCheckbox = ({
             lineHeight: '16px',
             wordWrap: 'break-word'
           }}>
-            {availability?.movieCount || '00'}
+            {availability?.isEstimate ? `~${availability.movieCount}` : availability?.movieCount || '00'}
           </div>
         </div>
       )}
@@ -245,6 +246,7 @@ const CustomCheckbox = ({
 
 const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selectedOption, draftMode, participants = [] }: EnhancedCategoriesFormProps) => {
   const [analysisResult, setAnalysisResult] = useState<CategoryAnalysisResponse | null>(null);
+  const [progressiveResults, setProgressiveResults] = useState<Map<string, CategoryAvailabilityResult>>(new Map());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Validation guards to ensure proper setup before analysis
@@ -274,14 +276,21 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
     if (!canAnalyze()) return;
     
     setIsAnalyzing(true);
+    setProgressiveResults(new Map());
+    
     try {
-      const result = await categoryValidationService.validateCategoriesForDraft(
-        categories,
-        theme,
-        playerCount,
-        selectedOption
+      // Use progressive loading for better UX
+      await progressiveCategoryService.analyzeCategoryProgressive(
+        {
+          theme,
+          option: selectedOption,
+          categories,
+          playerCount
+        },
+        (result) => {
+          setProgressiveResults(prev => new Map(prev).set(result.categoryId, result));
+        }
       );
-      setAnalysisResult(result);
     } catch (error) {
       console.error('Failed to analyze categories:', error);
     } finally {
@@ -308,6 +317,10 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   const selectedCategories = form.watch('categories') || [];
   
   const getAvailabilityForCategory = (category: string) => {
+    // Check progressive results first, fallback to analysis result
+    const progressiveResult = progressiveResults.get(category);
+    if (progressiveResult) return progressiveResult;
+    
     return analysisResult?.results.find(r => r.categoryId === category);
   };
 

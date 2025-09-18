@@ -38,25 +38,24 @@ serve(async (req) => {
 
     console.log('Analyzing categories:', { theme, option, categories, playerCount });
 
-    const results: CategoryAvailabilityResult[] = [];
-
-    // Analyze each category
-    for (const category of categories) {
+    // Analyze all categories in parallel for better performance
+    const categoryPromises = categories.map(async (category) => {
       try {
-        const analysisResult = await analyzeCategoryMovies(supabase, category, theme, option, playerCount);
-        results.push(analysisResult);
+        return await analyzeCategoryMovies(supabase, category, theme, option, playerCount);
       } catch (error) {
         console.error(`Error analyzing category ${category}:`, error);
-        results.push({
+        return {
           categoryId: category,
           available: false,
           movieCount: 0,
           sampleMovies: [],
           reason: 'Analysis failed',
           status: 'insufficient'
-        });
+        } as CategoryAvailabilityResult;
       }
-    }
+    });
+
+    const results = await Promise.all(categoryPromises);
 
     return new Response(
       JSON.stringify({
