@@ -37,8 +37,7 @@ export const useDraftForm = () => {
     if (!state.theme) return 'theme';
     if (!state.selectedOption) return 'option';
     if (!state.draftMode) return 'mode';
-    // For multiplayer, require at least one participant before categories
-    if (state.draftMode === 'multiplayer' && state.participants.length === 0) return 'participants';
+    // For both single and multiplayer, go to categories after mode is set
     return 'categories';
   }, [state]);
 
@@ -68,9 +67,19 @@ export const useDraftForm = () => {
     const currentStepIndex = steps.indexOf(getCurrentStep());
     const stepIndex = steps.indexOf(step);
     
+    // For multiplayer mode, show both participants and categories once mode is selected
+    if (state.draftMode === 'multiplayer' && stepIndex >= 3 && currentStepIndex >= 4) {
+      return step === 'participants' || step === 'categories' || stepIndex < 3;
+    }
+    
+    // For single player mode, skip participants step
+    if (state.draftMode === 'single' && step === 'participants') {
+      return false;
+    }
+    
     // Show current step and all previous steps
     return stepIndex <= currentStepIndex;
-  }, [getCurrentStep]);
+  }, [getCurrentStep, state.draftMode]);
 
   // State setters
   const setTheme = useCallback((theme: DraftTheme) => {
