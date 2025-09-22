@@ -37,8 +37,8 @@ export const useDraftForm = () => {
     if (!state.theme) return 'theme';
     if (!state.selectedOption) return 'option';
     if (!state.draftMode) return 'mode';
-    // For both single and multiplayer, go to categories after mode is set
-    return 'categories';
+    // Show participants step for both single and multiplayer modes
+    return 'participants';
   }, [state]);
 
   // Check if a step is complete
@@ -67,14 +67,14 @@ export const useDraftForm = () => {
     const currentStepIndex = steps.indexOf(getCurrentStep());
     const stepIndex = steps.indexOf(step);
     
-    // For multiplayer mode, show both participants and categories once mode is selected
-    if (state.draftMode === 'multiplayer' && stepIndex >= 3 && currentStepIndex >= 4) {
-      return step === 'participants' || step === 'categories' || stepIndex < 3;
+    // Show participants step for both single and multiplayer modes
+    if (step === 'participants' && currentStepIndex >= 3) {
+      return true;
     }
     
-    // For single player mode, skip participants step
-    if (state.draftMode === 'single' && step === 'participants') {
-      return false;
+    // Show categories step once participants step is reached
+    if (step === 'categories' && currentStepIndex >= 3) {
+      return true;
     }
     
     // Show current step and all previous steps
