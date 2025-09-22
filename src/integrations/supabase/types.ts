@@ -266,6 +266,36 @@ export type Database = {
         }
         Relationships: []
       }
+      person_lifespans: {
+        Row: {
+          birth_date: string | null
+          created_at: string
+          death_date: string | null
+          id: string
+          name: string
+          tmdb_id: number
+          updated_at: string
+        }
+        Insert: {
+          birth_date?: string | null
+          created_at?: string
+          death_date?: string | null
+          id?: string
+          name: string
+          tmdb_id: number
+          updated_at?: string
+        }
+        Update: {
+          birth_date?: string | null
+          created_at?: string
+          death_date?: string | null
+          id?: string
+          name?: string
+          tmdb_id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

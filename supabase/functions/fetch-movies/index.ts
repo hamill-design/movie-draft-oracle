@@ -18,6 +18,52 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Helper function to get person lifespan data
+async function getPersonLifespan(tmdbId: number): Promise<{birth_date: string | null, death_date: string | null} | null> {
+  try {
+    const { data } = await supabase
+      .from('person_lifespans')
+      .select('birth_date, death_date')
+      .eq('tmdb_id', tmdbId)
+      .single();
+    
+    return data;
+  } catch (error) {
+    // Person not in our lifespans table (assume living)
+    return null;
+  }
+}
+
+// Helper function to check if movie is valid for deceased actor
+function isValidMovieForDeceasedActor(movieYear: number, deathDate: string, movieGenres: any[]): boolean {
+  const death = new Date(deathDate);
+  const deathYear = death.getFullYear();
+  
+  // Grace period of 3 years for legitimate posthumous releases
+  const gracePeriodEnd = deathYear + 3;
+  
+  if (movieYear > gracePeriodEnd) {
+    console.log(`Movie year ${movieYear} exceeds grace period (death: ${deathYear}, grace end: ${gracePeriodEnd})`);
+    return false;
+  }
+  
+  // Filter out documentaries about the actor (common source of false positives)
+  if (movieGenres && Array.isArray(movieGenres)) {
+    const hasDocumentaryGenre = movieGenres.some(genre => 
+      genre && (
+        genre.id === 99 || // Documentary genre ID
+        (genre.name && genre.name.toLowerCase().includes('documentary'))
+      )
+    );
+    if (hasDocumentaryGenre && movieYear > deathYear) {
+      console.log(`Filtering documentary from ${movieYear} made after death (${deathYear})`);
+      return false;
+    }
+  }
+  
+  return true;
+}
+
 // Helper function to check and get Oscar status from cache or OMDb
 async function getOscarStatus(tmdbId: number, title: string, year: number): Promise<string> {
   try {
@@ -300,16 +346,40 @@ serve(async (req) => {
                 }
                 const creditsData = await creditsResponse.json();
                 
-                // Get all movies from cast and crew
-                const allMovies = [
-                  ...(creditsData.cast || []),
-                  ...(creditsData.crew || [])
-                ];
+                // Get person lifespan to determine filtering strategy
+                const personLifespan = await getPersonLifespan(selectedPerson.id);
                 
-                // Remove duplicates based on movie ID
-                const uniqueMovies = allMovies.filter((movie, index, self) => 
+                let allMovies = [];
+                if (personLifespan && personLifespan.death_date) {
+                  console.log(`${selectedPerson.name} is deceased (died: ${personLifespan.death_date}), filtering credits`);
+                  // For deceased actors, only include cast credits (actual performances)
+                  allMovies = creditsData.cast || [];
+                } else {
+                  console.log(`${selectedPerson.name} is living or not in our database, including all credits`);
+                  // For living actors, include both cast and crew
+                  allMovies = [
+                    ...(creditsData.cast || []),
+                    ...(creditsData.crew || [])
+                  ];
+                }
+                
+                // Remove duplicates based on movie ID and apply lifespan filtering
+                let uniqueMovies = allMovies.filter((movie, index, self) => 
                   index === self.findIndex(m => m.id === movie.id)
                 );
+                
+                // Apply lifespan filtering for deceased actors
+                if (personLifespan && personLifespan.death_date) {
+                  const originalCount = uniqueMovies.length;
+                  uniqueMovies = uniqueMovies.filter((movie: any) => {
+                    const movieYear = extractMovieYear(movie);
+                    if (movieYear === 0) return true; // Keep movies without valid years for now
+                    
+                    return isValidMovieForDeceasedActor(movieYear, personLifespan.death_date!, movie.genre_ids || []);
+                  });
+                  
+                  console.log(`Lifespan filtering: ${originalCount} → ${uniqueMovies.length} movies (removed ${originalCount - uniqueMovies.length} posthumous/documentary entries)`);
+                }
                 
                 console.log(`Person credits: ${creditsData.cast?.length || 0} cast + ${creditsData.crew?.length || 0} crew = ${allMovies.length} total, ${uniqueMovies.length} unique movies`);
                 

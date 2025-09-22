@@ -6,6 +6,28 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Initialize Supabase client for lifespan checks
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const globalSupabase = createClient(supabaseUrl, supabaseKey);
+
+// Helper function to get person lifespan data
+async function getPersonLifespan(personName: string): Promise<{birth_date: string | null, death_date: string | null} | null> {
+  try {
+    // Try to find by name (case-insensitive)
+    const { data } = await globalSupabase
+      .from('person_lifespans')
+      .select('birth_date, death_date')
+      .ilike('name', personName)
+      .single();
+    
+    return data;
+  } catch (error) {
+    // Person not in our lifespans table (assume living)
+    return null;
+  }
+}
+
 interface CategoryAnalysisRequest {
   theme: string;
   option: string;
@@ -128,6 +150,18 @@ async function analyzeCategoryMovies(
 
   const movies = movieData?.results || [];
   console.log(`Fetched ${movies.length} movies for analysis`);
+
+  // Enhanced logging for person-based analysis with lifespan information
+  if (theme === 'people' && option) {
+    const personLifespan = await getPersonLifespan(option);
+    if (personLifespan && personLifespan.death_date) {
+      console.log(`📅 LIFESPAN INFO: ${option} died on ${personLifespan.death_date}`);
+      const deathYear = new Date(personLifespan.death_date).getFullYear();
+      console.log(`🚫 Movies after ${deathYear + 3} should be filtered out (3-year grace period)`);
+    } else {
+      console.log(`💭 ${option} is not in our deceased actors database (assumed living)`);
+    }
+  }
 
   // Log a few sample movies to understand the data structure
   if (movies.length > 0) {
