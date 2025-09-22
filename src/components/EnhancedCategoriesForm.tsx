@@ -249,6 +249,16 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   const [progressiveResults, setProgressiveResults] = useState<Map<string, CategoryAvailabilityResult>>(new Map());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  // Force clear cache for person-based themes on component mount
+  useEffect(() => {
+    const isPersonTheme = ['Steve McQueen', 'Paul Newman', 'Clint Eastwood', 'John Wayne', 'Robert De Niro']
+      .some(person => theme.toLowerCase().includes(person.toLowerCase()));
+    
+    if (isPersonTheme) {
+      progressiveCategoryService.forceRefreshPersonThemes();
+    }
+  }, [theme]);
+
   // More permissive analysis - similar to local drafting
   const canAnalyze = () => {
     return theme && selectedOption && categories.length > 0;
@@ -270,8 +280,12 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
     setIsAnalyzing(true);
     setProgressiveResults(new Map());
     
+    // Check if this is a person-based theme (e.g., Steve McQueen)
+    const isPersonTheme = ['Steve McQueen', 'Paul Newman', 'Clint Eastwood', 'John Wayne', 'Robert De Niro']
+      .some(person => theme.toLowerCase().includes(person.toLowerCase()));
+    
     try {
-      // Use progressive loading for better UX
+      // Use progressive loading for better UX, force refresh for person themes
       await progressiveCategoryService.analyzeCategoryProgressive(
         {
           theme,
@@ -281,7 +295,8 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
         },
         (result) => {
           setProgressiveResults(prev => new Map(prev).set(result.categoryId, result));
-        }
+        },
+        isPersonTheme // Force refresh for person-based themes to ensure posthumous logic
       );
     } catch (error) {
       console.error('Failed to analyze categories:', error);

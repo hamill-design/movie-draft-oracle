@@ -5,6 +5,8 @@ export class ProgressiveCategoryService {
   private static instance: ProgressiveCategoryService;
   private cache = new Map<string, CategoryAvailabilityResult>();
   private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+  private readonly DECEASED_ACTOR_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes for deceased actors
+  private readonly CACHE_VERSION = 'v2.1.0'; // Increment when posthumous logic changes
 
   public static getInstance(): ProgressiveCategoryService {
     if (!ProgressiveCategoryService.instance) {
@@ -14,23 +16,41 @@ export class ProgressiveCategoryService {
   }
 
   private getCacheKey(category: string, theme: string, option: string, playerCount: number): string {
-    return `${theme}-${option}-${playerCount}-${category}`;
+    return `${this.CACHE_VERSION}-${theme}-${option}-${playerCount}-${category}`;
   }
 
-  private isValidCache(timestamp: number): boolean {
-    return Date.now() - timestamp < this.CACHE_DURATION;
+  private isPersonBasedTheme(theme: string): boolean {
+    // Detect person-based themes that might involve deceased actors
+    const personThemes = ['Steve McQueen', 'Paul Newman', 'Clint Eastwood', 'John Wayne', 'Robert De Niro'];
+    return personThemes.some(person => theme.toLowerCase().includes(person.toLowerCase()));
+  }
+
+  private getCacheDuration(theme: string): number {
+    // Use shorter cache for person-based themes to ensure fresh posthumous logic
+    return this.isPersonBasedTheme(theme) ? this.DECEASED_ACTOR_CACHE_DURATION : this.CACHE_DURATION;
+  }
+
+  private isValidCache(timestamp: number, theme: string): boolean {
+    const duration = this.getCacheDuration(theme);
+    return Date.now() - timestamp < duration;
   }
 
   public async analyzeCategoryProgressive(
     request: CategoryAnalysisRequest,
-    onCategoryComplete: (result: CategoryAvailabilityResult) => void
+    onCategoryComplete: (result: CategoryAvailabilityResult) => void,
+    forceRefresh: boolean = false
   ): Promise<CategoryAvailabilityResult[]> {
     const results: CategoryAvailabilityResult[] = [];
     const promises: Promise<void>[] = [];
 
+    // Clear cache for person-based themes or when forced
+    if (forceRefresh || this.isPersonBasedTheme(request.theme)) {
+      this.clearPersonBasedCache(request.theme);
+    }
+
     // Start analysis for each category
     for (const category of request.categories) {
-      const promise = this.analyzeSingleCategory(category, request, onCategoryComplete);
+      const promise = this.analyzeSingleCategory(category, request, onCategoryComplete, forceRefresh);
       promises.push(promise);
     }
 
@@ -47,15 +67,18 @@ export class ProgressiveCategoryService {
   private async analyzeSingleCategory(
     category: string,
     request: CategoryAnalysisRequest,
-    onComplete: (result: CategoryAvailabilityResult) => void
+    onComplete: (result: CategoryAvailabilityResult) => void,
+    forceRefresh: boolean = false
   ): Promise<void> {
     const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount);
     
-    // Check cache first
-    const cached = this.cache.get(cacheKey);
-    if (cached && this.isValidCache(cached.timestamp || 0)) {
-      onComplete(cached);
-      return;
+    // Check cache first (unless force refresh or person-based theme)
+    if (!forceRefresh && !this.isPersonBasedTheme(request.theme)) {
+      const cached = this.cache.get(cacheKey);
+      if (cached && this.isValidCache(cached.timestamp || 0, request.theme)) {
+        onComplete(cached);
+        return;
+      }
     }
 
     try {
@@ -146,6 +169,23 @@ export class ProgressiveCategoryService {
     this.cache.clear();
   }
 
+  private clearPersonBasedCache(theme: string): void {
+    // Clear cache entries for person-based themes
+    const keysToDelete = Array.from(this.cache.keys()).filter(key => 
+      key.includes(theme) || this.isPersonBasedTheme(theme)
+    );
+    keysToDelete.forEach(key => this.cache.delete(key));
+
+    // Clear localStorage entries too
+    if (typeof localStorage !== 'undefined') {
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('category_validation_cache') && key.includes(theme)) {
+          localStorage.removeItem(key);
+        }
+      });
+    }
+  }
+
   public clearAllCaches(): void {
     this.cache.clear();
     // Clear localStorage cache as well for fresh analysis
@@ -156,6 +196,12 @@ export class ProgressiveCategoryService {
         }
       });
     }
+  }
+
+  public forceRefreshPersonThemes(): void {
+    // Clear all person-based cached data and force fresh analysis
+    const personThemes = ['Steve McQueen', 'Paul Newman', 'Clint Eastwood', 'John Wayne', 'Robert De Niro'];
+    personThemes.forEach(theme => this.clearPersonBasedCache(theme));
   }
 }
 
