@@ -11,21 +11,77 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const globalSupabase = createClient(supabaseUrl, supabaseKey);
 
-// Helper function to get person lifespan data
+// Helper function to get person lifespan data with enhanced name matching
 async function getPersonLifespan(personName: string): Promise<{birth_date: string | null, death_date: string | null} | null> {
-  try {
-    // Try to find by name (case-insensitive)
-    const { data } = await globalSupabase
-      .from('person_lifespans')
-      .select('birth_date, death_date')
-      .ilike('name', personName)
-      .single();
+  console.log(`🔍 Looking up lifespan for: "${personName}"`);
+  
+  // First try exact match
+  let { data, error } = await globalSupabase
+    .from('person_lifespans')  
+    .select('birth_date, death_date, name, tmdb_id')
+    .eq('name', personName)
+    .single();
     
+  if (!error && data) {
+    console.log(`✅ Found exact match for ${personName}: ${data.birth_date} - ${data.death_date}`);
     return data;
-  } catch (error) {
-    // Person not in our lifespans table (assume living)
-    return null;
   }
+  
+  // Try case-insensitive match
+  ({ data, error } = await globalSupabase
+    .from('person_lifespans')  
+    .select('birth_date, death_date, name, tmdb_id')
+    .ilike('name', personName)
+    .single());
+    
+  if (!error && data) {
+    console.log(`✅ Found case-insensitive match for ${personName}: "${data.name}" (${data.birth_date} - ${data.death_date})`);
+    return data;
+  }
+  
+  // Try alias lookup
+  const { data: aliasData, error: aliasError } = await globalSupabase
+    .from('actor_name_aliases')
+    .select('primary_name, tmdb_id')
+    .eq('alias_name', personName)
+    .single();
+    
+  if (!aliasError && aliasData) {
+    console.log(`🔄 Found alias: "${personName}" -> "${aliasData.primary_name}"`);
+    
+    // Get lifespan data using primary name
+    ({ data, error } = await globalSupabase
+      .from('person_lifespans')  
+      .select('birth_date, death_date, name, tmdb_id')
+      .eq('tmdb_id', aliasData.tmdb_id)
+      .single());
+      
+    if (!error && data) {
+      console.log(`✅ Found lifespan via alias for ${personName}: "${data.name}" (${data.birth_date} - ${data.death_date})`);
+      return data;
+    }
+  }
+  
+  // Try partial name matching (last resort)
+  const nameParts = personName.split(' ');
+  if (nameParts.length >= 2) {
+    const lastName = nameParts[nameParts.length - 1];
+    const firstName = nameParts[0];
+    
+    ({ data, error } = await globalSupabase
+      .from('person_lifespans')  
+      .select('birth_date, death_date, name, tmdb_id')
+      .ilike('name', `${firstName}%${lastName}%`)
+      .single());
+      
+    if (!error && data) {
+      console.log(`✅ Found partial match for ${personName}: "${data.name}" (${data.birth_date} - ${data.death_date})`);
+      return data;
+    }
+  }
+  
+  console.log(`💭 ${personName} is not in our deceased actors database (assumed living)`);
+  return null;
 }
 
 interface CategoryAnalysisRequest {

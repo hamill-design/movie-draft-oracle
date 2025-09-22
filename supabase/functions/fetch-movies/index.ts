@@ -18,20 +18,98 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Helper function to get person lifespan data
+// Helper function to get person lifespan data by TMDB ID with enhanced fallback to name matching
 async function getPersonLifespan(tmdbId: number): Promise<{birth_date: string | null, death_date: string | null} | null> {
   try {
+    // First try by TMDB ID (most reliable)
     const { data } = await supabase
       .from('person_lifespans')
-      .select('birth_date, death_date')
+      .select('birth_date, death_date, name')
       .eq('tmdb_id', tmdbId)
       .single();
     
-    return data;
+    if (data) {
+      console.log(`✅ Found lifespan by TMDB ID ${tmdbId}: "${data.name}" (${data.birth_date} - ${data.death_date})`);
+      return data;
+    }
   } catch (error) {
-    // Person not in our lifespans table (assume living)
-    return null;
+    console.log(`🔍 TMDB ID ${tmdbId} not found in lifespans, person assumed living`);
   }
+  
+  return null;
+}
+
+// Helper function to get person lifespan data by name with enhanced matching
+async function getPersonLifespanByName(personName: string): Promise<{birth_date: string | null, death_date: string | null} | null> {
+  console.log(`🔍 Looking up lifespan by name for: "${personName}"`);
+  
+  // First try exact match
+  let { data, error } = await supabase
+    .from('person_lifespans')  
+    .select('birth_date, death_date, name, tmdb_id')
+    .eq('name', personName)
+    .single();
+    
+  if (!error && data) {
+    console.log(`✅ Found exact match for ${personName}: ${data.birth_date} - ${data.death_date}`);
+    return data;
+  }
+  
+  // Try case-insensitive match
+  ({ data, error } = await supabase
+    .from('person_lifespans')  
+    .select('birth_date, death_date, name, tmdb_id')
+    .ilike('name', personName)
+    .single());
+    
+  if (!error && data) {
+    console.log(`✅ Found case-insensitive match for ${personName}: "${data.name}" (${data.birth_date} - ${data.death_date})`);
+    return data;
+  }
+  
+  // Try alias lookup
+  const { data: aliasData, error: aliasError } = await supabase
+    .from('actor_name_aliases')
+    .select('primary_name, tmdb_id')
+    .eq('alias_name', personName)
+    .single();
+    
+  if (!aliasError && aliasData) {
+    console.log(`🔄 Found alias: "${personName}" -> "${aliasData.primary_name}"`);
+    
+    // Get lifespan data using TMDB ID from alias
+    ({ data, error } = await supabase
+      .from('person_lifespans')  
+      .select('birth_date, death_date, name, tmdb_id')
+      .eq('tmdb_id', aliasData.tmdb_id)
+      .single());
+      
+    if (!error && data) {
+      console.log(`✅ Found lifespan via alias for ${personName}: "${data.name}" (${data.birth_date} - ${data.death_date})`);
+      return data;
+    }
+  }
+  
+  // Try partial name matching (last resort)
+  const nameParts = personName.split(' ');
+  if (nameParts.length >= 2) {
+    const lastName = nameParts[nameParts.length - 1];
+    const firstName = nameParts[0];
+    
+    ({ data, error } = await supabase
+      .from('person_lifespans')  
+      .select('birth_date, death_date, name, tmdb_id')
+      .ilike('name', `${firstName}%${lastName}%`)
+      .single());
+      
+    if (!error && data) {
+      console.log(`✅ Found partial match for ${personName}: "${data.name}" (${data.birth_date} - ${data.death_date})`);
+      return data;
+    }
+  }
+  
+  console.log(`💭 ${personName} is not in our deceased actors database (assumed living)`);
+  return null;
 }
 
 // Enhanced function to detect documentaries and archive footage
@@ -431,7 +509,13 @@ serve(async (req) => {
                 const creditsData = await creditsResponse.json();
                 
                 // Get person lifespan to determine filtering strategy
-                const personLifespan = await getPersonLifespan(selectedPerson.id);
+                let personLifespan = await getPersonLifespan(selectedPerson.id);
+                
+                // If TMDB ID lookup failed, try name-based lookup as fallback
+                if (!personLifespan) {
+                  console.log(`🔄 TMDB ID lookup failed for ${selectedPerson.name}, trying name-based lookup...`);
+                  personLifespan = await getPersonLifespanByName(selectedPerson.name);
+                }
                 
                 let allMovies = [];
                 if (personLifespan && personLifespan.death_date) {

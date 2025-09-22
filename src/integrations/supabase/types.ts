@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      actor_name_aliases: {
+        Row: {
+          alias_name: string
+          created_at: string | null
+          id: string
+          primary_name: string
+          tmdb_id: number
+        }
+        Insert: {
+          alias_name: string
+          created_at?: string | null
+          id?: string
+          primary_name: string
+          tmdb_id: number
+        }
+        Update: {
+          alias_name?: string
+          created_at?: string | null
+          id?: string
+          primary_name?: string
+          tmdb_id?: number
+        }
+        Relationships: []
+      }
       draft_participants: {
         Row: {
           created_at: string
