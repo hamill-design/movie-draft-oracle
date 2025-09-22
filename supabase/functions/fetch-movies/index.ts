@@ -34,33 +34,117 @@ async function getPersonLifespan(tmdbId: number): Promise<{birth_date: string | 
   }
 }
 
-// Helper function to check if movie is valid for deceased actor
-function isValidMovieForDeceasedActor(movieYear: number, deathDate: string, movieGenres: any[]): boolean {
+// Enhanced function to detect documentaries and archive footage
+function isDocumentaryOrArchiveContent(movie: any, movieGenres: any[]): boolean {
+  // Check genre IDs - expanded documentary detection
+  if (movieGenres && Array.isArray(movieGenres)) {
+    const documentaryGenreIds = [99, 36, 10770]; // Documentary, History, TV Movie
+    const hasDocumentaryGenre = movieGenres.some(genre => 
+      genre && documentaryGenreIds.includes(genre.id)
+    );
+    if (hasDocumentaryGenre) {
+      console.log(`Documentary detected via genre: ${movieGenres.map(g => g.name || g.id).join(', ')}`);
+      return true;
+    }
+  }
+
+  // Check title keywords for documentary indicators
+  const title = (movie.title || '').toLowerCase();
+  const documentaryKeywords = [
+    'documentary', 'making of', 'behind the scenes', 'retrospective', 
+    'tribute', 'legacy', 'remembering', 'biography', 'life story',
+    'archives', 'footage', 'collection', 'compilation', 'best of',
+    'greatest hits', 'tribute to', 'in memoriam', 'celebrating'
+  ];
+  
+  const hasDocumentaryKeywords = documentaryKeywords.some(keyword => title.includes(keyword));
+  if (hasDocumentaryKeywords) {
+    console.log(`Archive content detected via title keywords: "${title}"`);
+    return true;
+  }
+
+  // Check overview for archive footage indicators
+  const overview = (movie.overview || '').toLowerCase();
+  const archiveKeywords = [
+    'archive footage', 'archival footage', 'rare footage', 'unseen footage',
+    'behind the scenes', 'documentary about', 'tribute to', 'explores the life'
+  ];
+  
+  const hasArchiveKeywords = archiveKeywords.some(keyword => overview.includes(keyword));
+  if (hasArchiveKeywords) {
+    console.log(`Archive content detected via overview: "${overview.substring(0, 100)}..."`);
+    return true;
+  }
+
+  return false;
+}
+
+// Enhanced function to check character roles for archive footage
+function isArchiveFootageRole(movie: any, actorName: string): boolean {
+  // Check if character name indicates archive footage
+  const character = (movie.character || '').toLowerCase();
+  const archiveRoles = ['self', 'archive footage', 'himself', 'herself', 'narrator', 'host'];
+  
+  if (archiveRoles.some(role => character.includes(role))) {
+    console.log(`Archive role detected: "${movie.character}" in "${movie.title}"`);
+    return true;
+  }
+
+  return false;
+}
+
+// Enhanced function to validate movies for deceased actors
+function isValidMovieForDeceasedActor(movie: any, deathDate: string, movieGenres: any[], actorName: string = ''): boolean {
   const death = new Date(deathDate);
   const deathYear = death.getFullYear();
+  const movieYear = extractMovieYear(movie);
   
-  // Grace period of 3 years for legitimate posthumous releases
-  const gracePeriodEnd = deathYear + 3;
+  if (movieYear === 0) {
+    console.log(`Skipping movie with no valid year: "${movie.title}"`);
+    return false;
+  }
+
+  // Stricter grace period: only 1 year for legitimate posthumous releases
+  const gracePeriodEnd = deathYear + 1;
   
+  // Always filter out movies made more than 1 year after death
   if (movieYear > gracePeriodEnd) {
-    console.log(`Movie year ${movieYear} exceeds grace period (death: ${deathYear}, grace end: ${gracePeriodEnd})`);
+    console.log(`🚫 Movie "${movie.title}" (${movieYear}) exceeds 1-year grace period (death: ${deathYear})`);
     return false;
   }
   
-  // Filter out documentaries about the actor (common source of false positives)
-  if (movieGenres && Array.isArray(movieGenres)) {
-    const hasDocumentaryGenre = movieGenres.some(genre => 
-      genre && (
-        genre.id === 99 || // Documentary genre ID
-        (genre.name && genre.name.toLowerCase().includes('documentary'))
-      )
-    );
-    if (hasDocumentaryGenre && movieYear > deathYear) {
-      console.log(`Filtering documentary from ${movieYear} made after death (${deathYear})`);
+  // Filter out documentaries and archive content regardless of year if made after death
+  if (movieYear > deathYear) {
+    if (isDocumentaryOrArchiveContent(movie, movieGenres)) {
+      console.log(`🚫 Documentary/Archive content filtered: "${movie.title}" (${movieYear})`);
+      return false;
+    }
+
+    // Check for archive footage roles
+    if (isArchiveFootageRole(movie, actorName)) {
+      console.log(`🚫 Archive footage role filtered: "${movie.title}" (${movieYear})`);
       return false;
     }
   }
-  
+
+  // Additional validation for movies made in the year of death
+  if (movieYear === deathYear) {
+    // Check release date vs death date if both are available
+    if (movie.release_date && deathDate) {
+      const releaseDate = new Date(movie.release_date);
+      const deathDateObj = new Date(deathDate);
+      
+      if (releaseDate > deathDateObj) {
+        const daysDiff = Math.floor((releaseDate.getTime() - deathDateObj.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysDiff > 180) { // More than 6 months after death is suspicious
+          console.log(`🚫 Movie "${movie.title}" released ${daysDiff} days after death, likely archive content`);
+          return false;
+        }
+      }
+    }
+  }
+
+  console.log(`✅ Valid movie for ${actorName}: "${movie.title}" (${movieYear})`);
   return true;
 }
 
@@ -368,17 +452,25 @@ serve(async (req) => {
                   index === self.findIndex(m => m.id === movie.id)
                 );
                 
-                // Apply lifespan filtering for deceased actors
+                // Enhanced lifespan filtering for deceased actors
                 if (personLifespan && personLifespan.death_date) {
                   const originalCount = uniqueMovies.length;
+                  console.log(`🔍 Applying enhanced filtering for deceased actor: ${selectedPerson.name} (died: ${personLifespan.death_date})`);
+                  
                   uniqueMovies = uniqueMovies.filter((movie: any) => {
-                    const movieYear = extractMovieYear(movie);
-                    if (movieYear === 0) return true; // Keep movies without valid years for now
-                    
-                    return isValidMovieForDeceasedActor(movieYear, personLifespan.death_date!, movie.genre_ids || []);
+                    // Convert genre_ids to genre objects for consistency
+                    const genres = (movie.genre_ids || []).map((id: number) => ({ id }));
+                    return isValidMovieForDeceasedActor(movie, personLifespan.death_date!, genres, selectedPerson.name);
                   });
                   
-                  console.log(`Lifespan filtering: ${originalCount} → ${uniqueMovies.length} movies (removed ${originalCount - uniqueMovies.length} posthumous/documentary entries)`);
+                  const filteredCount = originalCount - uniqueMovies.length;
+                  console.log(`📊 Enhanced lifespan filtering: ${originalCount} → ${uniqueMovies.length} movies`);
+                  console.log(`🗑️  Filtered out ${filteredCount} posthumous/documentary/archive entries`);
+                  
+                  // Log some examples of what was filtered
+                  if (filteredCount > 0) {
+                    console.log(`🎬 Remaining valid movies sample: ${uniqueMovies.slice(0, 5).map(m => `"${m.title}" (${extractMovieYear(m)})`).join(', ')}`);
+                  }
                 }
                 
                 console.log(`Person credits: ${creditsData.cast?.length || 0} cast + ${creditsData.crew?.length || 0} crew = ${allMovies.length} total, ${uniqueMovies.length} unique movies`);
