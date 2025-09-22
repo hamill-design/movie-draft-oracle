@@ -249,17 +249,9 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   const [progressiveResults, setProgressiveResults] = useState<Map<string, CategoryAvailabilityResult>>(new Map());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Validation guards to ensure proper setup before analysis
+  // More permissive analysis - similar to local drafting
   const canAnalyze = () => {
-    if (!theme || !selectedOption || categories.length === 0) return false;
-    
-    // For multiplayer, ensure participants are configured
-    if (draftMode === 'multiplayer' && participants.length === 0) return false;
-    
-    // Ensure proper player count
-    if (playerCount <= 0) return false;
-    
-    return true;
+    return theme && selectedOption && categories.length > 0;
   };
 
   useEffect(() => {
@@ -350,17 +342,6 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           Choose Categories
         </span>
       </div>
-
-      {/* Validation Status Message */}
-      {!canAnalyze() && (
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-          <p className="text-sm text-blue-800 font-brockmann">
-            {!selectedOption && "Please select a person or year first."}
-            {selectedOption && draftMode === 'multiplayer' && participants.length === 0 && "Add participants to analyze category availability."}
-            {selectedOption && categories.length === 0 && "Categories will be analyzed once available."}
-          </p>
-        </div>
-      )}
 
       {/* Categories Grid */}
       <div 
