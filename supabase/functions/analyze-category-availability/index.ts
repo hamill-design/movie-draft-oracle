@@ -134,9 +134,10 @@ async function analyzeCategoryMovies(
     console.log('Sample movie data structure:', JSON.stringify(movies[0], null, 2));
   }
 
-  // Filter movies that match the category
+  // Filter movies that match the category with person context
+  const personName = theme === 'people' ? option : undefined;
   const eligibleMovies = movies.filter((movie: any) => 
-    isMovieEligibleForCategory(movie, category)
+    isMovieEligibleForCategory(movie, category, personName)
   );
 
   const movieCount = eligibleMovies.length;
@@ -180,7 +181,8 @@ async function analyzeCategoryMovies(
   };
 }
 
-function isMovieEligibleForCategory(movie: any, category: string): boolean {
+// Unified category eligibility function with enhanced validation
+function isMovieEligibleForCategory(movie: any, category: string, personName?: string): boolean {
   // Enhanced year extraction with comprehensive fallback logic
   let year = 0;
   
@@ -217,9 +219,34 @@ function isMovieEligibleForCategory(movie: any, category: string): boolean {
       }
     }
   }
+
+  // Career timeline filtering for classic actors
+  if (personName && year > 0) {
+    const classicActors = {
+      'bette davis': { startYear: 1929, endYear: 1989 },
+      'clark gable': { startYear: 1924, endYear: 1960 },
+      'katharine hepburn': { startYear: 1932, endYear: 1994 },
+      'cary grant': { startYear: 1932, endYear: 1966 },
+      'james stewart': { startYear: 1935, endYear: 1991 },
+      'jimmy stewart': { startYear: 1935, endYear: 1991 },
+      'humphrey bogart': { startYear: 1930, endYear: 1957 },
+      'spencer tracy': { startYear: 1930, endYear: 1967 }
+    };
+    
+    const actorInfo = classicActors[personName.toLowerCase()];
+    if (actorInfo) {
+      // Filter out movies outside the actor's career timeline
+      if (year < actorInfo.startYear || year > actorInfo.endYear) {
+        if (Math.random() < 0.02) { // Log some filtered movies for debugging
+          console.log(`🚫 Career timeline filter: "${movie.title}" (${year}) outside ${personName} career (${actorInfo.startYear}-${actorInfo.endYear})`);
+        }
+        return false;
+      }
+    }
+  }
   
   // Enhanced logging for decade categories with more detail
-  if (category.includes("'s") && Math.random() < 0.1) {
+  if (category.includes("'s") && Math.random() < 0.05) {
     console.log(`Enhanced year extraction for ${movie.title}: extracted=${year}, sources={year:${movie.year}, release_date:${movie.release_date}, primary_release_date:${movie.primary_release_date}}`);
   }
 
@@ -234,11 +261,6 @@ function isMovieEligibleForCategory(movie: any, category: string): boolean {
     genreString = movie.genre.join(' ').toLowerCase();
   }
 
-  // Log movie details for debugging (only first few movies to avoid spam)
-  if (Math.random() < 0.05) { // Log ~5% of movies
-    console.log(`Movie: ${movie.title}, Year: ${year}, Genre: "${genreString}", HasOscar: ${movie.hasOscar}, Revenue: ${movie.revenue}, Budget: ${movie.budget}`);
-  }
-
   // Enhanced logging for decade categories debugging
   if (category.includes("'s")) {
     const decade = category.replace("'s", "");
@@ -247,8 +269,9 @@ function isMovieEligibleForCategory(movie: any, category: string): boolean {
     const isMatch = year >= startYear && year <= endYear;
     
     // Log matches and some non-matches for debugging
-    if (isMatch || Math.random() < 0.02) {
-      console.log(`${category} category check: "${movie.title}" (year: ${year}, from: ${movie.release_date || movie.primary_release_date || 'no date'}) - ${isMatch ? 'MATCH' : 'NO MATCH'}`);
+    if (isMatch || Math.random() < 0.01) {
+      const actorContext = personName ? ` for ${personName}` : '';
+      console.log(`${category} category check${actorContext}: "${movie.title}" (year: ${year}, from: ${movie.release_date || movie.primary_release_date || 'no date'}) - ${isMatch ? 'MATCH' : 'NO MATCH'}`);
     }
   }
 
@@ -303,10 +326,31 @@ function isMovieEligibleForCategory(movie: any, category: string): boolean {
       return year >= 2020 && year <= 2029;
     
     case 'Academy Award Nominee or Winner':
-      return movie.hasOscar === true || movie.oscar_status === 'winner' || movie.oscar_status === 'nominee';
+      // Enhanced Oscar status check with multiple field support
+      const oscarChecks = [
+        movie.hasOscar === true,
+        movie.oscar_status === 'winner',
+        movie.oscar_status === 'nominee'
+      ];
+      
+      const isOscarMovie = oscarChecks.some(check => check);
+      
+      // Enhanced logging for Oscar category debugging
+      if (Math.random() < 0.02) {
+        const actorContext = personName ? ` for ${personName}` : '';
+        console.log(`🏆 Oscar check${actorContext}: "${movie.title}" - hasOscar:${movie.hasOscar}, oscar_status:${movie.oscar_status}, result:${isOscarMovie}`);
+      }
+      
+      return isOscarMovie;
     
     case 'Blockbuster (minimum of $50 Mil)':
-      return movie.isBlockbuster === true || (movie.revenue && movie.revenue >= 50000000);
+      const blockbusterChecks = [
+        movie.isBlockbuster === true,
+        (movie.revenue && movie.revenue >= 50000000),
+        (movie.budget && movie.budget >= 50000000)
+      ];
+      
+      return blockbusterChecks.some(check => check);
     
     default:
       console.log(`Unknown category: ${category}`);

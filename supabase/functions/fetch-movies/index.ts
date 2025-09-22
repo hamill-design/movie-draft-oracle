@@ -18,8 +18,8 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Helper function to check and get Oscar status from cache or OMDb
-async function getOscarStatus(tmdbId: number, title: string, year: number): Promise<string> {
+// Helper function to check and get Oscar status from cache, classic database, or OMDb
+async function getOscarStatus(tmdbId: number, title: string, year: number, personName?: string): Promise<string> {
   try {
     // Reset daily counter if needed
     const today = new Date().toDateString();
@@ -40,13 +40,39 @@ async function getOscarStatus(tmdbId: number, title: string, year: number): Prom
       return cached.oscar_status;
     }
 
+    // Check classic Oscar database if we have person name
+    if (personName) {
+      const { data: classicData } = await supabase
+        .from('classic_oscar_data')
+        .select('oscar_status')
+        .ilike('person_name', personName)
+        .ilike('movie_title', `%${title}%`)
+        .eq('movie_year', year)
+        .single();
+
+      if (classicData) {
+        console.log(`🏆 Classic Oscar database hit for "${personName}" + "${title}" (${year}): ${classicData.oscar_status}`);
+        
+        // Cache this result for future use
+        await supabase.from('oscar_cache').insert({
+          tmdb_id: tmdbId,
+          movie_title: title,
+          movie_year: year,
+          oscar_status: classicData.oscar_status,
+          awards_data: `Classic database: ${classicData.oscar_status}`
+        });
+        
+        return classicData.oscar_status;
+      }
+    }
+
     // Check rate limit
     if (omdbCallsToday >= OMDB_DAILY_LIMIT) {
       console.log(`OMDb rate limit reached for today (${omdbCallsToday}/${OMDB_DAILY_LIMIT})`);
       return 'none';
     }
 
-    // Call OMDb API
+    // Call OMDb API as fallback
     const omdbApiKey = Deno.env.get('OMDB');
     if (!omdbApiKey) {
       console.log('OMDb API key not configured');
@@ -161,42 +187,212 @@ function movieMatchesYear(movie: any, requestedYear: number): boolean {
   return matches;
 }
 
-// Enhanced person validation and selection
-function selectBestPersonMatch(personResults: any[], searchQuery: string): any | null {
+// Enhanced person validation with career timeline awareness
+async function selectBestPersonMatch(personResults: any[], searchQuery: string, tmdbApiKey: string): Promise<any | null> {
   if (!personResults || personResults.length === 0) {
     return null;
   }
   
   const query = searchQuery.toLowerCase().trim();
+  console.log(`Selecting best match for "${searchQuery}" from ${personResults.length} candidates`);
   
-  // First, try exact name match
+  // Log all candidates for debugging
+  personResults.forEach((person, index) => {
+    console.log(`Candidate ${index + 1}: ${person.name} (ID: ${person.id}, popularity: ${person.popularity})`);
+  });
+  
+  // Define known classic actors with career timelines to avoid confusion
+  const classicActors = {
+    'bette davis': { startYear: 1929, endYear: 1989, tmdbId: null },
+    'clark gable': { startYear: 1924, endYear: 1960, tmdbId: null },
+    'katharine hepburn': { startYear: 1932, endYear: 1994, tmdbId: null },
+    'cary grant': { startYear: 1932, endYear: 1966, tmdbId: null },
+    'james stewart': { startYear: 1935, endYear: 1991, tmdbId: null },
+    'jimmy stewart': { startYear: 1935, endYear: 1991, tmdbId: null },
+    'humphrey bogart': { startYear: 1930, endYear: 1957, tmdbId: null },
+    'spencer tracy': { startYear: 1930, endYear: 1967, tmdbId: null }
+  };
+  
+  // Check if this is a known classic actor
+  const classicActor = classicActors[query];
+  if (classicActor) {
+    console.log(`🎬 Identified classic actor: ${query} (active ${classicActor.startYear}-${classicActor.endYear})`);
+  }
+  
+  // Enhanced matching with career validation
+  let bestMatch = null;
+  let bestScore = 0;
+  
   for (const person of personResults) {
-    if (person.name && person.name.toLowerCase() === query) {
-      console.log(`Exact name match found: ${person.name} (ID: ${person.id})`);
-      return person;
+    if (!person.name) continue;
+    
+    const personName = person.name.toLowerCase();
+    let score = 0;
+    
+    // Exact name match gets highest score
+    if (personName === query) {
+      score = 100;
+    } 
+    // Handle common name variations
+    else if (
+      (query === 'jimmy stewart' && personName === 'james stewart') ||
+      (query === 'james stewart' && personName === 'jimmy stewart')
+    ) {
+      score = 95;
     }
+    // Partial match with good popularity
+    else if (personName.includes(query) && person.popularity > 5) {
+      score = 70 + (person.popularity / 100); // Base score + popularity bonus
+    }
+    // Less specific partial match
+    else if (personName.includes(query.split(' ')[0])) {
+      score = 30 + (person.popularity / 100);
+    }
+    
+    // For classic actors, validate against known career timeline
+    if (classicActor && score > 0) {
+      try {
+        // Get person details to check birth/death dates
+        const detailsUrl = `https://api.themoviedb.org/3/person/${person.id}?api_key=${tmdbApiKey}`;
+        const detailsResponse = await fetch(detailsUrl);
+        
+        if (detailsResponse.ok) {
+          const details = await detailsResponse.json();
+          
+          // Extract birth year for validation
+          let birthYear = null;
+          if (details.birthday) {
+            birthYear = new Date(details.birthday).getFullYear();
+          }
+          
+          // Extract death year if available
+          let deathYear = null;
+          if (details.deathday) {
+            deathYear = new Date(details.deathday).getFullYear();
+          }
+          
+          console.log(`Person details: ${person.name} (born: ${birthYear}, died: ${deathYear})`);
+          
+          // Validate career timeline for classic actors
+          if (birthYear) {
+            const expectedCareerStart = birthYear + 20; // Rough career start age
+            const careerGap = Math.abs(expectedCareerStart - classicActor.startYear);
+            
+            // If career timeline doesn't match, reduce score significantly
+            if (careerGap > 15) {
+              console.log(`⚠️ Career timeline mismatch for ${person.name}: expected start ~${classicActor.startYear}, but birth suggests ~${expectedCareerStart}`);
+              score *= 0.3; // Reduce score by 70%
+            } else {
+              console.log(`✅ Career timeline matches for classic actor ${person.name}`);
+              score *= 1.2; // Boost score for timeline match
+}
+
+// Process movie results with enhanced Oscar and blockbuster detection
+async function processMovieResults(data: any, tmdbApiKey: string, personName?: string): Promise<any> {
+  console.log('TMDB API response received with', (data.results || []).length, 'movies');
+  
+  // Enhanced movie data transformation with proper Oscar and blockbuster detection
+  const transformedMovies = await Promise.all((data.results || []).map(async (movie: any) => {
+    let detailedMovie = movie;
+    let hasOscar = false;
+    let isBlockbuster = false;
+    
+    try {
+      // Get detailed movie information including budget and revenue
+      const detailResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${tmdbApiKey}`);
+      if (detailResponse.ok) {
+        detailedMovie = await detailResponse.json();
+        
+        // Proper blockbuster detection using actual budget/revenue data
+        const budget = detailedMovie.budget || 0;
+        const revenue = detailedMovie.revenue || 0;
+        isBlockbuster = budget >= 50000000 || revenue >= 100000000;
+        
+        // Only log occasionally to avoid spam
+        if (Math.random() < 0.05) {
+          console.log(`Movie: ${movie.title}, Budget: $${budget}, Revenue: $${revenue}, Blockbuster: ${isBlockbuster}`);
+        }
+      }
+
+      // Get accurate Oscar status from enhanced function with person context
+      const movieYear = extractMovieYear(detailedMovie);
+      
+      // Enhanced logging with more context
+      if (Math.random() < 0.05) {
+        console.log(`Movie: ${movie.title} - Release Date: ${detailedMovie.release_date}, Primary: ${detailedMovie.primary_release_date}, Extracted Year: ${movieYear}`);
+      }
+      
+      const oscarStatus = await getOscarStatus(movie.id, movie.title, movieYear, personName);
+      hasOscar = oscarStatus !== 'none';
+      
+    } catch (error) {
+      console.log(`Could not fetch detailed info for movie ${movie.id}:`, error);
+    }
+
+    // Use enhanced year extraction for consistency
+    const correctYear = extractMovieYear(detailedMovie);
+    
+    return {
+      id: movie.id,
+      title: movie.title,
+      year: correctYear,
+      // Enhanced debugging info (remove in production)
+      year_debug: Math.random() < 0.1 ? {
+        release_date: detailedMovie.release_date,
+        primary_release_date: detailedMovie.primary_release_date,
+        extracted_year: correctYear
+      } : undefined,
+      genre: movie.genre_ids?.[0] ? getGenreName(movie.genre_ids[0]) : 'Unknown',
+      director: 'Unknown',
+      runtime: detailedMovie.runtime || 120,
+      poster: getMovieEmoji(movie.genre_ids?.[0]),
+      description: movie.overview || 'No description available',
+      isDrafted: false,
+      tmdbId: movie.id,
+      posterPath: movie.poster_path,
+      backdropPath: movie.backdrop_path,
+      voteAverage: movie.vote_average,
+      releaseDate: movie.release_date,
+      budget: detailedMovie.budget || 0,
+      revenue: detailedMovie.revenue || 0,
+      hasOscar,
+      isBlockbuster,
+      oscar_status: hasOscar ? 'nominee' : 'none' // Simplified for compatibility
+    };
+  }));
+
+  console.log('Returning transformed movies:', transformedMovies.length);
+
+  return {
+    results: transformedMovies,
+    total_pages: data.total_pages,
+    total_results: data.total_results,
+    page: data.page,
+    person_info: data.person_info // Pass through person info if available
+  };
+}
+          }
+        }
+      } catch (error) {
+        console.log(`Could not fetch person details for timeline validation: ${error.message}`);
+      }
+    }
+    
+    // Track best match
+    if (score > bestScore) {
+      bestScore = score;
+      bestMatch = person;
+    }
+    
+    console.log(`${person.name}: score = ${score.toFixed(2)}`);
   }
   
-  // Then try partial name match with high popularity
-  const partialMatches = personResults.filter(person => 
-    person.name && person.name.toLowerCase().includes(query) && person.popularity > 5
-  );
-  
-  if (partialMatches.length > 0) {
-    // Sort by popularity and return the highest
-    partialMatches.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
-    console.log(`Partial match with high popularity: ${partialMatches[0].name} (ID: ${partialMatches[0].id}, popularity: ${partialMatches[0].popularity})`);
-    return partialMatches[0];
+  if (bestMatch) {
+    console.log(`✅ Best match selected: ${bestMatch.name} (ID: ${bestMatch.id}, score: ${bestScore.toFixed(2)})`);
+    return bestMatch;
   }
   
-  // Fallback to first result if it has reasonable popularity
-  const firstResult = personResults[0];
-  if (firstResult.popularity > 1) {
-    console.log(`Using first result: ${firstResult.name} (ID: ${firstResult.id}, popularity: ${firstResult.popularity})`);
-    return firstResult;
-  }
-  
-  console.log(`No suitable person match found for: ${searchQuery}`);
+  console.log(`❌ No suitable person match found for: ${searchQuery}`);
   return null;
 }
 
@@ -271,7 +467,7 @@ serve(async (req) => {
           
           if (personData.results && personData.results.length > 0) {
             // Use enhanced person selection
-            const selectedPerson = selectBestPersonMatch(personData.results, searchQuery);
+            const selectedPerson = await selectBestPersonMatch(personData.results, searchQuery, tmdbApiKey);
             
             if (!selectedPerson) {
               console.log('No suitable person match found for query:', searchQuery);
@@ -327,7 +523,7 @@ serve(async (req) => {
                 };
                 
                 // Skip normal TMDB API call since we have the data
-                return new Response(JSON.stringify(await processMovieResults(data, tmdbApiKey)), {
+                return new Response(JSON.stringify(await processMovieResults(data, tmdbApiKey, selectedPerson.name)), {
                   headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 });
                 
@@ -591,84 +787,11 @@ serve(async (req) => {
       data.total_pages = Math.ceil(filteredCount / 20);
     }
 
-    // Enhanced movie data transformation with proper Oscar and blockbuster detection
-    const transformedMovies = await Promise.all((data.results || []).map(async (movie: any) => {
-      let detailedMovie = movie;
-      let hasOscar = false;
-      let isBlockbuster = false;
-      
-      try {
-        // Get detailed movie information including budget and revenue
-        const detailResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${tmdbApiKey}`);
-        if (detailResponse.ok) {
-          detailedMovie = await detailResponse.json();
-          
-          // Proper blockbuster detection using actual budget/revenue data
-          const budget = detailedMovie.budget || 0;
-          const revenue = detailedMovie.revenue || 0;
-          isBlockbuster = budget >= 50000000 || revenue >= 100000000;
-          
-          // Only log occasionally to avoid spam
-          if (Math.random() < 0.05) {
-            console.log(`Movie: ${movie.title}, Budget: $${budget}, Revenue: $${revenue}, Blockbuster: ${isBlockbuster}`);
-          }
-        }
+    // Use the new processMovieResults function with person context when available
+    const personName = data.person_info?.name;
+    const processedData = await processMovieResults(data, tmdbApiKey, personName);
 
-        // Get accurate Oscar status from OMDb API with caching
-        // Use the enhanced movie year extraction
-        const movieYear = extractMovieYear(detailedMovie);
-        
-        // Enhanced logging with more context
-        if (Math.random() < 0.05) {
-          console.log(`Movie: ${movie.title} - Release Date: ${detailedMovie.release_date}, Primary: ${detailedMovie.primary_release_date}, Extracted Year: ${movieYear}`);
-        }
-        
-        const oscarStatus = await getOscarStatus(movie.id, movie.title, movieYear);
-        hasOscar = oscarStatus !== 'none';
-        
-      } catch (error) {
-        console.log(`Could not fetch detailed info for movie ${movie.id}:`, error);
-      }
-
-      // Use enhanced year extraction for consistency
-      const correctYear = extractMovieYear(detailedMovie);
-      
-      return {
-        id: movie.id,
-        title: movie.title,
-        year: correctYear,
-        // Enhanced debugging info (remove in production)
-        year_debug: Math.random() < 0.1 ? {
-          release_date: detailedMovie.release_date,
-          primary_release_date: detailedMovie.primary_release_date,
-          extracted_year: correctYear
-        } : undefined,
-        genre: movie.genre_ids?.[0] ? getGenreName(movie.genre_ids[0]) : 'Unknown',
-        director: 'Unknown',
-        runtime: detailedMovie.runtime || 120,
-        poster: getMovieEmoji(movie.genre_ids?.[0]),
-        description: movie.overview || 'No description available',
-        isDrafted: false,
-        tmdbId: movie.id,
-        posterPath: movie.poster_path,
-        backdropPath: movie.backdrop_path,
-        voteAverage: movie.vote_average,
-        releaseDate: movie.release_date,
-        budget: detailedMovie.budget || 0,
-        revenue: detailedMovie.revenue || 0,
-        hasOscar,
-        isBlockbuster
-      };
-    }));
-
-    console.log('Returning transformed movies:', transformedMovies.length);
-
-    return new Response(JSON.stringify({
-      results: transformedMovies,
-      total_pages: data.total_pages,
-      total_results: data.total_results,
-      page: data.page
-    }), {
+    return new Response(JSON.stringify(processedData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 

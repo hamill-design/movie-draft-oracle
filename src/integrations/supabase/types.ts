@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      classic_oscar_data: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          id: string
+          movie_title: string
+          movie_year: number
+          oscar_status: string
+          person_name: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          movie_title: string
+          movie_year: number
+          oscar_status: string
+          person_name: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          id?: string
+          movie_title?: string
+          movie_year?: number
+          oscar_status?: string
+          person_name?: string
+        }
+        Relationships: []
+      }
       draft_participants: {
         Row: {
           created_at: string
