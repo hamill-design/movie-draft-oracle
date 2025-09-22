@@ -38,6 +38,11 @@ serve(async (req) => {
 
     console.log('Analyzing categories:', { theme, option, categories, playerCount });
 
+    // Enhanced logging for specific debug cases
+    if (option === 'Clark Gable' && categories.includes("50's")) {
+      console.log('🔍 DEBUG: Analyzing Clark Gable + 50s combination - this will have enhanced logging');
+    }
+
     // Analyze all categories in parallel for better performance
     const categoryPromises = categories.map(async (category) => {
       try {
@@ -146,7 +151,22 @@ async function analyzeCategoryMovies(
   const available = movieCount >= requiredCount;
 
   console.log(`Category ${category}: ${movieCount} movies found, ${requiredCount} required`);
-  if (movieCount > 0) {
+  
+  // Enhanced logging for specific actor + decade combinations
+  if (theme === 'people' && category.includes("'s")) {
+    console.log(`🔍 ACTOR + DECADE: ${option} + ${category} = ${movieCount} movies`);
+    if (movieCount > 0) {
+      console.log(`Sample movies: ${sampleMovies.join(', ')}`);
+      // Log year distribution for decade categories
+      const yearCounts = {};
+      eligibleMovies.forEach(movie => {
+        const year = movie.year || movie.release_date ? new Date(movie.release_date).getFullYear() : 0;
+        const decade = Math.floor(year / 10) * 10;
+        yearCounts[decade] = (yearCounts[decade] || 0) + 1;
+      });
+      console.log(`Year distribution for ${option} + ${category}:`, yearCounts);
+    }
+  } else if (movieCount > 0) {
     console.log(`Sample eligible movies: ${sampleMovies.join(', ')}`);
   }
 
@@ -161,33 +181,46 @@ async function analyzeCategoryMovies(
 }
 
 function isMovieEligibleForCategory(movie: any, category: string): boolean {
-  // Extract year from movie data with enhanced logic
+  // Enhanced year extraction with comprehensive fallback logic
   let year = 0;
   
-  // Try multiple approaches to extract year
+  // Try direct year field first (from enhanced fetch-movies)
   if (movie.year && movie.year > 1900) {
     year = movie.year;
-  } else if (movie.release_date) {
-    try {
-      const releaseYear = new Date(movie.release_date).getFullYear();
-      if (releaseYear > 1900 && releaseYear <= new Date().getFullYear() + 5) {
-        year = releaseYear;
-      }
-    } catch (error) {
-      // Try parsing just the year from the date string
-      const yearMatch = movie.release_date.match(/(\d{4})/);
-      if (yearMatch) {
-        const parsedYear = parseInt(yearMatch[1]);
-        if (parsedYear > 1900 && parsedYear <= new Date().getFullYear() + 5) {
-          year = parsedYear;
+  } else {
+    // Try multiple date fields with enhanced parsing
+    const dateFields = ['release_date', 'primary_release_date', 'first_air_date'];
+    
+    for (const field of dateFields) {
+      if (movie[field]) {
+        try {
+          // Try full date parsing first
+          const date = new Date(movie[field]);
+          if (!isNaN(date.getTime())) {
+            const extractedYear = date.getFullYear();
+            if (extractedYear > 1900 && extractedYear <= new Date().getFullYear() + 5) {
+              year = extractedYear;
+              break;
+            }
+          }
+        } catch (error) {
+          // Fallback to regex extraction
+          const yearMatch = movie[field].toString().match(/(\d{4})/);
+          if (yearMatch) {
+            const parsedYear = parseInt(yearMatch[1]);
+            if (parsedYear > 1900 && parsedYear <= new Date().getFullYear() + 5) {
+              year = parsedYear;
+              break;
+            }
+          }
         }
       }
     }
   }
   
-  // Log year extraction for debugging decade categories
+  // Enhanced logging for decade categories with more detail
   if (category.includes("'s") && Math.random() < 0.1) {
-    console.log(`Year extraction for ${movie.title}: extracted=${year}, raw_year=${movie.year}, release_date=${movie.release_date}`);
+    console.log(`Enhanced year extraction for ${movie.title}: extracted=${year}, sources={year:${movie.year}, release_date:${movie.release_date}, primary_release_date:${movie.primary_release_date}}`);
   }
 
   // Handle genre data - it could be a string or array
@@ -206,11 +239,16 @@ function isMovieEligibleForCategory(movie: any, category: string): boolean {
     console.log(`Movie: ${movie.title}, Year: ${year}, Genre: "${genreString}", HasOscar: ${movie.hasOscar}, Revenue: ${movie.revenue}, Budget: ${movie.budget}`);
   }
 
-  // Special logging for 50's category debugging
-  if (category === "50's") {
-    const isMatch = year >= 1950 && year <= 1959;
-    if (isMatch || Math.random() < 0.05) {
-      console.log(`50's category check: ${movie.title} (${year}) - ${isMatch ? 'MATCH' : 'NO MATCH'}`);
+  // Enhanced logging for decade categories debugging
+  if (category.includes("'s")) {
+    const decade = category.replace("'s", "");
+    const startYear = parseInt(decade) * 10;
+    const endYear = startYear + 9;
+    const isMatch = year >= startYear && year <= endYear;
+    
+    // Log matches and some non-matches for debugging
+    if (isMatch || Math.random() < 0.02) {
+      console.log(`${category} category check: "${movie.title}" (year: ${year}, from: ${movie.release_date || movie.primary_release_date || 'no date'}) - ${isMatch ? 'MATCH' : 'NO MATCH'}`);
     }
   }
 

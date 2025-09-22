@@ -93,29 +93,111 @@ async function getOscarStatus(tmdbId: number, title: string, year: number): Prom
   }
 }
 
-// Helper function to extract year from various date formats
+// Enhanced year extraction with multiple date field support
 function getYearFromDate(dateString: string): number {
   if (!dateString) return 0;
   
-  // Handle different date formats
-  const year = parseInt(dateString.substring(0, 4));
-  return isNaN(year) ? 0 : year;
+  // Handle various date formats: YYYY-MM-DD, YYYY, partial dates
+  const dateStr = dateString.toString().trim();
+  
+  // Try full ISO date format first
+  try {
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      const year = date.getFullYear();
+      if (year > 1900 && year <= new Date().getFullYear() + 5) {
+        return year;
+      }
+    }
+  } catch (e) {
+    // Continue to regex parsing
+  }
+  
+  // Try regex to extract year from various formats
+  const yearMatch = dateStr.match(/(\d{4})/);
+  if (yearMatch) {
+    const year = parseInt(yearMatch[1]);
+    if (year > 1900 && year <= new Date().getFullYear() + 5) {
+      return year;
+    }
+  }
+  
+  return 0;
 }
 
-// Helper function to validate if a movie matches the requested year
+// Enhanced function to extract year from movie with multiple fallbacks
+function extractMovieYear(movie: any): number {
+  // Try multiple date fields in order of preference
+  const dateFields = ['release_date', 'primary_release_date', 'first_air_date'];
+  
+  for (const field of dateFields) {
+    if (movie[field]) {
+      const year = getYearFromDate(movie[field]);
+      if (year > 0) {
+        return year;
+      }
+    }
+  }
+  
+  // Try direct year field
+  if (movie.year && movie.year > 1900) {
+    return movie.year;
+  }
+  
+  return 0;
+}
+
+// Enhanced function to validate if a movie matches the requested year
 function movieMatchesYear(movie: any, requestedYear: number): boolean {
   if (!movie || !requestedYear) return false;
   
-  // Check multiple date fields for better accuracy
-  const releaseYear = movie.release_date ? getYearFromDate(movie.release_date) : 0;
+  const movieYear = extractMovieYear(movie);
+  const matches = movieYear === requestedYear;
   
-  const matches = releaseYear === requestedYear;
-  
-  if (!matches) {
-    console.log(`Filtering out "${movie.title}" - release year: ${releaseYear}, requested: ${requestedYear}`);
+  if (!matches && Math.random() < 0.1) { // Log 10% of mismatches for debugging
+    console.log(`Year mismatch: "${movie.title}" - extracted year: ${movieYear}, requested: ${requestedYear}, release_date: ${movie.release_date}`);
   }
   
   return matches;
+}
+
+// Enhanced person validation and selection
+function selectBestPersonMatch(personResults: any[], searchQuery: string): any | null {
+  if (!personResults || personResults.length === 0) {
+    return null;
+  }
+  
+  const query = searchQuery.toLowerCase().trim();
+  
+  // First, try exact name match
+  for (const person of personResults) {
+    if (person.name && person.name.toLowerCase() === query) {
+      console.log(`Exact name match found: ${person.name} (ID: ${person.id})`);
+      return person;
+    }
+  }
+  
+  // Then try partial name match with high popularity
+  const partialMatches = personResults.filter(person => 
+    person.name && person.name.toLowerCase().includes(query) && person.popularity > 5
+  );
+  
+  if (partialMatches.length > 0) {
+    // Sort by popularity and return the highest
+    partialMatches.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+    console.log(`Partial match with high popularity: ${partialMatches[0].name} (ID: ${partialMatches[0].id}, popularity: ${partialMatches[0].popularity})`);
+    return partialMatches[0];
+  }
+  
+  // Fallback to first result if it has reasonable popularity
+  const firstResult = personResults[0];
+  if (firstResult.popularity > 1) {
+    console.log(`Using first result: ${firstResult.name} (ID: ${firstResult.id}, popularity: ${firstResult.popularity})`);
+    return firstResult;
+  }
+  
+  console.log(`No suitable person match found for: ${searchQuery}`);
+  return null;
 }
 
 serve(async (req) => {
@@ -176,7 +258,7 @@ serve(async (req) => {
         console.log('Using multiple year filters: primary_release_year, year, and release_date range for:', yearNum);
         break;
       case 'person':
-        // First, search for the person to get their ID
+        // Enhanced person search with comprehensive filmography retrieval
         const personSearchUrl = `https://api.themoviedb.org/3/search/person?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchQuery)}`;
         console.log('Searching for person:', searchQuery);
         
@@ -188,17 +270,85 @@ serve(async (req) => {
           const personData = await personResponse.json();
           
           if (personData.results && personData.results.length > 0) {
-            const selectedPerson = personData.results[0];
-            console.log('Found person:', selectedPerson.name, 'ID:', selectedPerson.id);
+            // Use enhanced person selection
+            const selectedPerson = selectBestPersonMatch(personData.results, searchQuery);
+            
+            if (!selectedPerson) {
+              console.log('No suitable person match found for query:', searchQuery);
+              return new Response(JSON.stringify({
+                results: [],
+                total_pages: 0,
+                total_results: 0,
+                page: 1,
+                reason: 'No suitable person match found'
+              }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              });
+            }
+            
+            console.log('Selected person:', selectedPerson.name, 'ID:', selectedPerson.id, 'Popularity:', selectedPerson.popularity);
+            
+            // Use person's movie credits instead of discover endpoint for complete filmography
+            if (fetchAll) {
+              console.log('Fetching complete filmography using person credits endpoint');
+              const creditsUrl = `https://api.themoviedb.org/3/person/${selectedPerson.id}/movie_credits?api_key=${tmdbApiKey}`;
+              
+              try {
+                const creditsResponse = await fetch(creditsUrl);
+                if (!creditsResponse.ok) {
+                  throw new Error(`Credits fetch failed: ${creditsResponse.status}`);
+                }
+                const creditsData = await creditsResponse.json();
+                
+                // Get all movies from cast and crew
+                const allMovies = [
+                  ...(creditsData.cast || []),
+                  ...(creditsData.crew || [])
+                ];
+                
+                // Remove duplicates based on movie ID
+                const uniqueMovies = allMovies.filter((movie, index, self) => 
+                  index === self.findIndex(m => m.id === movie.id)
+                );
+                
+                console.log(`Person credits: ${creditsData.cast?.length || 0} cast + ${creditsData.crew?.length || 0} crew = ${allMovies.length} total, ${uniqueMovies.length} unique movies`);
+                
+                // Return complete filmography data
+                data = {
+                  results: uniqueMovies,
+                  total_pages: Math.ceil(uniqueMovies.length / 20),
+                  total_results: uniqueMovies.length,
+                  page: 1,
+                  person_info: {
+                    id: selectedPerson.id,
+                    name: selectedPerson.name,
+                    popularity: selectedPerson.popularity
+                  }
+                };
+                
+                // Skip normal TMDB API call since we have the data
+                return new Response(JSON.stringify(await processMovieResults(data, tmdbApiKey)), {
+                  headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                });
+                
+              } catch (creditsError) {
+                console.error('Error fetching person credits, falling back to discover:', creditsError);
+                // Fallback to discover endpoint
+              }
+            }
+            
+            // Fallback to discover endpoint (for single page requests or if credits failed)
             baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&with_people=${selectedPerson.id}&sort_by=popularity.desc`;
             url = `${baseUrl}&page=${page}`;
+            
           } else {
             console.log('No person found for query:', searchQuery);
             return new Response(JSON.stringify({
               results: [],
               total_pages: 0,
               total_results: 0,
-              page: 1
+              page: 1,
+              reason: 'No person found'
             }), {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             });
@@ -324,6 +474,17 @@ serve(async (req) => {
                   const requestedYear = parseInt(searchQuery);
                   pagesToAdd = pageData.results.filter((movie: any) => movieMatchesYear(movie, requestedYear));
                   console.log(`Page ${currentPage}: ${pageData.results.length} total movies, ${pagesToAdd.length} matching year ${requestedYear}`);
+                  
+                  // Enhanced logging for year debugging
+                  if (pagesToAdd.length < pageData.results.length / 2) {
+                    console.log(`Low match rate for year ${requestedYear}. Sample year extraction:`, 
+                      pageData.results.slice(0, 3).map((m: any) => ({
+                        title: m.title,
+                        release_date: m.release_date,
+                        extracted_year: extractMovieYear(m)
+                      }))
+                    );
+                  }
                 }
                 
                 // Filter out duplicates based on movie ID
@@ -405,15 +566,21 @@ serve(async (req) => {
       const requestedYear = parseInt(searchQuery);
       const originalCount = (data.results || []).length;
       
-      // Log all years before filtering for debugging
+      // Enhanced year analysis for debugging
       const allYears = (data.results || []).map((movie: any) => ({
         title: movie.title,
         releaseDate: movie.release_date,
-        year: getYearFromDate(movie.release_date || '')
+        primaryReleaseDate: movie.primary_release_date,
+        extractedYear: extractMovieYear(movie)
       }));
-      console.log('Pre-filtering year analysis:', allYears.slice(0, 10)); // Log first 10 for debugging
+      console.log(`Pre-filtering year analysis for ${requestedYear}:`, allYears.slice(0, 5));
       
-      // Apply strict year filtering
+      // Count how many movies have valid years vs invalid
+      const validYearCount = allYears.filter(m => m.extractedYear > 0).length;
+      const invalidYearCount = allYears.length - validYearCount;
+      console.log(`Year extraction stats: ${validYearCount} valid, ${invalidYearCount} invalid years out of ${allYears.length} total movies`);
+      
+      // Apply enhanced year filtering
       data.results = (data.results || []).filter((movie: any) => movieMatchesYear(movie, requestedYear));
       
       const filteredCount = data.results.length;
@@ -441,13 +608,20 @@ serve(async (req) => {
           const revenue = detailedMovie.revenue || 0;
           isBlockbuster = budget >= 50000000 || revenue >= 100000000;
           
-          console.log(`Movie: ${movie.title}, Budget: $${budget}, Revenue: $${revenue}, Blockbuster: ${isBlockbuster}`);
+          // Only log occasionally to avoid spam
+          if (Math.random() < 0.05) {
+            console.log(`Movie: ${movie.title}, Budget: $${budget}, Revenue: $${revenue}, Blockbuster: ${isBlockbuster}`);
+          }
         }
 
         // Get accurate Oscar status from OMDb API with caching
-        // Use the actual movie release year, not the requested year
-        const movieYear = detailedMovie.release_date ? getYearFromDate(detailedMovie.release_date) : movie.release_date ? getYearFromDate(movie.release_date) : 0;
-        console.log(`Movie: ${movie.title} - Release Date: ${movie.release_date}, Extracted Year: ${movieYear}`);
+        // Use the enhanced movie year extraction
+        const movieYear = extractMovieYear(detailedMovie);
+        
+        // Enhanced logging with more context
+        if (Math.random() < 0.05) {
+          console.log(`Movie: ${movie.title} - Release Date: ${detailedMovie.release_date}, Primary: ${detailedMovie.primary_release_date}, Extracted Year: ${movieYear}`);
+        }
         
         const oscarStatus = await getOscarStatus(movie.id, movie.title, movieYear);
         hasOscar = oscarStatus !== 'none';
@@ -456,13 +630,19 @@ serve(async (req) => {
         console.log(`Could not fetch detailed info for movie ${movie.id}:`, error);
       }
 
-      // Use the correct year from the movie data, not current year
-      const correctYear = detailedMovie.release_date ? getYearFromDate(detailedMovie.release_date) : movie.release_date ? getYearFromDate(movie.release_date) : 0;
+      // Use enhanced year extraction for consistency
+      const correctYear = extractMovieYear(detailedMovie);
       
       return {
         id: movie.id,
         title: movie.title,
-        year: correctYear, // Use the actual release year
+        year: correctYear,
+        // Enhanced debugging info (remove in production)
+        year_debug: Math.random() < 0.1 ? {
+          release_date: detailedMovie.release_date,
+          primary_release_date: detailedMovie.primary_release_date,
+          extracted_year: correctYear
+        } : undefined,
         genre: movie.genre_ids?.[0] ? getGenreName(movie.genre_ids[0]) : 'Unknown',
         director: 'Unknown',
         runtime: detailedMovie.runtime || 120,
