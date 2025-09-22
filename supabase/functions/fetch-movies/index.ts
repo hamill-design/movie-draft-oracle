@@ -171,6 +171,66 @@ function isArchiveFootageRole(movie: any, actorName: string): boolean {
   return false;
 }
 
+// Enhanced function to filter out TV content and validate movie eligibility
+function isValidMovieContent(movie: any): boolean {
+  if (!movie) return false;
+  
+  // Check for TV-specific indicators
+  if (movie.media_type === 'tv') {
+    console.log(`🚫 TV content filtered: "${movie.title || movie.name}" (media_type: tv)`);
+    return false;
+  }
+  
+  // Check for TV Movie genre (10770) and other TV-specific genres
+  const tvGenreIds = [10770, 10762]; // TV Movie, TV News
+  if (movie.genre_ids && Array.isArray(movie.genre_ids)) {
+    const hasTvGenre = movie.genre_ids.some((id: number) => tvGenreIds.includes(id));
+    if (hasTvGenre) {
+      console.log(`🚫 TV genre filtered: "${movie.title}" (genre IDs: ${movie.genre_ids.join(', ')})`);
+      return false;
+    }
+  }
+  
+  // Check title patterns for TV episodes and specials
+  const title = (movie.title || movie.name || '').toLowerCase();
+  const tvTitlePatterns = [
+    /episode \d+/i,
+    /season \d+/i,
+    /(^|\s)tv(\s|$)/i,
+    /television/i,
+    /mini-series/i,
+    /miniseries/i,
+    /web series/i,
+    /tv special/i,
+    /tv movie/i
+  ];
+  
+  const isTvTitle = tvTitlePatterns.some(pattern => pattern.test(title));
+  if (isTvTitle) {
+    console.log(`🚫 TV title pattern filtered: "${movie.title}"`);
+    return false;
+  }
+  
+  // Check overview for TV indicators
+  const overview = (movie.overview || '').toLowerCase();
+  const tvOverviewKeywords = [
+    'television series',
+    'tv series', 
+    'mini-series',
+    'web series',
+    'tv special',
+    'television special'
+  ];
+  
+  const hasTvOverview = tvOverviewKeywords.some(keyword => overview.includes(keyword));
+  if (hasTvOverview) {
+    console.log(`🚫 TV overview filtered: "${movie.title}" (overview contains TV keywords)`);
+    return false;
+  }
+  
+  return true;
+}
+
 // Enhanced function to validate movies for deceased actors
 function isValidMovieForDeceasedActor(movie: any, deathDate: string, movieGenres: any[], actorName: string = ''): boolean {
   const death = new Date(deathDate);
@@ -422,7 +482,9 @@ serve(async (req) => {
       throw new Error('TMDB API key not configured');
     }
 
-    console.log('Fetch movies request:', { category, searchQuery, page, fetchAll });
+    console.log('='.repeat(80));
+    console.log('🎬 FETCH MOVIES REQUEST:', { category, searchQuery, page, fetchAll });
+    console.log('='.repeat(80));
 
     let url = '';
     let baseUrl = '';
@@ -521,20 +583,48 @@ serve(async (req) => {
                 if (personLifespan && personLifespan.death_date) {
                   console.log(`${selectedPerson.name} is deceased (died: ${personLifespan.death_date}), filtering credits`);
                   // For deceased actors, only include cast credits (actual performances)
-                  allMovies = creditsData.cast || [];
+                  allMovies = (creditsData.cast || []).filter((movie: any) => {
+                    // Apply TV content filtering first
+                    if (!isValidMovieContent(movie)) {
+                      return false;
+                    }
+                    
+                    // Ensure we have a proper acting role (not just archive footage)
+                    const character = (movie.character || '').toLowerCase();
+                    const isActingRole = character && 
+                      !character.includes('self') && 
+                      !character.includes('archive footage') &&
+                      !character.includes('narrator') &&
+                      !character.includes('host');
+                    
+                    if (!isActingRole && character) {
+                      console.log(`🚫 Non-acting role filtered: "${movie.title}" - character: "${movie.character}"`);
+                      return false;
+                    }
+                    
+                    return true;
+                  });
                 } else {
-                  console.log(`${selectedPerson.name} is living or not in our database, including all credits`);
-                  // For living actors, include both cast and crew
-                  allMovies = [
-                    ...(creditsData.cast || []),
-                    ...(creditsData.crew || [])
-                  ];
+                  console.log(`${selectedPerson.name} is living or not in our database, including filtered credits`);
+                  // For living actors, prioritize cast credits but include some crew roles
+                  const castMovies = (creditsData.cast || []).filter(isValidMovieContent);
+                  
+                  // Only include crew if they're in key creative roles (director, producer, writer)
+                  const keyCrewDepartments = ['Directing', 'Production', 'Writing'];
+                  const crewMovies = (creditsData.crew || [])
+                    .filter((movie: any) => keyCrewDepartments.includes(movie.department))
+                    .filter(isValidMovieContent);
+                  
+                  allMovies = [...castMovies, ...crewMovies];
+                  console.log(`Living actor credits: ${castMovies.length} cast + ${crewMovies.length} key crew = ${allMovies.length} total`);
                 }
                 
-                // Remove duplicates based on movie ID and apply lifespan filtering
+                // Remove duplicates based on movie ID and apply additional filtering
                 let uniqueMovies = allMovies.filter((movie, index, self) => 
                   index === self.findIndex(m => m.id === movie.id)
                 );
+                
+                console.log(`After TV filtering and deduplication: ${uniqueMovies.length} unique movies`);
                 
                 // Enhanced lifespan filtering for deceased actors
                 if (personLifespan && personLifespan.death_date) {
@@ -558,6 +648,14 @@ serve(async (req) => {
                 }
                 
                 console.log(`Person credits: ${creditsData.cast?.length || 0} cast + ${creditsData.crew?.length || 0} crew = ${allMovies.length} total, ${uniqueMovies.length} unique movies`);
+                
+                // Enhanced debugging for specific person queries
+                if (selectedPerson.name.toLowerCase().includes('jane fonda')) {
+                  console.log(`🔍 JANE FONDA DEBUG - Sample movies after filtering:`);
+                  uniqueMovies.slice(0, 10).forEach((movie: any) => {
+                    console.log(`  - "${movie.title}" (${extractMovieYear(movie)}) - ${movie.character || 'N/A'}`);
+                  });
+                }
                 
                 // Return complete filmography data
                 data = {
@@ -837,84 +935,7 @@ serve(async (req) => {
       data.total_pages = Math.ceil(filteredCount / 20);
     }
 
-    // Enhanced movie data transformation with proper Oscar and blockbuster detection
-    const transformedMovies = await Promise.all((data.results || []).map(async (movie: any) => {
-      let detailedMovie = movie;
-      let hasOscar = false;
-      let isBlockbuster = false;
-      
-      try {
-        // Get detailed movie information including budget and revenue
-        const detailResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${tmdbApiKey}`);
-        if (detailResponse.ok) {
-          detailedMovie = await detailResponse.json();
-          
-          // Proper blockbuster detection using actual budget/revenue data
-          const budget = detailedMovie.budget || 0;
-          const revenue = detailedMovie.revenue || 0;
-          isBlockbuster = budget >= 50000000 || revenue >= 100000000;
-          
-          // Only log occasionally to avoid spam
-          if (Math.random() < 0.05) {
-            console.log(`Movie: ${movie.title}, Budget: $${budget}, Revenue: $${revenue}, Blockbuster: ${isBlockbuster}`);
-          }
-        }
-
-        // Get accurate Oscar status from OMDb API with caching
-        // Use the enhanced movie year extraction
-        const movieYear = extractMovieYear(detailedMovie);
-        
-        // Enhanced logging with more context
-        if (Math.random() < 0.05) {
-          console.log(`Movie: ${movie.title} - Release Date: ${detailedMovie.release_date}, Primary: ${detailedMovie.primary_release_date}, Extracted Year: ${movieYear}`);
-        }
-        
-        const oscarStatus = await getOscarStatus(movie.id, movie.title, movieYear);
-        hasOscar = oscarStatus !== 'none';
-        
-      } catch (error) {
-        console.log(`Could not fetch detailed info for movie ${movie.id}:`, error);
-      }
-
-      // Use enhanced year extraction for consistency
-      const correctYear = extractMovieYear(detailedMovie);
-      
-      return {
-        id: movie.id,
-        title: movie.title,
-        year: correctYear,
-        // Enhanced debugging info (remove in production)
-        year_debug: Math.random() < 0.1 ? {
-          release_date: detailedMovie.release_date,
-          primary_release_date: detailedMovie.primary_release_date,
-          extracted_year: correctYear
-        } : undefined,
-        genre: movie.genre_ids?.[0] ? getGenreName(movie.genre_ids[0]) : 'Unknown',
-        director: 'Unknown',
-        runtime: detailedMovie.runtime || 120,
-        poster: getMovieEmoji(movie.genre_ids?.[0]),
-        description: movie.overview || 'No description available',
-        isDrafted: false,
-        tmdbId: movie.id,
-        posterPath: movie.poster_path,
-        backdropPath: movie.backdrop_path,
-        voteAverage: movie.vote_average,
-        releaseDate: movie.release_date,
-        budget: detailedMovie.budget || 0,
-        revenue: detailedMovie.revenue || 0,
-        hasOscar,
-        isBlockbuster
-      };
-    }));
-
-    console.log('Returning transformed movies:', transformedMovies.length);
-
-    return new Response(JSON.stringify({
-      results: transformedMovies,
-      total_pages: data.total_pages,
-      total_results: data.total_results,
-      page: data.page
-    }), {
+    return new Response(JSON.stringify(await processMovieResults(data, tmdbApiKey)), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
@@ -932,6 +953,99 @@ serve(async (req) => {
     });
   }
 });
+
+// Process movie results function to handle common transformations
+async function processMovieResults(data: any, tmdbApiKey: string) {
+  console.log(`📊 Processing ${(data.results || []).length} movies...`);
+  
+  // Apply TV content filtering to all results
+  const originalCount = (data.results || []).length;
+  data.results = (data.results || []).filter(isValidMovieContent);
+  const filteredCount = originalCount - data.results.length;
+  
+  if (filteredCount > 0) {
+    console.log(`🚫 TV Content Filter: Removed ${filteredCount} TV shows/episodes from ${originalCount} total results`);
+  }
+  
+  // Enhanced movie data transformation with proper Oscar and blockbuster detection
+  const transformedMovies = await Promise.all(data.results.map(async (movie: any) => {
+    let detailedMovie = movie;
+    let hasOscar = false;
+    let isBlockbuster = false;
+    
+    try {
+      // Get detailed movie information including budget and revenue
+      const detailResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${tmdbApiKey}`);
+      if (detailResponse.ok) {
+        detailedMovie = await detailResponse.json();
+        
+        // Proper blockbuster detection using actual budget/revenue data
+        const budget = detailedMovie.budget || 0;
+        const revenue = detailedMovie.revenue || 0;
+        isBlockbuster = budget >= 50000000 || revenue >= 100000000;
+        
+        // Only log occasionally to avoid spam
+        if (Math.random() < 0.05) {
+          console.log(`Movie: ${movie.title}, Budget: $${budget}, Revenue: $${revenue}, Blockbuster: ${isBlockbuster}`);
+        }
+      }
+
+      // Get accurate Oscar status from OMDb API with caching
+      // Use the enhanced movie year extraction
+      const movieYear = extractMovieYear(detailedMovie);
+      
+      // Enhanced logging with more context
+      if (Math.random() < 0.05) {
+        console.log(`Movie: ${movie.title} - Release Date: ${detailedMovie.release_date}, Primary: ${detailedMovie.primary_release_date}, Extracted Year: ${movieYear}`);
+      }
+      
+      const oscarStatus = await getOscarStatus(movie.id, movie.title, movieYear);
+      hasOscar = oscarStatus !== 'none';
+      
+    } catch (error) {
+      console.log(`Could not fetch detailed info for movie ${movie.id}:`, error);
+    }
+
+    // Use enhanced year extraction for consistency
+    const correctYear = extractMovieYear(detailedMovie);
+    
+    return {
+      id: movie.id,
+      title: movie.title,
+      year: correctYear,
+      // Enhanced debugging info (remove in production)
+      year_debug: Math.random() < 0.1 ? {
+        release_date: detailedMovie.release_date,
+        primary_release_date: detailedMovie.primary_release_date,
+        extracted_year: correctYear
+      } : undefined,
+      genre: movie.genre_ids?.[0] ? getGenreName(movie.genre_ids[0]) : 'Unknown',
+      director: 'Unknown',
+      runtime: detailedMovie.runtime || 120,
+      poster: getMovieEmoji(movie.genre_ids?.[0]),
+      description: movie.overview || 'No description available',
+      isDrafted: false,
+      tmdbId: movie.id,
+      posterPath: movie.poster_path,
+      backdropPath: movie.backdrop_path,
+      voteAverage: movie.vote_average,
+      releaseDate: movie.release_date,
+      budget: detailedMovie.budget || 0,
+      revenue: detailedMovie.revenue || 0,
+      hasOscar,
+      isBlockbuster
+    };
+  }));
+
+  console.log(`✅ Processed ${transformedMovies.length} movies successfully`);
+
+  return {
+    results: transformedMovies,
+    total_pages: data.total_pages,
+    total_results: data.total_results,
+    page: data.page
+  };
+}
 
 // Helper function to map genre IDs to names
 function getGenreName(genreId: number): string {
