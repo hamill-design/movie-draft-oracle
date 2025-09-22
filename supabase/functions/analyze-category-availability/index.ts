@@ -194,9 +194,41 @@ async function analyzeCategoryMovies(
       // Log year distribution for decade categories
       const yearCounts = {};
       eligibleMovies.forEach(movie => {
-        const year = movie.year || movie.release_date ? new Date(movie.release_date).getFullYear() : 0;
-        const decade = Math.floor(year / 10) * 10;
-        yearCounts[decade] = (yearCounts[decade] || 0) + 1;
+        // Use the same enhanced year extraction logic as in isMovieEligibleForCategory
+        let year = 0;
+        if (movie.year && movie.year > 1900) {
+          year = movie.year;
+        } else {
+          const dateFields = ['release_date', 'primary_release_date', 'first_air_date'];
+          for (const field of dateFields) {
+            if (movie[field]) {
+              try {
+                const date = new Date(movie[field]);
+                if (!isNaN(date.getTime())) {
+                  const extractedYear = date.getFullYear();
+                  if (extractedYear > 1900 && extractedYear <= new Date().getFullYear() + 5) {
+                    year = extractedYear;
+                    break;
+                  }
+                }
+              } catch (error) {
+                const yearMatch = movie[field].toString().match(/(\d{4})/);
+                if (yearMatch) {
+                  const parsedYear = parseInt(yearMatch[1]);
+                  if (parsedYear > 1900 && parsedYear <= new Date().getFullYear() + 5) {
+                    year = parsedYear;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        if (year > 0) {
+          const decade = Math.floor(year / 10) * 10;
+          yearCounts[decade] = (yearCounts[decade] || 0) + 1;
+        }
       });
       console.log(`Year distribution for ${option} + ${category}:`, yearCounts);
     }
