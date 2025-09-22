@@ -40,24 +40,83 @@ export class ProgressiveCategoryService {
     onCategoryComplete: (result: CategoryAvailabilityResult) => void,
     forceRefresh: boolean = false
   ): Promise<CategoryAvailabilityResult[]> {
-    const results: CategoryAvailabilityResult[] = [];
-    const promises: Promise<void>[] = [];
-
     // Clear cache for person-based themes or when forced
     if (forceRefresh || this.isPersonBasedTheme(request.theme)) {
       this.clearPersonBasedCache(request.theme);
     }
 
-    // Start analysis for each category
-    for (const category of request.categories) {
-      const promise = this.analyzeSingleCategory(category, request, onCategoryComplete, forceRefresh);
-      promises.push(promise);
+    // Immediately show estimated results for all categories
+    const estimatedResults = request.categories.map(category => {
+      const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount);
+      
+      // Check cache first
+      if (!forceRefresh && !this.isPersonBasedTheme(request.theme)) {
+        const cached = this.cache.get(cacheKey);
+        if (cached && this.isValidCache(cached.timestamp || 0, request.theme)) {
+          onCategoryComplete(cached);
+          return cached;
+        }
+      }
+
+      // Show estimated result immediately
+      const estimatedResult = this.getEstimatedResult(category, request.playerCount);
+      onCategoryComplete(estimatedResult);
+      return estimatedResult;
+    });
+
+    // Make a single batched API call for all categories that need analysis
+    const categoriesToAnalyze = request.categories.filter(category => {
+      const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount);
+      const cached = this.cache.get(cacheKey);
+      return forceRefresh || this.isPersonBasedTheme(request.theme) || 
+             !cached || !this.isValidCache(cached.timestamp || 0, request.theme);
+    });
+
+    if (categoriesToAnalyze.length > 0) {
+      try {
+        // Single API call for all categories
+        const { data, error } = await supabase.functions.invoke('analyze-category-availability', {
+          body: {
+            ...request,
+            categories: categoriesToAnalyze
+          }
+        });
+
+        if (error) throw error;
+
+        // Process results and update cache
+        data.results?.forEach((result: CategoryAvailabilityResult) => {
+          const resultWithTimestamp = {
+            ...result,
+            timestamp: Date.now()
+          };
+          
+          const cacheKey = this.getCacheKey(result.categoryId, request.theme, request.option, request.playerCount);
+          this.cache.set(cacheKey, resultWithTimestamp);
+          onCategoryComplete(resultWithTimestamp);
+        });
+      } catch (error) {
+        console.error('Error analyzing categories:', error);
+        // Provide error fallbacks
+        categoriesToAnalyze.forEach(category => {
+          const errorResult: CategoryAvailabilityResult = {
+            categoryId: category,
+            available: false,
+            movieCount: 0,
+            sampleMovies: [],
+            reason: 'Analysis failed',
+            status: 'insufficient',
+            timestamp: Date.now()
+          };
+          
+          const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount);
+          this.cache.set(cacheKey, errorResult);
+          onCategoryComplete(errorResult);
+        });
+      }
     }
 
-    // Wait for all to complete
-    await Promise.all(promises);
-
-    // Return results in original order
+    // Return final results
     return request.categories.map(category => {
       const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount);
       return this.cache.get(cacheKey)!;
