@@ -4,7 +4,7 @@ import { CheckboxIcon } from '@/components/icons';
 import { categoryValidationService } from '@/services/categoryValidationService';
 import { progressiveCategoryService } from '@/services/progressiveCategoryService';
 import { CategoryAnalysisResponse, CategoryAvailabilityResult } from '@/types/categoryTypes';
-import { getCategoryConfig } from '@/config/categoryConfigs';
+import { getCategoryConfig, getCategoriesForTheme } from '@/config/categoryConfigs';
 
 interface DraftSetupForm {
   participants: string[];
@@ -264,12 +264,37 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
     return theme && selectedOption && categories.length > 0;
   };
 
-  // Effect for core analysis parameters - triggers actual analysis
+  // Effect for pre-analysis - triggers as soon as theme and option are selected
   useEffect(() => {
-    if (canAnalyze()) {
-      analyzeCategories();
+    if (theme && selectedOption) {
+      preAnalyzeAllCategories();
     }
-  }, [categories, theme, playerCount, selectedOption]);
+  }, [theme, selectedOption, playerCount]);
+
+  const preAnalyzeAllCategories = async () => {
+    try {
+      setIsAnalyzing(true);
+      
+      // Get all available categories for this theme
+      const allCategories = getCategoriesForTheme(theme);
+      const categoryNames = allCategories.map(config => config.name);
+      
+      if (categoryNames.length > 0) {
+        const result = await categoryValidationService.analyzeCategoryAvailability({
+          theme,
+          option: selectedOption,
+          categories: categoryNames,
+          playerCount
+        });
+        
+        setAnalysisResult(result);
+      }
+    } catch (err) {
+      console.error('Failed to pre-analyze categories:', err);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   // Effect for UI state management - clears results when conditions aren't met
   useEffect(() => {
