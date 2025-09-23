@@ -272,7 +272,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
       setAnalysisResult(null);
       setIsAnalyzing(false);
     }
-  }, [categories, theme, playerCount, selectedOption, draftMode, participants.length]);
+  }, [categories, theme, playerCount, selectedOption, participants.length]);
 
   const analyzeCategories = async () => {
     if (!canAnalyze()) return;
