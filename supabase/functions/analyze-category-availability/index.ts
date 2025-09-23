@@ -11,7 +11,7 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const globalSupabase = createClient(supabaseUrl, supabaseKey);
 
-// Helper function to get person lifespan data with enhanced name matching
+// Helper function to get person lifespan data with enhanced name matching and TMDB auto-population
 async function getPersonLifespan(personName: string): Promise<{birth_date: string | null, death_date: string | null} | null> {
   console.log(`🔍 Looking up lifespan for: "${personName}"`);
   
@@ -46,10 +46,10 @@ async function getPersonLifespan(personName: string): Promise<{birth_date: strin
     .eq('alias_name', personName)
     .single();
     
-  if (!aliasError && aliasData) {
-    console.log(`🔄 Found alias: "${personName}" -> "${aliasData.primary_name}"`);
+  if (!aliasError && aliasData && aliasData.tmdb_id) {
+    console.log(`🔄 Found alias: "${personName}" -> "${aliasData.primary_name}" (TMDB ID: ${aliasData.tmdb_id})`);
     
-    // Get lifespan data using primary name
+    // Get lifespan data using TMDB ID
     ({ data, error } = await globalSupabase
       .from('person_lifespans')  
       .select('birth_date, death_date, name, tmdb_id')
@@ -59,6 +59,13 @@ async function getPersonLifespan(personName: string): Promise<{birth_date: strin
     if (!error && data) {
       console.log(`✅ Found lifespan via alias for ${personName}: "${data.name}" (${data.birth_date} - ${data.death_date})`);
       return data;
+    }
+    
+    // If not found in our database but we have TMDB ID, try to auto-populate
+    console.log(`🔍 TMDB ID ${aliasData.tmdb_id} not found in lifespans, fetching from TMDB API...`);
+    const tmdbResult = await fetchFromTMDB(aliasData.tmdb_id);
+    if (tmdbResult) {
+      return tmdbResult;
     }
   }
   
@@ -80,8 +87,78 @@ async function getPersonLifespan(personName: string): Promise<{birth_date: strin
     }
   }
   
+  // Final attempt: try to find TMDB ID in our existing movie data for this person
+  console.log(`🔍 Searching for ${personName} in existing movie data to get TMDB ID...`);
+  
+  // Look for movies where this person appears in cast/crew to get their TMDB ID
+  const { data: movieData, error: movieError } = await globalSupabase
+    .from('movies')
+    .select('cast_ids, crew_ids')
+    .or(`cast_names.ilike.%${personName}%,crew_names.ilike.%${personName}%`)
+    .limit(1)
+    .single();
+    
+  if (!movieError && movieData) {
+    // Try to extract TMDB person ID from cast or crew IDs
+    // This is a simplified approach - in practice, we'd need more sophisticated matching
+    console.log(`💡 Found movie data for ${personName}, but TMDB ID extraction from cast/crew is complex - using fallback`);
+  }
+  
   console.log(`💭 ${personName} is not in our deceased actors database (assumed living)`);
   return null;
+}
+
+// Helper function to fetch person data from TMDB API and cache it
+async function fetchFromTMDB(tmdbId: number): Promise<{birth_date: string | null, death_date: string | null} | null> {
+  try {
+    const tmdbApiKey = Deno.env.get('TMDB_API_KEY');
+    if (!tmdbApiKey) {
+      console.log('❌ TMDB API key not configured, cannot fetch lifespan data');
+      return null;
+    }
+    
+    const tmdbResponse = await fetch(`https://api.themoviedb.org/3/person/${tmdbId}?api_key=${tmdbApiKey}`);
+    
+    if (!tmdbResponse.ok) {
+      console.log(`❌ TMDB API error for person ${tmdbId}: ${tmdbResponse.status}`);
+      return null;
+    }
+    
+    const personData = await tmdbResponse.json();
+    console.log(`📦 Fetched person data from TMDB: ${personData.name} (${personData.birthday} - ${personData.deathday})`);
+    
+    // Extract and format dates
+    const birthDate = personData.birthday || null;
+    const deathDate = personData.deathday || null;
+    const personName = personData.name || `Person ${tmdbId}`;
+    
+    // Cache the lifespan data in our database
+    const { data: cachedData, error: cacheError } = await globalSupabase
+      .from('person_lifespans')
+      .upsert({
+        tmdb_id: tmdbId,
+        name: personName,
+        birth_date: birthDate,
+        death_date: deathDate,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select('birth_date, death_date, name')
+      .single();
+    
+    if (cacheError) {
+      console.log(`❌ Failed to cache lifespan data for ${personName}: ${cacheError.message}`);
+      // Return the data anyway, even if caching failed
+      return { birth_date: birthDate, death_date: deathDate };
+    }
+    
+    console.log(`✅ Cached and returning lifespan data for ${personName}: (${birthDate} - ${deathDate})`);
+    return cachedData;
+    
+  } catch (apiError) {
+    console.log(`❌ Failed to fetch person data from TMDB API: ${apiError}`);
+    return null;
+  }
 }
 
 interface CategoryAnalysisRequest {
