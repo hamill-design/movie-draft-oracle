@@ -8,7 +8,6 @@ export class CategoryValidationService {
   private localStorageCache = 'category_validation_cache';
   private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
   private readonly LOCAL_CACHE_DURATION = 60 * 60 * 1000; // 1 hour for localStorage
-  private readonly DECEASED_ACTOR_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes for deceased actors
   private readonly CACHE_VERSION = 'v2.2.0'; // Increment when posthumous logic changes - enhanced documentary filtering
 
   public static getInstance(): CategoryValidationService {
@@ -29,9 +28,8 @@ export class CategoryValidationService {
   }
 
   private getCacheDuration(theme: string, isLocal: boolean = false): number {
-    // Use shorter cache for person-based themes to ensure fresh posthumous logic
-    const baseDuration = isLocal ? this.LOCAL_CACHE_DURATION : this.CACHE_DURATION;
-    return this.isPersonBasedTheme(theme) ? this.DECEASED_ACTOR_CACHE_DURATION : baseDuration;
+    // Use standard cache duration for all themes
+    return isLocal ? this.LOCAL_CACHE_DURATION : this.CACHE_DURATION;
   }
 
   private isValidCache(timestamp: number, theme: string): boolean {
@@ -75,21 +73,16 @@ export class CategoryValidationService {
   ): Promise<CategoryAnalysisResponse> {
     const cacheKey = this.getCacheKey(request);
     
-    // Clear cache for person-based themes or when forced
-    if (forceRefresh || this.isPersonBasedTheme(request.theme)) {
-      this.clearPersonBasedCache(request.theme);
-    }
-    
-    // Check memory cache first (unless force refresh or person-based theme)
-    if (!forceRefresh && !this.isPersonBasedTheme(request.theme)) {
+    // Check memory cache first (unless force refresh)
+    if (!forceRefresh) {
       const cached = this.cache.get(cacheKey);
       if (cached && this.isValidCache(cached.analysisTimestamp, request.theme)) {
         return { ...cached, cacheHit: true };
       }
     }
 
-    // Check localStorage cache (unless force refresh or person-based theme)
-    if (!forceRefresh && !this.isPersonBasedTheme(request.theme)) {
+    // Check localStorage cache (unless force refresh)
+    if (!forceRefresh) {
       const localCached = this.getFromLocalStorage(cacheKey, request.theme);
       if (localCached) {
         // Also store in memory cache for faster access
