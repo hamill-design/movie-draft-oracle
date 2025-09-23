@@ -264,15 +264,20 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
     return theme && selectedOption && categories.length > 0;
   };
 
+  // Effect for core analysis parameters - triggers actual analysis
   useEffect(() => {
     if (canAnalyze()) {
       analyzeCategories();
-    } else {
-      // Clear previous results if conditions aren't met
+    }
+  }, [categories, theme, playerCount, selectedOption]);
+
+  // Effect for UI state management - clears results when conditions aren't met
+  useEffect(() => {
+    if (!canAnalyze()) {
       setAnalysisResult(null);
       setIsAnalyzing(false);
     }
-  }, [categories, theme, playerCount, selectedOption, participants.length]);
+  }, [categories, theme, selectedOption]);
 
   const analyzeCategories = async () => {
     if (!canAnalyze()) return;
