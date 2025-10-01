@@ -16,13 +16,23 @@ export class ProgressiveCategoryService {
   }
 
   private getCacheKey(category: string, theme: string, option: string, playerCount: number, draftMode?: string): string {
-    return `${this.CACHE_VERSION}-${theme}-${option}-${draftMode || 'single'}-${playerCount}-${category}`;
+    // For non-person themes, don't include playerCount since the raw movie count doesn't change
+    const isPersonTheme = this.isPersonBasedTheme(theme);
+    if (isPersonTheme) {
+      return `${this.CACHE_VERSION}-${theme}-${option}-${draftMode || 'single'}-${playerCount}-${category}`;
+    }
+    return `${this.CACHE_VERSION}-${theme}-${option}-${draftMode || 'single'}-${category}`;
   }
 
   private isPersonBasedTheme(theme: string): boolean {
-    // Detect person-based themes that might involve deceased actors
-    const personThemes = ['Steve McQueen', 'Paul Newman', 'Clint Eastwood', 'John Wayne', 'Robert De Niro'];
-    return personThemes.some(person => theme.toLowerCase().includes(person.toLowerCase()));
+    return theme === 'actor' || theme === 'actress' || theme === 'director';
+  }
+
+  private getStatusFromCountDynamic(count: number, playerCount: number): 'sufficient' | 'limited' | 'insufficient' {
+    const required = playerCount * 5;
+    if (count >= required) return 'sufficient';
+    if (count > 0) return 'limited';
+    return 'insufficient';
   }
 
   private getCacheDuration(theme: string): number {
@@ -53,8 +63,13 @@ export class ProgressiveCategoryService {
       if (!forceRefresh && !this.isPersonBasedTheme(request.theme)) {
         const cached = this.cache.get(cacheKey);
         if (cached && this.isValidCache(cached.timestamp || 0, request.theme)) {
-          onCategoryComplete(cached);
-          return cached;
+          // For non-person themes, recalculate status based on current playerCount
+          const updatedResult = {
+            ...cached,
+            status: this.getStatusFromCountDynamic(cached.movieCount, request.playerCount)
+          };
+          onCategoryComplete(updatedResult);
+          return updatedResult;
         }
       }
 
@@ -135,7 +150,12 @@ export class ProgressiveCategoryService {
     if (!forceRefresh && !this.isPersonBasedTheme(request.theme)) {
       const cached = this.cache.get(cacheKey);
       if (cached && this.isValidCache(cached.timestamp || 0, request.theme)) {
-        onComplete(cached);
+        // For non-person themes, recalculate status based on current playerCount
+        const updatedResult = {
+          ...cached,
+          status: this.getStatusFromCountDynamic(cached.movieCount, request.playerCount)
+        };
+        onComplete(updatedResult);
         return;
       }
     }
@@ -259,8 +279,9 @@ export class ProgressiveCategoryService {
 
   public forceRefreshPersonThemes(): void {
     // Clear all person-based cached data and force fresh analysis
-    const personThemes = ['Steve McQueen', 'Paul Newman', 'Clint Eastwood', 'John Wayne', 'Robert De Niro'];
-    personThemes.forEach(theme => this.clearPersonBasedCache(theme));
+    this.clearPersonBasedCache('actor');
+    this.clearPersonBasedCache('actress');
+    this.clearPersonBasedCache('director');
   }
 }
 

@@ -22,9 +22,7 @@ export class CategoryValidationService {
   }
 
   private isPersonBasedTheme(theme: string): boolean {
-    // Detect person-based themes that might involve deceased actors
-    const personThemes = ['Steve McQueen', 'Paul Newman', 'Clint Eastwood', 'John Wayne', 'Robert De Niro'];
-    return personThemes.some(person => theme.toLowerCase().includes(person.toLowerCase()));
+    return theme === 'actor' || theme === 'actress' || theme === 'director';
   }
 
   private getCacheDuration(theme: string, isLocal: boolean = false): number {
@@ -206,8 +204,9 @@ export class CategoryValidationService {
 
   public forceRefreshPersonThemes(): void {
     // Clear all person-based cached data and force fresh analysis
-    const personThemes = ['Steve McQueen', 'Paul Newman', 'Clint Eastwood', 'John Wayne', 'Robert De Niro'];
-    personThemes.forEach(theme => this.clearPersonBasedCache(theme));
+    this.clearPersonBasedCache('actor');
+    this.clearPersonBasedCache('actress');
+    this.clearPersonBasedCache('director');
   }
 
   public validateCategoriesForDraft(
