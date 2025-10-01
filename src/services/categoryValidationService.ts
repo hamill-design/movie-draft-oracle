@@ -18,7 +18,7 @@ export class CategoryValidationService {
   }
 
   private getCacheKey(request: CategoryAnalysisRequest): string {
-    return `${this.CACHE_VERSION}-${request.theme}-${request.option}-${request.categories.sort().join(',')}`;
+    return `${this.CACHE_VERSION}-${request.theme}-${request.option}-${request.draftMode || 'single'}-${request.categories.sort().join(',')}`;
   }
 
   private isPersonBasedTheme(theme: string): boolean {

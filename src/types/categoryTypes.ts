@@ -30,6 +30,7 @@ export interface CategoryAnalysisRequest {
   option: string;
   categories: string[];
   playerCount: number;
+  draftMode?: 'single' | 'multiplayer';
 }
 
 export interface CategoryAnalysisResponse {

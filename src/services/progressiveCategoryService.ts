@@ -15,8 +15,8 @@ export class ProgressiveCategoryService {
     return ProgressiveCategoryService.instance;
   }
 
-  private getCacheKey(category: string, theme: string, option: string, playerCount: number): string {
-    return `${this.CACHE_VERSION}-${theme}-${option}-${playerCount}-${category}`;
+  private getCacheKey(category: string, theme: string, option: string, playerCount: number, draftMode?: string): string {
+    return `${this.CACHE_VERSION}-${theme}-${option}-${draftMode || 'single'}-${playerCount}-${category}`;
   }
 
   private isPersonBasedTheme(theme: string): boolean {
@@ -47,7 +47,7 @@ export class ProgressiveCategoryService {
 
     // Immediately show estimated results for all categories
     const estimatedResults = request.categories.map(category => {
-      const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount);
+      const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount, request.draftMode);
       
       // Check cache first
       if (!forceRefresh && !this.isPersonBasedTheme(request.theme)) {
@@ -66,7 +66,7 @@ export class ProgressiveCategoryService {
 
     // Make a single batched API call for all categories that need analysis
     const categoriesToAnalyze = request.categories.filter(category => {
-      const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount);
+      const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount, request.draftMode);
       const cached = this.cache.get(cacheKey);
       return forceRefresh || this.isPersonBasedTheme(request.theme) || 
              !cached || !this.isValidCache(cached.timestamp || 0, request.theme);
@@ -91,7 +91,7 @@ export class ProgressiveCategoryService {
             timestamp: Date.now()
           };
           
-          const cacheKey = this.getCacheKey(result.categoryId, request.theme, request.option, request.playerCount);
+          const cacheKey = this.getCacheKey(result.categoryId, request.theme, request.option, request.playerCount, request.draftMode);
           this.cache.set(cacheKey, resultWithTimestamp);
           onCategoryComplete(resultWithTimestamp);
         });
@@ -109,7 +109,7 @@ export class ProgressiveCategoryService {
             timestamp: Date.now()
           };
           
-          const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount);
+          const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount, request.draftMode);
           this.cache.set(cacheKey, errorResult);
           onCategoryComplete(errorResult);
         });
@@ -118,7 +118,7 @@ export class ProgressiveCategoryService {
 
     // Return final results
     return request.categories.map(category => {
-      const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount);
+      const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount, request.draftMode);
       return this.cache.get(cacheKey)!;
     });
   }
@@ -129,7 +129,7 @@ export class ProgressiveCategoryService {
     onComplete: (result: CategoryAvailabilityResult) => void,
     forceRefresh: boolean = false
   ): Promise<void> {
-    const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount);
+    const cacheKey = this.getCacheKey(category, request.theme, request.option, request.playerCount, request.draftMode);
     
     // Check cache first (unless force refresh or person-based theme)
     if (!forceRefresh && !this.isPersonBasedTheme(request.theme)) {

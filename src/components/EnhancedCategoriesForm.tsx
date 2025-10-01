@@ -284,7 +284,8 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           theme,
           option: selectedOption,
           categories: categoryNames,
-          playerCount
+          playerCount,
+          draftMode: draftMode || 'single'
         });
         
         setAnalysisResult(result);
@@ -321,7 +322,8 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           theme,
           option: selectedOption,
           categories,
-          playerCount
+          playerCount,
+          draftMode: draftMode || 'single'
         },
         (result) => {
           setProgressiveResults(prev => new Map(prev).set(result.categoryId, result));
