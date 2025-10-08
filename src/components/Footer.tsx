@@ -8,7 +8,7 @@ const Footer = () => {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex-1 min-w-80 flex flex-col items-center justify-center">
             <p className="text-sm font-brockmann font-normal text-greyscale-blue-200 leading-5">
-              © 2024 Movie Draft Oracle. All rights reserved.
+              © 2024 Movie Drafter. All rights reserved.
             </p>
           </div>
           
