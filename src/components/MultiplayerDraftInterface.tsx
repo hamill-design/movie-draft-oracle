@@ -20,7 +20,7 @@ import EnhancedCategorySelection from '@/components/EnhancedCategorySelection';
 import PickConfirmation from '@/components/PickConfirmation';
 import DraftBoard from '@/components/DraftBoard';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DiagnosticInfo } from '@/components/DiagnosticInfo';
+
 import { getCleanActorName } from '@/lib/utils';
 
 interface MultiplayerDraftInterfaceProps {
@@ -563,8 +563,6 @@ export const MultiplayerDraftInterface = ({
           </div>
         </div>
 
-        {/* Diagnostic Info */}
-        <DiagnosticInfo draft={draft} participants={participants} picks={picks} user={user} isMyTurn={isMyTurn} />
       </div>
     </div>;
 };
