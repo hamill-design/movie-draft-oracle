@@ -167,7 +167,7 @@ async function getPersonLifespanByName(personName: string): Promise<{birth_date:
 function isDocumentaryOrArchiveContent(movie: any, movieGenres: any[]): boolean {
   // Check genre IDs - expanded documentary detection
   if (movieGenres && Array.isArray(movieGenres)) {
-    const documentaryGenreIds = [99, 36, 10770]; // Documentary, History, TV Movie
+    const documentaryGenreIds = [99, 10770]; // Documentary, TV Movie
     const hasDocumentaryGenre = movieGenres.some(genre => 
       genre && documentaryGenreIds.includes(genre.id)
     );
