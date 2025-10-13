@@ -192,7 +192,10 @@ function isDocumentaryOrArchiveContent(movie: any, movieGenres: any[]): boolean 
     'highlights', 'moments', 'scenes from', 'clips'
   ];
   
-  const hasDocumentaryKeywords = documentaryKeywords.some(keyword => title.includes(keyword));
+  const hasDocumentaryKeywords = documentaryKeywords.some(keyword => {
+    const regex = new RegExp(`\\b${keyword}\\b`, 'i');
+    return regex.test(title);
+  });
   if (hasDocumentaryKeywords) {
     console.log(`Archive content detected via title keywords: "${title}"`);
     return true;
