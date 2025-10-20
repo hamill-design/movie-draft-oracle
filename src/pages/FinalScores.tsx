@@ -12,8 +12,6 @@ import { DraftPick } from '@/hooks/useDrafts';
 import TeamRoster from '@/components/TeamRoster';
 import ShareResultsButton from '@/components/ShareResultsButton';
 import SaveDraftButton from '@/components/SaveDraftButton';
-import CategoryLeaderboard from '@/components/CategoryLeaderboard';
-import CategoryComparison from '@/components/CategoryComparison';
 import { getScoreColor, getScoreGrade } from '@/utils/scoreCalculator';
 
 interface TeamScore {
@@ -22,14 +20,6 @@ interface TeamScore {
   averageScore: number;
   completedPicks: number;
   totalPicks: number;
-}
-
-interface CategoryScore {
-  categoryName: string;
-  picks: DraftPick[];
-  averageScore: number;
-  topPick: DraftPick;
-  playerCount: number;
 }
 
 const FinalScores = () => {
@@ -42,15 +32,11 @@ const FinalScores = () => {
   const [draft, setDraft] = useState<any>(null);
   const [picks, setPicks] = useState<DraftPick[]>([]);
   const [teamScores, setTeamScores] = useState<TeamScore[]>([]);
-  const [categoryScores, setCategoryScores] = useState<CategoryScore[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [enrichingData, setEnrichingData] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [hoveredTeam, setHoveredTeam] = useState<string>('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [hoveredCategory, setHoveredCategory] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'player' | 'category'>('player');
   
   const [isPublicView, setIsPublicView] = useState(false);
 
@@ -153,13 +139,6 @@ const FinalScores = () => {
         if (teams.length > 0) {
           setSelectedTeam(teams[0].playerName);
         }
-        
-        // Process category scores
-        const categories = processCategoryScores(picksData || []);
-        setCategoryScores(categories);
-        if (categories.length > 0) {
-          setSelectedCategory(categories[0].categoryName);
-        }
       }
 
       // Automatically enrich data if needed
@@ -261,12 +240,9 @@ const FinalScores = () => {
       const { draft: refreshedDraft, picks: refreshedPicks } = await getDraftWithPicks(draftId!);
       setPicks(refreshedPicks || []);
 
-      // Recalculate team scores and category scores
+      // Recalculate team scores
       const refreshedTeams = processTeamScores(refreshedPicks || []);
       setTeamScores(refreshedTeams);
-      
-      const refreshedCategories = processCategoryScores(refreshedPicks || []);
-      setCategoryScores(refreshedCategories);
 
       toast({
         title: "Movie data loaded",
@@ -317,49 +293,6 @@ const FinalScores = () => {
 
     // Sort by average score (descending)
     return teams.sort((a, b) => b.averageScore - a.averageScore);
-  };
-
-  const processCategoryScores = (picksData: DraftPick[]): CategoryScore[] => {
-    const categoryMap = new Map<string, DraftPick[]>();
-
-    // Group picks by category
-    picksData.forEach(pick => {
-      if (!categoryMap.has(pick.category)) {
-        categoryMap.set(pick.category, []);
-      }
-      categoryMap.get(pick.category)!.push(pick);
-    });
-
-    // Calculate category scores
-    const categories: CategoryScore[] = [];
-    categoryMap.forEach((categoryPicks, categoryName) => {
-      const validScores = categoryPicks
-        .filter(pick => (pick as any).calculated_score !== null && (pick as any).calculated_score !== undefined)
-        .map(pick => (pick as any).calculated_score!);
-      
-      const averageScore = validScores.length > 0 
-        ? validScores.reduce((sum: number, score: number) => sum + score, 0) / validScores.length
-        : 0;
-
-      // Find the top pick in this category
-      const topPick = categoryPicks
-        .filter(pick => (pick as any).calculated_score !== null)
-        .sort((a, b) => (b as any).calculated_score - (a as any).calculated_score)[0];
-
-      // Count unique players in this category
-      const uniquePlayers = new Set(categoryPicks.map(p => p.player_name)).size;
-
-      categories.push({
-        categoryName,
-        picks: categoryPicks,
-        averageScore,
-        topPick,
-        playerCount: uniquePlayers
-      });
-    });
-
-    // Sort by average score (descending)
-    return categories.sort((a, b) => b.averageScore - a.averageScore);
   };
 
   const getRankingBadgeStyle = (index: number) => {
@@ -560,20 +493,11 @@ const FinalScores = () => {
         )}
 
         <div className="space-y-6">
-          {/* Tabs for View Mode */}
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'player' | 'category')} className="w-full">
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-6">
-              <TabsTrigger value="player">By Player</TabsTrigger>
-              <TabsTrigger value="category">By Category</TabsTrigger>
-            </TabsList>
-
-            {/* Player View */}
-            <TabsContent value="player" className="space-y-6">
-              {/* Player Leaderboard */}
-              <div style={{
-                width: '100%',
-                height: '100%',
-                padding: '24px',
+          {/* Leaderboard */}
+          <div style={{
+            width: '100%',
+            height: '100%',
+            padding: '24px',
             background: 'hsl(var(--greyscale-blue-100))',
             boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)',
             borderRadius: '4px',
@@ -780,36 +704,14 @@ const FinalScores = () => {
             </div>
           </div>
 
-              {/* Selected Team Roster */}
-              {selectedTeam && teamScores.find(t => t.playerName === selectedTeam) && (
-                <TeamRoster
-                  playerName={selectedTeam}
-                  picks={teamScores.find(t => t.playerName === selectedTeam)!.picks}
-                  teamRank={teamScores.findIndex(t => t.playerName === selectedTeam) + 1}
-                />
-              )}
-            </TabsContent>
-
-            {/* Category View */}
-            <TabsContent value="category" className="space-y-6">
-              {/* Category Leaderboard */}
-              <CategoryLeaderboard
-                categoryScores={categoryScores}
-                selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
-                hoveredCategory={hoveredCategory}
-                onHoverCategory={setHoveredCategory}
-              />
-
-              {/* Selected Category Comparison */}
-              {selectedCategory && categoryScores.find(c => c.categoryName === selectedCategory) && (
-                <CategoryComparison
-                  categoryName={selectedCategory}
-                  picks={categoryScores.find(c => c.categoryName === selectedCategory)!.picks}
-                />
-              )}
-            </TabsContent>
-          </Tabs>
+          {/* Selected Team Roster */}
+          {selectedTeam && teamScores.find(t => t.playerName === selectedTeam) && (
+            <TeamRoster
+              playerName={selectedTeam}
+              picks={teamScores.find(t => t.playerName === selectedTeam)!.picks}
+              teamRank={teamScores.findIndex(t => t.playerName === selectedTeam) + 1}
+            />
+          )}
         </div>
       </div>
     </div>
