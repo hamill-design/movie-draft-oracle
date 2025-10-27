@@ -1055,7 +1055,9 @@ async function processMovieResults(data: any, tmdbApiKey: string) {
         primary_release_date: detailedMovie.primary_release_date,
         extracted_year: correctYear
       } : undefined,
-      genre: movie.genre_ids?.[0] ? getGenreName(movie.genre_ids[0]) : 'Unknown',
+      genre: movie.genre_ids && movie.genre_ids.length > 0 
+        ? movie.genre_ids.map((id: number) => getGenreName(id)).join(' ')
+        : 'Unknown',
       director: 'Unknown',
       runtime: detailedMovie.runtime || 120,
       poster: getMovieEmoji(movie.genre_ids?.[0]),
