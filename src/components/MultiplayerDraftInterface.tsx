@@ -564,5 +564,6 @@ export const MultiplayerDraftInterface = ({
         </div>
 
       </div>
-    </div>;
+    </div>
+  );
 };
