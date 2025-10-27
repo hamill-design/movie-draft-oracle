@@ -6,7 +6,7 @@ export class ProgressiveCategoryService {
   private cache = new Map<string, CategoryAvailabilityResult>();
   private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
   private readonly DECEASED_ACTOR_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes for deceased actors
-  private readonly CACHE_VERSION = 'v2.2.0'; // Increment when posthumous logic changes - enhanced documentary filtering
+  private readonly CACHE_VERSION = 'v2.3.0'; // Genre fix: now stores all genres, not just first
 
   public static getInstance(): ProgressiveCategoryService {
     if (!ProgressiveCategoryService.instance) {

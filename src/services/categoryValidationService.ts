@@ -8,7 +8,7 @@ export class CategoryValidationService {
   private localStorageCache = 'category_validation_cache';
   private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
   private readonly LOCAL_CACHE_DURATION = 60 * 60 * 1000; // 1 hour for localStorage
-  private readonly CACHE_VERSION = 'v2.2.0'; // Increment when posthumous logic changes - enhanced documentary filtering
+  private readonly CACHE_VERSION = 'v2.3.0'; // Genre fix: now stores all genres, not just first
 
   public static getInstance(): CategoryValidationService {
     if (!CategoryValidationService.instance) {
