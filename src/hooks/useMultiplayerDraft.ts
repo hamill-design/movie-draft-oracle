@@ -5,6 +5,20 @@ import { useCurrentUser } from './useCurrentUser';
 import { useGuestSession } from './useGuestSession';
 import { useToast } from '@/hooks/use-toast';
 
+// Helper function to extract detailed error information
+const getErrorMessage = (error: any): string => {
+  const parts: string[] = [];
+  
+  if (error.message) parts.push(error.message);
+  if (error.hint) parts.push(`Hint: ${error.hint}`);
+  if (error.details) parts.push(`Details: ${error.details}`);
+  if (error.code) parts.push(`Code: ${error.code}`);
+  
+  return parts.length > 0 
+    ? parts.join(' | ') 
+    : 'An unknown error occurred';
+};
+
 interface DraftParticipant {
   id: string;
   user_id: string | null;
@@ -321,9 +335,10 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
 
     } catch (error) {
       console.error('Error starting draft:', error);
+      const errorMessage = getErrorMessage(error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to start draft",
+        title: "Error Starting Draft",
+        description: errorMessage,
         variant: "destructive",
       });
       throw error;
@@ -399,9 +414,10 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
 
     } catch (error) {
       console.error('Error loading draft:', error);
+      const errorMessage = getErrorMessage(error);
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to load draft",
+        title: "Error Loading Draft",
+        description: errorMessage,
         variant: "destructive",
       });
       throw error;
@@ -472,25 +488,27 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     } catch (error: any) {
       console.error('Error joining draft:', error);
       
+      const errorMessage = getErrorMessage(error);
+      
       // Enhanced error handling with specific messages
       if (error.message?.includes('Invalid invite code')) {
         toast({
           title: "Invalid Invite Code",
-          description: "Please check the invite code and try again.",
+          description: errorMessage,
           variant: "destructive",
         });
         throw new Error('INVALID_CODE');
       } else if (error.message?.includes('already complete')) {
         toast({
           title: "Draft Complete",
-          description: "This draft has already been completed.",
+          description: errorMessage,
           variant: "destructive",
         });
         throw new Error('DRAFT_COMPLETE');
       } else {
         toast({
           title: "Error Joining Draft",
-          description: error.message || "Failed to join draft. Please try again.",
+          description: errorMessage,
           variant: "destructive",
         });
         throw error;
@@ -540,22 +558,24 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     } catch (error: any) {
       console.error('Error making pick:', error);
       
+      const errorMessage = getErrorMessage(error);
+      
       if (error.message?.includes('Not your turn')) {
         toast({
           title: "Not Your Turn",
-          description: "Please wait for your turn to make a pick.",
+          description: errorMessage,
           variant: "destructive",
         });
       } else if (error.message?.includes('already been drafted')) {
         toast({
           title: "Movie Already Drafted",
-          description: "This movie has already been selected by another player.",
+          description: errorMessage,
           variant: "destructive",
         });
       } else {
         toast({
           title: "Error Making Pick",
-          description: error.message || "Failed to make pick. Please try again.",
+          description: errorMessage,
           variant: "destructive",
         });
       }
