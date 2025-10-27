@@ -520,6 +520,9 @@ serve(async (req) => {
 
     console.log('='.repeat(80));
     console.log('🎬 FETCH MOVIES REQUEST:', { category, searchQuery, page, fetchAll });
+    console.log('🔍 DEBUG - Raw values:');
+    console.log('  category type:', typeof category, 'value:', category);
+    console.log('  searchQuery type:', typeof searchQuery, 'value:', searchQuery);
     console.log('='.repeat(80));
 
     let url = '';

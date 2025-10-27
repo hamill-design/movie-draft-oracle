@@ -269,7 +269,11 @@ async function analyzeCategoryMovies(
     console.log('Analyzing for all movies');
   }
 
-  console.log('Fetch params:', fetchParams);
+  console.log('🔍 DEBUG Before fetch-movies invoke:');
+  console.log('  - theme:', theme);
+  console.log('  - option:', option);
+  console.log('  - category being analyzed:', category);
+  console.log('  - fetchParams:', JSON.stringify(fetchParams));
 
   // Call the existing fetch-movies function to get comprehensive movie data
   const { data: movieData, error } = await supabase.functions.invoke('fetch-movies', {
