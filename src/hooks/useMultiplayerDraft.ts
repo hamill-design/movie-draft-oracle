@@ -28,6 +28,7 @@ interface DraftParticipant {
   status: 'invited' | 'joined' | 'left';
   is_host: boolean;
   joined_at: string | null;
+  email?: string | null; // User's email from profiles
 }
 
 interface MultiplayerDraft {
@@ -219,7 +220,10 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       const participantsArray = Array.isArray(functionResult.participants_data) 
         ? (functionResult.participants_data as unknown as DraftParticipant[])
         : [];
-      setParticipants(participantsArray);
+      
+      // Enrich participants with emails from profiles
+      const enrichedParticipants = await enrichParticipantsWithEmails(participantsArray);
+      setParticipants(enrichedParticipants);
 
       const picksArray = Array.isArray(functionResult.picks_data) 
         ? functionResult.picks_data 
@@ -279,7 +283,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     } finally {
       setLoading(false);
     }
-  }, [participantId, toast]);
+  }, [participantId, toast, enrichParticipantsWithEmails]);
 
   // Start the draft with pre-calculated snake draft turn order
   const startDraft = useCallback(async (draftId: string) => {
@@ -347,6 +351,47 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     }
   }, [participantId, toast, broadcastDraftChange, draft]);
 
+  // Enrich participants with emails from profiles
+  const enrichParticipantsWithEmails = useCallback(async (participants: DraftParticipant[]): Promise<DraftParticipant[]> => {
+    // Extract unique user_ids that are not null
+    const userIds = participants
+      .map(p => p.user_id)
+      .filter((id): id is string => id !== null);
+    
+    if (userIds.length === 0) {
+      // No authenticated users, return participants as-is
+      return participants;
+    }
+
+    // Fetch emails from profiles
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('id, email')
+      .in('id', userIds);
+
+    if (error) {
+      console.error('Error fetching participant emails:', error);
+      // Return participants without enrichment on error
+      return participants;
+    }
+
+    // Create a map of user_id -> email
+    const emailMap = new Map<string, string>();
+    if (profiles) {
+      profiles.forEach(profile => {
+        if (profile.email) {
+          emailMap.set(profile.id, profile.email);
+        }
+      });
+    }
+
+    // Enrich participants with emails
+    return participants.map(participant => ({
+      ...participant,
+      email: participant.user_id ? emailMap.get(participant.user_id) || null : null
+    }));
+  }, []);
+
   // Load draft data
   const loadDraft = useCallback(async (id: string) => {
     if (!participantId) throw new Error('No participant ID available');
@@ -387,7 +432,10 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       const participantsArray = Array.isArray(draftData.participants_data) 
         ? (draftData.participants_data as unknown as DraftParticipant[])
         : [];
-      setParticipants(participantsArray);
+      
+      // Enrich participants with emails from profiles
+      const enrichedParticipants = await enrichParticipantsWithEmails(participantsArray);
+      setParticipants(enrichedParticipants);
 
       // Set picks
       const picksArray = Array.isArray(draftData.picks_data) 
@@ -422,7 +470,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       });
       throw error;
     }
-  }, [participantId, toast]);
+  }, [participantId, toast, enrichParticipantsWithEmails, broadcastDraftChange]);
 
   // Join a draft by invite code
   const joinDraftByCode = useCallback(async (inviteCode: string, participantName: string) => {

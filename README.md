@@ -64,6 +64,46 @@ This project is built with:
 
 Simply open [Lovable](https://lovable.dev/projects/964f15f1-a644-4dc2-849a-48e1e55bfa91) and click on Share -> Publish.
 
+## Deploying to Vercel (Production + Preview/Staging)
+
+This app is a Vite + React SPA. We've added `vercel.json` for SPA routing.
+
+### 1) Import the repository in Vercel
+- Go to your Vercel dashboard → "Add New Project" → "Import Git Repository".
+- Select this repository.
+
+### 2) Set Build & Output
+- Framework Preset: Vite
+- Build Command: `npm run build`
+- Output Directory: `dist`
+
+### 3) Environment Variables
+Set these for both Production and Preview environments:
+- `VITE_SUPABASE_URL` = your Supabase project URL
+- `VITE_SUPABASE_ANON_KEY` = your Supabase anon key
+- Optional: `VITE_GOOGLE_ADSENSE_CLIENT_ID`
+
+Tip: Ensure these keys match the Supabase project you want the deployment to use.
+
+### 4) Supabase configuration for Auth and Functions
+- Authentication → URL Configuration:
+  - Site URL: your Production Vercel domain
+  - Redirect URLs: add both your Production and Preview domains
+- Edge Functions (if used): Project Settings → API → CORS → Allowed origins: add both your Production and Preview domains.
+
+### 5) Preview deployments as staging
+- Every PR or push to a non-main branch gets a Preview deployment with its own URL.
+- Use this Preview URL as your "staging" for testing multiplayer joins.
+
+### 6) Test
+- Open the Preview or Production URL on two devices/browsers.
+- Create a draft and join via invite code.
+
+If auth redirect fails or Realtime doesn’t connect, double-check:
+- Env vars are present on Vercel (Preview and Production)
+- Supabase Auth Redirect URLs include the current domain
+- Using HTTPS URLs
+
 ## Can I connect a custom domain to my Lovable project?
 
 Yes, you can!

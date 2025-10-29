@@ -189,7 +189,8 @@ export const MultiplayerDraftInterface = ({
   const draftHasStarted = draft?.turn_order && draft.turn_order.length > 0;
 
   if (loading) {
-    return <div className="min-h-screen bg-background p-4">
+    return (
+      <div className="min-h-screen bg-background p-4">
         <div className="max-w-6xl mx-auto space-y-6">
           <Skeleton className="h-8 w-64" />
           <div className="grid md:grid-cols-3 gap-6">
@@ -198,11 +199,13 @@ export const MultiplayerDraftInterface = ({
             <Skeleton className="h-96" />
           </div>
         </div>
-      </div>;
+      </div>
+    );
   }
 
   if (!participantId) {
-    return <div className="max-w-4xl mx-auto p-6">
+    return (
+      <div className="max-w-4xl mx-auto p-6">
         <Card>
           <CardHeader>
             <CardTitle>Authentication Required</CardTitle>
@@ -211,11 +214,13 @@ export const MultiplayerDraftInterface = ({
             </CardDescription>
           </CardHeader>
         </Card>
-      </div>;
+      </div>
+    );
   }
 
   if (!draft) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Card>
           <CardContent className="p-6 text-center">
             <h2 className="text-xl font-semibold mb-2">Draft Not Found</h2>
@@ -227,15 +232,17 @@ export const MultiplayerDraftInterface = ({
             </Button>
           </CardContent>
         </Card>
-      </div>;
+      </div>
+    );
   }
 
   const currentTurnPlayer = getCurrentTurnPlayer();
   const isComplete = draft.is_complete;
 
-  return <div className="min-h-screen" style={{
-    background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'
-  }}>
+  return (
+    <div className="min-h-screen" style={{
+      background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'
+    }}>
       <div className="max-w-6xl mx-auto p-4 space-y-6">
         {/* Header */}
         <div className="mb-6">
@@ -402,10 +409,11 @@ export const MultiplayerDraftInterface = ({
               {/* Participants list with proper gap */}
               <div className="flex flex-col gap-2">
                 {participants.map(participant => {
-                const pId = participant.user_id || participant.guest_participant_id;
-                const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
-                const isCurrentTurn = pId === currentTurnId;
-                return <div key={participant.id} className="flex items-center gap-2 py-3 px-4 bg-white" style={{borderRadius: '2px', outline: '0.5px solid #BDC3C2', outlineOffset: '-0.5px'}}>
+                  const pId = participant.user_id || participant.guest_participant_id;
+                  const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
+                  const isCurrentTurn = pId === currentTurnId;
+                  return (
+                    <div key={participant.id} className="flex items-center gap-2 py-3 px-4 bg-white" style={{borderRadius: '2px', outline: '0.5px solid #BDC3C2', outlineOffset: '-0.5px'}}>
                       <div className="flex-1 flex flex-col gap-1 pb-0.5">
                         <div className="flex items-center justify-between">
                           <div className="flex-1 flex flex-col">
@@ -424,13 +432,14 @@ export const MultiplayerDraftInterface = ({
                           <span className="text-xs font-normal font-brockmann leading-4 text-[#06C995]">
                             {participant.status === 'joined' ? 'Joined' : participant.status}
                           </span>
-                          {participant.user_id && <span className="text-xs font-normal font-brockmann leading-4 text-[#828786]">
-                              {participant.participant_name.toLowerCase().replace(/\s+/g, '')}@gmail.com
+                          {participant.email && <span className="text-xs font-normal font-brockmann leading-4 text-[#828786]">
+                              {participant.email}
                             </span>}
                         </div>
                       </div>
-                    </div>;
-              })}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -541,24 +550,23 @@ export const MultiplayerDraftInterface = ({
           {/* Controls */}
           <div className="space-y-6">
             {!isComplete && isMyTurn && <>
-                <>
-                  <MovieSearch theme={draft.theme} option={getCleanActorName(draft.option)} searchQuery={searchQuery} onSearchChange={setSearchQuery} movies={movies} loading={moviesLoading} onMovieSelect={handleMovieSelect} selectedMovie={selectedMovie} themeParameter={themeConstraint} />
+              <MovieSearch theme={draft.theme} option={getCleanActorName(draft.option)} searchQuery={searchQuery} onSearchChange={setSearchQuery} movies={movies} loading={moviesLoading} onMovieSelect={handleMovieSelect} selectedMovie={selectedMovie} themeParameter={themeConstraint} />
 
-                  <EnhancedCategorySelection selectedMovie={selectedMovie} categories={draft.categories} selectedCategory={selectedCategory} onCategorySelect={handleCategorySelect} picks={picks.map(pick => ({
-                    playerId: participants.findIndex(p => p.participant_name === pick.player_name) + 1,
-                    playerName: pick.player_name,
-                    movie: {
-                      id: pick.movie_id,
-                      title: pick.movie_title,
-                      year: pick.movie_year,
-                      poster_path: pick.poster_path
-                    },
-                    category: pick.category
-                  }))} currentPlayerId={participants.findIndex(p => (p.user_id || p.guest_participant_id) === participantId) + 1} />
+              <EnhancedCategorySelection selectedMovie={selectedMovie} categories={draft.categories} selectedCategory={selectedCategory} onCategorySelect={handleCategorySelect} picks={picks.map(pick => ({
+                playerId: participants.findIndex(p => p.participant_name === pick.player_name) + 1,
+                playerName: pick.player_name,
+                movie: {
+                  id: pick.movie_id,
+                  title: pick.movie_title,
+                  year: pick.movie_year,
+                  poster_path: pick.poster_path
+                },
+                category: pick.category
+              }))} currentPlayerId={participants.findIndex(p => (p.user_id || p.guest_participant_id) === participantId) + 1} />
 
-                  <PickConfirmation currentPlayerName={currentTurnPlayer?.participant_name || 'You'} selectedMovie={selectedMovie} selectedCategory={selectedCategory} onConfirm={confirmPick} />
-                </>
-              </>}
+              <PickConfirmation currentPlayerName={currentTurnPlayer?.participant_name || 'You'} selectedMovie={selectedMovie} selectedCategory={selectedCategory} onConfirm={confirmPick} />
+            </>
+            }
 
           </div>
         </div>
