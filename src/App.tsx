@@ -19,6 +19,7 @@ import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 import { JoinDraft } from "./pages/JoinDraft";
 import LearnMore from "./pages/LearnMore";
+import { EnvironmentDebug } from "./components/EnvironmentDebug";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +37,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <EnvironmentDebug />
         <AuthProvider>
           <BrowserRouter>
             <AppHeader />
