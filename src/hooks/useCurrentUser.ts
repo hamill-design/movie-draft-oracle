@@ -10,7 +10,7 @@ import { useGuestSession } from './useGuestSession';
  */
 export const useCurrentUser = () => {
   const { user } = useAuth();
-  const { guestSession, loading: guestLoading } = useGuestSession();
+  const { guestSession, loading: guestLoading } = useGuestSession(user);
 
   const getCurrentUserId = (): string | null => {
     // Always prioritize authenticated user ID over guest session

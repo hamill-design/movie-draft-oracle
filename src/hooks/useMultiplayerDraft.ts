@@ -49,8 +49,8 @@ interface MultiplayerDraft {
 }
 
 export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft: any; participants: any[]; picks: any[] }) => {
-  const { participantId, isGuest } = useCurrentUser();
-  const { guestSession } = useGuestSession();
+  const { participantId, isGuest, user } = useCurrentUser();
+  const { guestSession } = useGuestSession(user);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -163,6 +163,47 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       broadcastQueueRef.current.push({ type, payload, participantName });
     }
   }, [participantId, draft?.id, getCurrentParticipantName]);
+
+  // Enrich participants with emails from profiles
+  const enrichParticipantsWithEmails = useCallback(async (participants: DraftParticipant[]): Promise<DraftParticipant[]> => {
+    // Extract unique user_ids that are not null
+    const userIds = participants
+      .map(p => p.user_id)
+      .filter((id): id is string => id !== null);
+    
+    if (userIds.length === 0) {
+      // No authenticated users, return participants as-is
+      return participants;
+    }
+
+    // Fetch emails from profiles
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('id, email')
+      .in('id', userIds);
+
+    if (error) {
+      console.error('Error fetching participant emails:', error);
+      // Return participants without enrichment on error
+      return participants;
+    }
+
+    // Create a map of user_id -> email
+    const emailMap = new Map<string, string>();
+    if (profiles) {
+      profiles.forEach(profile => {
+        if (profile.email) {
+          emailMap.set(profile.id, profile.email);
+        }
+      });
+    }
+
+    // Enrich participants with emails
+    return participants.map(participant => ({
+      ...participant,
+      email: participant.user_id ? emailMap.get(participant.user_id) || null : null
+    }));
+  }, []);
 
   // Create a multiplayer draft with email invitations
   const createMultiplayerDraft = useCallback(async (draftData: {
@@ -350,47 +391,6 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       setLoading(false);
     }
   }, [participantId, toast, broadcastDraftChange, draft]);
-
-  // Enrich participants with emails from profiles
-  const enrichParticipantsWithEmails = useCallback(async (participants: DraftParticipant[]): Promise<DraftParticipant[]> => {
-    // Extract unique user_ids that are not null
-    const userIds = participants
-      .map(p => p.user_id)
-      .filter((id): id is string => id !== null);
-    
-    if (userIds.length === 0) {
-      // No authenticated users, return participants as-is
-      return participants;
-    }
-
-    // Fetch emails from profiles
-    const { data: profiles, error } = await supabase
-      .from('profiles')
-      .select('id, email')
-      .in('id', userIds);
-
-    if (error) {
-      console.error('Error fetching participant emails:', error);
-      // Return participants without enrichment on error
-      return participants;
-    }
-
-    // Create a map of user_id -> email
-    const emailMap = new Map<string, string>();
-    if (profiles) {
-      profiles.forEach(profile => {
-        if (profile.email) {
-          emailMap.set(profile.id, profile.email);
-        }
-      });
-    }
-
-    // Enrich participants with emails
-    return participants.map(participant => ({
-      ...participant,
-      email: participant.user_id ? emailMap.get(participant.user_id) || null : null
-    }));
-  }, []);
 
   // Load draft data
   const loadDraft = useCallback(async (id: string) => {
