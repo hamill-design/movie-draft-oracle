@@ -294,7 +294,7 @@ async function analyzeCategoryMovies(
     if (personLifespan && personLifespan.death_date) {
       console.log(`📅 LIFESPAN INFO: ${option} died on ${personLifespan.death_date}`);
       const deathYear = new Date(personLifespan.death_date).getFullYear();
-      console.log(`🚫 Movies after ${deathYear + 3} should be filtered out (3-year grace period)`);
+      console.log(`🚫 Movies after ${deathYear + 1} should be filtered out (1-year grace period)`);
     } else {
       console.log(`💭 ${option} is not in our deceased actors database (assumed living)`);
     }
@@ -518,10 +518,15 @@ function isMovieEligibleForCategory(movie: any, category: string): boolean {
 }
 
 function calculateRequiredMovies(category: string, playerCount: number): number {
-  // Minimum requirement: 1 movie per player
+  // Minimum viable requirement: 1 movie per player
+  // Status calculation will determine if it's sufficient (2x) or just limited (1x)
   return playerCount;
 }
 
+// Status calculation:
+// - sufficient (green): >= 2x player count (enough variety for good draft)
+// - limited (yellow): >= 1x player count (minimum viable)
+// - insufficient (red): < player count (not enough movies)
 function getStatusFromCount(count: number, playerCount: number): 'sufficient' | 'limited' | 'insufficient' {
   if (count >= playerCount * 2) return 'sufficient'; // Green: Plenty of movies
   if (count >= playerCount) return 'limited';        // Yellow: Limited but sufficient  

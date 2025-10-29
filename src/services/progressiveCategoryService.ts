@@ -16,11 +16,7 @@ export class ProgressiveCategoryService {
   }
 
   private getCacheKey(category: string, theme: string, option: string, playerCount: number, draftMode?: string): string {
-    // For non-person themes, don't include playerCount since the raw movie count doesn't change
-    const isPersonTheme = this.isPersonBasedTheme(theme);
-    if (isPersonTheme) {
-      return `${this.CACHE_VERSION}-${theme}-${option}-${draftMode || 'single'}-${playerCount}-${category}`;
-    }
+    // Don't include playerCount in cache key - we recalculate status based on current playerCount
     return `${this.CACHE_VERSION}-${theme}-${option}-${draftMode || 'single'}-${category}`;
   }
 
@@ -29,10 +25,9 @@ export class ProgressiveCategoryService {
   }
 
   private getStatusFromCountDynamic(count: number, playerCount: number): 'sufficient' | 'limited' | 'insufficient' {
-    const required = playerCount * 5;
-    if (count >= required) return 'sufficient';
-    if (count > 0) return 'limited';
-    return 'insufficient';
+    if (count >= playerCount * 2) return 'sufficient'; // Green: Plenty of movies
+    if (count >= playerCount) return 'limited';        // Yellow: Limited but sufficient  
+    return 'insufficient';                             // Red: Insufficient
   }
 
   private getCacheDuration(theme: string): number {
@@ -238,6 +233,10 @@ export class ProgressiveCategoryService {
     };
   }
 
+  // Status calculation:
+  // - sufficient (green): >= 2x player count (enough variety for good draft)
+  // - limited (yellow): >= 1x player count (minimum viable)
+  // - insufficient (red): < player count (not enough movies)
   private getStatusFromCount(count: number, playerCount: number): 'sufficient' | 'limited' | 'insufficient' {
     if (count >= playerCount * 2) return 'sufficient';
     if (count >= playerCount) return 'limited';
