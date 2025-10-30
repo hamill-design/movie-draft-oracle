@@ -7,6 +7,7 @@ export class ProgressiveCategoryService {
   private readonly CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
   private readonly DECEASED_ACTOR_CACHE_DURATION = 2 * 60 * 1000; // 2 minutes for deceased actors
   private readonly CACHE_VERSION = 'v2.3.0'; // Genre fix: now stores all genres, not just first
+  private academyRefreshDone = new Set<string>(); // once-per-session refresh by theme+option
 
   public static getInstance(): ProgressiveCategoryService {
     if (!ProgressiveCategoryService.instance) {
@@ -85,10 +86,19 @@ export class ProgressiveCategoryService {
     if (categoriesToAnalyze.length > 0) {
       try {
         // Single API call for all categories
+        // One-time per theme+option preferFreshOscarStatus for Academy Award category
+        const academyInSelection = categoriesToAnalyze.includes('Academy Award Nominee or Winner');
+        const refreshKey = `${request.theme}:${request.option || ''}`;
+        const preferFreshOscarStatus = academyInSelection && !this.academyRefreshDone.has(refreshKey);
+        if (preferFreshOscarStatus) {
+          this.academyRefreshDone.add(refreshKey);
+        }
+
         const { data, error } = await supabase.functions.invoke('analyze-category-availability', {
           body: {
             ...request,
-            categories: categoriesToAnalyze
+            categories: categoriesToAnalyze,
+            preferFreshOscarStatus
           }
         });
 

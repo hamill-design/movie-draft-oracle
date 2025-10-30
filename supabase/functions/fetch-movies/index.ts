@@ -446,7 +446,7 @@ async function getOscarStatus(tmdbId: number, title: string, year: number, imdbI
 }
 
 // Normalized resolver that returns one of: 'winner' | 'nominee' | 'none' | 'unknown'
-async function resolveOscarStatus(tmdbId: number, title: string, year: number, tmdbApiKey: string): Promise<string> {
+async function resolveOscarStatus(tmdbId: number, title: string, year: number, tmdbApiKey: string, options: { preferFreshOscarStatus?: boolean } = {}): Promise<string> {
   try {
     // Try to get IMDb ID first for high-accuracy lookups
     const imdbId = await getImdbIdForMovie(tmdbId, tmdbApiKey);
@@ -454,24 +454,38 @@ async function resolveOscarStatus(tmdbId: number, title: string, year: number, t
     // Prefer exact year match in cache
     const { data: cachedExact } = await supabase
       .from('oscar_cache')
-      .select('oscar_status')
+      .select('oscar_status, updated_at')
       .eq('tmdb_id', tmdbId)
       .eq('movie_year', year || null)
       .single();
 
     if (cachedExact?.oscar_status) {
+      const isNegative = cachedExact.oscar_status === 'none' || cachedExact.oscar_status === 'unknown';
+      const updatedAt = cachedExact.updated_at ? new Date(cachedExact.updated_at).getTime() : 0;
+      const isStale = !updatedAt || (Date.now() - updatedAt > 30 * 24 * 60 * 60 * 1000);
+      if ((options.preferFreshOscarStatus && isNegative && imdbId) || (isNegative && isStale && imdbId)) {
+        const refreshed = await getOscarStatus(tmdbId, title, year, imdbId);
+        if (refreshed === 'winner' || refreshed === 'nominee') return refreshed;
+      }
       return cachedExact.oscar_status;
     }
 
     // Fallback: any cache for this tmdb_id regardless of year
     const { data: cachedAny } = await supabase
       .from('oscar_cache')
-      .select('oscar_status')
+      .select('oscar_status, updated_at')
       .eq('tmdb_id', tmdbId)
       .limit(1)
       .single();
 
     if (cachedAny?.oscar_status) {
+      const isNegative = cachedAny.oscar_status === 'none' || cachedAny.oscar_status === 'unknown';
+      const updatedAt = cachedAny.updated_at ? new Date(cachedAny.updated_at).getTime() : 0;
+      const isStale = !updatedAt || (Date.now() - updatedAt > 30 * 24 * 60 * 60 * 1000);
+      if ((options.preferFreshOscarStatus && isNegative && imdbId) || (isNegative && isStale && imdbId)) {
+        const refreshed = await getOscarStatus(tmdbId, title, year, imdbId);
+        if (refreshed === 'winner' || refreshed === 'nominee') return refreshed;
+      }
       return cachedAny.oscar_status;
     }
 
@@ -598,7 +612,7 @@ serve(async (req) => {
   }
 
   try {
-    const { searchQuery, category, page = 1, fetchAll = false } = await req.json();
+    const { searchQuery, category, page = 1, fetchAll = false, preferFreshOscarStatus = false } = await req.json();
     const tmdbApiKey = Deno.env.get('TMDB');
 
     if (!tmdbApiKey) {
@@ -1061,7 +1075,7 @@ serve(async (req) => {
       data.total_pages = Math.ceil(filteredCount / 20);
     }
 
-    return new Response(JSON.stringify(await processMovieResults(data, tmdbApiKey)), {
+    return new Response(JSON.stringify(await processMovieResults(data, tmdbApiKey, { preferFreshOscarStatus })), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
@@ -1081,7 +1095,7 @@ serve(async (req) => {
 });
 
 // Process movie results function to handle common transformations
-async function processMovieResults(data: any, tmdbApiKey: string) {
+async function processMovieResults(data: any, tmdbApiKey: string, opts: { preferFreshOscarStatus?: boolean } = {}) {
   console.log(`📊 Processing ${(data.results || []).length} movies...`);
   
   // Apply TV content filtering to all results
@@ -1126,7 +1140,7 @@ async function processMovieResults(data: any, tmdbApiKey: string) {
         console.log(`Movie: ${movie.title} - Release Date: ${detailedMovie.release_date}, Primary: ${detailedMovie.primary_release_date}, Extracted Year: ${movieYear}`);
       }
       
-      const oscarStatus = await resolveOscarStatus(movie.id, movie.title, movieYear, tmdbApiKey);
+      const oscarStatus = await resolveOscarStatus(movie.id, movie.title, movieYear, tmdbApiKey, { preferFreshOscarStatus: !!opts.preferFreshOscarStatus });
       oscarStatusNormalized = oscarStatus || 'unknown';
       hasOscar = oscarStatusNormalized !== 'none' && oscarStatusNormalized !== 'unknown';
       

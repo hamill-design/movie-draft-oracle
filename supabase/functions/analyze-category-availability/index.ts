@@ -189,7 +189,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { theme, option, categories, playerCount }: CategoryAnalysisRequest = await req.json();
+    const { theme, option, categories, playerCount, preferFreshOscarStatus }: any = await req.json();
 
     console.log('Analyzing categories:', { theme, option, categories, playerCount });
 
@@ -276,8 +276,12 @@ async function analyzeCategoryMovies(
   console.log('  - fetchParams:', JSON.stringify(fetchParams));
 
   // Call the existing fetch-movies function to get comprehensive movie data
+  // Pass preferFreshOscarStatus for the Academy category to bypass negative cache once per call
   const { data: movieData, error } = await supabase.functions.invoke('fetch-movies', {
-    body: fetchParams
+    body: { 
+      ...fetchParams,
+      preferFreshOscarStatus: preferFreshOscarStatus === true || category === 'Academy Award Nominee or Winner'
+    }
   });
 
   if (error) {

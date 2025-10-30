@@ -17,6 +17,24 @@ interface BackfillItem {
   imdb_id?: string;
 }
 
+async function fetchOmdbByImdbId(imdbId: string): Promise<{ status: string; awards: string } | null> {
+  try {
+    const omdbApiKey = Deno.env.get('OMDB');
+    if (!omdbApiKey) return null;
+    const url = `http://www.omdbapi.com/?apikey=${omdbApiKey}&i=${encodeURIComponent(imdbId)}`;
+    const res = await fetch(url);
+    const json = await res.json();
+    if (json?.Response !== 'True') return null;
+    const awardsStr = (json.Awards || '').toLowerCase();
+    let status = 'none';
+    if (awardsStr.includes('won') && (awardsStr.includes('oscar') || awardsStr.includes('academy award'))) status = 'winner';
+    else if (awardsStr.includes('nominated') && (awardsStr.includes('oscar') || awardsStr.includes('academy award'))) status = 'nominee';
+    return { status, awards: json.Awards || '' };
+  } catch {
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -39,17 +57,25 @@ serve(async (req) => {
           .eq('movie_year', item.year || null)
           .single();
 
-        if (cached && cached.oscar_status && cached.oscar_status !== 'none') {
+        if (cached && cached.oscar_status && cached.oscar_status !== 'none' && cached.oscar_status !== 'unknown') {
           processed++;
           continue;
         }
 
-        // Minimal upsert placeholder (actual enrichment can be added later)
+        let status = cached?.oscar_status || 'unknown';
+        let awards = '';
+        if (item.imdb_id) {
+          const omdb = await fetchOmdbByImdbId(item.imdb_id);
+          if (omdb) { status = omdb.status; awards = omdb.awards; }
+        }
+
         await supabase.from('oscar_cache').upsert({
           tmdb_id: item.tmdb_id,
+          imdb_id: item.imdb_id || null,
           movie_title: item.title,
           movie_year: item.year,
-          oscar_status: cached?.oscar_status || 'none',
+          oscar_status: status,
+          awards_data: awards,
           updated_at: new Date().toISOString(),
         });
 
