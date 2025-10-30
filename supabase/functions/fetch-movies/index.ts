@@ -327,16 +327,23 @@ async function getImdbIdForMovie(tmdbId: number, tmdbApiKey: string): Promise<st
   try {
     const url = `https://api.themoviedb.org/3/movie/${tmdbId}/external_ids?api_key=${tmdbApiKey}`;
     const res = await fetch(url);
-    if (!res.ok) return null;
+    if (!res.ok) throw new Error('external_ids request failed');
     const json = await res.json();
-    return json?.imdb_id || null;
-  } catch {
-    return null;
-  }
+    if (json?.imdb_id) return json.imdb_id;
+  } catch {}
+  // Fallback via movie details
+  try {
+    const det = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${tmdbApiKey}`);
+    if (det.ok) {
+      const j = await det.json();
+      if (j?.imdb_id) return j.imdb_id;
+    }
+  } catch {}
+  return null;
 }
 
 // Helper function to check and get Oscar status from cache or OMDb
-async function getOscarStatus(tmdbId: number, title: string, year: number, imdbId?: string | null): Promise<string> {
+async function getOscarStatus(tmdbId: number, title: string, year: number, imdbId?: string | null, originalTitle?: string | null): Promise<string> {
   try {
     // Reset daily counter if needed
     const today = new Date().toDateString();
@@ -393,20 +400,34 @@ async function getOscarStatus(tmdbId: number, title: string, year: number, imdbI
       data = await response.json();
     }
 
-    // Fallback to title+year if IMDb lookup missing or failed
+    // Fallbacks when IMDb lookup missing or failed
     if (!data || data.Response !== 'True') {
-      const urlByTitleYear = `http://www.omdbapi.com/?apikey=${omdbApiKey}&t=${encodeURIComponent(title)}&y=${year}`;
-      console.log(`Calling OMDb by title+year for "${title}" (${year}):`, urlByTitleYear);
-      const response2 = await fetch(urlByTitleYear);
-      data = await response2.json();
-    }
+      const tryTitleYear = async (t: string, y: number | null) => {
+        const q = y ? `&y=${y}` : '';
+        const u = `http://www.omdbapi.com/?apikey=${omdbApiKey}&t=${encodeURIComponent(t)}${q}`;
+        const r = await fetch(u);
+        return r.json();
+      };
 
-    // Fallback to title-only if still not found
-    if (!data || data.Response !== 'True') {
-      const urlByTitle = `http://www.omdbapi.com/?apikey=${omdbApiKey}&t=${encodeURIComponent(title)}`;
-      console.log(`Calling OMDb by title only for "${title}":`, urlByTitle);
-      const response3 = await fetch(urlByTitle);
-      data = await response3.json();
+      // Title + exact year, then ±1 tolerance
+      data = await tryTitleYear(title, year);
+      if (!data || data.Response !== 'True') data = await tryTitleYear(title, year ? year - 1 : null);
+      if (!data || data.Response !== 'True') data = await tryTitleYear(title, year ? year + 1 : null);
+
+      // Try original title if provided
+      if ((!data || data.Response !== 'True') && originalTitle) {
+        data = await tryTitleYear(originalTitle, year);
+        if (!data || data.Response !== 'True') data = await tryTitleYear(originalTitle, year ? year - 1 : null);
+        if (!data || data.Response !== 'True') data = await tryTitleYear(originalTitle, year ? year + 1 : null);
+      }
+
+      // Fallback to title-only if still not found
+      if (!data || data.Response !== 'True') {
+        const urlByTitle = `http://www.omdbapi.com/?apikey=${omdbApiKey}&t=${encodeURIComponent(title)}`;
+        console.log(`Calling OMDb by title only for "${title}":`, urlByTitle);
+        const response3 = await fetch(urlByTitle);
+        data = await response3.json();
+      }
     }
     omdbCallsToday++;
 
@@ -450,6 +471,21 @@ async function resolveOscarStatus(tmdbId: number, title: string, year: number, t
   try {
     // Try to get IMDb ID first for high-accuracy lookups
     const imdbId = await getImdbIdForMovie(tmdbId, tmdbApiKey);
+    let originalTitle: string | null = null;
+    try {
+      const det = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${tmdbApiKey}`);
+      if (det.ok) {
+        const j = await det.json();
+        originalTitle = j?.original_title || null;
+      }
+    } catch {}
+
+    // For Academy fresh runs, bypass cache entirely to avoid stale negatives
+    if (options.preferFreshOscarStatus && imdbId) {
+      console.log(`PreferFresh: bypassing cache for ${title} (${year}) using IMDb ${imdbId}`);
+      const fresh = await getOscarStatus(tmdbId, title, year, imdbId, originalTitle);
+      if (fresh) return fresh;
+    }
 
     // Prefer exact year match in cache
     const { data: cachedExact } = await supabase
@@ -464,7 +500,8 @@ async function resolveOscarStatus(tmdbId: number, title: string, year: number, t
       const updatedAt = cachedExact.updated_at ? new Date(cachedExact.updated_at).getTime() : 0;
       const isStale = !updatedAt || (Date.now() - updatedAt > 30 * 24 * 60 * 60 * 1000);
       if ((options.preferFreshOscarStatus && isNegative && imdbId) || (isNegative && isStale && imdbId)) {
-        const refreshed = await getOscarStatus(tmdbId, title, year, imdbId);
+        console.log(`Refreshing negative/stale cache (exact) via IMDb for ${title}`);
+        const refreshed = await getOscarStatus(tmdbId, title, year, imdbId, originalTitle);
         if (refreshed === 'winner' || refreshed === 'nominee') return refreshed;
       }
       return cachedExact.oscar_status;
@@ -483,14 +520,15 @@ async function resolveOscarStatus(tmdbId: number, title: string, year: number, t
       const updatedAt = cachedAny.updated_at ? new Date(cachedAny.updated_at).getTime() : 0;
       const isStale = !updatedAt || (Date.now() - updatedAt > 30 * 24 * 60 * 60 * 1000);
       if ((options.preferFreshOscarStatus && isNegative && imdbId) || (isNegative && isStale && imdbId)) {
-        const refreshed = await getOscarStatus(tmdbId, title, year, imdbId);
+        console.log(`Refreshing negative/stale cache (any) via IMDb for ${title}`);
+        const refreshed = await getOscarStatus(tmdbId, title, year, imdbId, originalTitle);
         if (refreshed === 'winner' || refreshed === 'nominee') return refreshed;
       }
       return cachedAny.oscar_status;
     }
 
     // Last resort: fetch via OMDb parser helper
-    const status = await getOscarStatus(tmdbId, title, year, imdbId || undefined);
+    const status = await getOscarStatus(tmdbId, title, year, imdbId || undefined, originalTitle);
     return status || 'unknown';
   } catch (e) {
     console.log('resolveOscarStatus error:', e);
