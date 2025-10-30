@@ -222,7 +222,7 @@ export const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
   'Academy Award Nominee or Winner': {
     id: 'academy-award',
     name: 'Academy Award Nominee or Winner',
-    description: 'Movies with Oscar nominations or wins',
+    description: 'Any film that received at least one Academy Award (Oscar) nomination or win, in any category',
     minMoviesRequired: (playerCount) => Math.max(playerCount * 1.2, 8),
     validationRules: [
       { type: 'minMovies', config: { minimum: 8 } },

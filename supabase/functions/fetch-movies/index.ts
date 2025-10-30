@@ -335,8 +335,9 @@ async function getOscarStatus(tmdbId: number, title: string, year: number): Prom
     // First check cache
     const { data: cached } = await supabase
       .from('oscar_cache')
-      .select('oscar_status')
+      .select('oscar_status, movie_year')
       .eq('tmdb_id', tmdbId)
+      .eq('movie_year', year || null)
       .single();
 
     if (cached) {
@@ -380,7 +381,7 @@ async function getOscarStatus(tmdbId: number, title: string, year: number): Prom
     }
 
     // Cache the result
-    await supabase.from('oscar_cache').insert({
+    await supabase.from('oscar_cache').upsert({
       tmdb_id: tmdbId,
       movie_title: title,
       movie_year: year,
@@ -394,6 +395,42 @@ async function getOscarStatus(tmdbId: number, title: string, year: number): Prom
   } catch (error) {
     console.error(`Error getting Oscar status for "${title}":`, error);
     return 'none';
+  }
+}
+
+// Normalized resolver that returns one of: 'winner' | 'nominee' | 'none' | 'unknown'
+async function resolveOscarStatus(tmdbId: number, title: string, year: number): Promise<string> {
+  try {
+    // Prefer exact year match in cache
+    const { data: cachedExact } = await supabase
+      .from('oscar_cache')
+      .select('oscar_status')
+      .eq('tmdb_id', tmdbId)
+      .eq('movie_year', year || null)
+      .single();
+
+    if (cachedExact?.oscar_status) {
+      return cachedExact.oscar_status;
+    }
+
+    // Fallback: any cache for this tmdb_id regardless of year
+    const { data: cachedAny } = await supabase
+      .from('oscar_cache')
+      .select('oscar_status')
+      .eq('tmdb_id', tmdbId)
+      .limit(1)
+      .single();
+
+    if (cachedAny?.oscar_status) {
+      return cachedAny.oscar_status;
+    }
+
+    // Last resort: fetch via OMDb parser helper
+    const status = await getOscarStatus(tmdbId, title, year);
+    return status || 'unknown';
+  } catch (e) {
+    console.log('resolveOscarStatus error:', e);
+    return 'unknown';
   }
 }
 
@@ -1010,6 +1047,7 @@ async function processMovieResults(data: any, tmdbApiKey: string) {
   const transformedMovies = await Promise.all(data.results.map(async (movie: any) => {
     let detailedMovie = movie;
     let hasOscar = false;
+    let oscarStatusNormalized = 'unknown';
     let isBlockbuster = false;
     
     try {
@@ -1038,8 +1076,9 @@ async function processMovieResults(data: any, tmdbApiKey: string) {
         console.log(`Movie: ${movie.title} - Release Date: ${detailedMovie.release_date}, Primary: ${detailedMovie.primary_release_date}, Extracted Year: ${movieYear}`);
       }
       
-      const oscarStatus = await getOscarStatus(movie.id, movie.title, movieYear);
-      hasOscar = oscarStatus !== 'none';
+      const oscarStatus = await resolveOscarStatus(movie.id, movie.title, movieYear);
+      oscarStatusNormalized = oscarStatus || 'unknown';
+      hasOscar = oscarStatusNormalized !== 'none' && oscarStatusNormalized !== 'unknown';
       
     } catch (error) {
       console.log(`Could not fetch detailed info for movie ${movie.id}:`, error);
@@ -1074,11 +1113,22 @@ async function processMovieResults(data: any, tmdbApiKey: string) {
       budget: detailedMovie.budget || 0,
       revenue: detailedMovie.revenue || 0,
       hasOscar,
+      oscar_status: oscarStatusNormalized,
       isBlockbuster
     };
   }));
 
   console.log(`✅ Processed ${transformedMovies.length} movies successfully`);
+
+  // Coverage logging for oscar status
+  try {
+    const counts = transformedMovies.reduce((acc: any, m: any) => {
+      const key = m.oscar_status || 'unknown';
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    console.log('🏆 Oscar status distribution:', counts);
+  } catch {}
 
   return {
     results: transformedMovies,

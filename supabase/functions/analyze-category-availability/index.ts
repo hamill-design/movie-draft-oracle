@@ -287,6 +287,15 @@ async function analyzeCategoryMovies(
 
   const movies = movieData?.results || [];
   console.log(`Fetched ${movies.length} movies for analysis`);
+  // If analyzing Academy Award category, log oscar status coverage
+  if (category === 'Academy Award Nominee or Winner' && movies.length > 0) {
+    const dist = movies.reduce((acc: any, m: any) => {
+      const key = (m.oscar_status || 'unknown');
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    console.log('🏆 Oscar status coverage (pre-filter):', dist);
+  }
 
   // Enhanced logging for person-based analysis with lifespan information
   if (theme === 'people' && option) {
@@ -506,7 +515,8 @@ function isMovieEligibleForCategory(movie: any, category: string): boolean {
       return year >= 2020 && year <= 2029;
     
     case 'Academy Award Nominee or Winner':
-      return movie.hasOscar === true || movie.oscar_status === 'winner' || movie.oscar_status === 'nominee';
+      // Rely solely on normalized oscar_status attached by fetch-movies
+      return movie.oscar_status === 'winner' || movie.oscar_status === 'nominee';
     
     case 'Blockbuster (minimum of $50 Mil)':
       return movie.isBlockbuster === true || (movie.revenue && movie.revenue >= 50000000);
