@@ -1,6 +1,10 @@
 -- Critical Security Fix: Add search_path protection to all functions
 -- This prevents function hijacking and privilege escalation attacks
 
+-- Set search_path for this migration to allow PostgreSQL to resolve table types
+-- (like drafts%ROWTYPE) during function creation
+SET LOCAL search_path = 'public';
+
 -- Fix generate_invite_code function
 CREATE OR REPLACE FUNCTION public.generate_invite_code()
  RETURNS text

@@ -1,5 +1,9 @@
 -- Fix the final remaining database functions with search_path security
 
+-- Set search_path for this migration to allow PostgreSQL to resolve table types
+-- (like drafts%ROWTYPE) during function creation
+SET LOCAL search_path = 'public';
+
 -- Fix start_multiplayer_draft function
 CREATE OR REPLACE FUNCTION public.start_multiplayer_draft(p_draft_id uuid, p_guest_session_id uuid DEFAULT NULL::uuid)
  RETURNS TABLE(draft_id uuid, draft_user_id uuid, draft_guest_session_id uuid, draft_title text, draft_theme text, draft_option text, draft_categories text[], draft_participants text[], draft_is_multiplayer boolean, draft_invite_code text, draft_current_pick_number integer, draft_current_turn_user_id uuid, draft_is_complete boolean, draft_turn_order jsonb, draft_draft_order text[], draft_created_at timestamp with time zone, draft_updated_at timestamp with time zone)

@@ -1,4 +1,9 @@
 -- Update can_access_draft function to handle mixed authentication states better
+
+-- Set search_path for this migration to allow PostgreSQL to resolve table types
+-- (like drafts%ROWTYPE) during function creation
+SET LOCAL search_path = 'public';
+
 CREATE OR REPLACE FUNCTION public.can_access_draft(p_draft_id uuid, p_participant_id uuid)
 RETURNS boolean
 LANGUAGE plpgsql

@@ -1,5 +1,9 @@
 -- Fix the remaining database functions with search_path security
 
+-- Set search_path for this migration to allow PostgreSQL to resolve table types
+-- (like drafts%ROWTYPE) during function creation
+SET LOCAL search_path = 'public';
+
 -- Fix set_guest_session_context function
 CREATE OR REPLACE FUNCTION public.set_guest_session_context(session_id uuid)
  RETURNS void

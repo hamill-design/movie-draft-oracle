@@ -1,5 +1,9 @@
 -- Fix the last two remaining database functions with search_path security
 
+-- Set search_path for this migration to allow PostgreSQL to resolve table types
+-- (like drafts%ROWTYPE) during function creation
+SET LOCAL search_path = 'public';
+
 -- Fix make_multiplayer_pick_unified function
 CREATE OR REPLACE FUNCTION public.make_multiplayer_pick_unified(p_draft_id uuid, p_participant_id uuid, p_movie_id integer, p_movie_title text, p_movie_year integer, p_movie_genre text, p_category text, p_poster_path text DEFAULT NULL::text)
  RETURNS TABLE(success boolean, message text, new_pick_number integer, next_turn_participant_id uuid)
