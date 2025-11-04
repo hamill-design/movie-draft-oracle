@@ -3,7 +3,7 @@ CREATE OR REPLACE FUNCTION public.can_access_draft(p_draft_id uuid, p_participan
 RETURNS boolean
 LANGUAGE plpgsql
 STABLE SECURITY DEFINER
-SET search_path TO ''
+SET search_path = 'public'
 AS $function$
 DECLARE
   v_draft_record public.drafts%ROWTYPE;

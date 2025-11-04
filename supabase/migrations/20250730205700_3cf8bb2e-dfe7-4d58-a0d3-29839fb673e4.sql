@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION public.start_multiplayer_draft(p_draft_id uuid, p_gue
  RETURNS TABLE(draft_id uuid, draft_user_id uuid, draft_guest_session_id uuid, draft_title text, draft_theme text, draft_option text, draft_categories text[], draft_participants text[], draft_is_multiplayer boolean, draft_invite_code text, draft_current_pick_number integer, draft_current_turn_user_id uuid, draft_is_complete boolean, draft_turn_order jsonb, draft_draft_order text[], draft_created_at timestamp with time zone, draft_updated_at timestamp with time zone)
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path = ''
+ SET search_path = 'public'
 AS $function$
 DECLARE
   v_draft_record public.drafts;
@@ -229,7 +229,7 @@ CREATE OR REPLACE FUNCTION public.start_multiplayer_draft_unified(p_draft_id uui
  RETURNS TABLE(draft_id uuid, draft_user_id uuid, draft_guest_session_id uuid, draft_title text, draft_theme text, draft_option text, draft_categories text[], draft_participants text[], draft_is_multiplayer boolean, draft_invite_code text, draft_current_pick_number integer, draft_current_turn_user_id uuid, draft_current_turn_participant_id uuid, draft_is_complete boolean, draft_turn_order jsonb, draft_draft_order text[], draft_created_at timestamp with time zone, draft_updated_at timestamp with time zone)
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path = ''
+ SET search_path = 'public'
 AS $function$
 DECLARE
   v_draft_record public.drafts;
