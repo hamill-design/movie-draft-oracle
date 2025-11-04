@@ -51,7 +51,7 @@ AS $function$
 DECLARE
   v_draft_id UUID;
   v_invite_code TEXT;
-  v_draft_record public.drafts%ROWTYPE;
+  v_draft_record drafts%ROWTYPE;
   v_participants_json jsonb;
   v_picks_json jsonb;
   v_is_authenticated_user BOOLEAN := false;
@@ -241,7 +241,7 @@ CREATE OR REPLACE FUNCTION public.join_draft_by_invite_code(invite_code_param te
  SET search_path = 'public'
 AS $function$
 DECLARE
-  draft_record public.drafts%ROWTYPE;
+  draft_record drafts%ROWTYPE;
   existing_participant_id UUID;
   new_participant_id UUID;
 BEGIN

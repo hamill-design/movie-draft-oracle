@@ -18,12 +18,12 @@ CREATE OR REPLACE FUNCTION public.create_guest_multiplayer_draft(p_guest_session
  RETURNS TABLE(draft_id uuid, draft_user_id uuid, draft_guest_session_id uuid, draft_title text, draft_theme text, draft_option text, draft_categories text[], draft_participants text[], draft_is_multiplayer boolean, draft_invite_code text, draft_current_pick_number integer, draft_current_turn_user_id uuid, draft_is_complete boolean, draft_turn_order jsonb, draft_draft_order text[], draft_created_at timestamp with time zone, draft_updated_at timestamp with time zone, participants_data jsonb, picks_data jsonb)
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path = ''
+ SET search_path = 'public'
 AS $function$
 DECLARE
   v_draft_id UUID;
   v_invite_code TEXT;
-  v_draft_record public.drafts;
+  v_draft_record drafts%ROWTYPE;
   v_participants_json jsonb;
   v_picks_json jsonb;
 BEGIN
@@ -172,10 +172,10 @@ CREATE OR REPLACE FUNCTION public.load_draft_with_guest_access(p_draft_id uuid, 
  RETURNS TABLE(draft_id uuid, draft_user_id uuid, draft_guest_session_id uuid, draft_title text, draft_theme text, draft_option text, draft_categories text[], draft_participants text[], draft_is_multiplayer boolean, draft_invite_code text, draft_current_pick_number integer, draft_current_turn_user_id uuid, draft_is_complete boolean, draft_turn_order jsonb, draft_draft_order text[], draft_created_at timestamp with time zone, draft_updated_at timestamp with time zone, participants_data jsonb, picks_data jsonb)
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path = ''
+ SET search_path = 'public'
 AS $function$
 DECLARE
-  draft_record public.drafts;
+  draft_record drafts%ROWTYPE;
   v_participants_json jsonb;
   v_picks_json jsonb;
   v_has_access boolean := false;

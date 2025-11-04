@@ -6,7 +6,7 @@ STABLE SECURITY DEFINER
 SET search_path = 'public'
 AS $function$
 DECLARE
-  v_draft_record public.drafts%ROWTYPE;
+  v_draft_record drafts%ROWTYPE;
   v_current_user_id uuid;
 BEGIN
   -- Log the access attempt for debugging

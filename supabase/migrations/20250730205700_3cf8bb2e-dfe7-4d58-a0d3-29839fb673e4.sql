@@ -8,9 +8,9 @@ CREATE OR REPLACE FUNCTION public.start_multiplayer_draft(p_draft_id uuid, p_gue
  SET search_path = 'public'
 AS $function$
 DECLARE
-  v_draft_record public.drafts;
-  v_participants_list public.draft_participants[];
-  v_shuffled_participants public.draft_participants[];
+  v_draft_record drafts%ROWTYPE;
+  v_participants_list draft_participants[];
+  v_shuffled_participants draft_participants[];
   v_turn_order jsonb := '[]'::jsonb;
   v_categories_count integer;
   v_participant_count integer;
@@ -192,10 +192,10 @@ CREATE OR REPLACE FUNCTION public.can_access_draft(p_draft_id uuid, p_participan
  RETURNS boolean
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
- SET search_path = ''
+ SET search_path = 'public'
 AS $function$
 DECLARE
-  v_draft_record public.drafts;
+  v_draft_record drafts%ROWTYPE;
 BEGIN
   -- Get draft record
   SELECT * INTO v_draft_record
@@ -232,9 +232,9 @@ CREATE OR REPLACE FUNCTION public.start_multiplayer_draft_unified(p_draft_id uui
  SET search_path = 'public'
 AS $function$
 DECLARE
-  v_draft_record public.drafts;
-  v_participants_list public.draft_participants[];
-  v_shuffled_participants public.draft_participants[];
+  v_draft_record drafts%ROWTYPE;
+  v_participants_list draft_participants[];
+  v_shuffled_participants draft_participants[];
   v_turn_order jsonb := '[]'::jsonb;
   v_categories_count integer;
   v_participant_count integer;

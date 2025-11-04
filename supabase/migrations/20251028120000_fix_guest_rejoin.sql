@@ -25,10 +25,10 @@ RETURNS TABLE(
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = ''
+SET search_path = 'public'
 AS $function$
 DECLARE
-  draft_record public.drafts;
+  draft_record drafts%ROWTYPE;
   existing_participant_id UUID;
   new_participant_id UUID;
   final_participant_name TEXT;
