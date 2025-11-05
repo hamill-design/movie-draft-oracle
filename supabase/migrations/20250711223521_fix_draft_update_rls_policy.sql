@@ -1,5 +1,6 @@
 -- Fix RLS policy for drafts to allow participants to update
 DROP POLICY IF EXISTS "Users can update their own drafts" ON public.drafts;
+DROP POLICY IF EXISTS "Users can update drafts they participate in" ON public.drafts;
 
 CREATE POLICY "Users can update drafts they participate in"
 ON public.drafts
