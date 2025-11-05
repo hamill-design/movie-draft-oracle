@@ -1,5 +1,7 @@
 -- Update the join_draft_by_invite_code_guest function to return complete draft details
 -- This eliminates the need for a separate RLS-dependent query
+-- Drop function first since we're changing the return type
+DROP FUNCTION IF EXISTS public.join_draft_by_invite_code_guest(text, text, uuid);
 
 CREATE OR REPLACE FUNCTION public.join_draft_by_invite_code_guest(invite_code_param text, participant_name_param text, p_guest_session_id uuid DEFAULT NULL::uuid)
  RETURNS TABLE(

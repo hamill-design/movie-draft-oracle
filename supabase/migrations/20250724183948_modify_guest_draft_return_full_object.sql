@@ -1,4 +1,7 @@
 -- Modify create_guest_multiplayer_draft to return full draft object
+-- Drop function first since we're changing the return type
+DROP FUNCTION IF EXISTS public.create_guest_multiplayer_draft(uuid, text, text, text, text[], text[], text);
+
 CREATE OR REPLACE FUNCTION public.create_guest_multiplayer_draft(p_guest_session_id uuid, p_title text, p_theme text, p_option text, p_categories text[], p_participants text[], p_participant_name text)
  RETURNS TABLE(
    id uuid,
