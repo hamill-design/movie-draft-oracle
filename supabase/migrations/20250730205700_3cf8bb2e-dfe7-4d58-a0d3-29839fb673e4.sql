@@ -1,8 +1,13 @@
 -- Fix the final remaining database functions with search_path security
 
--- Set search_path for this migration to allow PostgreSQL to resolve table types
--- (like drafts%ROWTYPE) during function creation
-SET LOCAL search_path = 'public';
+-- Verify drafts table exists before creating functions that reference it
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.tables 
+                 WHERE table_schema = 'public' AND table_name = 'drafts') THEN
+    RAISE EXCEPTION 'Table public.drafts does not exist. Migration 20250701202547 must run first.';
+  END IF;
+END $$;
 
 -- Fix start_multiplayer_draft function
 CREATE OR REPLACE FUNCTION public.start_multiplayer_draft(p_draft_id uuid, p_guest_session_id uuid DEFAULT NULL::uuid)
@@ -12,9 +17,9 @@ CREATE OR REPLACE FUNCTION public.start_multiplayer_draft(p_draft_id uuid, p_gue
  SET search_path = 'public'
 AS $function$
 DECLARE
-  v_draft_record drafts%ROWTYPE;
-  v_participants_list draft_participants[];
-  v_shuffled_participants draft_participants[];
+  v_draft_record public.drafts%ROWTYPE;
+  v_participants_list public.draft_participants[];
+  v_shuffled_participants public.draft_participants[];
   v_turn_order jsonb := '[]'::jsonb;
   v_categories_count integer;
   v_participant_count integer;
@@ -199,7 +204,7 @@ CREATE OR REPLACE FUNCTION public.can_access_draft(p_draft_id uuid, p_participan
  SET search_path = 'public'
 AS $function$
 DECLARE
-  v_draft_record drafts%ROWTYPE;
+  v_draft_record public.drafts%ROWTYPE;
 BEGIN
   -- Get draft record
   SELECT * INTO v_draft_record
@@ -236,9 +241,9 @@ CREATE OR REPLACE FUNCTION public.start_multiplayer_draft_unified(p_draft_id uui
  SET search_path = 'public'
 AS $function$
 DECLARE
-  v_draft_record drafts%ROWTYPE;
-  v_participants_list draft_participants[];
-  v_shuffled_participants draft_participants[];
+  v_draft_record public.drafts%ROWTYPE;
+  v_participants_list public.draft_participants[];
+  v_shuffled_participants public.draft_participants[];
   v_turn_order jsonb := '[]'::jsonb;
   v_categories_count integer;
   v_participant_count integer;

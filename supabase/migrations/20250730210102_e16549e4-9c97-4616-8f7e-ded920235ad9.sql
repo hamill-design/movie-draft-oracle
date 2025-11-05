@@ -1,9 +1,5 @@
 -- Fix the last two remaining database functions with search_path security
 
--- Set search_path for this migration to allow PostgreSQL to resolve table types
--- (like drafts%ROWTYPE) during function creation
-SET LOCAL search_path = 'public';
-
 -- Fix make_multiplayer_pick_unified function
 CREATE OR REPLACE FUNCTION public.make_multiplayer_pick_unified(p_draft_id uuid, p_participant_id uuid, p_movie_id integer, p_movie_title text, p_movie_year integer, p_movie_genre text, p_category text, p_poster_path text DEFAULT NULL::text)
  RETURNS TABLE(success boolean, message text, new_pick_number integer, next_turn_participant_id uuid)
@@ -146,6 +142,15 @@ BEGIN
 END;
 $function$;
 
+-- Verify drafts table exists before creating functions that reference it
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.tables 
+                 WHERE table_schema = 'public' AND table_name = 'drafts') THEN
+    RAISE EXCEPTION 'Table public.drafts does not exist. Migration 20250701202547 must run first.';
+  END IF;
+END $$;
+
 -- Fix load_draft_unified function
 CREATE OR REPLACE FUNCTION public.load_draft_unified(p_draft_id uuid, p_participant_id uuid)
  RETURNS TABLE(draft_id uuid, draft_user_id uuid, draft_guest_session_id uuid, draft_title text, draft_theme text, draft_option text, draft_categories text[], draft_participants text[], draft_is_multiplayer boolean, draft_invite_code text, draft_current_pick_number integer, draft_current_turn_user_id uuid, draft_current_turn_participant_id uuid, draft_is_complete boolean, draft_turn_order jsonb, draft_draft_order text[], draft_created_at timestamp with time zone, draft_updated_at timestamp with time zone, participants_data jsonb, picks_data jsonb)
@@ -154,7 +159,7 @@ CREATE OR REPLACE FUNCTION public.load_draft_unified(p_draft_id uuid, p_particip
  SET search_path = 'public'
 AS $function$
 DECLARE
-  draft_record drafts%ROWTYPE;
+  draft_record public.drafts%ROWTYPE;
   v_participants_json jsonb;
   v_picks_json jsonb;
 BEGIN

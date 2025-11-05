@@ -1,9 +1,14 @@
 -- Fix guest rejoin behavior: re-associate existing participant by guest session or name
 -- When a guest reconnects, prefer returning existing participant rather than inserting a new one.
 
--- Set search_path for this migration to allow PostgreSQL to resolve table types
--- (like drafts%ROWTYPE) during function creation
-SET LOCAL search_path = 'public';
+-- Verify drafts table exists before creating functions that reference it
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.tables 
+                 WHERE table_schema = 'public' AND table_name = 'drafts') THEN
+    RAISE EXCEPTION 'Table public.drafts does not exist. Migration 20250701202547 must run first.';
+  END IF;
+END $$;
 
 CREATE OR REPLACE FUNCTION public.join_draft_by_invite_code_guest(
   invite_code_param text,
@@ -32,7 +37,7 @@ SECURITY DEFINER
 SET search_path = 'public'
 AS $function$
 DECLARE
-  draft_record drafts%ROWTYPE;
+  draft_record public.drafts%ROWTYPE;
   existing_participant_id UUID;
   new_participant_id UUID;
   final_participant_name TEXT;
