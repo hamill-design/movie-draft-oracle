@@ -1,4 +1,7 @@
 -- Create a dedicated function for guest users to create multiplayer drafts
+-- Drop function first in case it exists with a different return type
+DROP FUNCTION IF EXISTS public.create_guest_multiplayer_draft(uuid, text, text, text, text[], text[], text);
+
 CREATE OR REPLACE FUNCTION public.create_guest_multiplayer_draft(
   p_guest_session_id UUID,
   p_title TEXT,

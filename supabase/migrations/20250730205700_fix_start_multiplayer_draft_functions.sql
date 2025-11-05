@@ -1,14 +1,23 @@
 -- Fix the final remaining database functions with search_path security
 
+-- Verify drafts table exists before creating functions that reference it
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.tables 
+                 WHERE table_schema = 'public' AND table_name = 'drafts') THEN
+    RAISE EXCEPTION 'Table public.drafts does not exist. Migration 20250701202547 must run first.';
+  END IF;
+END $$;
+
 -- Fix start_multiplayer_draft function
 CREATE OR REPLACE FUNCTION public.start_multiplayer_draft(p_draft_id uuid, p_guest_session_id uuid DEFAULT NULL::uuid)
  RETURNS TABLE(draft_id uuid, draft_user_id uuid, draft_guest_session_id uuid, draft_title text, draft_theme text, draft_option text, draft_categories text[], draft_participants text[], draft_is_multiplayer boolean, draft_invite_code text, draft_current_pick_number integer, draft_current_turn_user_id uuid, draft_is_complete boolean, draft_turn_order jsonb, draft_draft_order text[], draft_created_at timestamp with time zone, draft_updated_at timestamp with time zone)
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path = ''
+ SET search_path = 'public'
 AS $function$
 DECLARE
-  v_draft_record public.drafts;
+  v_draft_record public.drafts%ROWTYPE;
   v_participants_list public.draft_participants[];
   v_shuffled_participants public.draft_participants[];
   v_turn_order jsonb := '[]'::jsonb;
@@ -192,10 +201,10 @@ CREATE OR REPLACE FUNCTION public.can_access_draft(p_draft_id uuid, p_participan
  RETURNS boolean
  LANGUAGE plpgsql
  STABLE SECURITY DEFINER
- SET search_path = ''
+ SET search_path = 'public'
 AS $function$
 DECLARE
-  v_draft_record public.drafts;
+  v_draft_record public.drafts%ROWTYPE;
 BEGIN
   -- Get draft record
   SELECT * INTO v_draft_record
@@ -229,10 +238,10 @@ CREATE OR REPLACE FUNCTION public.start_multiplayer_draft_unified(p_draft_id uui
  RETURNS TABLE(draft_id uuid, draft_user_id uuid, draft_guest_session_id uuid, draft_title text, draft_theme text, draft_option text, draft_categories text[], draft_participants text[], draft_is_multiplayer boolean, draft_invite_code text, draft_current_pick_number integer, draft_current_turn_user_id uuid, draft_current_turn_participant_id uuid, draft_is_complete boolean, draft_turn_order jsonb, draft_draft_order text[], draft_created_at timestamp with time zone, draft_updated_at timestamp with time zone)
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path = ''
+ SET search_path = 'public'
 AS $function$
 DECLARE
-  v_draft_record public.drafts;
+  v_draft_record public.drafts%ROWTYPE;
   v_participants_list public.draft_participants[];
   v_shuffled_participants public.draft_participants[];
   v_turn_order jsonb := '[]'::jsonb;

@@ -2,19 +2,15 @@
 import React, { useState, useEffect } from 'react';
 import { useDraftGame } from '@/hooks/useDraftGame';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
-import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useMovies } from '@/hooks/useMovies';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 
 import DraftBoard from './DraftBoard';
 import MovieSearch from './MovieSearch';
-import CategorySelection from '@/components/CategorySelection';
 import EnhancedCategorySelection from '@/components/EnhancedCategorySelection';
 import PickConfirmation from './PickConfirmation';
 import DraftComplete from './DraftComplete';
 import { MultiplayerDraftInterface } from './MultiplayerDraftInterface';
-import { DraftActorPortrait } from './DraftActorPortrait';
 
 interface DraftInterfaceProps {
   draftState: {
@@ -42,7 +38,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
           description: `Email invitations have been sent to ${draftState.participants.length} participant(s)`,
         });
       }
-    }, []);
+    }, [draftState.existingDraftId, draftState.participants.length, toast]);
 
     return (
       <MultiplayerDraftInterface 
@@ -80,7 +76,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     if (existingPicks) {
       loadExistingPicks(existingPicks, draftState.participants);
     }
-  }, [existingPicks, draftState.participants]);
+  }, [existingPicks, draftState.participants, loadExistingPicks]);
 
   // Get the base category for initial movie loading
   const getBaseCategory = () => {
@@ -100,12 +96,8 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     ? draftState.option 
     : '';
   
-  console.log('DraftInterface - Category:', baseCategory, 'Constraint:', themeConstraint);
-  
   // Use movies hook - pass the theme constraint to get all movies for that theme
   const { movies, loading: moviesLoading } = useMovies(baseCategory, themeConstraint);
-
-  console.log('DraftInterface - Movies loaded:', movies.length, 'Loading:', moviesLoading);
 
   // Auto-save function
   const performAutoSave = async (updatedPicks: any[], isComplete: boolean) => {
@@ -122,15 +114,13 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
       if (!currentDraftId) {
         setCurrentDraftId(draftId);
       }
-
-      console.log('Draft auto-saved successfully');
     } catch (error) {
       console.error('Auto-save failed:', error);
       // Only show error toast for non-RLS policy violations
       // RLS errors typically happen for guest users and are expected
       // Check both direct code property and nested message content
-      const isRLSError = error?.code === '42501' || 
-                        error?.message?.includes('row-level security policy') ||
+      const isRLSError = (error as any)?.code === '42501' || 
+                        (error as any)?.message?.includes('row-level security policy') ||
                         (typeof error === 'object' && JSON.stringify(error).includes('42501'));
       
       if (!isRLSError) {
@@ -156,7 +146,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     if (!selectedMovie || !selectedCategory || !currentPlayer) return;
 
     // Check if this movie has already been drafted
-    const isDuplicate = picks.some(pick => pick.movie.id === selectedMovie.id);
+    const isDuplicate = picks.some((pick: any) => pick.movie.id === selectedMovie.id);
     if (isDuplicate) {
       toast({
         title: "Movie Already Drafted",

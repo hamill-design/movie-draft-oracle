@@ -1,5 +1,6 @@
 -- Replace the problematic current_guest_session function with a more reliable approach
-DROP FUNCTION IF EXISTS public.current_guest_session();
+-- Note: Cannot drop function because RLS policies depend on it, but CREATE OR REPLACE works
+-- since the function signature (no params, returns UUID) hasn't changed
 
 -- Create a simple approach using a session variable
 CREATE OR REPLACE FUNCTION public.set_guest_session_context(session_id UUID)

@@ -1,6 +1,9 @@
 -- First, let's see if there's a unique constraint causing the issue and fix the join function for guest users
 
 -- Check if we need to update the join_draft_by_invite_code function to handle guest users
+-- Drop function first in case it exists with a different return type
+DROP FUNCTION IF EXISTS public.join_draft_by_invite_code_guest(text, text, uuid);
+
 CREATE OR REPLACE FUNCTION public.join_draft_by_invite_code_guest(invite_code_param text, participant_name_param text, p_guest_session_id uuid DEFAULT NULL)
  RETURNS uuid
  LANGUAGE plpgsql

@@ -1,12 +1,22 @@
 -- Update can_access_draft function to handle mixed authentication states better
+
+-- Verify drafts table exists before creating functions that reference it
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.tables 
+                 WHERE table_schema = 'public' AND table_name = 'drafts') THEN
+    RAISE EXCEPTION 'Table public.drafts does not exist. Migration 20250701202547 must run first.';
+  END IF;
+END $$;
+
 CREATE OR REPLACE FUNCTION public.can_access_draft(p_draft_id uuid, p_participant_id uuid)
 RETURNS boolean
 LANGUAGE plpgsql
 STABLE SECURITY DEFINER
-SET search_path TO ''
+SET search_path = 'public'
 AS $function$
 DECLARE
-  v_draft_record public.drafts;
+  v_draft_record public.drafts%ROWTYPE;
   v_current_user_id uuid;
 BEGIN
   -- Log the access attempt for debugging

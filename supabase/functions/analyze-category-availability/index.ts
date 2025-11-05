@@ -189,7 +189,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { theme, option, categories, playerCount }: CategoryAnalysisRequest = await req.json();
+    const { theme, option, categories, playerCount, preferFreshOscarStatus }: any = await req.json();
 
     console.log('Analyzing categories:', { theme, option, categories, playerCount });
 
@@ -276,8 +276,12 @@ async function analyzeCategoryMovies(
   console.log('  - fetchParams:', JSON.stringify(fetchParams));
 
   // Call the existing fetch-movies function to get comprehensive movie data
+  // Pass preferFreshOscarStatus for the Academy category to bypass negative cache once per call
   const { data: movieData, error } = await supabase.functions.invoke('fetch-movies', {
-    body: fetchParams
+    body: { 
+      ...fetchParams,
+      preferFreshOscarStatus: preferFreshOscarStatus === true || category === 'Academy Award Nominee or Winner'
+    }
   });
 
   if (error) {
@@ -287,6 +291,15 @@ async function analyzeCategoryMovies(
 
   const movies = movieData?.results || [];
   console.log(`Fetched ${movies.length} movies for analysis`);
+  // If analyzing Academy Award category, log oscar status coverage
+  if (category === 'Academy Award Nominee or Winner' && movies.length > 0) {
+    const dist = movies.reduce((acc: any, m: any) => {
+      const key = (m.oscar_status || 'unknown');
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    console.log('🏆 Oscar status coverage (pre-filter):', dist);
+  }
 
   // Enhanced logging for person-based analysis with lifespan information
   if (theme === 'people' && option) {
@@ -294,7 +307,7 @@ async function analyzeCategoryMovies(
     if (personLifespan && personLifespan.death_date) {
       console.log(`📅 LIFESPAN INFO: ${option} died on ${personLifespan.death_date}`);
       const deathYear = new Date(personLifespan.death_date).getFullYear();
-      console.log(`🚫 Movies after ${deathYear + 3} should be filtered out (3-year grace period)`);
+      console.log(`🚫 Movies after ${deathYear + 1} should be filtered out (1-year grace period)`);
     } else {
       console.log(`💭 ${option} is not in our deceased actors database (assumed living)`);
     }
@@ -309,6 +322,28 @@ async function analyzeCategoryMovies(
   const eligibleMovies = movies.filter((movie: any) => 
     isMovieEligibleForCategory(movie, category)
   );
+
+  // Log decade coverage post-filter for decade categories
+  if (category.includes("'s")) {
+    const decadeDist = eligibleMovies.reduce((acc: any, m: any) => {
+      let y = 0;
+      if (m.year && m.year > 1900) y = m.year; else {
+        const fields = ['release_date','primary_release_date','first_air_date'];
+        for (const f of fields) {
+          if (m[f]) {
+            const match = m[f].toString().match(/(\d{4})/);
+            if (match) { y = parseInt(match[1]); break; }
+          }
+        }
+      }
+      if (y > 1900) {
+        const d = Math.floor(y / 10) * 10;
+        acc[d] = (acc[d] || 0) + 1;
+      }
+      return acc;
+    }, {} as Record<string, number>);
+    console.log(`📅 Decade distribution post-filter for ${category}:`, decadeDist);
+  }
 
   const movieCount = eligibleMovies.length;
   const requiredCount = calculateRequiredMovies(category, playerCount);
@@ -506,7 +541,8 @@ function isMovieEligibleForCategory(movie: any, category: string): boolean {
       return year >= 2020 && year <= 2029;
     
     case 'Academy Award Nominee or Winner':
-      return movie.hasOscar === true || movie.oscar_status === 'winner' || movie.oscar_status === 'nominee';
+      // Rely solely on normalized oscar_status attached by fetch-movies
+      return movie.oscar_status === 'winner' || movie.oscar_status === 'nominee';
     
     case 'Blockbuster (minimum of $50 Mil)':
       return movie.isBlockbuster === true || (movie.revenue && movie.revenue >= 50000000);
@@ -518,10 +554,15 @@ function isMovieEligibleForCategory(movie: any, category: string): boolean {
 }
 
 function calculateRequiredMovies(category: string, playerCount: number): number {
-  // Minimum requirement: 1 movie per player
+  // Minimum viable requirement: 1 movie per player
+  // Status calculation will determine if it's sufficient (2x) or just limited (1x)
   return playerCount;
 }
 
+// Status calculation:
+// - sufficient (green): >= 2x player count (enough variety for good draft)
+// - limited (yellow): >= 1x player count (minimum viable)
+// - insufficient (red): < player count (not enough movies)
 function getStatusFromCount(count: number, playerCount: number): 'sufficient' | 'limited' | 'insufficient' {
   if (count >= playerCount * 2) return 'sufficient'; // Green: Plenty of movies
   if (count >= playerCount) return 'limited';        // Yellow: Limited but sufficient  

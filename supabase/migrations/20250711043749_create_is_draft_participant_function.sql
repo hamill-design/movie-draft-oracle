@@ -12,6 +12,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
 -- Update the drafts policy to use the function
 DROP POLICY IF EXISTS "Users can view their own drafts" ON public.drafts;
+DROP POLICY IF EXISTS "Users can view drafts they participate in" ON public.drafts;
 
 CREATE POLICY "Users can view drafts they participate in"
 ON public.drafts

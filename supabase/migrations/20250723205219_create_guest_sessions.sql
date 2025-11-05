@@ -40,6 +40,22 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- Create function to check if user is a participant (needed for RLS policies)
+CREATE OR REPLACE FUNCTION public.is_draft_participant(draft_id_param uuid)
+RETURNS boolean
+LANGUAGE plpgsql
+STABLE SECURITY DEFINER
+SET search_path = ''
+AS $function$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.draft_participants dp
+    WHERE dp.draft_id = draft_id_param 
+    AND (dp.user_id = auth.uid() OR dp.guest_participant_id = public.current_guest_session())
+  );
+END;
+$function$;
+
 -- Update RLS policies for drafts to allow guest access
 DROP POLICY IF EXISTS "Users can view drafts they participate in" ON public.drafts;
 CREATE POLICY "Users can view drafts they participate in" ON public.drafts

@@ -8,5 +8,8 @@ WHERE id NOT IN (
 
 -- Now add the unique constraint to prevent future duplicates
 ALTER TABLE public.draft_picks 
+DROP CONSTRAINT IF EXISTS unique_movie_per_draft;
+
+ALTER TABLE public.draft_picks 
 ADD CONSTRAINT unique_movie_per_draft 
 UNIQUE (draft_id, movie_id);

@@ -1,8 +1,5 @@
 project_id = "zduruulowyopdstihfwk"
 
-[functions.share-page]
-verify_jwt = false
-
 [functions.fix-movie-years]
 verify_jwt = false
 

@@ -70,16 +70,27 @@ END;
 $$;
 
 -- Update all existing draft_picks with recalculated scores
-UPDATE public.draft_picks 
-SET calculated_score = public.calculate_new_movie_score(
-  movie_budget,
-  movie_revenue,
-  rt_critics_score,
-  metacritic_score,
-  imdb_rating,
-  oscar_status
-)
-WHERE calculated_score IS NOT NULL;
+-- Only update if calculated_score column exists
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_schema = 'public' 
+    AND table_name = 'draft_picks' 
+    AND column_name = 'calculated_score'
+  ) THEN
+    UPDATE public.draft_picks 
+    SET calculated_score = public.calculate_new_movie_score(
+      movie_budget,
+      movie_revenue,
+      rt_critics_score,
+      metacritic_score,
+      imdb_rating,
+      oscar_status
+    )
+    WHERE calculated_score IS NOT NULL;
+  END IF;
+END $$;
 
 -- Show summary of the recalculation
 DO $$

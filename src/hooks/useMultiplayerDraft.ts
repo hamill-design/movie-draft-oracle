@@ -28,6 +28,7 @@ interface DraftParticipant {
   status: 'invited' | 'joined' | 'left';
   is_host: boolean;
   joined_at: string | null;
+  email?: string | null; // User's email from profiles
 }
 
 interface MultiplayerDraft {
@@ -48,8 +49,8 @@ interface MultiplayerDraft {
 }
 
 export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft: any; participants: any[]; picks: any[] }) => {
-  const { participantId, isGuest } = useCurrentUser();
-  const { guestSession } = useGuestSession();
+  const { participantId, isGuest, user } = useCurrentUser();
+  const { guestSession } = useGuestSession(user);
   
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -69,12 +70,10 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     participantIdRef.current = participantId;
   }, [participantId]);
 
-  // Presence channel for real-time updates
-  const presenceChannelRef = useRef<any>(null);
-
-  // Broadcast queue for messages sent before channel is ready
-  const broadcastQueueRef = useRef<Array<{type: string, payload: any, participantName?: string}>>([]);
-  const channelReadyRef = useRef(false);
+  // Database subscription channels for real-time updates
+  const draftChannelRef = useRef<any>(null);
+  const picksChannelRef = useRef<any>(null);
+  const participantsChannelRef = useRef<any>(null);
 
   // Get current participant name
   const getCurrentParticipantName = useCallback(() => {
@@ -86,82 +85,53 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     return currentParticipant?.participant_name || 'Unknown Player';
   }, [participants, participantId]);
 
-  // Process queued broadcasts when channel becomes ready
-  const processQueuedBroadcasts = useCallback(() => {
-    if (!channelReadyRef.current || !presenceChannelRef.current || broadcastQueueRef.current.length === 0) {
-      return;
-    }
-
-    console.log('Processing queued broadcasts:', broadcastQueueRef.current.length);
-    
-    // Process each queued broadcast with small delays to prevent overwhelming
-    broadcastQueueRef.current.forEach(({ type, payload, participantName }, index) => {
-      setTimeout(() => {
-        const message = {
-          type,
-          participantId,
-          participantName: participantName || getCurrentParticipantName(),
-          draftId: draft?.id,
-          timestamp: new Date().toISOString(),
-          ...payload
-        };
-
-        try {
-          presenceChannelRef.current?.send({
-            type: 'broadcast',
-            event: 'draft-change',
-            payload: message
-          });
-          console.log('Sent queued broadcast:', type);
-        } catch (error) {
-          console.error('Failed to send queued broadcast:', error);
-        }
-      }, index * 100); // 100ms delay between broadcasts
-    });
-
-    // Clear the queue
-    broadcastQueueRef.current = [];
-  }, [participantId, draft?.id, getCurrentParticipantName]);
-
-  // Broadcast draft change to all participants with queue system
+  // Broadcast draft change to all participants (kept for backward compatibility)
   const broadcastDraftChange = useCallback((type: string, payload: any = {}, participantName?: string) => {
-    console.log('Broadcasting:', type, 'Channel ready:', channelReadyRef.current, 'ParticipantId:', participantId);
+    // This function is kept for backward compatibility but is now optional
+    // Real-time updates are handled by database subscriptions
+    console.log('Broadcast (optional):', type, payload);
+  }, []);
+
+  // Enrich participants with emails from profiles
+  const enrichParticipantsWithEmails = useCallback(async (participants: DraftParticipant[]): Promise<DraftParticipant[]> => {
+    // Extract unique user_ids that are not null
+    const userIds = participants
+      .map(p => p.user_id)
+      .filter((id): id is string => id !== null);
     
-    if (!participantId) {
-      console.warn('Cannot broadcast: missing participantId');
-      return;
+    if (userIds.length === 0) {
+      // No authenticated users, return participants as-is
+      return participants;
     }
 
-    // If channel is not ready, queue the message
-    if (!channelReadyRef.current || !presenceChannelRef.current) {
-      console.log('Queueing broadcast until channel is ready:', type);
-      broadcastQueueRef.current.push({ type, payload, participantName });
-      return;
+    // Fetch emails from profiles
+    const { data: profiles, error } = await supabase
+      .from('profiles')
+      .select('id, email')
+      .in('id', userIds);
+
+    if (error) {
+      console.error('Error fetching participant emails:', error);
+      // Return participants without enrichment on error
+      return participants;
     }
 
-    const message = {
-      type,
-      participantId,
-      participantName: participantName || getCurrentParticipantName(),
-      draftId: draft?.id,
-      timestamp: new Date().toISOString(),
-      ...payload
-    };
-
-    console.log('Sending broadcast message:', message);
-
-    try {
-      presenceChannelRef.current.send({
-        type: 'broadcast',
-        event: 'draft-change',
-        payload: message
+    // Create a map of user_id -> email
+    const emailMap = new Map<string, string>();
+    if (profiles) {
+      profiles.forEach(profile => {
+        if (profile.email) {
+          emailMap.set(profile.id, profile.email);
+        }
       });
-    } catch (error) {
-      console.error('Failed to broadcast:', error);
-      // Re-queue the message if it failed
-      broadcastQueueRef.current.push({ type, payload, participantName });
     }
-  }, [participantId, draft?.id, getCurrentParticipantName]);
+
+    // Enrich participants with emails
+    return participants.map(participant => ({
+      ...participant,
+      email: participant.user_id ? emailMap.get(participant.user_id) || null : null
+    }));
+  }, []);
 
   // Create a multiplayer draft with email invitations
   const createMultiplayerDraft = useCallback(async (draftData: {
@@ -219,7 +189,10 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       const participantsArray = Array.isArray(functionResult.participants_data) 
         ? (functionResult.participants_data as unknown as DraftParticipant[])
         : [];
-      setParticipants(participantsArray);
+      
+      // Enrich participants with emails from profiles
+      const enrichedParticipants = await enrichParticipantsWithEmails(participantsArray);
+      setParticipants(enrichedParticipants);
 
       const picksArray = Array.isArray(functionResult.picks_data) 
         ? functionResult.picks_data 
@@ -279,7 +252,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     } finally {
       setLoading(false);
     }
-  }, [participantId, toast]);
+  }, [participantId, toast, enrichParticipantsWithEmails]);
 
   // Start the draft with pre-calculated snake draft turn order
   const startDraft = useCallback(async (draftId: string) => {
@@ -325,8 +298,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       const firstPlayerName = updatedDraft.draft_turn_order?.[0]?.participant_name || 'Unknown';
       console.log('👤 First player:', firstPlayerName, 'Turn order:', updatedDraft.draft_turn_order);
 
-      // Broadcast the draft start
-      broadcastDraftChange('DRAFT_STARTED');
+      // Real-time updates are handled by database subscriptions
+      // No need to broadcast - subscriptions will update the UI automatically
 
       toast({
         title: "Draft Started!",
@@ -345,7 +318,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     } finally {
       setLoading(false);
     }
-  }, [participantId, toast, broadcastDraftChange, draft]);
+  }, [participantId, toast, draft]);
 
   // Load draft data
   const loadDraft = useCallback(async (id: string) => {
@@ -387,7 +360,10 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       const participantsArray = Array.isArray(draftData.participants_data) 
         ? (draftData.participants_data as unknown as DraftParticipant[])
         : [];
-      setParticipants(participantsArray);
+      
+      // Enrich participants with emails from profiles
+      const enrichedParticipants = await enrichParticipantsWithEmails(participantsArray);
+      setParticipants(enrichedParticipants);
 
       // Set picks
       const picksArray = Array.isArray(draftData.picks_data) 
@@ -399,18 +375,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       const currentTurnId = mappedDraft.current_turn_participant_id || mappedDraft.current_turn_user_id;
       setIsMyTurn(currentTurnId === participantId);
 
-      // Broadcast that this participant is now active (with throttling)
-      // Only broadcast if we're an existing participant (found in participants list)
-      const isExistingParticipant = participantsArray.some(p => 
-        p.participant_id === participantId || 
-        p.user_id === participantId || 
-        p.guest_participant_id === participantId
-      );
-      
-      if (isExistingParticipant) {
-        console.log('🟡 Broadcasting PARTICIPANT_ACTIVE for existing participant');
-        broadcastDraftChange('PARTICIPANT_ACTIVE');
-      }
+      // Real-time updates are handled by database subscriptions
+      // No need to broadcast participant activity
 
     } catch (error) {
       console.error('Error loading draft:', error);
@@ -422,7 +388,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       });
       throw error;
     }
-  }, [participantId, toast]);
+  }, [participantId, toast, enrichParticipantsWithEmails]);
 
   // Join a draft by invite code
   const joinDraftByCode = useCallback(async (inviteCode: string, participantName: string) => {
@@ -470,12 +436,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       // Set the draft state
       setDraft(draftData);
       
-      // Broadcast the participant join immediately with the participant name
-      console.log('🟢 About to broadcast join for participant:', participantName);
-      console.log('🟢 Channel exists:', !!presenceChannelRef.current);
-      broadcastDraftChange('PARTICIPANT_JOINED', { participantName }, participantName);
-
-      // Load additional data (participants and picks) after broadcast
+      // Real-time updates are handled by database subscriptions
+      // Load additional data (participants and picks)
       await loadDraft(draftData.id);
 
       toast({
@@ -516,7 +478,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     } finally {
       setLoading(false);
     }
-  }, [participantId, toast, loadDraft, broadcastDraftChange]);
+  }, [participantId, toast, loadDraft]);
 
   // Make a pick
   const makePick = useCallback(async (movieId: number, movieTitle: string, movieYear: number, movieGenre: string, category: string, posterPath?: string) => {
@@ -544,11 +506,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         throw new Error(pickResult.message || 'Failed to make pick');
       }
 
-      // Broadcast the pick
-      broadcastDraftChange('PICK_MADE', { movieTitle, category });
-
-      // Reload draft data to get updated state
-      await loadDraft(draft.id);
+      // Real-time updates are handled by database subscriptions
+      // No need to reload - subscriptions will update the UI automatically
 
       toast({
         title: "Pick Made!",
@@ -581,7 +540,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       }
       throw error;
     }
-  }, [draft?.id, participantId, loadDraft, toast, broadcastDraftChange]);
+  }, [draft?.id, participantId, loadDraft, toast]);
 
   // Compute isMyTurn using unified participant ID
   const computedIsMyTurn = useMemo(() => {
@@ -612,128 +571,138 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   }, [draftId, participantId, draft, loadDraft]);
 
 
-  // Set up real-time presence channel with fixed communication
+  // Set up real-time database subscriptions
   useEffect(() => {
     if (!draftId || !participantId) return;
 
-    console.log(`🔴 Setting up presence channel for draft: ${draftId}, participant: ${participantId}`);
+    console.log(`🔴 Setting up database subscriptions for draft: ${draftId}, participant: ${participantId}`);
 
-    // Use consistent channel naming between all participants
-    const channelName = `multiplayer-draft-${draftId}`;
-    const presenceChannel = supabase
-      .channel(channelName, {
-        config: { 
-          broadcast: { self: false }, // Don't receive our own broadcasts
-          presence: { key: participantId }
-        }
-      })
-      .on('broadcast', { event: 'draft-change' }, (payload) => {
-        console.log('📥 Received broadcast:', payload);
-        console.log('📥 Payload structure:', JSON.stringify(payload, null, 2));
+    // Draft changes subscription (turn order, current turn, completion status)
+    const draftChannel = supabase
+      .channel(`draft-${draftId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'drafts',
+        filter: `id=eq.${draftId}`
+      }, (payload) => {
+        console.log('📥 Draft change received:', payload);
         
-        // Extract the actual message - handle both nested and direct payload structures
-        const message = payload?.payload || payload;
-        console.log('📥 Message:', JSON.stringify(message, null, 2));
-        
-        // Don't process our own broadcasts (double check)
-        if (message.participantId === participantId) {
-          console.log('🔄 Ignoring own broadcast');
-          return;
-        }
-
-        const { type, participantName } = message;
-        console.log(`📨 Processing broadcast: ${type} from ${participantName}`);
-        
-        // Handle different broadcast types with immediate data reload
-        switch (type) {
-          case 'PARTICIPANT_JOINED':
-            console.log('👋 New participant joined:', participantName);
-            toast({
-              title: "Player Joined",
-              description: `${participantName} joined the draft`,
-            });
-            // Immediate reload for participant changes
-            setTimeout(() => loadDraft(draftId), 200);
-            break;
-            
-          case 'PICK_MADE':
-            console.log('🎬 Pick made by:', participantName);
-            toast({
-              title: "Pick Made",
-              description: `${participantName} made a pick`,
-            });
-            setTimeout(() => loadDraft(draftId), 200);
-            break;
-            
-          case 'DRAFT_STARTED':
-            console.log('🚀 Draft started by:', participantName);
-            toast({
-              title: "Draft Started",
-              description: "The draft has begun!",
-            });
-            // Immediate reload to get the new turn order
-            loadDraft(draftId);
-            break;
-            
-          case 'PARTICIPANT_ACTIVE':
-            console.log('✅ Participant active:', participantName);
-            // Reload data for active participants to catch any missed updates
-            setTimeout(() => loadDraft(draftId), 300);
-            break;
-            
-          default:
-            console.log('❓ Unknown broadcast type:', type);
-        }
-      })
-      .subscribe((status) => {
-        console.log('Presence channel status:', status);
-        
-        if (status === 'SUBSCRIBED') {
-          console.log('Presence channel ready for broadcasting');
-          channelReadyRef.current = true;
+        // Update draft state directly from payload
+        if (payload.new) {
+          setDraft(prev => ({
+            ...prev,
+            ...payload.new,
+            // Ensure we maintain the correct structure
+            current_turn_participant_id: payload.new.current_turn_participant_id || payload.new.current_turn_user_id,
+            current_pick_number: payload.new.current_pick_number,
+            is_complete: payload.new.is_complete,
+            turn_order: payload.new.turn_order
+          }));
           
-          // Process any queued broadcasts first
-          setTimeout(() => {
-            processQueuedBroadcasts();
-          }, 100);
+          // Check if turn changed
+          const newTurnId = payload.new.current_turn_participant_id || payload.new.current_turn_user_id;
+          setIsMyTurn(newTurnId === participantId);
           
-          // Then broadcast that this participant is active
-          // Only if we have a draft and we're a participant
-          if (draft && participants.length > 0) {
-            const isParticipant = participants.some(p => 
-              p.participant_id === participantId || 
-              p.user_id === participantId || 
-              p.guest_participant_id === participantId
-            );
-            
-            if (isParticipant) {
-              console.log('🟡 Channel ready - broadcasting PARTICIPANT_ACTIVE');
-              // Small delay to ensure all participants' channels are ready
-              setTimeout(() => {
-                broadcastDraftChange('PARTICIPANT_ACTIVE');
-              }, 500);
+          // Show toast for important changes
+          if (payload.eventType === 'UPDATE') {
+            if (payload.new.is_complete) {
+              toast({
+                title: "Draft Complete!",
+                description: "All picks have been made!",
+              });
+            } else if (payload.old?.current_turn_participant_id !== payload.new.current_turn_participant_id) {
+              // Turn changed
+              const currentTurnPlayer = participants.find(p => 
+                (p.participant_id || p.user_id || p.guest_participant_id) === newTurnId
+              );
+              if (currentTurnPlayer) {
+                toast({
+                  title: "Turn Changed",
+                  description: `It's now ${currentTurnPlayer.participant_name}'s turn`,
+                });
+              }
             }
           }
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Channel error occurred');
-          channelReadyRef.current = false;
-        } else if (status === 'CLOSED') {
-          console.log('📪 Channel closed');
-          channelReadyRef.current = false;
         }
-      });
+      })
+      .subscribe();
 
-    presenceChannelRef.current = presenceChannel;
+    // Picks subscription (new picks added)
+    const picksChannel = supabase
+      .channel(`picks-${draftId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'draft_picks',
+        filter: `draft_id=eq.${draftId}`
+      }, (payload) => {
+        console.log('📥 New pick received:', payload);
+        
+        // Add new pick to state
+        if (payload.new) {
+          setPicks(prev => [...prev, payload.new]);
+          
+          // Show toast for new picks
+          toast({
+            title: "New Pick!",
+            description: `${payload.new.player_name} drafted ${payload.new.movie_title}`,
+          });
+        }
+      })
+      .subscribe();
+
+    // Participants subscription (joins/leaves)
+    const participantsChannel = supabase
+      .channel(`participants-${draftId}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'draft_participants',
+        filter: `draft_id=eq.${draftId}`
+      }, (payload) => {
+        console.log('📥 Participant change received:', payload);
+        
+        // Reload participants when changes occur
+        loadDraft(draftId);
+        
+        // Show toast for participant changes
+        if (payload.eventType === 'INSERT') {
+          toast({
+            title: "Player Joined",
+            description: `${payload.new.participant_name} joined the draft`,
+          });
+        } else if (payload.eventType === 'DELETE') {
+          toast({
+            title: "Player Left",
+            description: "A player left the draft",
+          });
+        }
+      })
+      .subscribe();
+
+    // Store channel references
+    draftChannelRef.current = draftChannel;
+    picksChannelRef.current = picksChannel;
+    participantsChannelRef.current = participantsChannel;
 
     return () => {
-      if (presenceChannelRef.current) {
-        console.log('🧹 Cleaning up presence channel');
-        channelReadyRef.current = false;
-        supabase.removeChannel(presenceChannelRef.current);
-        presenceChannelRef.current = null;
+      console.log('🧹 Cleaning up database subscriptions');
+      
+      if (draftChannelRef.current) {
+        supabase.removeChannel(draftChannelRef.current);
+        draftChannelRef.current = null;
+      }
+      if (picksChannelRef.current) {
+        supabase.removeChannel(picksChannelRef.current);
+        picksChannelRef.current = null;
+      }
+      if (participantsChannelRef.current) {
+        supabase.removeChannel(participantsChannelRef.current);
+        participantsChannelRef.current = null;
       }
     };
-  }, [draftId, participantId, loadDraft, toast, processQueuedBroadcasts, broadcastDraftChange, draft, participants]);
+  }, [draftId, participantId, loadDraft, toast, participants]);
 
   return {
     draft,

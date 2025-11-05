@@ -251,9 +251,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
 
   // Force clear cache for person-based themes on component mount
   useEffect(() => {
-    const isPersonTheme = ['Steve McQueen', 'Paul Newman', 'Clint Eastwood', 'John Wayne', 'Robert De Niro']
-      .some(person => theme.toLowerCase().includes(person.toLowerCase()));
-    
+    const isPersonTheme = theme === 'people';
     if (isPersonTheme) {
       progressiveCategoryService.forceRefreshPersonThemes();
     }
@@ -311,9 +309,9 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
     setIsAnalyzing(true);
     setProgressiveResults(new Map());
     
-    // Check if this is a person-based theme (e.g., Steve McQueen)
-    const isPersonTheme = ['Steve McQueen', 'Paul Newman', 'Clint Eastwood', 'John Wayne', 'Robert De Niro']
-      .some(person => theme.toLowerCase().includes(person.toLowerCase()));
+    // Person theme uses stronger cache refresh; also refresh if any decade categories are selected
+    const isPersonTheme = theme === 'people';
+    const includesDecadeCategories = categories.some(c => c.includes("'s"));
     
     try {
       // Use progressive loading for better UX, force refresh for person themes
@@ -328,7 +326,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
         (result) => {
           setProgressiveResults(prev => new Map(prev).set(result.categoryId, result));
         },
-        isPersonTheme // Force refresh for person-based themes to ensure posthumous logic
+        isPersonTheme || includesDecadeCategories // Force refresh for person/decode categories to avoid stale counts
       );
     } catch (error) {
       console.error('Failed to analyze categories:', error);

@@ -163,6 +163,10 @@ export class CategoryValidationService {
     return estimates[category] || 50;
   }
 
+  // Status calculation:
+  // - sufficient (green): >= 2x player count (enough variety for good draft)
+  // - limited (yellow): >= 1x player count (minimum viable)
+  // - insufficient (red): < player count (not enough movies)
   private getStatusFromCount(count: number, playerCount: number): 'sufficient' | 'limited' | 'insufficient' {
     if (count >= playerCount * 2) return 'sufficient'; // Green: Plenty of movies
     if (count >= playerCount) return 'limited';        // Yellow: Limited but sufficient  
