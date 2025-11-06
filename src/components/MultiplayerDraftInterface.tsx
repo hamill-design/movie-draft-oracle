@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Copy, Check, Users, Clock, Film, User, Calendar, Trophy } from 'lucide-react';
+import { Copy, Check, Users, Clock, Film, User, Calendar, Trophy, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { MultiPersonIcon } from '@/components/icons/MultiPersonIcon';
 import { ClockIcon } from '@/components/icons/ClockIcon';
 import MovieSearch from '@/components/MovieSearch';
@@ -59,10 +59,12 @@ export const MultiplayerDraftInterface = ({
     picks,
     loading,
     isMyTurn,
+    isConnected,
     createMultiplayerDraft,
     joinDraftByCode,
     makePick,
-    startDraft
+    startDraft,
+    manualRefresh
   } = useMultiplayerDraft(draftId);
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -399,11 +401,29 @@ export const MultiplayerDraftInterface = ({
             {/* Participants section */}
             <div>
               {/* Participants header matching StyledHeading4 */}
-              <div className="flex items-center gap-2 mb-4">
-              <div className="w-6 h-6 flex flex-col justify-center items-center">
-                <MultiPersonIcon className="w-6 h-6 text-[#680AFF]" />
-              </div>
-                <span className="text-xl font-medium font-brockmann leading-7 text-[#2B2D2D]">Participants</span>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 flex flex-col justify-center items-center">
+                    <MultiPersonIcon className="w-6 h-6 text-[#680AFF]" />
+                  </div>
+                  <span className="text-xl font-medium font-brockmann leading-7 text-[#2B2D2D]">Participants</span>
+                </div>
+                {/* Connection status and refresh button */}
+                <div className="flex items-center gap-2">
+                  {!isConnected && (
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-yellow-50 border border-yellow-200 rounded">
+                      <WifiOff className="w-3 h-3 text-yellow-600" />
+                      <span className="text-xs font-brockmann text-yellow-700">Reconnecting...</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={manualRefresh}
+                    className="p-1.5 hover:bg-purple-100 rounded transition-colors"
+                    title="Refresh draft"
+                  >
+                    <RefreshCw className={`w-4 h-4 text-[#680AFF] ${loading ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
               </div>
               
               {/* Participants list with proper gap */}
