@@ -83,6 +83,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isReconnectingRef = useRef(false);
   const debounceReloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const loadDraftRef = useRef<((id: string) => Promise<void>) | null>(null);
 
   // Get current participant name
   const getCurrentParticipantName = useCallback(() => {
@@ -108,9 +109,11 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     }
     debounceReloadTimeoutRef.current = setTimeout(() => {
       console.log('🔄 Debounced reload triggered');
-      loadDraft(draftId);
+      if (loadDraftRef.current) {
+        loadDraftRef.current(draftId);
+      }
     }, 500);
-  }, [loadDraft]);
+  }, []);
 
   // Update last activity timestamp
   const updateLastActivity = useCallback(() => {
@@ -128,10 +131,12 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       // If no updates for 10 seconds, reload draft
       if (timeSinceLastUpdate > 10000) {
         console.log('📡 Polling: No updates received, reloading draft');
-        loadDraft(draftId);
+        if (loadDraftRef.current) {
+          loadDraftRef.current(draftId);
+        }
       }
     }, 5000); // Check every 5 seconds
-  }, [loadDraft]);
+  }, []);
 
   // Stop polling when subscriptions are healthy
   const stopPolling = useCallback(() => {
@@ -164,11 +169,15 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     }
     
     // Reload draft to get fresh state
-    loadDraft(draftId).finally(() => {
-      // Reconnection will happen automatically via the subscription useEffect
+    if (loadDraftRef.current) {
+      loadDraftRef.current(draftId).finally(() => {
+        // Reconnection will happen automatically via the subscription useEffect
+        isReconnectingRef.current = false;
+      });
+    } else {
       isReconnectingRef.current = false;
-    });
-  }, [loadDraft]);
+    }
+  }, []);
 
   // Enrich participants with emails from profiles
   const enrichParticipantsWithEmails = useCallback(async (participants: DraftParticipant[]): Promise<DraftParticipant[]> => {
@@ -301,8 +310,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           } else {
             const emailResults = inviteResponse.data;
             if (emailResults?.success && emailResults.invitations) {
-              const successful = emailResults.invitations.filter(inv => inv.status === 'sent').length;
-              const simulated = emailResults.invitations.filter(inv => inv.status === 'simulated').length;
+              const successful = emailResults.invitations.filter((inv: any) => inv.status === 'sent').length;
+              const simulated = emailResults.invitations.filter((inv: any) => inv.status === 'simulated').length;
               
               if (simulated > 0) {
                 toast({
@@ -355,16 +364,18 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       console.log('📋 Updated draft data:', updatedDraft);
 
       // Update local state
-      const newDraftState = {
-        ...draft,
-        turn_order: updatedDraft.draft_turn_order,
-        current_turn_user_id: updatedDraft.draft_current_turn_user_id,
-        current_turn_participant_id: updatedDraft.draft_current_turn_participant_id,
-        current_pick_number: updatedDraft.draft_current_pick_number
-      };
-      
-      console.log('🔄 Setting new draft state:', newDraftState);
-      setDraft(newDraftState);
+      if (draft) {
+        const newDraftState: MultiplayerDraft = {
+          ...draft,
+          turn_order: updatedDraft.draft_turn_order,
+          current_turn_user_id: updatedDraft.draft_current_turn_user_id,
+          current_turn_participant_id: updatedDraft.draft_current_turn_participant_id,
+          current_pick_number: updatedDraft.draft_current_pick_number
+        };
+        
+        console.log('🔄 Setting new draft state:', newDraftState);
+        setDraft(newDraftState);
+      }
 
       // Check if it's the current user's turn using unified ID
       const currentTurnId = updatedDraft.draft_current_turn_participant_id || updatedDraft.draft_current_turn_user_id;
@@ -373,7 +384,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       setIsMyTurn(isCurrentUserTurn);
 
       // Get first player name from turn order
-      const firstPlayerName = updatedDraft.draft_turn_order?.[0]?.participant_name || 'Unknown';
+      const turnOrder = updatedDraft.draft_turn_order as any;
+      const firstPlayerName = (Array.isArray(turnOrder) && turnOrder[0]?.participant_name) || 'Unknown';
       console.log('👤 First player:', firstPlayerName, 'Turn order:', updatedDraft.draft_turn_order);
 
       // Real-time updates are handled by database subscriptions
@@ -467,6 +479,11 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       throw error;
     }
   }, [participantId, toast, enrichParticipantsWithEmails]);
+
+  // Update the ref whenever loadDraft changes
+  useEffect(() => {
+    loadDraftRef.current = loadDraft;
+  }, [loadDraft]);
 
   // Join a draft by invite code
   const joinDraftByCode = useCallback(async (inviteCode: string, participantName: string) => {
@@ -633,7 +650,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       }
       throw error;
     }
-  }, [draft?.id, participantId, loadDraft, toast, updateLastActivity, debouncedReload]);
+  }, [draft?.id, participantId, toast, updateLastActivity, debouncedReload]);
 
   // Compute isMyTurn using unified participant ID
   const computedIsMyTurn = useMemo(() => {
@@ -714,29 +731,35 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         
         // Update draft state directly from payload
         if (payload.new) {
-          setDraft(prev => ({
-            ...prev,
-            ...payload.new,
-            // Ensure we maintain the correct structure
-            current_turn_participant_id: payload.new.current_turn_participant_id || payload.new.current_turn_user_id,
-            current_pick_number: payload.new.current_pick_number,
-            is_complete: payload.new.is_complete,
-            turn_order: payload.new.turn_order
-          }));
+          const newPayload = payload.new as any;
+          const oldPayload = payload.old as any;
+          
+          setDraft(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              ...newPayload,
+              // Ensure we maintain the correct structure
+              current_turn_participant_id: newPayload.current_turn_participant_id || newPayload.current_turn_user_id,
+              current_pick_number: newPayload.current_pick_number,
+              is_complete: newPayload.is_complete,
+              turn_order: newPayload.turn_order
+            };
+          });
           
           // Check if turn changed
-          const newTurnId = payload.new.current_turn_participant_id || payload.new.current_turn_user_id;
+          const newTurnId = newPayload.current_turn_participant_id || newPayload.current_turn_user_id;
           setIsMyTurn(newTurnId === participantId);
           
           // Show toast for important changes
           if (payload.eventType === 'UPDATE') {
-            if (payload.new.is_complete) {
+            if (newPayload.is_complete) {
               toast({
                 title: "Draft Complete!",
                 description: "All picks have been made!",
               });
-            } else if (payload.old?.current_turn_participant_id !== payload.new.current_turn_participant_id || 
-                       payload.old?.current_turn_user_id !== payload.new.current_turn_user_id) {
+            } else if (oldPayload?.current_turn_participant_id !== newPayload.current_turn_participant_id || 
+                       oldPayload?.current_turn_user_id !== newPayload.current_turn_user_id) {
               // Turn changed - reload to get fresh participant data
               debouncedReload(draftId);
               
@@ -926,7 +949,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         participantsChannelRef.current = null;
       }
     };
-  }, [draftId, participantId, loadDraft, toast, participants, updateLastActivity, stopPolling, startPolling, reconnectSubscriptions, debouncedReload]);
+  }, [draftId, participantId, toast, participants, updateLastActivity, stopPolling, startPolling, reconnectSubscriptions, debouncedReload]);
 
   // Mobile-specific optimizations: Handle visibility changes (tab switching, app backgrounding)
   useEffect(() => {
@@ -973,12 +996,12 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
 
   // Manual refresh function for UI
   const manualRefresh = useCallback(() => {
-    if (draftId) {
+    if (draftId && loadDraftRef.current) {
       console.log('🔄 Manual refresh triggered');
-      loadDraft(draftId);
+      loadDraftRef.current(draftId);
       updateLastActivity();
     }
-  }, [draftId, loadDraft, updateLastActivity]);
+  }, [draftId, updateLastActivity]);
 
   return {
     draft,
