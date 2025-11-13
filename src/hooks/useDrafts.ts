@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -36,7 +36,7 @@ export const useDrafts = () => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  const fetchDrafts = async () => {
+  const fetchDrafts = useCallback(async () => {
     if (!user) return;
     
     setLoading(true);
@@ -45,7 +45,7 @@ export const useDrafts = () => {
     try {
       const { data, error } = await supabase
         .from('drafts')
-        .select('*')
+        .select('id, title, theme, option, participants, categories, is_complete, is_multiplayer, created_at, updated_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -56,7 +56,7 @@ export const useDrafts = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   const deleteDraft = async (draftId: string) => {
     // Optimistically remove the draft from the UI
@@ -68,7 +68,7 @@ export const useDrafts = () => {
 
   useEffect(() => {
     fetchDrafts();
-  }, [user]);
+  }, [fetchDrafts]);
 
   return {
     drafts,

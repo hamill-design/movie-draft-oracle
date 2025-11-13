@@ -9,6 +9,9 @@ interface Person {
   known_for: any[];
 }
 
+// In-memory cache for people search results (persists for session duration)
+const peopleCache = new Map<string, Person[]>();
+
 export const usePeopleSearch = (searchQuery?: string) => {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(false);
@@ -20,36 +23,40 @@ export const usePeopleSearch = (searchQuery?: string) => {
       return;
     }
     
+    const trimmedQuery = searchQuery.trim().toLowerCase();
+    
+    // Check cache first
+    if (peopleCache.has(trimmedQuery)) {
+      setPeople(peopleCache.get(trimmedQuery)!);
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     
     try {
-      console.log('usePeopleSearch - Searching for people:', searchQuery);
-      
       const requestBody = {
         searchQuery: searchQuery.trim(),
         searchType: 'person'
       };
-      
-      console.log('usePeopleSearch - Request body:', requestBody);
       
       const { data, error } = await supabase.functions.invoke('search-people', {
         body: requestBody
       });
 
       if (error) {
-        console.error('usePeopleSearch - Supabase function error:', error);
         throw error;
       }
 
       const fetchedPeople = data?.results || [];
-      console.log('usePeopleSearch - Received people:', fetchedPeople.length);
+      
+      // Store in cache
+      peopleCache.set(trimmedQuery, fetchedPeople);
       
       setPeople(fetchedPeople);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to search people');
-      console.error('usePeopleSearch - Error searching people:', err);
     } finally {
       setLoading(false);
     }
@@ -57,7 +64,14 @@ export const usePeopleSearch = (searchQuery?: string) => {
 
   useEffect(() => {
     if (searchQuery && searchQuery.trim().length >= 2) {
-      console.log('usePeopleSearch - Effect triggered, searchQuery:', searchQuery);
+      const trimmedQuery = searchQuery.trim().toLowerCase();
+      
+      // Check cache immediately
+      if (peopleCache.has(trimmedQuery)) {
+        setPeople(peopleCache.get(trimmedQuery)!);
+        return;
+      }
+      
       const timeoutId = setTimeout(() => {
         fetchPeople();
       }, 300); // Debounce the search

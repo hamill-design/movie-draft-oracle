@@ -572,17 +572,26 @@ export const MultiplayerDraftInterface = ({
             {!isComplete && isMyTurn && <>
               <MovieSearch theme={draft.theme} option={getCleanActorName(draft.option)} searchQuery={searchQuery} onSearchChange={setSearchQuery} movies={movies} loading={moviesLoading} onMovieSelect={handleMovieSelect} selectedMovie={selectedMovie} themeParameter={themeConstraint} />
 
-              <EnhancedCategorySelection selectedMovie={selectedMovie} categories={draft.categories} selectedCategory={selectedCategory} onCategorySelect={handleCategorySelect} picks={picks.map(pick => ({
-                playerId: participants.findIndex(p => p.participant_name === pick.player_name) + 1,
-                playerName: pick.player_name,
-                movie: {
-                  id: pick.movie_id,
-                  title: pick.movie_title,
-                  year: pick.movie_year,
-                  poster_path: pick.poster_path
-                },
-                category: pick.category
-              }))} currentPlayerId={participants.findIndex(p => (p.user_id || p.guest_participant_id) === participantId) + 1} />
+              <EnhancedCategorySelection 
+                selectedMovie={selectedMovie} 
+                categories={draft.categories} 
+                selectedCategory={selectedCategory} 
+                onCategorySelect={handleCategorySelect} 
+                picks={picks.map(pick => ({
+                  playerId: participants.findIndex(p => p.participant_name === pick.player_name) + 1,
+                  playerName: pick.player_name,
+                  movie: {
+                    id: pick.movie_id,
+                    title: pick.movie_title,
+                    year: pick.movie_year,
+                    poster_path: pick.poster_path
+                  },
+                  category: pick.category
+                }))} 
+                currentPlayerId={participants.findIndex(p => (p.user_id || p.guest_participant_id) === participantId) + 1}
+                theme={draft.theme}
+                option={draft.option}
+              />
 
               <PickConfirmation currentPlayerName={currentTurnPlayer?.participant_name || 'You'} selectedMovie={selectedMovie} selectedCategory={selectedCategory} onConfirm={confirmPick} />
             </>

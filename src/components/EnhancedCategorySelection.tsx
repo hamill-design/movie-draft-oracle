@@ -7,6 +7,8 @@ import { SearchIcon } from '@/components/icons/SearchIcon';
 import { CheckboxIcon } from '@/components/icons/CheckboxIcon';
 import { NAIcon } from '@/components/icons/NAIcon';
 import { getCategoryConfig } from '@/config/categoryConfigs';
+import { useActorSpecCategories } from '@/hooks/useActorSpecCategories';
+import { getCleanActorName } from '@/lib/utils';
 
 interface Pick {
   playerId: number;
@@ -22,6 +24,8 @@ interface EnhancedCategorySelectionProps {
   onCategorySelect: (category: string) => void;
   picks: Pick[];
   currentPlayerId: number;
+  theme?: string;
+  option?: string;
 }
 
 const CategoryButton = ({ 
@@ -82,11 +86,17 @@ const EnhancedCategorySelection = ({
   selectedCategory,
   onCategorySelect,
   picks,
-  currentPlayerId
+  currentPlayerId,
+  theme,
+  option
 }: EnhancedCategorySelectionProps) => {
   if (!selectedMovie) return null;
 
   const [houseOverrideEnabled, setHouseOverrideEnabled] = useState(false);
+
+  // Get actor name for spec categories lookup
+  const actorName = theme === 'people' && option ? getCleanActorName(option) : null;
+  const { specCategories } = useActorSpecCategories(actorName);
 
   // Reset house override when movie changes
   useEffect(() => {
@@ -95,8 +105,8 @@ const EnhancedCategorySelection = ({
 
   // Get eligible categories for the selected movie
   const eligibleCategories = useMemo(() => 
-    getEligibleCategories(selectedMovie, categories), 
-    [selectedMovie, categories]
+    getEligibleCategories(selectedMovie, categories, theme, option, specCategories), 
+    [selectedMovie, categories, theme, option, specCategories]
   );
 
   const getCategoryTooltip = (category: string) => {

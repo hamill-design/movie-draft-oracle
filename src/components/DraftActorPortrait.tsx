@@ -18,17 +18,10 @@ export const DraftActorPortrait: React.FC<DraftActorPortraitProps> = ({
   const cleanActorName = getCleanActorName(actorName);
   const { people, loading } = usePeopleSearch(cleanActorName);
   
-  console.log('DraftActorPortrait - Actor name:', actorName);
-  console.log('DraftActorPortrait - Clean actor name:', cleanActorName);
-  console.log('DraftActorPortrait - People found:', people);
-  console.log('DraftActorPortrait - Loading:', loading);
-  
   // Find the exact match for the actor name
   const actor = people.find(person => 
     person.name.toLowerCase() === cleanActorName.toLowerCase()
   );
-
-  console.log('DraftActorPortrait - Matched actor:', actor);
 
   if (loading) {
     return (

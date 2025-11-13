@@ -10,12 +10,31 @@ interface Movie {
   isBlockbuster?: boolean;
   budget?: number;
   revenue?: number;
+  tmdbId?: number; // TMDB ID for spec category matching
 }
 
-export const getEligibleCategories = (movie: Movie, allCategories: string[]): string[] => {
+export const getEligibleCategories = (
+  movie: Movie, 
+  allCategories: string[],
+  theme?: string,
+  option?: string,
+  specCategoriesMap?: Map<string, number[]>
+): string[] => {
   if (!movie) return [];
 
   const eligibleCategories: string[] = [];
+
+  // Check spec categories first if this is a person-based theme
+  if (theme === 'people' && option && specCategoriesMap && specCategoriesMap.size > 0) {
+    const movieId = movie.tmdbId || movie.id;
+    
+    specCategoriesMap.forEach((movieIds, categoryName) => {
+      // Only check if this category is in the draft's category list
+      if (allCategories.includes(categoryName) && movieId && movieIds.includes(movieId)) {
+        eligibleCategories.push(categoryName);
+      }
+    });
+  }
 
   // Year-based categories
   if (movie.year >= 1930 && movie.year <= 1939) {
