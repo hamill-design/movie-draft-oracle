@@ -401,14 +401,6 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
 
     fetchSpecCategories();
   }, [theme, selectedOption, categories]);
-  
-  // Also sort when categories prop changes (for non-people themes)
-  useEffect(() => {
-    if (theme !== 'people' || !selectedOption) {
-      const sortedCategories = sortCategoriesForDisplay([], categories);
-      setAllCategories(sortedCategories);
-    }
-  }, [categories, theme, selectedOption]);
 
   // Force clear cache for person-based themes on component mount
   useEffect(() => {
