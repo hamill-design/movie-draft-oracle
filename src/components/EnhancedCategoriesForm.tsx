@@ -250,6 +250,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   const [progressiveResults, setProgressiveResults] = useState<Map<string, CategoryAvailabilityResult>>(new Map());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [specCategories, setSpecCategories] = useState<string[]>([]);
+  const [specCategoryCounts, setSpecCategoryCounts] = useState<Map<string, number>>(new Map());
   const [allCategories, setAllCategories] = useState<string[]>(categories);
 
   // Fetch spec categories for people themes
@@ -258,20 +259,52 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
       if (theme === 'people' && selectedOption) {
         try {
           const actorName = getCleanActorName(selectedOption);
-          const specCategoryConfigs = await getSpecCategoriesForActor(actorName);
-          const specCategoryNames = specCategoryConfigs.map(config => config.name);
-          setSpecCategories(specCategoryNames);
           
-          // Merge with regular categories
-          const merged = [...categories, ...specCategoryNames];
+          // Fetch spec categories directly to get movie counts
+          const { supabase } = await import('@/integrations/supabase/client');
+          let { data, error } = await supabase
+            .from('actor_spec_categories')
+            .select('category_name, movie_tmdb_ids')
+            .eq('actor_name', actorName);
+          
+          if (error || !data || data.length === 0) {
+            ({ data, error } = await supabase
+              .from('actor_spec_categories')
+              .select('category_name, movie_tmdb_ids')
+              .ilike('actor_name', actorName));
+          }
+          
+          if (error || !data || data.length === 0) {
+            setSpecCategories([]);
+            setSpecCategoryCounts(new Map());
+            setAllCategories(categories);
+            return;
+          }
+          
+          // Extract category names and counts
+          const specCategoryNames = data.map((row: any) => row.category_name);
+          const countsMap = new Map<string, number>();
+          
+          data.forEach((row: any) => {
+            const count = row.movie_tmdb_ids?.length || 0;
+            countsMap.set(row.category_name, count);
+          });
+          
+          setSpecCategories(specCategoryNames);
+          setSpecCategoryCounts(countsMap);
+          
+          // Merge with spec categories first, then regular categories
+          const merged = [...specCategoryNames, ...categories];
           setAllCategories(merged);
         } catch (err) {
           console.error('Failed to fetch spec categories:', err);
           setSpecCategories([]);
+          setSpecCategoryCounts(new Map());
           setAllCategories(categories);
         }
       } else {
         setSpecCategories([]);
+        setSpecCategoryCounts(new Map());
         setAllCategories(categories);
       }
     };
@@ -381,6 +414,23 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   const selectedCategories = form.watch('categories') || [];
   
   const getAvailabilityForCategory = (category: string) => {
+    // For spec categories, use the direct count from database
+    if (specCategories.includes(category)) {
+      const movieCount = specCategoryCounts.get(category) || 0;
+      const requiredCount = playerCount;
+      const status = movieCount >= requiredCount ? 'sufficient' : 
+                     movieCount > 0 ? 'limited' : 'insufficient';
+      
+      return {
+        categoryId: category,
+        available: movieCount >= requiredCount,
+        movieCount: movieCount,
+        sampleMovies: [],
+        status: status,
+        isEstimate: false
+      };
+    }
+    
     // Check progressive results first, fallback to analysis result
     const progressiveResult = progressiveResults.get(category);
     if (progressiveResult) return progressiveResult;
