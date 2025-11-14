@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { CheckboxIcon } from '@/components/icons';
 import { categoryValidationService } from '@/services/categoryValidationService';
@@ -621,10 +621,14 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           alignItems: 'start'
         }}
       >
-        {(() => {
-          console.log('🎨 Rendering allCategories:', allCategories);
-          return allCategories;
-        })().map((category, index) => {
+        {useMemo(() => {
+          // Create a fresh copy to ensure correct order
+          const categoriesToRender = [...allCategories];
+          console.log('🎨 Rendering allCategories - length:', categoriesToRender.length);
+          console.log('🎨 Rendering allCategories - first item:', categoriesToRender[0]);
+          console.log('🎨 Rendering allCategories - JSON:', JSON.stringify(categoriesToRender));
+          return categoriesToRender;
+        }, [allCategories]).map((category, index) => {
           const categoryConfig = getCategoryConfig(category);
           const isSpecCategory = specCategories.includes(category);
           
