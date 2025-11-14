@@ -11,6 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDrafts } from '@/hooks/useDrafts';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminAccess } from '@/hooks/useAdminAccess';
+import { Settings } from 'lucide-react';
 import BannerAd from '@/components/ads/BannerAd';
 import InlineAd from '@/components/ads/InlineAd';
 import { DraftActorPortrait } from '@/components/DraftActorPortrait';
@@ -31,6 +33,7 @@ const Profile = () => {
   const { user, loading, signOut } = useAuth();
   const { drafts, loading: draftsLoading, error: draftsError, refetch, deleteDraft } = useDrafts();
   const { toast } = useToast();
+  const { isAdmin } = useAdminAccess();
   const [profile, setProfile] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -367,10 +370,22 @@ const Profile = () => {
         {/* <BannerAd className="mb-8" /> */}
 
         <div className="w-full h-full p-6 bg-greyscale-blue-100 shadow-[0px_0px_3px_rgba(0,0,0,0.25)] rounded flex-col justify-start items-start gap-3 inline-flex mb-8">
-          <div className="flex-col justify-start items-start flex">
-            <div className="justify-center flex flex-col text-text-primary text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
-              Account Information
+          <div className="w-full flex justify-between items-center">
+            <div className="flex-col justify-start items-start flex">
+              <div className="justify-center flex flex-col text-text-primary text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
+                Account Information
+              </div>
             </div>
+            {isAdmin && (
+              <Button
+                onClick={() => navigate('/admin')}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                Admin Panel
+              </Button>
+            )}
           </div>
           <div className="self-stretch justify-start items-center gap-4 inline-flex flex-wrap content-center">
             <div className="flex-1 min-w-[300px] justify-start items-center gap-1.5 flex">

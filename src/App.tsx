@@ -13,6 +13,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
 import FinalScores from "./pages/FinalScores";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/draft" element={<Index />} />
               <Route path="/draft/:draftId" element={<Index />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/admin" element={<Admin />} />
               <Route path="/final-scores/:draftId" element={<FinalScores />} />
               <Route path="/join-draft/:draftId" element={<JoinDraft />} />
               <Route path="/join-draft" element={<JoinDraft />} />
