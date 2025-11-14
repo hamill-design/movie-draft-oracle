@@ -57,6 +57,12 @@ export const useActorSpecCategoriesAdmin = () => {
     setError(null);
 
     try {
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('You must be logged in to create categories');
+      }
+
       const { data, error: createError } = await supabase
         .from('actor_spec_categories')
         .insert({
@@ -110,6 +116,12 @@ export const useActorSpecCategoriesAdmin = () => {
     setError(null);
 
     try {
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('You must be logged in to update categories');
+      }
+
       const { data, error: updateError } = await supabase
         .from('actor_spec_categories')
         .update({
@@ -154,6 +166,12 @@ export const useActorSpecCategoriesAdmin = () => {
     setError(null);
 
     try {
+      // Check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('You must be logged in to delete categories');
+      }
+
       const { error: deleteError } = await supabase
         .from('actor_spec_categories')
         .delete()
