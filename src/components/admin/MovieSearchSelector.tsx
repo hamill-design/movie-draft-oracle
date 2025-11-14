@@ -122,10 +122,31 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
     setShowResults(false);
   };
 
-  // Create placeholders for movie IDs that aren't in cache (for editing existing categories)
+  // Fetch movie details for IDs that aren't in cache (for editing existing categories)
   useEffect(() => {
-    selectedMovieIds.forEach(movieId => {
-      if (!selectedMoviesCache.has(movieId)) {
+    const fetchMovieDetails = async (movieId: number) => {
+      // Skip if already in cache
+      if (selectedMoviesCache.has(movieId)) return;
+
+      try {
+        const { data, error } = await supabase.functions.invoke('get-movie-by-id', {
+          body: { movieId }
+        });
+
+        if (error) throw error;
+
+        if (data) {
+          setSelectedMoviesCache(prev => new Map(prev).set(movieId, {
+            id: data.id,
+            title: data.title,
+            year: data.year,
+            posterPath: data.posterPath,
+            tmdbId: data.tmdbId,
+          }));
+        }
+      } catch (err) {
+        console.error(`Failed to fetch movie ${movieId}:`, err);
+        // Fallback to placeholder if fetch fails
         setSelectedMoviesCache(prev => {
           if (prev.has(movieId)) return prev;
           return new Map(prev).set(movieId, {
@@ -135,6 +156,13 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
             tmdbId: movieId,
           });
         });
+      }
+    };
+
+    // Fetch details for all selected movie IDs that aren't in cache
+    selectedMovieIds.forEach(movieId => {
+      if (!selectedMoviesCache.has(movieId)) {
+        fetchMovieDetails(movieId);
       }
     });
   }, [selectedMovieIds, selectedMoviesCache]);

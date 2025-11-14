@@ -4,7 +4,8 @@ import { CheckboxIcon } from '@/components/icons';
 import { categoryValidationService } from '@/services/categoryValidationService';
 import { progressiveCategoryService } from '@/services/progressiveCategoryService';
 import { CategoryAnalysisResponse, CategoryAvailabilityResult } from '@/types/categoryTypes';
-import { getCategoryConfig, getCategoriesForTheme } from '@/config/categoryConfigs';
+import { getCategoryConfig, getCategoriesForTheme, getSpecCategoriesForActor } from '@/config/categoryConfigs';
+import { getCleanActorName } from '@/lib/utils';
 
 interface DraftSetupForm {
   participants: string[];
@@ -248,6 +249,35 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   const [analysisResult, setAnalysisResult] = useState<CategoryAnalysisResponse | null>(null);
   const [progressiveResults, setProgressiveResults] = useState<Map<string, CategoryAvailabilityResult>>(new Map());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [specCategories, setSpecCategories] = useState<string[]>([]);
+  const [allCategories, setAllCategories] = useState<string[]>(categories);
+
+  // Fetch spec categories for people themes
+  useEffect(() => {
+    const fetchSpecCategories = async () => {
+      if (theme === 'people' && selectedOption) {
+        try {
+          const actorName = getCleanActorName(selectedOption);
+          const specCategoryConfigs = await getSpecCategoriesForActor(actorName);
+          const specCategoryNames = specCategoryConfigs.map(config => config.name);
+          setSpecCategories(specCategoryNames);
+          
+          // Merge with regular categories
+          const merged = [...categories, ...specCategoryNames];
+          setAllCategories(merged);
+        } catch (err) {
+          console.error('Failed to fetch spec categories:', err);
+          setSpecCategories([]);
+          setAllCategories(categories);
+        }
+      } else {
+        setSpecCategories([]);
+        setAllCategories(categories);
+      }
+    };
+
+    fetchSpecCategories();
+  }, [theme, selectedOption, categories]);
 
   // Force clear cache for person-based themes on component mount
   useEffect(() => {
@@ -259,29 +289,26 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
 
   // More permissive analysis - similar to local drafting
   const canAnalyze = () => {
-    return theme && selectedOption && categories.length > 0;
+    return theme && selectedOption && allCategories.length > 0;
   };
 
   // Effect for pre-analysis - triggers as soon as theme and option are selected
   useEffect(() => {
-    if (theme && selectedOption) {
+    if (theme && selectedOption && allCategories.length > 0) {
       preAnalyzeAllCategories();
     }
-  }, [theme, selectedOption, playerCount]);
+  }, [theme, selectedOption, playerCount, allCategories]);
 
   const preAnalyzeAllCategories = async () => {
     try {
       setIsAnalyzing(true);
       
-      // Get all available categories for this theme
-      const allCategories = getCategoriesForTheme(theme);
-      const categoryNames = allCategories.map(config => config.name);
-      
-      if (categoryNames.length > 0) {
+      // Use allCategories which includes spec categories for people themes
+      if (allCategories.length > 0) {
         const result = await categoryValidationService.analyzeCategoryAvailability({
           theme,
           option: selectedOption,
-          categories: categoryNames,
+          categories: allCategories,
           playerCount,
           draftMode: draftMode || 'single'
         });
@@ -301,7 +328,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
       setAnalysisResult(null);
       setIsAnalyzing(false);
     }
-  }, [categories, theme, selectedOption]);
+  }, [allCategories, theme, selectedOption]);
 
   const analyzeCategories = async () => {
     if (!canAnalyze()) return;
@@ -311,7 +338,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
     
     // Person theme uses stronger cache refresh; also refresh if any decade categories are selected
     const isPersonTheme = theme === 'people';
-    const includesDecadeCategories = categories.some(c => c.includes("'s"));
+    const includesDecadeCategories = allCategories.some(c => c.includes("'s"));
     
     try {
       // Use progressive loading for better UX, force refresh for person themes
@@ -319,7 +346,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
         {
           theme,
           option: selectedOption,
-          categories,
+          categories: allCategories,
           playerCount,
           draftMode: draftMode || 'single'
         },
@@ -398,18 +425,23 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           alignItems: 'start'
         }}
       >
-        {categories.map((category, index) => (
-          <CustomCheckbox
-            key={category}
-            id={category}
-            category={category}
-            isChecked={selectedCategories.includes(category)}
-            onToggle={(checked) => handleCategoryToggle(category, checked)}
-            availability={getAvailabilityForCategory(category)}
-            isAnalyzing={isAnalyzing}
-            index={index}
-          />
-        ))}
+        {allCategories.map((category, index) => {
+          const categoryConfig = getCategoryConfig(category);
+          const isSpecCategory = specCategories.includes(category);
+          
+          return (
+            <CustomCheckbox
+              key={category}
+              id={category}
+              category={category}
+              isChecked={selectedCategories.includes(category)}
+              onToggle={(checked) => handleCategoryToggle(category, checked)}
+              availability={getAvailabilityForCategory(category)}
+              isAnalyzing={isAnalyzing}
+              index={index}
+            />
+          );
+        })}
       </div>
     </div>
   );
