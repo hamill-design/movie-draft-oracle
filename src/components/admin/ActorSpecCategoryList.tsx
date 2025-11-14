@@ -51,6 +51,24 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
     );
   });
 
+  // Group categories by actor
+  const groupedByActor = filteredCategories.reduce((acc, category) => {
+    const actorKey = `${category.actor_name}_${category.actor_tmdb_id || 'no-id'}`;
+    if (!acc[actorKey]) {
+      acc[actorKey] = {
+        actor_name: category.actor_name,
+        actor_tmdb_id: category.actor_tmdb_id,
+        categories: [],
+      };
+    }
+    acc[actorKey].categories.push(category);
+    return acc;
+  }, {} as Record<string, { actor_name: string; actor_tmdb_id: number | null; categories: ActorSpecCategory[] }>);
+
+  const groupedArray = Object.values(groupedByActor).sort((a, b) =>
+    a.actor_name.localeCompare(b.actor_name)
+  );
+
   const handleDeleteClick = (category: ActorSpecCategory) => {
     setCategoryToDelete(category);
     setDeleteDialogOpen(true);
@@ -101,66 +119,81 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
           </div>
         </CardHeader>
         <CardContent>
-          {filteredCategories.length === 0 ? (
+          {groupedArray.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               {searchQuery ? 'No categories match your search' : 'No categories found'}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Actor Name</TableHead>
-                    <TableHead>Category Name</TableHead>
-                    <TableHead>Movie Count</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredCategories.map((category) => (
-                    <TableRow key={category.id}>
-                      <TableCell className="font-medium">
-                        {category.actor_name}
-                        {category.actor_tmdb_id && (
-                          <span className="text-xs text-gray-500 ml-2">
-                            (ID: {category.actor_tmdb_id})
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>{category.category_name}</TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
-                          {category.movie_tmdb_ids?.length || 0} movies
-                        </span>
-                      </TableCell>
-                      <TableCell className="max-w-xs truncate">
-                        {category.description || '-'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => onEdit(category)}
-                            disabled={loading}
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleDeleteClick(category)}
-                            disabled={loading}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            <div className="space-y-6">
+              {groupedArray.map((group) => (
+                <div key={`${group.actor_name}_${group.actor_tmdb_id || 'no-id'}`} className="space-y-2">
+                  {/* Actor Header */}
+                  <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {group.actor_name}
+                    </h3>
+                    {group.actor_tmdb_id && (
+                      <span className="text-sm text-gray-500">
+                        (ID: {group.actor_tmdb_id})
+                      </span>
+                    )}
+                    <span className="text-sm text-gray-400">
+                      {group.categories.length} {group.categories.length === 1 ? 'category' : 'categories'}
+                    </span>
+                  </div>
+
+                  {/* Categories Table */}
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Category Name</TableHead>
+                          <TableHead>Movie Count</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {group.categories.map((category) => (
+                          <TableRow key={category.id}>
+                            <TableCell className="font-medium">
+                              {category.category_name}
+                            </TableCell>
+                            <TableCell>
+                              <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
+                                {category.movie_tmdb_ids?.length || 0} movies
+                              </span>
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate">
+                              {category.description || '-'}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => onEdit(category)}
+                                  disabled={loading}
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => handleDeleteClick(category)}
+                                  disabled={loading}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
