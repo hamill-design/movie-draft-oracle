@@ -5,8 +5,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
-import { TMDBHelper } from './TMDBHelper';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { MovieSearchSelector } from './MovieSearchSelector';
+import { X } from 'lucide-react';
 import { ActorSpecCategory } from '@/hooks/useActorSpecCategoriesAdmin';
 
 interface ActorSpecCategoryFormProps {
@@ -31,8 +31,8 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
   const [actorName, setActorName] = useState(category?.actor_name || '');
   const [actorTmdbId, setActorTmdbId] = useState<number | null>(category?.actor_tmdb_id || null);
   const [categoryName, setCategoryName] = useState(category?.category_name || '');
-  const [movieIds, setMovieIds] = useState<string[]>(
-    category?.movie_tmdb_ids?.map(String) || ['']
+  const [movieIds, setMovieIds] = useState<number[]>(
+    category?.movie_tmdb_ids || []
   );
   const [description, setDescription] = useState(category?.description || '');
   const [showActorSuggestions, setShowActorSuggestions] = useState(false);
@@ -75,17 +75,7 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
     setActorSearchQuery('');
   };
 
-  const handleAddMovieId = () => {
-    setMovieIds([...movieIds, '']);
-  };
-
-  const handleRemoveMovieId = (index: number) => {
-    setMovieIds(movieIds.filter((_, i) => i !== index));
-  };
-
-  const handleMovieIdChange = (index: number, value: string) => {
-    const newMovieIds = [...movieIds];
-    newMovieIds[index] = value;
+  const handleMoviesChange = (newMovieIds: number[]) => {
     setMovieIds(newMovieIds);
   };
 
@@ -102,14 +92,8 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
       return;
     }
 
-    const validMovieIds = movieIds
-      .map(id => id.trim())
-      .filter(id => id.length > 0)
-      .map(id => parseInt(id, 10))
-      .filter(id => !isNaN(id) && id > 0);
-
-    if (validMovieIds.length === 0) {
-      alert('At least one valid movie ID is required');
+    if (movieIds.length === 0) {
+      alert('At least one movie is required');
       return;
     }
 
@@ -117,7 +101,7 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
       actorName: actorName.trim(),
       actorTmdbId,
       categoryName: categoryName.trim(),
-      movieTmdbIds: validMovieIds,
+      movieTmdbIds: movieIds,
       description: description.trim() || undefined,
     });
   };
@@ -195,45 +179,16 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
               />
             </div>
 
-            {/* Movie IDs */}
-            <div className="space-y-2">
-              <Label>Movie TMDB IDs *</Label>
-              <div className="space-y-2">
-                {movieIds.map((id, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      type="number"
-                      value={id}
-                      onChange={(e) => handleMovieIdChange(index, e.target.value)}
-                      placeholder="Enter TMDB movie ID"
-                      min="1"
-                    />
-                    {movieIds.length > 1 && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleRemoveMovieId(index)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleAddMovieId}
-                  className="w-full"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Another Movie ID
-                </Button>
-              </div>
-              <p className="text-xs text-gray-500">
-                Current: {movieIds.filter(id => id.trim()).length} movie ID(s)
-              </p>
-            </div>
+            {/* Movie Search and Selection */}
+            <MovieSearchSelector
+              selectedMovieIds={movieIds}
+              onMoviesChange={handleMoviesChange}
+              initialMovies={category?.movie_tmdb_ids?.map(id => ({
+                id,
+                title: `Movie ID: ${id}`, // Placeholder - will be replaced when searched
+                year: 0,
+              })) || []}
+            />
 
             {/* Description */}
             <div className="space-y-2">
@@ -261,8 +216,6 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
           </form>
         </CardContent>
       </Card>
-
-      <TMDBHelper />
     </div>
   );
 };
