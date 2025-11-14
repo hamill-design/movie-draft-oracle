@@ -567,19 +567,26 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   };
 
   const handleCategoryToggle = (category: string, checked: boolean) => {
+    console.log(`🔄 handleCategoryToggle called for "${category}":`, checked);
     const currentCategories = form.getValues('categories');
     // Use getAvailabilityForCategory to get the correct availability for both spec and regular categories
     const availability = getAvailabilityForCategory(category);
+    console.log(`📊 Availability for "${category}":`, availability);
     
     // Prevent selection of insufficient categories
     if (checked && availability?.status === 'insufficient') {
+      console.log(`❌ Blocked selection of "${category}" - insufficient`);
       return;
     }
     
     if (checked) {
-      form.setValue('categories', [...currentCategories, category]);
+      const newCategories = [...currentCategories, category];
+      console.log(`✅ Adding "${category}" to categories:`, newCategories);
+      form.setValue('categories', newCategories);
     } else {
-      form.setValue('categories', currentCategories.filter(c => c !== category));
+      const newCategories = currentCategories.filter(c => c !== category);
+      console.log(`✅ Removing "${category}" from categories:`, newCategories);
+      form.setValue('categories', newCategories);
     }
   };
 
@@ -632,6 +639,17 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
         }, [allCategories]).map((category, index) => {
           const categoryConfig = getCategoryConfig(category);
           const isSpecCategory = specCategories.includes(category);
+          const availability = getAvailabilityForCategory(category);
+          
+          // Debug logging for spec categories
+          if (isSpecCategory) {
+            console.log(`🔍 Spec category "${category}":`, {
+              availability,
+              isDisabled: availability?.status === 'insufficient',
+              movieCount: specCategoryCounts.get(category),
+              playerCount
+            });
+          }
           
           return (
             <CustomCheckbox
@@ -639,8 +657,11 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
               id={category}
               category={category}
               isChecked={selectedCategories.includes(category)}
-              onToggle={(checked) => handleCategoryToggle(category, checked)}
-              availability={getAvailabilityForCategory(category)}
+              onToggle={(checked) => {
+                console.log(`🖱️ Toggle clicked for "${category}":`, checked);
+                handleCategoryToggle(category, checked);
+              }}
+              availability={availability}
               isAnalyzing={isAnalyzing}
               index={index}
             />
