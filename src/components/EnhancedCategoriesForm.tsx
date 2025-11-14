@@ -71,13 +71,24 @@ const sortCategoriesForDisplay = (specCategories: string[], regularCategories: s
   const sortedEnd = endCategories.filter(cat => end.includes(cat));
   
   // Combine: spec categories first, then genres, then decades, then other, then end categories
-  return [
+  const sorted = [
     ...specCategories,
     ...sortedGenres,
     ...sortedDecades,
     ...other,
     ...sortedEnd
   ];
+  
+  console.log('Sorting categories:', {
+    specCategories,
+    sortedGenres,
+    sortedDecades,
+    other,
+    sortedEnd,
+    final: sorted
+  });
+  
+  return sorted;
 };
 
 interface DraftSetupForm {
@@ -324,7 +335,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [specCategories, setSpecCategories] = useState<string[]>([]);
   const [specCategoryCounts, setSpecCategoryCounts] = useState<Map<string, number>>(new Map());
-  const [allCategories, setAllCategories] = useState<string[]>(categories);
+  const [allCategories, setAllCategories] = useState<string[]>(() => sortCategoriesForDisplay([], categories));
 
   // Fetch spec categories for people themes
   useEffect(() => {
@@ -390,6 +401,14 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
 
     fetchSpecCategories();
   }, [theme, selectedOption, categories]);
+  
+  // Also sort when categories prop changes (for non-people themes)
+  useEffect(() => {
+    if (theme !== 'people' || !selectedOption) {
+      const sortedCategories = sortCategoriesForDisplay([], categories);
+      setAllCategories(sortedCategories);
+    }
+  }, [categories, theme, selectedOption]);
 
   // Force clear cache for person-based themes on component mount
   useEffect(() => {
