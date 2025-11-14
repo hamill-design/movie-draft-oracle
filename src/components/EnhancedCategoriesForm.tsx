@@ -79,14 +79,16 @@ const sortCategoriesForDisplay = (specCategories: string[], regularCategories: s
     ...sortedEnd
   ];
   
-  console.log('Sorting categories:', {
+  console.log('🔍 Sorting categories - INPUT:', {
     specCategories,
+    regularCategories,
     sortedGenres,
     sortedDecades,
     other,
-    sortedEnd,
-    final: sorted
+    sortedEnd
   });
+  
+  console.log('✅ Sorting categories - OUTPUT:', sorted);
   
   return sorted;
 };
@@ -381,6 +383,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           
           // Sort categories: spec categories first, then genres, then decades chronologically, then Academy Award and Blockbuster
           const sortedCategories = sortCategoriesForDisplay(specCategoryNames, categories);
+          console.log('📝 Setting allCategories with spec categories:', sortedCategories);
           setAllCategories(sortedCategories);
         } catch (err) {
           console.error('Failed to fetch spec categories:', err);
@@ -395,6 +398,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
         setSpecCategoryCounts(new Map());
         // Sort regular categories even when no spec categories
         const sortedCategories = sortCategoriesForDisplay([], categories);
+        console.log('📝 Setting allCategories (no spec):', sortedCategories);
         setAllCategories(sortedCategories);
       }
     };
@@ -565,7 +569,10 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           alignItems: 'start'
         }}
       >
-        {allCategories.map((category, index) => {
+        {(() => {
+          console.log('🎨 Rendering allCategories:', allCategories);
+          return allCategories;
+        })().map((category, index) => {
           const categoryConfig = getCategoryConfig(category);
           const isSpecCategory = specCategories.includes(category);
           
