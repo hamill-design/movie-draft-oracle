@@ -58,10 +58,16 @@ export const useActorSpecCategoriesAdmin = () => {
 
     try {
       // Check if user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error(`Authentication error: ${authError.message}`);
+      }
       if (!user) {
         throw new Error('You must be logged in to create categories');
       }
+
+      console.log('Creating category as user:', user.email, 'ID:', user.id);
 
       const { data, error: createError } = await supabase
         .from('actor_spec_categories')
@@ -75,7 +81,15 @@ export const useActorSpecCategoriesAdmin = () => {
         .select()
         .single();
 
-      if (createError) throw createError;
+      if (createError) {
+        console.error('Create error details:', {
+          message: createError.message,
+          code: createError.code,
+          details: createError.details,
+          hint: createError.hint,
+        });
+        throw createError;
+      }
 
       setCategories(prev => [...prev, data].sort((a, b) => 
         a.actor_name.localeCompare(b.actor_name) || 
@@ -117,10 +131,16 @@ export const useActorSpecCategoriesAdmin = () => {
 
     try {
       // Check if user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error(`Authentication error: ${authError.message}`);
+      }
       if (!user) {
         throw new Error('You must be logged in to update categories');
       }
+
+      console.log('Updating category as user:', user.email, 'ID:', user.id);
 
       const { data, error: updateError } = await supabase
         .from('actor_spec_categories')
@@ -132,7 +152,15 @@ export const useActorSpecCategoriesAdmin = () => {
         .select()
         .single();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Update error details:', {
+          message: updateError.message,
+          code: updateError.code,
+          details: updateError.details,
+          hint: updateError.hint,
+        });
+        throw updateError;
+      }
 
       setCategories(prev => prev.map(cat => 
         cat.id === id ? data : cat
@@ -167,17 +195,31 @@ export const useActorSpecCategoriesAdmin = () => {
 
     try {
       // Check if user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error(`Authentication error: ${authError.message}`);
+      }
       if (!user) {
         throw new Error('You must be logged in to delete categories');
       }
+
+      console.log('Deleting category as user:', user.email, 'ID:', user.id);
 
       const { error: deleteError } = await supabase
         .from('actor_spec_categories')
         .delete()
         .eq('id', id);
 
-      if (deleteError) throw deleteError;
+      if (deleteError) {
+        console.error('Delete error details:', {
+          message: deleteError.message,
+          code: deleteError.code,
+          details: deleteError.details,
+          hint: deleteError.hint,
+        });
+        throw deleteError;
+      }
 
       setCategories(prev => prev.filter(cat => cat.id !== id));
 
