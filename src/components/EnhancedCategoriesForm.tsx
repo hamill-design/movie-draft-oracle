@@ -131,7 +131,7 @@ const sortCategoriesForDisplay = (specCategories: string[], regularCategories: s
   });
   
   return sorted;
-};
+}
 
 interface DraftSetupForm {
   participants: string[];
@@ -405,7 +405,8 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
             setSpecCategoryCounts(new Map());
             // Sort regular categories even when no spec categories found
             const sortedCategories = sortCategoriesForDisplay([], categories);
-            setAllCategories(sortedCategories);
+            const freshArray = Array.from(sortedCategories);
+            setAllCategories(freshArray);
             return;
           }
           
@@ -423,28 +424,39 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           
           // Sort categories: spec categories first, then genres, then decades chronologically, then Academy Award and Blockbuster
           const sortedCategories = sortCategoriesForDisplay(specCategoryNames, categories);
-          console.log('📝 Setting allCategories with spec categories:', sortedCategories);
-          setAllCategories(sortedCategories);
+          // Create a completely fresh array to prevent any reference issues
+          const freshArray = Array.from(sortedCategories);
+          console.log('📝 BEFORE setState - freshArray:', JSON.stringify(freshArray));
+          console.log('📝 BEFORE setState - first item:', freshArray[0]);
+          setAllCategories(freshArray);
         } catch (err) {
           console.error('Failed to fetch spec categories:', err);
           setSpecCategories([]);
           setSpecCategoryCounts(new Map());
           // Sort regular categories even on error
           const sortedCategories = sortCategoriesForDisplay([], categories);
-          setAllCategories(sortedCategories);
+          const freshArray = Array.from(sortedCategories);
+          setAllCategories(freshArray);
         }
       } else {
         setSpecCategories([]);
         setSpecCategoryCounts(new Map());
         // Sort regular categories even when no spec categories
         const sortedCategories = sortCategoriesForDisplay([], categories);
-        console.log('📝 Setting allCategories (no spec):', sortedCategories);
-        setAllCategories(sortedCategories);
+        const freshArray = Array.from(sortedCategories);
+        console.log('📝 Setting allCategories (no spec):', freshArray);
+        setAllCategories(freshArray);
       }
     };
 
     fetchSpecCategories();
   }, [theme, selectedOption, categories]);
+
+  // Debug: Log whenever allCategories changes
+  useEffect(() => {
+    console.log('🔄 allCategories state changed:', JSON.stringify(allCategories));
+    console.log('🔄 allCategories first item:', allCategories[0]);
+  }, [allCategories]);
 
   // Force clear cache for person-based themes on component mount
   useEffect(() => {
