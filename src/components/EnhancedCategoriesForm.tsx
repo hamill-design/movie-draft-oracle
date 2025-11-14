@@ -98,13 +98,36 @@ const sortCategoriesForDisplay = (specCategories: string[], regularCategories: s
     sortedEnd
   });
   
-  console.log('✅ Sorting categories - OUTPUT (step by step):', {
+  // Verify the array was built correctly by checking each index
+  console.log('🔍 VERIFICATION - Array contents by index:');
+  for (let i = 0; i < sorted.length; i++) {
+    console.log(`  [${i}]: "${sorted[i]}"`);
+  }
+  
+  // Expected order verification
+  const expectedFirst = specCategories.length > 0 ? specCategories[0] : sortedGenres[0];
+  const actualFirst = sorted[0];
+  console.log(`🔍 First item - Expected: "${expectedFirst}", Actual: "${actualFirst}"`);
+  
+  if (actualFirst !== expectedFirst) {
+    console.error('❌ ARRAY ORDER IS WRONG! The first item does not match expected order!');
+    console.error('Expected order:', [
+      ...specCategories,
+      ...sortedGenres,
+      ...sortedDecades,
+      ...other,
+      ...sortedEnd
+    ]);
+    console.error('Actual order:', sorted);
+  }
+  
+  console.log('✅ Sorting categories - OUTPUT:', {
     step1_specCategories: specCategories,
     step2_sortedGenres: sortedGenres,
     step3_sortedDecades: sortedDecades,
     step4_other: other,
     step5_sortedEnd: sortedEnd,
-    final: sorted
+    finalJSON: JSON.stringify(sorted)
   });
   
   return sorted;
