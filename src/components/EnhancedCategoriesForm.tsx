@@ -541,9 +541,35 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
     }
   };
 
+  const getAvailabilityForCategory = (category: string) => {
+    // For spec categories, use the direct count from database
+    if (specCategories.includes(category)) {
+      const movieCount = specCategoryCounts.get(category) || 0;
+      const requiredCount = playerCount;
+      const status = movieCount >= requiredCount ? 'sufficient' : 
+                     movieCount > 0 ? 'limited' : 'insufficient';
+      
+      return {
+        categoryId: category,
+        available: movieCount >= requiredCount,
+        movieCount: movieCount,
+        sampleMovies: [],
+        status: status as 'sufficient' | 'limited' | 'insufficient',
+        isEstimate: false
+      };
+    }
+    
+    // Check progressive results first, fallback to analysis result
+    const progressiveResult = progressiveResults.get(category);
+    if (progressiveResult) return progressiveResult;
+    
+    return analysisResult?.results.find(r => r.categoryId === category);
+  };
+
   const handleCategoryToggle = (category: string, checked: boolean) => {
     const currentCategories = form.getValues('categories');
-    const availability = analysisResult?.results.find(r => r.categoryId === category);
+    // Use getAvailabilityForCategory to get the correct availability for both spec and regular categories
+    const availability = getAvailabilityForCategory(category);
     
     // Prevent selection of insufficient categories
     if (checked && availability?.status === 'insufficient') {
@@ -558,31 +584,6 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   };
 
   const selectedCategories = form.watch('categories') || [];
-  
-  const getAvailabilityForCategory = (category: string) => {
-    // For spec categories, use the direct count from database
-    if (specCategories.includes(category)) {
-      const movieCount = specCategoryCounts.get(category) || 0;
-      const requiredCount = playerCount;
-      const status = movieCount >= requiredCount ? 'sufficient' : 
-                     movieCount > 0 ? 'limited' : 'insufficient';
-      
-      return {
-        categoryId: category,
-        available: movieCount >= requiredCount,
-        movieCount: movieCount,
-        sampleMovies: [],
-        status: status,
-        isEstimate: false
-      };
-    }
-    
-    // Check progressive results first, fallback to analysis result
-    const progressiveResult = progressiveResults.get(category);
-    if (progressiveResult) return progressiveResult;
-    
-    return analysisResult?.results.find(r => r.categoryId === category);
-  };
 
   const getSummaryStats = () => {
     if (!analysisResult) return null;
