@@ -71,13 +71,23 @@ const sortCategoriesForDisplay = (specCategories: string[], regularCategories: s
   const sortedEnd = endCategories.filter(cat => end.includes(cat));
   
   // Combine: spec categories first, then genres, then decades, then other, then end categories
-  const sorted = [
-    ...specCategories,
-    ...sortedGenres,
-    ...sortedDecades,
-    ...other,
-    ...sortedEnd
-  ];
+  // Build array step by step to ensure correct order
+  const sorted: string[] = [];
+  
+  // 1. Spec categories first
+  sorted.push(...specCategories);
+  
+  // 2. Genres
+  sorted.push(...sortedGenres);
+  
+  // 3. Decades chronologically
+  sorted.push(...sortedDecades);
+  
+  // 4. Other categories
+  sorted.push(...other);
+  
+  // 5. End categories (Academy Award and Blockbuster)
+  sorted.push(...sortedEnd);
   
   console.log('🔍 Sorting categories - INPUT:', {
     specCategories,
@@ -88,7 +98,14 @@ const sortCategoriesForDisplay = (specCategories: string[], regularCategories: s
     sortedEnd
   });
   
-  console.log('✅ Sorting categories - OUTPUT:', sorted);
+  console.log('✅ Sorting categories - OUTPUT (step by step):', {
+    step1_specCategories: specCategories,
+    step2_sortedGenres: sortedGenres,
+    step3_sortedDecades: sortedDecades,
+    step4_other: other,
+    step5_sortedEnd: sortedEnd,
+    final: sorted
+  });
   
   return sorted;
 };
