@@ -7,6 +7,79 @@ import { CategoryAnalysisResponse, CategoryAvailabilityResult } from '@/types/ca
 import { getCategoryConfig, getCategoriesForTheme, getSpecCategoriesForActor } from '@/config/categoryConfigs';
 import { getCleanActorName } from '@/lib/utils';
 
+/**
+ * Sort categories in the desired order:
+ * 1. Spec categories (custom)
+ * 2. Genres (Action/Adventure, Comedy, Drama/Romance, etc.)
+ * 3. Decades chronologically (30's, 40's, 50's, 60's, 70's, 80's, 90's, 2000's, 2010's, 2020's)
+ * 4. Academy Award and Blockbuster at the end
+ */
+const sortCategoriesForDisplay = (specCategories: string[], regularCategories: string[]): string[] => {
+  // Define category groups
+  const genreCategories = [
+    'Action/Adventure',
+    'Animated',
+    'Comedy',
+    'Drama/Romance',
+    'Horror/Thriller',
+    'Sci-Fi/Fantasy'
+  ];
+  
+  const decadeCategories = [
+    "30's",
+    "40's",
+    "50's",
+    "60's",
+    "70's",
+    "80's",
+    "90's",
+    "2000's",
+    "2010's",
+    "2020's"
+  ];
+  
+  const endCategories = [
+    'Academy Award Nominee or Winner',
+    'Blockbuster (minimum of $50 Mil)'
+  ];
+  
+  // Separate regular categories into groups
+  const genres: string[] = [];
+  const decades: string[] = [];
+  const end: string[] = [];
+  const other: string[] = [];
+  
+  regularCategories.forEach(category => {
+    if (genreCategories.includes(category)) {
+      genres.push(category);
+    } else if (decadeCategories.includes(category)) {
+      decades.push(category);
+    } else if (endCategories.includes(category)) {
+      end.push(category);
+    } else {
+      other.push(category);
+    }
+  });
+  
+  // Sort genres in the defined order
+  const sortedGenres = genreCategories.filter(cat => genres.includes(cat));
+  
+  // Sort decades chronologically
+  const sortedDecades = decadeCategories.filter(cat => decades.includes(cat));
+  
+  // Sort end categories in the defined order
+  const sortedEnd = endCategories.filter(cat => end.includes(cat));
+  
+  // Combine: spec categories first, then genres, then decades, then other, then end categories
+  return [
+    ...specCategories,
+    ...sortedGenres,
+    ...sortedDecades,
+    ...other,
+    ...sortedEnd
+  ];
+};
+
 interface DraftSetupForm {
   participants: string[];
   categories: string[];
@@ -277,7 +350,9 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           if (error || !data || data.length === 0) {
             setSpecCategories([]);
             setSpecCategoryCounts(new Map());
-            setAllCategories(categories);
+            // Sort regular categories even when no spec categories found
+            const sortedCategories = sortCategoriesForDisplay([], categories);
+            setAllCategories(sortedCategories);
             return;
           }
           
@@ -293,19 +368,23 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           setSpecCategories(specCategoryNames);
           setSpecCategoryCounts(countsMap);
           
-          // Merge with spec categories first, then regular categories
-          const merged = [...specCategoryNames, ...categories];
-          setAllCategories(merged);
+          // Sort categories: spec categories first, then genres, then decades chronologically, then Academy Award and Blockbuster
+          const sortedCategories = sortCategoriesForDisplay(specCategoryNames, categories);
+          setAllCategories(sortedCategories);
         } catch (err) {
           console.error('Failed to fetch spec categories:', err);
           setSpecCategories([]);
           setSpecCategoryCounts(new Map());
-          setAllCategories(categories);
+          // Sort regular categories even on error
+          const sortedCategories = sortCategoriesForDisplay([], categories);
+          setAllCategories(sortedCategories);
         }
       } else {
         setSpecCategories([]);
         setSpecCategoryCounts(new Map());
-        setAllCategories(categories);
+        // Sort regular categories even when no spec categories
+        const sortedCategories = sortCategoriesForDisplay([], categories);
+        setAllCategories(sortedCategories);
       }
     };
 
