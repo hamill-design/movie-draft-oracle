@@ -7,6 +7,10 @@ import { useAdminAccess } from '@/hooks/useAdminAccess';
 import { useActorSpecCategoriesAdmin, ActorSpecCategory } from '@/hooks/useActorSpecCategoriesAdmin';
 import { ActorSpecCategoryForm } from '@/components/admin/ActorSpecCategoryForm';
 import { ActorSpecCategoryList } from '@/components/admin/ActorSpecCategoryList';
+import { useSpecDraftsAdmin, SpecDraft, SpecDraftWithMovies } from '@/hooks/useSpecDraftsAdmin';
+import { SpecDraftForm } from '@/components/admin/SpecDraftForm';
+import { SpecDraftList } from '@/components/admin/SpecDraftList';
+import { SpecDraftMovieManager } from '@/components/admin/SpecDraftMovieManager';
 import { ArrowLeft, Plus, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,7 +28,20 @@ const Admin = () => {
   const { toast } = useToast();
 
   const [editingCategory, setEditingCategory] = useState<ActorSpecCategory | null>(null);
-  const [activeTab, setActiveTab] = useState('list');
+  const [activeTab, setActiveTab] = useState('actor-categories');
+  const [specDraftSection, setSpecDraftSection] = useState<'list' | 'form' | 'movies'>('list');
+  const [editingSpecDraft, setEditingSpecDraft] = useState<SpecDraft | null>(null);
+  const [managingMoviesForDraft, setManagingMoviesForDraft] = useState<SpecDraftWithMovies | null>(null);
+
+  const {
+    specDrafts,
+    loading: specDraftsLoading,
+    fetchSpecDrafts,
+    fetchSpecDraftWithMovies,
+    createSpecDraft,
+    updateSpecDraft,
+    deleteSpecDraft,
+  } = useSpecDraftsAdmin();
 
   useEffect(() => {
     if (!authLoading && !isAdmin) {
@@ -40,8 +57,9 @@ const Admin = () => {
   useEffect(() => {
     if (isAdmin) {
       fetchCategories();
+      fetchSpecDrafts();
     }
-  }, [isAdmin, fetchCategories]);
+  }, [isAdmin, fetchCategories, fetchSpecDrafts]);
 
   const handleCreate = async (data: {
     actorName: string;
@@ -90,12 +108,71 @@ const Admin = () => {
 
   const handleEdit = (category: ActorSpecCategory) => {
     setEditingCategory(category);
-    setActiveTab('form');
+    setActiveTab('actor-categories');
   };
 
   const handleCancel = () => {
     setEditingCategory(null);
-    setActiveTab('list');
+    setActiveTab('actor-categories');
+  };
+
+  // Spec Draft handlers
+  const handleSpecDraftCreate = async (data: { name: string; description?: string }) => {
+    try {
+      await createSpecDraft(data.name, data.description);
+      setSpecDraftSection('list');
+      setEditingSpecDraft(null);
+    } catch (error) {
+      // Error already handled in hook
+    }
+  };
+
+  const handleSpecDraftUpdate = async (data: { name: string; description?: string }) => {
+    if (!editingSpecDraft) return;
+
+    try {
+      await updateSpecDraft(editingSpecDraft.id, data);
+      setSpecDraftSection('list');
+      setEditingSpecDraft(null);
+    } catch (error) {
+      // Error already handled in hook
+    }
+  };
+
+  const handleSpecDraftEdit = (specDraft: SpecDraft) => {
+    setEditingSpecDraft(specDraft);
+    setSpecDraftSection('form');
+  };
+
+  const handleSpecDraftCancel = () => {
+    setEditingSpecDraft(null);
+    setSpecDraftSection('list');
+  };
+
+  const handleManageMovies = async (specDraft: SpecDraft) => {
+    const draftWithMovies = await fetchSpecDraftWithMovies(specDraft.id);
+    if (draftWithMovies) {
+      setManagingMoviesForDraft(draftWithMovies);
+      setSpecDraftSection('movies');
+    }
+  };
+
+  const handleSpecDraftDelete = async (id: string) => {
+    try {
+      await deleteSpecDraft(id);
+    } catch (error) {
+      // Error already handled in hook
+    }
+  };
+
+  const handleMovieManagerRefresh = async () => {
+    if (managingMoviesForDraft) {
+      const updated = await fetchSpecDraftWithMovies(managingMoviesForDraft.id);
+      if (updated) {
+        setManagingMoviesForDraft(updated);
+      }
+    }
+    fetchSpecDrafts();
   };
 
   if (authLoading) {
@@ -124,42 +201,105 @@ const Admin = () => {
           Back to Profile
         </Button>
         <h1 className="text-3xl font-bold">Admin Panel</h1>
-        <p className="text-gray-600 mt-2">Manage Actor Spec Categories</p>
+        <p className="text-gray-600 mt-2">Manage Actor Spec Categories and Spec Drafts</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
-          <TabsTrigger value="list">All Categories</TabsTrigger>
-          <TabsTrigger value="form">
-            {editingCategory ? 'Edit Category' : 'Create New'}
-          </TabsTrigger>
+          <TabsTrigger value="actor-categories">Actor Spec Categories</TabsTrigger>
+          <TabsTrigger value="spec-drafts">Spec Draft Builder</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="list" className="space-y-4">
-          <div className="flex justify-end">
-            <Button onClick={() => {
-              setEditingCategory(null);
-              setActiveTab('form');
-            }}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create New Category
-            </Button>
-          </div>
-          <ActorSpecCategoryList
-            categories={categories}
-            onEdit={handleEdit}
-            onDelete={deleteCategory}
-            loading={categoriesLoading}
-          />
+        {/* Actor Spec Categories Tab */}
+        <TabsContent value="actor-categories" className="space-y-6">
+          {!editingCategory ? (
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <Button onClick={() => {
+                  setEditingCategory(null);
+                  setActiveTab('actor-categories');
+                }}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create New Category
+                </Button>
+              </div>
+              <ActorSpecCategoryList
+                categories={categories}
+                onEdit={handleEdit}
+                onDelete={deleteCategory}
+                loading={categoriesLoading}
+              />
+            </div>
+          ) : (
+            <ActorSpecCategoryForm
+              category={editingCategory}
+              onSubmit={editingCategory ? handleUpdate : handleCreate}
+              onCancel={handleCancel}
+              loading={categoriesLoading}
+            />
+          )}
         </TabsContent>
 
-        <TabsContent value="form">
-          <ActorSpecCategoryForm
-            category={editingCategory}
-            onSubmit={editingCategory ? handleUpdate : handleCreate}
-            onCancel={handleCancel}
-            loading={categoriesLoading}
-          />
+        {/* Spec Draft Builder Tab */}
+        <TabsContent value="spec-drafts" className="space-y-6">
+          {specDraftSection === 'list' && (
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <Button onClick={() => {
+                  setEditingSpecDraft(null);
+                  setSpecDraftSection('form');
+                }}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create New Spec Draft
+                </Button>
+              </div>
+              <SpecDraftList
+                specDrafts={specDrafts}
+                onEdit={handleSpecDraftEdit}
+                onDelete={handleSpecDraftDelete}
+                onManageMovies={handleManageMovies}
+                loading={specDraftsLoading}
+              />
+            </div>
+          )}
+
+          {specDraftSection === 'form' && (
+            <SpecDraftForm
+              specDraft={editingSpecDraft}
+              onSubmit={editingSpecDraft ? handleSpecDraftUpdate : handleSpecDraftCreate}
+              onCancel={handleSpecDraftCancel}
+              loading={specDraftsLoading}
+            />
+          )}
+
+          {specDraftSection === 'movies' && managingMoviesForDraft && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold">{managingMoviesForDraft.name}</h2>
+                  {managingMoviesForDraft.description && (
+                    <p className="text-gray-600 mt-1">{managingMoviesForDraft.description}</p>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setManagingMoviesForDraft(null);
+                    setSpecDraftSection('list');
+                  }}
+                >
+                  Back to List
+                </Button>
+              </div>
+              <SpecDraftMovieManager
+                specDraft={managingMoviesForDraft}
+                onMovieAdded={handleMovieManagerRefresh}
+                onMovieRemoved={handleMovieManagerRefresh}
+                onCategoriesUpdated={handleMovieManagerRefresh}
+                loading={specDraftsLoading}
+              />
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>
