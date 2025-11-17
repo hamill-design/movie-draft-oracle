@@ -29,6 +29,7 @@ const Admin = () => {
 
   const [editingCategory, setEditingCategory] = useState<ActorSpecCategory | null>(null);
   const [activeTab, setActiveTab] = useState('actor-categories');
+  const [actorCategorySection, setActorCategorySection] = useState<'list' | 'form'>('list');
   const [specDraftSection, setSpecDraftSection] = useState<'list' | 'form' | 'movies'>('list');
   const [editingSpecDraft, setEditingSpecDraft] = useState<SpecDraft | null>(null);
   const [managingMoviesForDraft, setManagingMoviesForDraft] = useState<SpecDraftWithMovies | null>(null);
@@ -76,7 +77,8 @@ const Admin = () => {
         data.description,
         data.actorTmdbId
       );
-      setActiveTab('list');
+      setEditingCategory(null);
+      setActorCategorySection('list');
     } catch (error) {
       // Error already handled in hook
     }
@@ -100,7 +102,7 @@ const Admin = () => {
         description: data.description || null,
       });
       setEditingCategory(null);
-      setActiveTab('list');
+      setActorCategorySection('list');
     } catch (error) {
       // Error already handled in hook
     }
@@ -108,12 +110,12 @@ const Admin = () => {
 
   const handleEdit = (category: ActorSpecCategory) => {
     setEditingCategory(category);
-    setActiveTab('actor-categories');
+    setActorCategorySection('form');
   };
 
   const handleCancel = () => {
     setEditingCategory(null);
-    setActiveTab('actor-categories');
+    setActorCategorySection('list');
   };
 
   // Spec Draft handlers
@@ -212,12 +214,19 @@ const Admin = () => {
 
         {/* Actor Spec Categories Tab */}
         <TabsContent value="actor-categories" className="space-y-6">
-          {!editingCategory ? (
-            <div className="space-y-4">
+          <Tabs value={actorCategorySection} onValueChange={(v) => setActorCategorySection(v as 'list' | 'form')} className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="list">All Categories</TabsTrigger>
+              <TabsTrigger value="form">
+                {editingCategory ? 'Edit Category' : 'Create New'}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="list" className="space-y-4">
               <div className="flex justify-end">
                 <Button onClick={() => {
                   setEditingCategory(null);
-                  setActiveTab('actor-categories');
+                  setActorCategorySection('form');
                 }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Create New Category
@@ -229,15 +238,17 @@ const Admin = () => {
                 onDelete={deleteCategory}
                 loading={categoriesLoading}
               />
-            </div>
-          ) : (
-            <ActorSpecCategoryForm
-              category={editingCategory}
-              onSubmit={editingCategory ? handleUpdate : handleCreate}
-              onCancel={handleCancel}
-              loading={categoriesLoading}
-            />
-          )}
+            </TabsContent>
+
+            <TabsContent value="form">
+              <ActorSpecCategoryForm
+                category={editingCategory}
+                onSubmit={editingCategory ? handleUpdate : handleCreate}
+                onCancel={handleCancel}
+                loading={categoriesLoading}
+              />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
 
         {/* Spec Draft Builder Tab */}
