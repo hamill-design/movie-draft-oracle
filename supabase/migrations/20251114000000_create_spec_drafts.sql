@@ -49,39 +49,39 @@ ALTER TABLE public.spec_drafts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.spec_draft_movies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.spec_draft_movie_categories ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies - allow public read, admin write
+-- RLS Policies - allow public read, authenticated write (frontend enforces admin check)
 CREATE POLICY "Spec drafts are publicly readable" 
   ON public.spec_drafts 
   FOR SELECT 
   USING (true);
 
-CREATE POLICY "Allow admin modifications to spec drafts" 
+CREATE POLICY "Authenticated users can modify spec drafts" 
   ON public.spec_drafts 
   FOR ALL 
-  USING (true)
-  WITH CHECK (true);
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Spec draft movies are publicly readable" 
   ON public.spec_draft_movies 
   FOR SELECT 
   USING (true);
 
-CREATE POLICY "Allow admin modifications to spec draft movies" 
+CREATE POLICY "Authenticated users can modify spec draft movies" 
   ON public.spec_draft_movies 
   FOR ALL 
-  USING (true)
-  WITH CHECK (true);
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
 
 CREATE POLICY "Spec draft movie categories are publicly readable" 
   ON public.spec_draft_movie_categories 
   FOR SELECT 
   USING (true);
 
-CREATE POLICY "Allow admin modifications to spec draft movie categories" 
+CREATE POLICY "Authenticated users can modify spec draft movie categories" 
   ON public.spec_draft_movie_categories 
   FOR ALL 
-  USING (true)
-  WITH CHECK (true);
+  USING (auth.uid() IS NOT NULL)
+  WITH CHECK (auth.uid() IS NOT NULL);
 
 -- Add trigger for updated_at
 CREATE OR REPLACE FUNCTION update_spec_drafts_updated_at()
