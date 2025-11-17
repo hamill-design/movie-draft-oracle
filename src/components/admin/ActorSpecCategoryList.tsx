@@ -144,30 +144,32 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
 
                   {/* Categories Table */}
                   <div className="overflow-x-auto">
-                    <Table>
+                    <Table className="w-full">
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Category Name</TableHead>
-                          <TableHead>Movie Count</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead className="text-right">Actions</TableHead>
+                          <TableHead className="w-[25%]">Category Name</TableHead>
+                          <TableHead className="w-[15%]">Movie Count</TableHead>
+                          <TableHead className="w-[45%]">Description</TableHead>
+                          <TableHead className="w-[15%] text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {group.categories.map((category) => (
                           <TableRow key={category.id}>
-                            <TableCell className="font-medium">
+                            <TableCell className="font-medium w-[25%]">
                               {category.category_name}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="w-[15%]">
                               <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
                                 {category.movie_tmdb_ids?.length || 0} movies
                               </span>
                             </TableCell>
-                            <TableCell className="max-w-xs truncate">
-                              {category.description || '-'}
+                            <TableCell className="w-[45%]">
+                              <div className="truncate" title={category.description || undefined}>
+                                {category.description || '-'}
+                              </div>
                             </TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="w-[15%] text-right">
                               <div className="flex justify-end gap-2">
                                 <Button
                                   variant="outline"
