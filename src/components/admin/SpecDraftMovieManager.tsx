@@ -92,16 +92,26 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
 
         if (error) throw error;
 
-        const movies = (data?.results || []).map((movie: any) => ({
-          id: movie.id || movie.tmdbId,
-          title: movie.title,
-          year: movie.year || (movie.release_date ? parseInt(movie.release_date.split('-')[0]) : null),
-          posterPath: movie.posterPath || movie.poster_path,
-          genres: movie.genres?.map((g: any) => g.id || g) || movie.genre_ids || [],
-          releaseDate: movie.release_date,
-          oscarStatus: movie.oscar_status,
-          revenue: movie.revenue,
-        }));
+        const movies = (data?.results || []).map((movie: any) => {
+          // Extract genres - handle both formats: array of objects {id, name} or array of IDs
+          let genreIds: number[] = [];
+          if (movie.genres && Array.isArray(movie.genres)) {
+            genreIds = movie.genres.map((g: any) => typeof g === 'object' ? (g.id || g) : g);
+          } else if (movie.genre_ids && Array.isArray(movie.genre_ids)) {
+            genreIds = movie.genre_ids;
+          }
+
+          return {
+            id: movie.id || movie.tmdbId,
+            title: movie.title,
+            year: movie.year || (movie.release_date ? parseInt(movie.release_date.split('-')[0]) : null),
+            posterPath: movie.posterPath || movie.poster_path,
+            genres: genreIds,
+            releaseDate: movie.release_date,
+            oscarStatus: movie.oscar_status || movie.oscarStatus || null,
+            revenue: movie.revenue || null,
+          };
+        });
 
         setSearchResults(movies);
         setShowResults(true);
@@ -150,40 +160,47 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
         return;
       }
 
-      // Fetch full movie details to get oscar status and revenue
-      // The search results may already have this, but we'll fetch fresh data to ensure accuracy
+      // Use the data from search results, which should already include oscar_status and revenue
+      // The fetch-movies function processes all this data, so we should have it
       let fullMovieDetails = {
         oscarStatus: movie.oscarStatus || null,
         revenue: movie.revenue || null,
       };
 
-      // Always fetch fresh details to ensure we have complete data for category automation
-      try {
-        const { data: freshData, error: fetchError } = await supabase.functions.invoke('fetch-movies', {
-          body: {
-            category: 'search',
-            searchQuery: movie.title,
-            fetchAll: false,
-            page: 1,
-            preferFreshOscarStatus: true,
-          },
-        });
+      // If we don't have complete data, try to fetch it
+      // But prefer using what we already have from the search
+      if (!fullMovieDetails.oscarStatus || !fullMovieDetails.revenue) {
+        try {
+          const { data: freshData, error: fetchError } = await supabase.functions.invoke('fetch-movies', {
+            body: {
+              category: 'search',
+              searchQuery: movie.title,
+              fetchAll: false,
+              page: 1,
+              preferFreshOscarStatus: !fullMovieDetails.oscarStatus,
+            },
+          });
 
-        if (!fetchError && freshData?.results) {
-          // Find the exact movie match by ID
-          const matchedMovie = freshData.results.find((m: any) => 
-            (m.id === movie.id || m.tmdbId === movie.id)
-          );
-          
-          if (matchedMovie) {
-            // Use fresh data if available, otherwise keep what we have
-            fullMovieDetails.oscarStatus = matchedMovie.oscar_status || matchedMovie.oscarStatus || fullMovieDetails.oscarStatus;
-            fullMovieDetails.revenue = matchedMovie.revenue || fullMovieDetails.revenue;
+          if (!fetchError && freshData?.results) {
+            // Find the exact movie match by ID
+            const matchedMovie = freshData.results.find((m: any) => 
+              (m.id === movie.id || m.tmdbId === movie.id)
+            );
+            
+            if (matchedMovie) {
+              // Only update if we're missing data
+              if (!fullMovieDetails.oscarStatus) {
+                fullMovieDetails.oscarStatus = matchedMovie.oscar_status || matchedMovie.oscarStatus || null;
+              }
+              if (!fullMovieDetails.revenue) {
+                fullMovieDetails.revenue = matchedMovie.revenue || null;
+              }
+            }
           }
+        } catch (err) {
+          console.warn('Could not fetch additional movie details, using available data:', err);
+          // Continue with available data
         }
-      } catch (err) {
-        console.warn('Could not fetch full movie details, using available data:', err);
-        // Continue with available data
       }
 
       // Automatically determine categories from genres, year, oscar status, and revenue
