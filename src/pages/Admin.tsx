@@ -11,6 +11,7 @@ import { useSpecDraftsAdmin, SpecDraft, SpecDraftWithMovies } from '@/hooks/useS
 import { SpecDraftForm } from '@/components/admin/SpecDraftForm';
 import { SpecDraftList } from '@/components/admin/SpecDraftList';
 import { SpecDraftMovieManager } from '@/components/admin/SpecDraftMovieManager';
+import { SpecDraftCategoriesManager } from '@/components/admin/SpecDraftCategoriesManager';
 import { ArrowLeft, Plus, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -42,6 +43,9 @@ const Admin = () => {
     createSpecDraft,
     updateSpecDraft,
     deleteSpecDraft,
+    createCustomCategory,
+    updateCustomCategory,
+    deleteCustomCategory,
   } = useSpecDraftsAdmin();
 
   useEffect(() => {
@@ -302,6 +306,27 @@ const Admin = () => {
                   Back to List
                 </Button>
               </div>
+
+              {/* Custom Categories Section */}
+              <SpecDraftCategoriesManager
+                specDraftId={managingMoviesForDraft.id}
+                customCategories={managingMoviesForDraft.customCategories || []}
+                onCreate={async (categoryName, description) => {
+                  await createCustomCategory(managingMoviesForDraft.id, categoryName, description);
+                  handleMovieManagerRefresh();
+                }}
+                onUpdate={async (id, updates) => {
+                  await updateCustomCategory(id, updates);
+                  handleMovieManagerRefresh();
+                }}
+                onDelete={async (id) => {
+                  await deleteCustomCategory(id);
+                  handleMovieManagerRefresh();
+                }}
+                loading={specDraftsLoading}
+              />
+
+              {/* Movies Section */}
               <SpecDraftMovieManager
                 specDraft={managingMoviesForDraft}
                 onMovieAdded={handleMovieManagerRefresh}

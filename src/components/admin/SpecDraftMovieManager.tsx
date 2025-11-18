@@ -51,8 +51,8 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
   const resultsRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // All available categories
-  const allCategories = [
+  // Standard categories
+  const standardCategories = [
     'Action/Adventure',
     'Animated',
     'Comedy',
@@ -72,6 +72,13 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
     'Academy Award Nominee or Winner',
     'Blockbuster (minimum of $50 Mil)',
   ];
+
+  // Custom categories from the spec draft
+  const customCategories = specDraft.customCategories || [];
+  const customCategoryNames = customCategories.map(cat => cat.category_name);
+
+  // All categories = standard + custom
+  const allCategories = [...standardCategories, ...customCategoryNames];
 
   // Search for movies
   useEffect(() => {
@@ -324,7 +331,8 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
           const categoriesToInsert = selectedCategories.map(categoryName => ({
             spec_draft_movie_id: selectedMovieForCategories.id,
             category_name: categoryName,
-            is_automated: autoCategories.includes(categoryName),
+            // Custom categories are never automated, only standard categories can be auto-detected
+            is_automated: customCategoryNames.includes(categoryName) ? false : autoCategories.includes(categoryName),
           }));
 
           const { error: insertError } = await supabase
@@ -548,14 +556,23 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                 Select which categories this movie can apply to.
               </p>
               <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto p-2">
-                {allCategories.map((category) => {
+                {/* Standard Categories */}
+                {standardCategories.map((category) => {
                   const isChecked = categoryCheckboxes[category] || false;
                   const movie = specDraft.movies.find(m => m.id === selectedMovieForCategories.id);
+                  const genreString = movie && movie.movie_genres && movie.movie_genres.length > 0
+                    ? movie.movie_genres.map((id: number) => getGenreName(id)).join(' ')
+                    : '';
+                  const hasOscar = movie && (movie.oscar_status === 'winner' || movie.oscar_status === 'nominee');
+                  const isBlockbuster = movie && movie.revenue && movie.revenue >= 50000000;
+                  
                   const isAutoDetected = movie && mapGenresToCategories(
-                    movie.movie_genres || [],
+                    genreString || movie.movie_genres || [],
                     movie.movie_year,
                     movie.oscar_status,
-                    movie.revenue
+                    movie.revenue,
+                    hasOscar,
+                    isBlockbuster
                   ).includes(category);
 
                   return (
@@ -582,6 +599,42 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                     </div>
                   );
                 })}
+                
+                {/* Custom Categories */}
+                {customCategoryNames.length > 0 && (
+                  <>
+                    <div className="col-span-2 border-t pt-3 mt-2">
+                      <div className="text-xs font-semibold text-gray-500 mb-2">Custom Categories</div>
+                    </div>
+                    {customCategoryNames.map((category) => {
+                      const isChecked = categoryCheckboxes[category] || false;
+                      const customCategory = customCategories.find(c => c.category_name === category);
+
+                      return (
+                        <div key={category} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`category-${category}`}
+                            checked={isChecked}
+                            onCheckedChange={(checked) => {
+                              setCategoryCheckboxes(prev => ({
+                                ...prev,
+                                [category]: checked === true,
+                              }));
+                            }}
+                          />
+                          <Label
+                            htmlFor={`category-${category}`}
+                            className="text-sm font-normal cursor-pointer"
+                            title={customCategory?.description || undefined}
+                          >
+                            {category}
+                            <span className="ml-1 text-xs text-gray-400">(custom)</span>
+                          </Label>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
               </div>
               <div className="flex gap-2 justify-end">
                 <Button

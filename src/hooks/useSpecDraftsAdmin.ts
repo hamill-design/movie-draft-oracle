@@ -31,10 +31,20 @@ export interface SpecDraftMovieCategory {
   created_at: string;
 }
 
+export interface SpecDraftCategory {
+  id: string;
+  spec_draft_id: string;
+  category_name: string;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface SpecDraftWithMovies extends SpecDraft {
   movies: (SpecDraftMovie & {
     categories: SpecDraftMovieCategory[];
   })[];
+  customCategories?: SpecDraftCategory[];
 }
 
 export const useSpecDraftsAdmin = () => {
@@ -93,6 +103,17 @@ export const useSpecDraftsAdmin = () => {
 
       if (moviesError) throw moviesError;
 
+      // Fetch custom categories for this spec draft
+      const { data: customCategoriesData, error: customCategoriesError } = await supabase
+        .from('spec_draft_categories')
+        .select('*')
+        .eq('spec_draft_id', specDraftId)
+        .order('category_name', { ascending: true });
+
+      if (customCategoriesError) {
+        console.error('Error fetching custom categories:', customCategoriesError);
+      }
+
       // Fetch categories for each movie
       const moviesWithCategories = await Promise.all(
         (moviesData || []).map(async (movie) => {
@@ -116,6 +137,7 @@ export const useSpecDraftsAdmin = () => {
       return {
         ...draftData,
         movies: moviesWithCategories,
+        customCategories: customCategoriesData || [],
       };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch spec draft';
@@ -424,6 +446,144 @@ export const useSpecDraftsAdmin = () => {
     }
   }, [toast]);
 
+  const createCustomCategory = useCallback(async (
+    specDraftId: string,
+    categoryName: string,
+    description?: string
+  ) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        throw new Error(`Authentication error: ${authError.message}`);
+      }
+      if (!user) {
+        throw new Error('You must be logged in to create custom categories');
+      }
+
+      const { data, error: createError } = await supabase
+        .from('spec_draft_categories')
+        .insert({
+          spec_draft_id: specDraftId,
+          category_name: categoryName.trim(),
+          description: description?.trim() || null,
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      toast({
+        title: 'Success',
+        description: `Custom category "${categoryName}" created successfully`,
+      });
+
+      return data;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create custom category';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  const updateCustomCategory = useCallback(async (
+    id: string,
+    updates: {
+      category_name?: string;
+      description?: string | null;
+    }
+  ) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        throw new Error(`Authentication error: ${authError.message}`);
+      }
+      if (!user) {
+        throw new Error('You must be logged in to update custom categories');
+      }
+
+      const { data, error: updateError } = await supabase
+        .from('spec_draft_categories')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: 'Success',
+        description: 'Custom category updated successfully',
+      });
+
+      return data;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update custom category';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  const deleteCustomCategory = useCallback(async (id: string) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        throw new Error(`Authentication error: ${authError.message}`);
+      }
+      if (!user) {
+        throw new Error('You must be logged in to delete custom categories');
+      }
+
+      const { error: deleteError } = await supabase
+        .from('spec_draft_categories')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+
+      toast({
+        title: 'Success',
+        description: 'Custom category deleted successfully',
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete custom category';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
   return {
     specDrafts,
     loading,
@@ -436,6 +596,9 @@ export const useSpecDraftsAdmin = () => {
     addMovieToSpecDraft,
     removeMovieFromSpecDraft,
     updateMovieCategories,
+    createCustomCategory,
+    updateCustomCategory,
+    deleteCustomCategory,
   };
 };
 
