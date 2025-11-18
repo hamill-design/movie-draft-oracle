@@ -27,9 +27,9 @@ const TMDB_GENRE_MAP: Record<number, string> = {
 };
 
 /**
- * Maps TMDB genre IDs to draft category names using the same logic as the draft system
+ * Maps movie data to draft category names using the same logic as the draft system
  * This matches the logic in isMovieEligibleForCategory and getEligibleCategories
- * @param genreIds Array of TMDB genre IDs
+ * @param genreStringOrIds Genre string (preferred) or array of TMDB genre IDs
  * @param movieYear Optional movie year for decade categories
  * @param oscarStatus Optional oscar status string ('winner', 'nominee', 'none', 'unknown')
  * @param revenue Optional revenue for Blockbuster category
@@ -38,7 +38,7 @@ const TMDB_GENRE_MAP: Record<number, string> = {
  * @returns Array of category names the movie qualifies for
  */
 export function mapGenresToCategories(
-  genreIds: number[],
+  genreStringOrIds: string | number[],
   movieYear?: number | null,
   oscarStatus?: string | null,
   revenue?: number | null,
@@ -47,12 +47,19 @@ export function mapGenresToCategories(
 ): string[] {
   const categories: string[] = [];
 
-  // Convert genre IDs to genre string (same format as fetch-movies returns)
-  const genreString = genreIds
-    .map(id => TMDB_GENRE_MAP[id])
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
+  // Convert to genre string (same format as fetch-movies returns)
+  let genreString = '';
+  if (typeof genreStringOrIds === 'string') {
+    // Already a string (preferred - this is what fetch-movies returns)
+    genreString = genreStringOrIds.toLowerCase();
+  } else if (Array.isArray(genreStringOrIds)) {
+    // Array of genre IDs - convert to string
+    genreString = genreStringOrIds
+      .map(id => TMDB_GENRE_MAP[id])
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+  }
 
   // Genre-based categories (using same string matching logic as isMovieEligibleForCategory)
   if (genreString.includes('action') || genreString.includes('adventure')) {

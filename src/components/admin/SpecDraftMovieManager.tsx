@@ -24,7 +24,8 @@ interface MovieSearchResult {
   title: string;
   year: number;
   posterPath?: string;
-  genres?: number[];
+  genre?: string; // Genre string from fetch-movies (e.g., "Action Adventure Comedy")
+  genres?: number[]; // Genre IDs array for storage
   releaseDate?: string;
   oscarStatus?: string;
   hasOscar?: boolean;
@@ -95,12 +96,16 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
         if (error) throw error;
 
         const movies = (data?.results || []).map((movie: any) => {
-          // Extract genres - handle both formats: array of objects {id, name} or array of IDs
+          // Extract genres - fetch-movies returns 'genre' as a string (e.g., "Action Adventure Comedy")
+          // Also try to get genre_ids as fallback
+          let genreString: string = movie.genre || '';
           let genreIds: number[] = [];
-          if (movie.genres && Array.isArray(movie.genres)) {
-            genreIds = movie.genres.map((g: any) => typeof g === 'object' ? (g.id || g) : g);
-          } else if (movie.genre_ids && Array.isArray(movie.genre_ids)) {
+          
+          // If we have genre_ids, extract them (for storing in database)
+          if (movie.genre_ids && Array.isArray(movie.genre_ids)) {
             genreIds = movie.genre_ids;
+          } else if (movie.genres && Array.isArray(movie.genres)) {
+            genreIds = movie.genres.map((g: any) => typeof g === 'object' ? (g.id || g) : g);
           }
 
           return {
@@ -108,7 +113,8 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
             title: movie.title,
             year: movie.year || (movie.release_date ? parseInt(movie.release_date.split('-')[0]) : null),
             posterPath: movie.posterPath || movie.poster_path,
-            genres: genreIds,
+            genre: genreString, // String format for category detection
+            genres: genreIds, // Array of IDs for storage
             releaseDate: movie.release_date,
             oscarStatus: movie.oscar_status || movie.oscarStatus || null,
             hasOscar: movie.hasOscar || (movie.oscar_status === 'winner' || movie.oscar_status === 'nominee'),
@@ -167,8 +173,10 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
       // Use the data from search results, which should already include all needed fields
       // The fetch-movies function processes all this data, so we should have it
       // Automatically determine categories using the same logic as the draft system
+      // Use genre string (preferred) or fallback to genre IDs array
+      const genreData = movie.genre || movie.genres || [];
       const autoCategories = mapGenresToCategories(
-        movie.genres || [],
+        genreData,
         movie.year,
         movie.oscarStatus,
         movie.revenue,
@@ -290,8 +298,13 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
         const hasOscar = movie.oscar_status === 'winner' || movie.oscar_status === 'nominee';
         const isBlockbuster = movie.revenue && movie.revenue >= 50000000;
         
+        // Convert genre IDs to genre string (same as fetch-movies does)
+        const genreString = movie.movie_genres && movie.movie_genres.length > 0
+          ? movie.movie_genres.map((id: number) => getGenreName(id)).join(' ')
+          : '';
+        
         const autoCategories = mapGenresToCategories(
-          movie.movie_genres || [],
+          genreString || movie.movie_genres || [],
           movie.movie_year,
           movie.oscar_status,
           movie.revenue,
