@@ -27,61 +27,51 @@ const TMDB_GENRE_MAP: Record<number, string> = {
 };
 
 /**
- * Maps TMDB genre IDs to draft category names
+ * Maps TMDB genre IDs to draft category names using the same logic as the draft system
+ * This matches the logic in isMovieEligibleForCategory and getEligibleCategories
  * @param genreIds Array of TMDB genre IDs
  * @param movieYear Optional movie year for decade categories
- * @param oscarStatus Optional oscar status for Academy Award category
+ * @param oscarStatus Optional oscar status string ('winner', 'nominee', 'none', 'unknown')
  * @param revenue Optional revenue for Blockbuster category
+ * @param hasOscar Optional boolean for Academy Award (alternative to oscarStatus)
+ * @param isBlockbuster Optional boolean for Blockbuster (alternative to revenue check)
  * @returns Array of category names the movie qualifies for
  */
 export function mapGenresToCategories(
   genreIds: number[],
   movieYear?: number | null,
   oscarStatus?: string | null,
-  revenue?: number | null
+  revenue?: number | null,
+  hasOscar?: boolean,
+  isBlockbuster?: boolean
 ): string[] {
   const categories: string[] = [];
-  const genreNames = genreIds.map(id => TMDB_GENRE_MAP[id]?.toLowerCase() || '').filter(Boolean);
 
-  // Genre-based categories
-  const hasAction = genreIds.includes(28);
-  const hasAdventure = genreIds.includes(12);
-  const hasAnimation = genreIds.includes(16);
-  const hasComedy = genreIds.includes(35);
-  const hasDrama = genreIds.includes(18);
-  const hasRomance = genreIds.includes(10749);
-  const hasSciFi = genreIds.includes(878);
-  const hasFantasy = genreIds.includes(14);
-  const hasHorror = genreIds.includes(27);
-  const hasThriller = genreIds.includes(53);
+  // Convert genre IDs to genre string (same format as fetch-movies returns)
+  const genreString = genreIds
+    .map(id => TMDB_GENRE_MAP[id])
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
 
-  // Action/Adventure
-  if (hasAction || hasAdventure) {
+  // Genre-based categories (using same string matching logic as isMovieEligibleForCategory)
+  if (genreString.includes('action') || genreString.includes('adventure')) {
     categories.push('Action/Adventure');
   }
-
-  // Animated
-  if (hasAnimation) {
+  if (genreString.includes('animation') || genreString.includes('animated')) {
     categories.push('Animated');
   }
-
-  // Comedy
-  if (hasComedy) {
+  if (genreString.includes('comedy')) {
     categories.push('Comedy');
   }
-
-  // Drama/Romance
-  if (hasDrama || hasRomance) {
+  if (genreString.includes('drama') || genreString.includes('romance')) {
     categories.push('Drama/Romance');
   }
-
-  // Sci-Fi/Fantasy
-  if (hasSciFi || hasFantasy) {
+  if (genreString.includes('sci-fi') || genreString.includes('science fiction') || 
+      genreString.includes('fantasy') || genreString.includes('science')) {
     categories.push('Sci-Fi/Fantasy');
   }
-
-  // Horror/Thriller
-  if (hasHorror || hasThriller) {
+  if (genreString.includes('horror') || genreString.includes('thriller')) {
     categories.push('Horror/Thriller');
   }
 
@@ -110,13 +100,14 @@ export function mapGenresToCategories(
     }
   }
 
-  // Academy Award Nominee or Winner
-  if (oscarStatus === 'winner' || oscarStatus === 'nominee') {
+  // Academy Award Nominee or Winner (same logic as isMovieEligibleForCategory)
+  // Check both hasOscar boolean and oscar_status string
+  if (hasOscar === true || oscarStatus === 'winner' || oscarStatus === 'nominee') {
     categories.push('Academy Award Nominee or Winner');
   }
 
-  // Blockbuster (minimum of $50 Mil)
-  if (revenue && revenue >= 50000000) {
+  // Blockbuster (minimum of $50 Mil) (same logic as isMovieEligibleForCategory)
+  if (isBlockbuster === true || (revenue && revenue >= 50000000)) {
     categories.push('Blockbuster (minimum of $50 Mil)');
   }
 

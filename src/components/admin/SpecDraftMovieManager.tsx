@@ -27,7 +27,9 @@ interface MovieSearchResult {
   genres?: number[];
   releaseDate?: string;
   oscarStatus?: string;
+  hasOscar?: boolean;
   revenue?: number;
+  isBlockbuster?: boolean;
 }
 
 export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
@@ -109,7 +111,9 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
             genres: genreIds,
             releaseDate: movie.release_date,
             oscarStatus: movie.oscar_status || movie.oscarStatus || null,
+            hasOscar: movie.hasOscar || (movie.oscar_status === 'winner' || movie.oscar_status === 'nominee'),
             revenue: movie.revenue || null,
+            isBlockbuster: movie.isBlockbuster || (movie.revenue && movie.revenue >= 50000000),
           };
         });
 
@@ -160,55 +164,16 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
         return;
       }
 
-      // Use the data from search results, which should already include oscar_status and revenue
+      // Use the data from search results, which should already include all needed fields
       // The fetch-movies function processes all this data, so we should have it
-      let fullMovieDetails = {
-        oscarStatus: movie.oscarStatus || null,
-        revenue: movie.revenue || null,
-      };
-
-      // If we don't have complete data, try to fetch it
-      // But prefer using what we already have from the search
-      if (!fullMovieDetails.oscarStatus || !fullMovieDetails.revenue) {
-        try {
-          const { data: freshData, error: fetchError } = await supabase.functions.invoke('fetch-movies', {
-            body: {
-              category: 'search',
-              searchQuery: movie.title,
-              fetchAll: false,
-              page: 1,
-              preferFreshOscarStatus: !fullMovieDetails.oscarStatus,
-            },
-          });
-
-          if (!fetchError && freshData?.results) {
-            // Find the exact movie match by ID
-            const matchedMovie = freshData.results.find((m: any) => 
-              (m.id === movie.id || m.tmdbId === movie.id)
-            );
-            
-            if (matchedMovie) {
-              // Only update if we're missing data
-              if (!fullMovieDetails.oscarStatus) {
-                fullMovieDetails.oscarStatus = matchedMovie.oscar_status || matchedMovie.oscarStatus || null;
-              }
-              if (!fullMovieDetails.revenue) {
-                fullMovieDetails.revenue = matchedMovie.revenue || null;
-              }
-            }
-          }
-        } catch (err) {
-          console.warn('Could not fetch additional movie details, using available data:', err);
-          // Continue with available data
-        }
-      }
-
-      // Automatically determine categories from genres, year, oscar status, and revenue
+      // Automatically determine categories using the same logic as the draft system
       const autoCategories = mapGenresToCategories(
         movie.genres || [],
         movie.year,
-        fullMovieDetails.oscarStatus,
-        fullMovieDetails.revenue
+        movie.oscarStatus,
+        movie.revenue,
+        movie.hasOscar,
+        movie.isBlockbuster
       );
 
       // Add movie to spec draft with all available data
@@ -221,8 +186,8 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
           movie_year: movie.year,
           movie_poster_path: movie.posterPath,
           movie_genres: movie.genres || [],
-          oscar_status: fullMovieDetails.oscarStatus || null,
-          revenue: fullMovieDetails.revenue || null,
+          oscar_status: movie.oscarStatus || null,
+          revenue: movie.revenue || null,
         })
         .select()
         .single();
@@ -321,11 +286,17 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
       // Determine which categories are automated (those that match auto-detection)
       const movie = specDraft.movies.find(m => m.id === selectedMovieForCategories.id);
       if (movie) {
+        // Convert oscar_status to hasOscar boolean for compatibility
+        const hasOscar = movie.oscar_status === 'winner' || movie.oscar_status === 'nominee';
+        const isBlockbuster = movie.revenue && movie.revenue >= 50000000;
+        
         const autoCategories = mapGenresToCategories(
           movie.movie_genres || [],
           movie.movie_year,
           movie.oscar_status,
-          movie.revenue
+          movie.revenue,
+          hasOscar,
+          isBlockbuster
         );
 
         // Update categories
