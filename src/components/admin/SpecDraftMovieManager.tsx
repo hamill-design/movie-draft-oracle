@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, X, Plus, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Search, X, Loader2, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { SpecDraftWithMovies, SpecDraftMovie, SpecDraftMovieCategory } from '@/hooks/useSpecDraftsAdmin';
 import { mapGenresToCategories, getGenreName } from '@/utils/specDraftGenreMapper';
@@ -150,15 +150,51 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
         return;
       }
 
-      // Automatically determine categories from genres
+      // Fetch full movie details to get oscar status and revenue
+      // The search results may already have this, but we'll fetch fresh data to ensure accuracy
+      let fullMovieDetails = {
+        oscarStatus: movie.oscarStatus || null,
+        revenue: movie.revenue || null,
+      };
+
+      // Always fetch fresh details to ensure we have complete data for category automation
+      try {
+        const { data: freshData, error: fetchError } = await supabase.functions.invoke('fetch-movies', {
+          body: {
+            category: 'search',
+            searchQuery: movie.title,
+            fetchAll: false,
+            page: 1,
+            preferFreshOscarStatus: true,
+          },
+        });
+
+        if (!fetchError && freshData?.results) {
+          // Find the exact movie match by ID
+          const matchedMovie = freshData.results.find((m: any) => 
+            (m.id === movie.id || m.tmdbId === movie.id)
+          );
+          
+          if (matchedMovie) {
+            // Use fresh data if available, otherwise keep what we have
+            fullMovieDetails.oscarStatus = matchedMovie.oscar_status || matchedMovie.oscarStatus || fullMovieDetails.oscarStatus;
+            fullMovieDetails.revenue = matchedMovie.revenue || fullMovieDetails.revenue;
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch full movie details, using available data:', err);
+        // Continue with available data
+      }
+
+      // Automatically determine categories from genres, year, oscar status, and revenue
       const autoCategories = mapGenresToCategories(
         movie.genres || [],
         movie.year,
-        movie.oscarStatus,
-        movie.revenue
+        fullMovieDetails.oscarStatus,
+        fullMovieDetails.revenue
       );
 
-      // Add movie to spec draft
+      // Add movie to spec draft with all available data
       const { data: movieData, error: insertError } = await supabase
         .from('spec_draft_movies')
         .insert({
@@ -168,6 +204,8 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
           movie_year: movie.year,
           movie_poster_path: movie.posterPath,
           movie_genres: movie.genres || [],
+          oscar_status: fullMovieDetails.oscarStatus || null,
+          revenue: fullMovieDetails.revenue || null,
         })
         .select()
         .single();
@@ -269,8 +307,8 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
         const autoCategories = mapGenresToCategories(
           movie.movie_genres || [],
           movie.movie_year,
-          undefined, // We don't have oscar status in the movie record
-          undefined  // We don't have revenue in the movie record
+          movie.oscar_status,
+          movie.revenue
         );
 
         // Update categories
@@ -473,7 +511,6 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                             size="sm"
                             onClick={() => handleManageCategories(movie)}
                           >
-                            <Sparkles className="w-3 h-3 mr-1" />
                             Manage
                           </Button>
                         </div>
@@ -481,14 +518,8 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                           <p className="text-xs text-gray-400">No categories assigned</p>
                         ) : (
                           <div className="flex flex-wrap gap-2">
-                            {automatedCategories.map((cat) => (
-                              <Badge key={cat.id} variant="secondary" className="text-xs">
-                                {cat.category_name}
-                                <Sparkles className="w-3 h-3 ml-1 inline" />
-                              </Badge>
-                            ))}
-                            {manualCategories.map((cat) => (
-                              <Badge key={cat.id} variant="outline" className="text-xs">
+                            {movie.categories.map((cat) => (
+                              <Badge key={cat.id} variant={cat.is_automated ? "secondary" : "outline"} className="text-xs">
                                 {cat.category_name}
                               </Badge>
                             ))}
@@ -506,14 +537,14 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
 
       {/* Category Management Dialog */}
       {selectedMovieForCategories && (
-        <Card className="border-2 border-blue-500">
+        <Card>
           <CardHeader>
             <CardTitle>Manage Categories for "{selectedMovieForCategories.movie_title}"</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
-                Select which categories this movie can apply to. Categories with ✨ are auto-detected from genres.
+                Select which categories this movie can apply to.
               </p>
               <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto p-2">
                 {allCategories.map((category) => {
@@ -521,7 +552,9 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                   const movie = specDraft.movies.find(m => m.id === selectedMovieForCategories.id);
                   const isAutoDetected = movie && mapGenresToCategories(
                     movie.movie_genres || [],
-                    movie.movie_year
+                    movie.movie_year,
+                    movie.oscar_status,
+                    movie.revenue
                   ).includes(category);
 
                   return (
@@ -538,11 +571,11 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                       />
                       <Label
                         htmlFor={`category-${category}`}
-                        className="text-sm font-normal cursor-pointer flex items-center gap-1"
+                        className="text-sm font-normal cursor-pointer"
                       >
                         {category}
                         {isAutoDetected && (
-                          <Sparkles className="w-3 h-3 text-blue-500" />
+                          <span className="ml-1 text-xs text-gray-500">(auto)</span>
                         )}
                       </Label>
                     </div>

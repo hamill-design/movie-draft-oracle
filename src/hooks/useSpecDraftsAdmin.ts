@@ -18,6 +18,8 @@ export interface SpecDraftMovie {
   movie_year: number | null;
   movie_poster_path: string | null;
   movie_genres: number[] | null;
+  oscar_status: string | null;
+  revenue: number | null;
   created_at: string;
 }
 
