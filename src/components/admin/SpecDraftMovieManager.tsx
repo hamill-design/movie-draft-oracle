@@ -77,6 +77,15 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
   const customCategories = specDraft.customCategories || [];
   const customCategoryNames = customCategories.map(cat => cat.category_name);
 
+  // Debug: Log when custom categories change
+  React.useEffect(() => {
+    console.log('🎬 SpecDraftMovieManager: Custom categories updated', {
+      count: customCategoryNames.length,
+      names: customCategoryNames,
+      fullData: customCategories
+    });
+  }, [customCategoryNames.length, customCategories.length]);
+
   // All categories = standard + custom
   const allCategories = [...standardCategories, ...customCategoryNames];
 
@@ -546,7 +555,7 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
 
       {/* Category Management Dialog */}
       {selectedMovieForCategories && (
-        <Card>
+        <Card className="w-full max-w-2xl">
           <CardHeader>
             <CardTitle>Manage Categories for "{selectedMovieForCategories.movie_title}"</CardTitle>
           </CardHeader>
@@ -555,7 +564,11 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
               <p className="text-sm text-gray-600">
                 Select which categories this movie can apply to.
               </p>
-              <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto p-2">
+              <div className="text-xs text-gray-500 mb-2">
+                Total categories: {allCategories.length} (Standard: {standardCategories.length}, Custom: {customCategoryNames.length})
+              </div>
+              <div className="border rounded-lg p-4">
+                <div className="grid grid-cols-2 gap-3">
                 {/* Standard Categories */}
                 {standardCategories.map((category) => {
                   const isChecked = categoryCheckboxes[category] || false;
@@ -604,16 +617,27 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                 {customCategoryNames.length > 0 && (
                   <>
                     <div className="col-span-2 border-t pt-3 mt-2">
-                      <div className="text-xs font-semibold text-gray-500 mb-2">Custom Categories</div>
+                      <div className="text-xs font-semibold text-gray-500 mb-2">
+                        Custom Categories ({customCategoryNames.length})
+                      </div>
                     </div>
-                    {customCategoryNames.map((category) => {
+                    {customCategoryNames.map((category, index) => {
                       const isChecked = categoryCheckboxes[category] || false;
                       const customCategory = customCategories.find(c => c.category_name === category);
 
+                      // Debug: Log each category being rendered
+                      if (index === 0) {
+                        console.log('🎬 Rendering custom categories in dialog:', customCategoryNames);
+                      }
+
                       return (
-                        <div key={category} className="flex items-center space-x-2">
+                        <div 
+                          key={`custom-${category}-${customCategory?.id || index}`} 
+                          className="flex items-center space-x-2"
+                          data-category-name={category}
+                        >
                           <Checkbox
-                            id={`category-${category}`}
+                            id={`category-custom-${category}`}
                             checked={isChecked}
                             onCheckedChange={(checked) => {
                               setCategoryCheckboxes(prev => ({
@@ -623,7 +647,7 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                             }}
                           />
                           <Label
-                            htmlFor={`category-${category}`}
+                            htmlFor={`category-custom-${category}`}
                             className="text-sm font-normal cursor-pointer"
                             title={customCategory?.description || undefined}
                           >
@@ -635,6 +659,7 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                     })}
                   </>
                 )}
+                </div>
               </div>
               <div className="flex gap-2 justify-end">
                 <Button
