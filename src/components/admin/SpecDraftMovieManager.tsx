@@ -555,7 +555,7 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
 
       {/* Category Management Dialog */}
       {selectedMovieForCategories && (
-        <Card className="w-full max-w-2xl">
+        <Card className="w-full">
           <CardHeader>
             <CardTitle>Manage Categories for "{selectedMovieForCategories.movie_title}"</CardTitle>
           </CardHeader>
