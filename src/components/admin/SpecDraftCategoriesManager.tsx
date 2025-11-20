@@ -29,6 +29,14 @@ export const SpecDraftCategoriesManager: React.FC<SpecDraftCategoriesManagerProp
   const [categoryName, setCategoryName] = useState('');
   const [description, setDescription] = useState('');
 
+  // Debug: Log custom categories when they change
+  React.useEffect(() => {
+    console.log(`📋 SpecDraftCategoriesManager: Received ${customCategories.length} custom categories for draft ${specDraftId}`);
+    if (customCategories.length > 0) {
+      console.log('Categories:', customCategories.map(c => c.category_name));
+    }
+  }, [customCategories, specDraftId]);
+
   const handleCreate = async () => {
     if (!categoryName.trim()) {
       alert('Category name is required');
@@ -161,6 +169,11 @@ export const SpecDraftCategoriesManager: React.FC<SpecDraftCategoriesManagerProp
             </p>
           ) : (
             <div className="space-y-2">
+              {customCategories.length > 0 && (
+                <div className="text-xs text-gray-500 mb-2">
+                  Showing {customCategories.length} custom categor{customCategories.length === 1 ? 'y' : 'ies'}
+                </div>
+              )}
               {customCategories.map((category) => (
                 <div
                   key={category.id}

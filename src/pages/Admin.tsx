@@ -312,16 +312,32 @@ const Admin = () => {
                 specDraftId={managingMoviesForDraft.id}
                 customCategories={managingMoviesForDraft.customCategories || []}
                 onCreate={async (categoryName, description) => {
-                  await createCustomCategory(managingMoviesForDraft.id, categoryName, description);
-                  handleMovieManagerRefresh();
+                  try {
+                    await createCustomCategory(managingMoviesForDraft.id, categoryName, description);
+                    // Wait a bit for the database to update, then refresh
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    await handleMovieManagerRefresh();
+                  } catch (error) {
+                    console.error('Error creating custom category:', error);
+                  }
                 }}
                 onUpdate={async (id, updates) => {
-                  await updateCustomCategory(id, updates);
-                  handleMovieManagerRefresh();
+                  try {
+                    await updateCustomCategory(id, updates);
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    await handleMovieManagerRefresh();
+                  } catch (error) {
+                    console.error('Error updating custom category:', error);
+                  }
                 }}
                 onDelete={async (id) => {
-                  await deleteCustomCategory(id);
-                  handleMovieManagerRefresh();
+                  try {
+                    await deleteCustomCategory(id);
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    await handleMovieManagerRefresh();
+                  } catch (error) {
+                    console.error('Error deleting custom category:', error);
+                  }
                 }}
                 loading={specDraftsLoading}
               />

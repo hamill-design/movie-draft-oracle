@@ -104,14 +104,21 @@ export const useSpecDraftsAdmin = () => {
       if (moviesError) throw moviesError;
 
       // Fetch custom categories for this spec draft
+      // Explicitly set a high limit to ensure we get all categories (Supabase default is 1000, but being explicit)
       const { data: customCategoriesData, error: customCategoriesError } = await supabase
         .from('spec_draft_categories')
         .select('*')
         .eq('spec_draft_id', specDraftId)
-        .order('category_name', { ascending: true });
+        .order('category_name', { ascending: true })
+        .limit(1000); // Explicit limit to ensure we get all categories
 
       if (customCategoriesError) {
         console.error('Error fetching custom categories:', customCategoriesError);
+      } else {
+        console.log(`✅ Fetched ${customCategoriesData?.length || 0} custom categories for spec draft ${specDraftId}`);
+        if (customCategoriesData && customCategoriesData.length > 0) {
+          console.log('Custom categories:', customCategoriesData.map(c => c.category_name));
+        }
       }
 
       // Fetch categories for each movie
