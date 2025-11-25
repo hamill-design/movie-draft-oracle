@@ -78,6 +78,17 @@ export const uploadSpecDraftPhoto = async (
       throw new Error('File size exceeds 5MB limit. Please upload a smaller image.');
     }
 
+    // Check if bucket exists
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    if (bucketsError) {
+      console.error('Error checking buckets:', bucketsError);
+    } else {
+      const bucketExists = buckets?.some(bucket => bucket.name === 'spec-draft-photos');
+      if (!bucketExists) {
+        throw new Error('Storage bucket "spec-draft-photos" does not exist. Please apply the migration first.');
+      }
+    }
+
     // Resize image to 900x900
     const resizedBlob = await resizeImageToSquare(file);
 
@@ -86,15 +97,27 @@ export const uploadSpecDraftPhoto = async (
     const fileName = `${specDraftId}-${Date.now()}.${fileExt}`;
     const filePath = `${specDraftId}/${fileName}`;
 
+    // Determine content type for the blob (use original file type, default to jpeg)
+    const contentType = file.type || 'image/jpeg';
+    
     // Upload to Supabase storage
     const { data, error } = await supabase.storage
       .from('spec-draft-photos')
       .upload(filePath, resizedBlob, {
-        contentType: file.type,
+        contentType: contentType,
         upsert: false, // Don't overwrite existing files
+        cacheControl: '3600',
       });
 
     if (error) {
+      // Provide more helpful error messages
+      if (error.message?.includes('Bucket not found') || error.message?.includes('does not exist')) {
+        throw new Error('Storage bucket "spec-draft-photos" does not exist. Please apply the migration to create it.');
+      } else if (error.message?.includes('new row violates row-level security policy')) {
+        throw new Error('Permission denied. Please ensure you are logged in and have admin access.');
+      } else if (error.statusCode === 400) {
+        throw new Error(`Upload failed: ${error.message || 'Bad request. Please check file format and size.'}`);
+      }
       throw error;
     }
 

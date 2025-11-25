@@ -13,13 +13,19 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
+-- Drop existing policies if they exist (to allow re-running migration)
+DROP POLICY IF EXISTS "Spec draft photos are publicly readable" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload spec draft photos" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can update spec draft photos" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can delete spec draft photos" ON storage.objects;
+
 -- Create policy to allow public read access
-CREATE POLICY IF NOT EXISTS "Spec draft photos are publicly readable"
+CREATE POLICY "Spec draft photos are publicly readable"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'spec-draft-photos');
 
 -- Create policy to allow authenticated users to upload
-CREATE POLICY IF NOT EXISTS "Authenticated users can upload spec draft photos"
+CREATE POLICY "Authenticated users can upload spec draft photos"
 ON storage.objects FOR INSERT
 WITH CHECK (
   bucket_id = 'spec-draft-photos' AND
@@ -27,7 +33,7 @@ WITH CHECK (
 );
 
 -- Create policy to allow authenticated users to update
-CREATE POLICY IF NOT EXISTS "Authenticated users can update spec draft photos"
+CREATE POLICY "Authenticated users can update spec draft photos"
 ON storage.objects FOR UPDATE
 USING (
   bucket_id = 'spec-draft-photos' AND
@@ -39,7 +45,7 @@ WITH CHECK (
 );
 
 -- Create policy to allow authenticated users to delete
-CREATE POLICY IF NOT EXISTS "Authenticated users can delete spec draft photos"
+CREATE POLICY "Authenticated users can delete spec draft photos"
 ON storage.objects FOR DELETE
 USING (
   bucket_id = 'spec-draft-photos' AND
