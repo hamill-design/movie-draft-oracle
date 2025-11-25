@@ -230,7 +230,7 @@ export const useSpecDraftsAdmin = () => {
           description: description?.trim() || null,
           photo_url: photoUrl || null,
         })
-        .select()
+        .select('id, name, description, photo_url, created_at, updated_at')
         .single();
 
       if (createError) throw createError;
@@ -277,15 +277,49 @@ export const useSpecDraftsAdmin = () => {
         throw new Error('You must be logged in to update spec drafts');
       }
 
-      const { data, error: updateError } = await supabase
+      // Build update object, excluding photo_url if column doesn't exist
+      const updateData: any = {
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+      
+      // Try to update with photo_url first
+      let data: any;
+      let updateError: any;
+      
+      const { data: updateResult, error: updateErr } = await supabase
         .from('spec_drafts')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', id)
-        .select()
+        .select('id, name, description, photo_url, created_at, updated_at')
         .single();
+      
+      data = updateResult;
+      updateError = updateErr;
+      
+      // If photo_url column doesn't exist, try without it
+      if (updateError && (
+        updateError.message?.includes('photo_url') || 
+        updateError.message?.includes('column') ||
+        updateError.code === 'PGRST116' ||
+        updateError.status === 400 ||
+        updateError.statusCode === 400
+      ) && updates.photo_url !== undefined) {
+        // Remove photo_url from update and try again
+        const { photo_url, ...updateWithoutPhoto } = updateData;
+        const { data: fallbackResult, error: fallbackError } = await supabase
+          .from('spec_drafts')
+          .update(updateWithoutPhoto)
+          .eq('id', id)
+          .select('id, name, description, created_at, updated_at')
+          .single();
+        
+        if (fallbackError) throw fallbackError;
+        data = { ...fallbackResult, photo_url: null };
+        updateError = null;
+      }
+      
+      if (updateError) throw updateError;
 
       if (updateError) throw updateError;
 
