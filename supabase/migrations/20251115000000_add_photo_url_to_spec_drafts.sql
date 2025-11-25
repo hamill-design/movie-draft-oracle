@@ -2,22 +2,31 @@
 ALTER TABLE public.spec_drafts 
 ADD COLUMN IF NOT EXISTS photo_url TEXT;
 
--- Create storage bucket for spec draft photos
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES (
-  'spec-draft-photos',
-  'spec-draft-photos', 
-  true,
-  5242880, -- 5MB limit
-  ARRAY['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
-)
-ON CONFLICT (id) DO NOTHING;
+-- Create storage bucket for spec draft photos (if it doesn't exist)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM storage.buckets WHERE id = 'spec-draft-photos'
+  ) THEN
+    INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+    VALUES (
+      'spec-draft-photos',
+      'spec-draft-photos', 
+      true,
+      5242880, -- 5MB limit
+      ARRAY['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
+    );
+  END IF;
+END $$;
 
 -- Drop existing policies if they exist (to allow re-running migration)
-DROP POLICY IF EXISTS "Spec draft photos are publicly readable" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated users can upload spec draft photos" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated users can update spec draft photos" ON storage.objects;
-DROP POLICY IF EXISTS "Authenticated users can delete spec draft photos" ON storage.objects;
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS "Spec draft photos are publicly readable" ON storage.objects;
+  DROP POLICY IF EXISTS "Authenticated users can upload spec draft photos" ON storage.objects;
+  DROP POLICY IF EXISTS "Authenticated users can update spec draft photos" ON storage.objects;
+  DROP POLICY IF EXISTS "Authenticated users can delete spec draft photos" ON storage.objects;
+END $$;
 
 -- Create policy to allow public read access
 CREATE POLICY "Spec draft photos are publicly readable"
