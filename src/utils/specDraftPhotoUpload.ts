@@ -78,25 +78,26 @@ export const uploadSpecDraftPhoto = async (
       throw new Error('File size exceeds 5MB limit. Please upload a smaller image.');
     }
 
-    // Check if bucket exists
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-    if (bucketsError) {
-      console.error('Error checking buckets:', bucketsError);
-      // Continue anyway - the upload will fail with a more specific error if bucket doesn't exist
-    } else {
-      const bucketExists = buckets?.some(bucket => bucket.name === 'spec-draft-photos' || bucket.id === 'spec-draft-photos');
-      console.log('Available buckets:', buckets?.map(b => b.name || b.id));
-      console.log('Looking for bucket: spec-draft-photos');
-      console.log('Bucket exists:', bucketExists);
-      
-      if (!bucketExists) {
-        const bucketNames = buckets?.map(b => b.name || b.id).join(', ') || 'none';
-        throw new Error(
-          `Storage bucket "spec-draft-photos" does not exist. ` +
-          `Available buckets: ${bucketNames}. ` +
-          `Please run the migration SQL in Supabase Dashboard → SQL Editor.`
+    // Check if bucket exists (but don't block if check fails - let the upload try)
+    try {
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      if (!bucketsError && buckets) {
+        const bucketExists = buckets.some(
+          bucket => (bucket.name === 'spec-draft-photos') || (bucket.id === 'spec-draft-photos')
         );
+        if (!bucketExists) {
+          const bucketNames = buckets.map(b => b.name || b.id).join(', ') || 'none';
+          throw new Error(
+            `Storage bucket "spec-draft-photos" does not exist. ` +
+            `Available buckets: ${bucketNames}. ` +
+            `Please create the bucket in Supabase Dashboard → Storage.`
+          );
+        }
       }
+      // If check fails, continue anyway - the upload will provide a more specific error
+    } catch (checkError) {
+      // If bucket check fails, continue to upload attempt
+      console.warn('Bucket check failed, continuing with upload:', checkError);
     }
 
     // Resize image to 900x900
