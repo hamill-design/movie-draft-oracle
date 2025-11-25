@@ -82,10 +82,20 @@ export const uploadSpecDraftPhoto = async (
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     if (bucketsError) {
       console.error('Error checking buckets:', bucketsError);
+      // Continue anyway - the upload will fail with a more specific error if bucket doesn't exist
     } else {
-      const bucketExists = buckets?.some(bucket => bucket.name === 'spec-draft-photos');
+      const bucketExists = buckets?.some(bucket => bucket.name === 'spec-draft-photos' || bucket.id === 'spec-draft-photos');
+      console.log('Available buckets:', buckets?.map(b => b.name || b.id));
+      console.log('Looking for bucket: spec-draft-photos');
+      console.log('Bucket exists:', bucketExists);
+      
       if (!bucketExists) {
-        throw new Error('Storage bucket "spec-draft-photos" does not exist. Please apply the migration first.');
+        const bucketNames = buckets?.map(b => b.name || b.id).join(', ') || 'none';
+        throw new Error(
+          `Storage bucket "spec-draft-photos" does not exist. ` +
+          `Available buckets: ${bucketNames}. ` +
+          `Please run the migration SQL in Supabase Dashboard → SQL Editor.`
+        );
       }
     }
 
