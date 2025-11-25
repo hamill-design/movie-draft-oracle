@@ -59,12 +59,28 @@ export const useSpecDraftsAdmin = () => {
     setError(null);
 
     try {
+      // Explicitly select columns to handle cases where photo_url column might not exist yet
       const { data, error: fetchError } = await supabase
         .from('spec_drafts')
-        .select('*')
+        .select('id, name, description, photo_url, created_at, updated_at')
         .order('created_at', { ascending: false });
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        // If photo_url doesn't exist, try without it
+        if (fetchError.message?.includes('photo_url') || fetchError.message?.includes('column')) {
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('spec_drafts')
+            .select('id, name, description, created_at, updated_at')
+            .order('created_at', { ascending: false });
+          
+          if (fallbackError) throw fallbackError;
+          
+          // Map to include photo_url as null
+          setSpecDrafts((fallbackData || []).map(draft => ({ ...draft, photo_url: null })));
+          return;
+        }
+        throw fetchError;
+      }
 
       setSpecDrafts(data || []);
     } catch (err) {
@@ -85,15 +101,32 @@ export const useSpecDraftsAdmin = () => {
     setError(null);
 
     try {
-      // Fetch spec draft
-      const { data: draftData, error: draftError } = await supabase
+      // Fetch spec draft - explicitly select columns
+      let draftData: any;
+      const { data: initialDraftData, error: draftError } = await supabase
         .from('spec_drafts')
-        .select('*')
+        .select('id, name, description, photo_url, created_at, updated_at')
         .eq('id', specDraftId)
         .single();
-
-      if (draftError) throw draftError;
-      if (!draftData) return null;
+      
+      // If photo_url column doesn't exist, try without it
+      if (draftError && (draftError.message?.includes('photo_url') || draftError.message?.includes('column'))) {
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('spec_drafts')
+          .select('id, name, description, created_at, updated_at')
+          .eq('id', specDraftId)
+          .single();
+        
+        if (fallbackError) throw fallbackError;
+        if (!fallbackData) return null;
+        
+        // Add photo_url as null
+        draftData = { ...fallbackData, photo_url: null };
+      } else {
+        if (draftError) throw draftError;
+        if (!initialDraftData) return null;
+        draftData = initialDraftData;
+      }
 
       // Fetch movies
       const { data: moviesData, error: moviesError } = await supabase
