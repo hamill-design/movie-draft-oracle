@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -34,6 +34,24 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Update form state when specDraft changes
+  useEffect(() => {
+    if (specDraft) {
+      setName(specDraft.name || '');
+      setDescription(specDraft.description || '');
+      // Only update photoPreview if no new file is selected
+      if (!photoFile) {
+        setPhotoPreview(specDraft.photo_url || null);
+      }
+    } else {
+      // Reset form for new draft
+      setName('');
+      setDescription('');
+      setPhotoPreview(null);
+      setPhotoFile(null);
+    }
+  }, [specDraft]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -186,14 +204,19 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
               <Label>Photo (900x900 square)</Label>
               <div className="space-y-3">
                 {/* Show current photo if it exists (from database) */}
-                {specDraft?.photo_url && !photoFile && (
+                {photoPreview && !photoFile && specDraft?.photo_url && (
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-gray-700">Current Photo:</p>
                     <div className="relative inline-block">
                       <img
-                        src={specDraft.photo_url}
+                        src={photoPreview}
                         alt="Current spec draft photo"
                         className="w-48 h-48 object-cover rounded-md border border-gray-300"
+                        onError={(e) => {
+                          console.error('Failed to load photo:', photoPreview);
+                          // Hide the image if it fails to load
+                          setPhotoPreview(null);
+                        }}
                       />
                       <Button
                         type="button"
