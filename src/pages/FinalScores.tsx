@@ -421,18 +421,23 @@ const FinalScores = () => {
               display: 'flex', 
               flexDirection: 'column'
             }}>
-              <div style={{
-                color: 'var(--Greyscale-(Blue)-800, #2B2D2D)', 
-                fontSize: '64px', 
-                fontFamily: 'CHANEY', 
-                fontWeight: '400', 
-                lineHeight: '64px', 
-                whiteSpace: 'nowrap',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                flexWrap: 'nowrap'
-              }}>
+              <div 
+                className="break-words"
+                style={{
+                  color: 'var(--Greyscale-(Blue)-800, #2B2D2D)', 
+                  fontSize: 'clamp(28px, 8vw, 64px)', 
+                  fontFamily: 'CHANEY', 
+                  fontWeight: '400', 
+                  lineHeight: '1.1',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '0.25ch',
+                  maxWidth: '100%',
+                  padding: '0 1rem'
+                }}
+              >
                 <span>THE</span>
                 <span style={{ color: 'var(--Brand-Primary, #680AFF)', margin: '0 0.5ch' }}>
                   {draft.title}

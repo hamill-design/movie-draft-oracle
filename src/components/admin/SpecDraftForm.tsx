@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { SpecDraft } from '@/hooks/useSpecDraftsAdmin';
+import { uploadSpecDraftPhoto, deleteSpecDraftPhoto } from '@/utils/specDraftPhotoUpload';
+import { Upload, X, Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface SpecDraftFormProps {
   specDraft?: SpecDraft | null;
   onSubmit: (data: {
     name: string;
     description?: string;
+    photoUrl?: string;
+    photoFile?: File | null;
   }) => Promise<void>;
   onCancel?: () => void;
   loading?: boolean;
@@ -24,18 +29,121 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
 }) => {
   const [name, setName] = useState(specDraft?.name || '');
   const [description, setDescription] = useState(specDraft?.description || '');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(specDraft?.photo_url || null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please upload a PNG, JPEG, or WebP image.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast({
+        title: 'File too large',
+        description: 'File size exceeds 5MB limit. Please upload a smaller image.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setPhotoFile(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setPhotoPreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!name.trim()) {
-      alert('Spec draft name is required');
+      toast({
+        title: 'Validation Error',
+        description: 'Spec draft name is required',
+        variant: 'destructive',
+      });
       return;
     }
 
+    let photoUrl: string | undefined = undefined;
+
+    // For existing drafts, handle photo upload/removal
+    if (specDraft?.id) {
+      if (photoFile) {
+        // New photo selected - upload it
+        setUploadingPhoto(true);
+        try {
+          // Delete old photo if it exists
+          if (specDraft.photo_url) {
+            try {
+              await deleteSpecDraftPhoto(specDraft.photo_url);
+            } catch (error) {
+              console.error('Error deleting old photo:', error);
+              // Continue anyway
+            }
+          }
+
+          photoUrl = await uploadSpecDraftPhoto(specDraft.id, photoFile);
+        } catch (error) {
+          toast({
+            title: 'Upload Error',
+            description: error instanceof Error ? error.message : 'Failed to upload photo',
+            variant: 'destructive',
+          });
+          setUploadingPhoto(false);
+          return;
+        } finally {
+          setUploadingPhoto(false);
+        }
+      } else if (photoPreview && photoPreview === specDraft.photo_url) {
+        // Keep existing photo
+        photoUrl = specDraft.photo_url;
+      } else if (!photoPreview && specDraft.photo_url) {
+        // Photo was removed
+        try {
+          await deleteSpecDraftPhoto(specDraft.photo_url);
+        } catch (error) {
+          console.error('Error deleting photo:', error);
+          // Continue anyway
+        }
+        photoUrl = undefined;
+      }
+    }
+    // For new drafts, photoFile will be stored and uploaded after draft creation
+
+    // Submit the form
+    // For new drafts, pass the photoFile so parent can upload after creation
     await onSubmit({
       name: name.trim(),
       description: description.trim() || undefined,
+      photoUrl,
+      photoFile: !specDraft ? photoFile : null, // Only pass photoFile for new drafts
     });
   };
 
@@ -73,6 +181,50 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
               />
             </div>
 
+            {/* Photo Upload */}
+            <div className="space-y-2">
+              <Label>Photo (900x900 square)</Label>
+              <div className="space-y-3">
+                {photoPreview ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={photoPreview}
+                      alt="Spec draft preview"
+                      className="w-48 h-48 object-cover rounded-md border border-gray-300"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={handleRemovePhoto}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
+                    <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600 mb-2">No photo uploaded</p>
+                  </div>
+                )}
+                <div>
+                  <Input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
+                    onChange={handlePhotoChange}
+                    className="cursor-pointer"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Upload a square image (will be resized to 900x900). Max 5MB.
+                    {!specDraft && ' Photo will be uploaded after draft creation.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+
             {/* Actions */}
             <div className="flex gap-3 justify-end">
               {onCancel && (
@@ -80,8 +232,19 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
                   Cancel
                 </Button>
               )}
-              <Button type="submit" disabled={loading}>
-                {loading ? 'Saving...' : specDraft ? 'Update Spec Draft' : 'Create Spec Draft'}
+              <Button type="submit" disabled={loading || uploadingPhoto}>
+                {uploadingPhoto ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : loading ? (
+                  'Saving...'
+                ) : specDraft ? (
+                  'Update Spec Draft'
+                ) : (
+                  'Create Spec Draft'
+                )}
               </Button>
             </div>
           </form>

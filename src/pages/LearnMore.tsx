@@ -7,13 +7,27 @@ const LearnMore = () => {
         {/* Hero Section */}
         <section className="self-stretch px-6 py-20 bg-gradient-to-br from-ui-primary via-purple-50 to-ui-primary flex flex-col items-center">
           <div className="w-full max-w-7xl px-6 flex flex-col items-center gap-6">
-            <div className="self-stretch flex flex-col items-center">
-              <h1 className="self-stretch text-center text-text-primary text-6xl font-chaney font-normal leading-18 tracking-normal">
+            <div className="self-stretch flex flex-col items-center px-4">
+              <h1 
+                className="self-stretch text-center text-text-primary font-chaney font-normal break-words"
+                style={{
+                  fontSize: 'clamp(32px, 10vw, 72px)',
+                  lineHeight: '1.1',
+                  maxWidth: '100%'
+                }}
+              >
                 This isn't TRivia.
               </h1>
             </div>
-            <div className="self-stretch flex flex-col items-center">
-              <h2 className="self-stretch text-center text-brand-primary text-6xl font-chaney font-normal leading-18 tracking-normal">
+            <div className="self-stretch flex flex-col items-center px-4">
+              <h2 
+                className="self-stretch text-center text-brand-primary font-chaney font-normal break-words"
+                style={{
+                  fontSize: 'clamp(32px, 10vw, 72px)',
+                  lineHeight: '1.1',
+                  maxWidth: '100%'
+                }}
+              >
                 It's Taste.
               </h2>
             </div>

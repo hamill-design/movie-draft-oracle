@@ -123,9 +123,30 @@ const Admin = () => {
   };
 
   // Spec Draft handlers
-  const handleSpecDraftCreate = async (data: { name: string; description?: string }) => {
+  const handleSpecDraftCreate = async (data: { name: string; description?: string; photoUrl?: string; photoFile?: File | null }) => {
     try {
-      await createSpecDraft(data.name, data.description);
+      // Create the draft first
+      const newDraft = await createSpecDraft(data.name, data.description);
+      
+      // If there's a photo file, upload it after creation
+      if (data.photoFile && newDraft) {
+        const { uploadSpecDraftPhoto } = await import('@/utils/specDraftPhotoUpload');
+        try {
+          const photoUrl = await uploadSpecDraftPhoto(newDraft.id, data.photoFile);
+          // Update the draft with the photo URL
+          await updateSpecDraft(newDraft.id, {
+            photo_url: photoUrl,
+          });
+        } catch (error) {
+          console.error('Error uploading photo:', error);
+          toast({
+            title: 'Photo Upload Error',
+            description: 'Draft created but photo upload failed. You can add a photo later.',
+            variant: 'destructive',
+          });
+        }
+      }
+      
       setSpecDraftSection('list');
       setEditingSpecDraft(null);
     } catch (error) {
@@ -133,11 +154,15 @@ const Admin = () => {
     }
   };
 
-  const handleSpecDraftUpdate = async (data: { name: string; description?: string }) => {
+  const handleSpecDraftUpdate = async (data: { name: string; description?: string; photoUrl?: string }) => {
     if (!editingSpecDraft) return;
 
     try {
-      await updateSpecDraft(editingSpecDraft.id, data);
+      await updateSpecDraft(editingSpecDraft.id, {
+        name: data.name,
+        description: data.description,
+        photo_url: data.photoUrl || null,
+      });
       setSpecDraftSection('list');
       setEditingSpecDraft(null);
     } catch (error) {

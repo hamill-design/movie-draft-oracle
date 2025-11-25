@@ -6,6 +6,7 @@ export interface SpecDraft {
   id: string;
   name: string;
   description: string | null;
+  photo_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -162,7 +163,8 @@ export const useSpecDraftsAdmin = () => {
 
   const createSpecDraft = useCallback(async (
     name: string,
-    description?: string
+    description?: string,
+    photoUrl?: string
   ) => {
     setLoading(true);
     setError(null);
@@ -181,6 +183,7 @@ export const useSpecDraftsAdmin = () => {
         .insert({
           name: name.trim(),
           description: description?.trim() || null,
+          photo_url: photoUrl || null,
         })
         .select()
         .single();
@@ -214,6 +217,7 @@ export const useSpecDraftsAdmin = () => {
     updates: {
       name?: string;
       description?: string | null;
+      photo_url?: string | null;
     }
   ) => {
     setLoading(true);
