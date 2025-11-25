@@ -1,8 +1,10 @@
--- Add photo_url column to spec_drafts table
-ALTER TABLE public.spec_drafts 
-ADD COLUMN IF NOT EXISTS photo_url TEXT;
+-- Quick script to check if bucket exists and create it if needed
+-- Run this in Supabase SQL Editor
 
--- Create storage bucket for spec draft photos (if it doesn't exist)
+-- Check if bucket exists
+SELECT id, name, public FROM storage.buckets WHERE id = 'spec-draft-photos';
+
+-- If the above returns no rows, run this to create the bucket:
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'spec-draft-photos',
@@ -13,18 +15,25 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- Drop existing policies if they exist (to allow re-running migration)
+-- Verify bucket was created
+SELECT id, name, public FROM storage.buckets WHERE id = 'spec-draft-photos';
+
+-- Check if policies exist
+SELECT policyname FROM pg_policies 
+WHERE schemaname = 'storage' 
+AND tablename = 'objects' 
+AND policyname LIKE '%spec draft photos%';
+
+-- If policies don't exist, create them:
 DROP POLICY IF EXISTS "Spec draft photos are publicly readable" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated users can upload spec draft photos" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated users can update spec draft photos" ON storage.objects;
 DROP POLICY IF EXISTS "Authenticated users can delete spec draft photos" ON storage.objects;
 
--- Create policy to allow public read access
 CREATE POLICY "Spec draft photos are publicly readable"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'spec-draft-photos');
 
--- Create policy to allow authenticated users to upload
 CREATE POLICY "Authenticated users can upload spec draft photos"
 ON storage.objects FOR INSERT
 WITH CHECK (
@@ -32,7 +41,6 @@ WITH CHECK (
   auth.role() = 'authenticated'
 );
 
--- Create policy to allow authenticated users to update
 CREATE POLICY "Authenticated users can update spec draft photos"
 ON storage.objects FOR UPDATE
 USING (
@@ -44,7 +52,6 @@ WITH CHECK (
   auth.role() = 'authenticated'
 );
 
--- Create policy to allow authenticated users to delete
 CREATE POLICY "Authenticated users can delete spec draft photos"
 ON storage.objects FOR DELETE
 USING (

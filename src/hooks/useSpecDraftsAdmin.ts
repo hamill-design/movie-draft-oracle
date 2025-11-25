@@ -66,8 +66,14 @@ export const useSpecDraftsAdmin = () => {
         .order('created_at', { ascending: false });
 
       if (fetchError) {
-        // If photo_url doesn't exist, try without it
-        if (fetchError.message?.includes('photo_url') || fetchError.message?.includes('column')) {
+        // If photo_url doesn't exist or there's a 400 error, try without it
+        if (
+          fetchError.message?.includes('photo_url') || 
+          fetchError.message?.includes('column') ||
+          fetchError.code === 'PGRST116' ||
+          fetchError.status === 400 ||
+          fetchError.statusCode === 400
+        ) {
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('spec_drafts')
             .select('id, name, description, created_at, updated_at')
@@ -109,8 +115,14 @@ export const useSpecDraftsAdmin = () => {
         .eq('id', specDraftId)
         .single();
       
-      // If photo_url column doesn't exist, try without it
-      if (draftError && (draftError.message?.includes('photo_url') || draftError.message?.includes('column'))) {
+      // If photo_url column doesn't exist or there's a 400 error, try without it
+      if (draftError && (
+        draftError.message?.includes('photo_url') || 
+        draftError.message?.includes('column') ||
+        draftError.code === 'PGRST116' ||
+        draftError.status === 400 ||
+        draftError.statusCode === 400
+      )) {
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('spec_drafts')
           .select('id, name, description, created_at, updated_at')
