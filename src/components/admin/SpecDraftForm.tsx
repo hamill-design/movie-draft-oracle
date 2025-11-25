@@ -185,29 +185,60 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
             <div className="space-y-2">
               <Label>Photo (900x900 square)</Label>
               <div className="space-y-3">
-                {photoPreview ? (
-                  <div className="relative inline-block">
-                    <img
-                      src={photoPreview}
-                      alt="Spec draft preview"
-                      className="w-48 h-48 object-cover rounded-md border border-gray-300"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="absolute top-2 right-2"
-                      onClick={handleRemovePhoto}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
+                {/* Show current photo if it exists (from database) */}
+                {specDraft?.photo_url && !photoFile && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Current Photo:</p>
+                    <div className="relative inline-block">
+                      <img
+                        src={specDraft.photo_url}
+                        alt="Current spec draft photo"
+                        className="w-48 h-48 object-cover rounded-md border border-gray-300"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={handleRemovePhoto}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                ) : (
+                )}
+                
+                {/* Show preview if a new photo was selected */}
+                {photoFile && photoPreview && photoPreview !== specDraft?.photo_url && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">New Photo Preview:</p>
+                    <div className="relative inline-block">
+                      <img
+                        src={photoPreview}
+                        alt="New photo preview"
+                        className="w-48 h-48 object-cover rounded-md border border-gray-300"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={handleRemovePhoto}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Show upload area if no photo exists */}
+                {!specDraft?.photo_url && !photoFile && (
                   <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
                     <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
                     <p className="text-sm text-gray-600 mb-2">No photo uploaded</p>
                   </div>
                 )}
+                
                 <div>
                   <Input
                     ref={fileInputRef}
@@ -217,7 +248,9 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
                     className="cursor-pointer"
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    Upload a square image (will be resized to 900x900). Max 5MB.
+                    {specDraft?.photo_url 
+                      ? 'Upload a new photo to replace the current one (will be resized to 900x900). Max 5MB.'
+                      : 'Upload a square image (will be resized to 900x900). Max 5MB.'}
                     {!specDraft && ' Photo will be uploaded after draft creation.'}
                   </p>
                 </div>
