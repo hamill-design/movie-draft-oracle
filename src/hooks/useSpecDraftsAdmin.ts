@@ -67,13 +67,17 @@ export const useSpecDraftsAdmin = () => {
 
       if (fetchError) {
         // If photo_url doesn't exist or there's a 400 error, try without it
-        if (
+        const isColumnError = 
           fetchError.message?.includes('photo_url') || 
           fetchError.message?.includes('column') ||
+          fetchError.message?.includes('does not exist') ||
           fetchError.code === 'PGRST116' ||
           fetchError.status === 400 ||
-          fetchError.statusCode === 400
-        ) {
+          fetchError.statusCode === 400 ||
+          (fetchError.message && fetchError.message.toLowerCase().includes('photo'));
+        
+        if (isColumnError) {
+          console.log('photo_url column not found, fetching without it');
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('spec_drafts')
             .select('id, name, description, created_at, updated_at')
@@ -116,13 +120,18 @@ export const useSpecDraftsAdmin = () => {
         .single();
       
       // If photo_url column doesn't exist or there's a 400 error, try without it
-      if (draftError && (
+      const isColumnError = draftError && (
         draftError.message?.includes('photo_url') || 
         draftError.message?.includes('column') ||
+        draftError.message?.includes('does not exist') ||
         draftError.code === 'PGRST116' ||
         draftError.status === 400 ||
-        draftError.statusCode === 400
-      )) {
+        draftError.statusCode === 400 ||
+        (draftError.message && draftError.message.toLowerCase().includes('photo'))
+      );
+      
+      if (isColumnError) {
+        console.log('photo_url column not found, fetching without it');
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('spec_drafts')
           .select('id, name, description, created_at, updated_at')
