@@ -5,6 +5,10 @@ import {
   SidebarProvider,
   Sidebar,
   SidebarHeader,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
@@ -16,7 +20,7 @@ import { SpecDraftForm } from '@/components/admin/SpecDraftForm';
 import { SpecDraftList } from '@/components/admin/SpecDraftList';
 import { SpecDraftMovieManager } from '@/components/admin/SpecDraftMovieManager';
 import { SpecDraftCategoriesManager } from '@/components/admin/SpecDraftCategoriesManager';
-import { ArrowLeft, Plus, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, Users, Film } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Admin = () => {
@@ -230,48 +234,45 @@ const Admin = () => {
       style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}
     >
       <Sidebar 
-        collapsible="none" 
-        className="border-r border-greyscale-blue-200 bg-ui-primary [&_[data-sidebar=sidebar]]:bg-ui-primary [&_[data-sidebar=sidebar]]:text-text-primary w-[206px]"
+        collapsible="icon" 
+        className="border-r border-greyscale-blue-200 bg-ui-primary [&_[data-sidebar=sidebar]]:bg-ui-primary [&_[data-sidebar=sidebar]]:text-text-primary"
       >
-        <SidebarHeader className="p-0">
-          <div className="flex flex-col gap-6 p-0">
-            {/* Back to Profile Button */}
-            <div className="px-3 pt-6">
-              <Button
-                variant="outline"
-                onClick={() => navigate('/profile')}
-                className="bg-ui-primary border-greyscale-blue-200 text-text-primary hover:bg-greyscale-blue-150 h-9 px-3 py-2 rounded-[2px] font-brockmann-medium text-sm leading-5"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Profile
-              </Button>
-            </div>
-            
-            {/* Admin Menu */}
-            <div className="flex flex-col gap-0">
-              <button
-                onClick={() => setActiveSection('actor-categories')}
-                className={`flex items-center px-3 py-1.5 w-full text-left font-brockmann-semibold text-base leading-6 tracking-[0.32px] ${
-                  activeSection === 'actor-categories'
-                    ? 'border-l-2 border-brand-primary text-brand-primary'
-                    : 'text-text-primary'
-                }`}
-              >
-                Actor Spec Categories
-              </button>
-              <button
-                onClick={() => setActiveSection('spec-drafts')}
-                className={`flex items-center px-3 py-1.5 w-full text-left font-brockmann-semibold text-base leading-6 tracking-[0.32px] ${
-                  activeSection === 'spec-drafts'
-                    ? 'border-l-2 border-brand-primary text-brand-primary'
-                    : 'text-text-primary'
-                }`}
-              >
-                Spec Draft Builder
-              </button>
-            </div>
+        <SidebarHeader className="p-4 border-b border-greyscale-blue-200">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/profile')}
+              className="bg-ui-primary border-greyscale-blue-200 text-text-primary hover:bg-greyscale-blue-150 h-9 px-3 py-2 rounded-[2px] font-brockmann-medium text-sm leading-5"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Profile
+            </Button>
           </div>
         </SidebarHeader>
+        <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActiveSection('actor-categories')}
+                isActive={activeSection === 'actor-categories'}
+                className="font-brockmann-semibold text-base leading-6 tracking-[0.32px] data-[active=true]:bg-transparent data-[active=true]:border-l-2 data-[active=true]:border-brand-primary data-[active=true]:text-brand-primary hover:bg-greyscale-blue-150"
+              >
+                <Users className="w-4 h-4" />
+                <span>Actor Spec Categories</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActiveSection('spec-drafts')}
+                isActive={activeSection === 'spec-drafts'}
+                className="font-brockmann-semibold text-base leading-6 tracking-[0.32px] data-[active=true]:bg-transparent data-[active=true]:border-l-2 data-[active=true]:border-brand-primary data-[active=true]:text-brand-primary hover:bg-greyscale-blue-150"
+              >
+                <Film className="w-4 h-4" />
+                <span>Spec Draft Builder</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
       </Sidebar>
       <SidebarInset className="flex flex-col">
         <div className="flex-1 overflow-auto">
