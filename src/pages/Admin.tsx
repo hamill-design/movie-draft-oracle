@@ -252,19 +252,14 @@ const Admin = () => {
             </TabsList>
 
             <TabsContent value="list" className="space-y-4">
-              <div className="flex justify-end">
-                <Button onClick={() => {
-                  setEditingCategory(null);
-                  setActorCategorySection('form');
-                }}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create New Category
-                </Button>
-              </div>
               <ActorSpecCategoryList
                 categories={categories}
                 onEdit={handleEdit}
                 onDelete={deleteCategory}
+                onCreateNew={() => {
+                  setEditingCategory(null);
+                  setActorCategorySection('form');
+                }}
                 loading={categoriesLoading}
               />
             </TabsContent>

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -27,6 +26,7 @@ interface ActorSpecCategoryListProps {
   categories: ActorSpecCategory[];
   onEdit: (category: ActorSpecCategory) => void;
   onDelete: (id: string) => Promise<void>;
+  onCreateNew?: () => void;
   loading?: boolean;
 }
 
@@ -34,6 +34,7 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
   categories,
   onEdit,
   onDelete,
+  onCreateNew,
   loading = false,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -91,115 +92,134 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
 
   if (loading && categories.length === 0) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-gray-500">Loading categories...</div>
-        </CardContent>
-      </Card>
+      <div className="bg-greyscale-blue-100 rounded-[8px] shadow-[0px_0px_3px_0px_rgba(0,0,0,0.25)] p-6">
+        <div className="text-center text-greyscale-blue-600 font-brockmann-regular text-sm leading-5">
+          Loading categories...
+        </div>
+      </div>
     );
   }
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Actor Spec Categories ({categories.length})</CardTitle>
-            <div className="flex items-center gap-2 w-64">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Search categories..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+      <div className="bg-greyscale-blue-100 rounded-[8px] shadow-[0px_0px_3px_0px_rgba(0,0,0,0.25)] p-6 space-y-6">
+        {/* Search and Create Button Section */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div className="flex-1 min-w-0 sm:min-w-[294px]">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-greyscale-blue-400 pointer-events-none" />
+              <Input
+                placeholder="Search for actors, directors..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 h-12 border-greyscale-blue-400 text-sm font-brockmann-medium leading-5 placeholder:text-greyscale-blue-400"
+              />
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
-          {groupedArray.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              {searchQuery ? 'No categories match your search' : 'No categories found'}
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {groupedArray.map((group) => (
-                <div key={`${group.actor_name}_${group.actor_tmdb_id || 'no-id'}`} className="space-y-2">
-                  {/* Actor Header */}
-                  <div className="flex items-center gap-2 pb-2 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">
+          {onCreateNew && (
+            <Button
+              onClick={onCreateNew}
+              className="bg-brand-primary text-ui-primary hover:bg-brand-primary/90 h-12 px-6 py-3 rounded-[2px] font-brockmann-semibold text-base leading-6 tracking-[0.32px] whitespace-nowrap"
+            >
+              Create New Category
+            </Button>
+          )}
+        </div>
+
+        {/* Categories List */}
+        {groupedArray.length === 0 ? (
+          <div className="text-center py-8 text-greyscale-blue-600 font-brockmann-regular text-sm leading-5">
+            {searchQuery ? 'No categories match your search' : 'No categories found'}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {groupedArray.map((group, groupIndex) => (
+              <div key={`${group.actor_name}_${group.actor_tmdb_id || 'no-id'}`} className="space-y-0">
+                {/* Actor Header with Purple Background */}
+                <div className="bg-purple-100 px-3 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-base font-brockmann-semibold text-text-primary leading-6 tracking-[0.32px]">
                       {group.actor_name}
                     </h3>
                     {group.actor_tmdb_id && (
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
                         (ID: {group.actor_tmdb_id})
                       </span>
                     )}
-                    <span className="text-sm text-gray-400">
-                      {group.categories.length} {group.categories.length === 1 ? 'category' : 'categories'}
-                    </span>
                   </div>
-
-                  {/* Categories Table */}
-                  <div className="overflow-x-auto">
-                    <Table className="w-full">
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[25%]">Category Name</TableHead>
-                          <TableHead className="w-[15%]">Movie Count</TableHead>
-                          <TableHead className="w-[45%]">Description</TableHead>
-                          <TableHead className="w-[15%] text-right">Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {group.categories.map((category) => (
-                          <TableRow key={category.id}>
-                            <TableCell className="font-medium w-[25%]">
-                              {category.category_name}
-                            </TableCell>
-                            <TableCell className="w-[15%]">
-                              <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">
-                                {category.movie_tmdb_ids?.length || 0} movies
-                              </span>
-                            </TableCell>
-                            <TableCell className="w-[45%]">
-                              <div className="truncate" title={category.description || undefined}>
-                                {category.description || '-'}
-                              </div>
-                            </TableCell>
-                            <TableCell className="w-[15%] text-right">
-                              <div className="flex justify-end gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => onEdit(category)}
-                                  disabled={loading}
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleDeleteClick(category)}
-                                  disabled={loading}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                  <div className="text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
+                    {group.categories.length} {group.categories.length === 1 ? 'category' : 'categories'}
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+                {/* Categories Table */}
+                <div className="overflow-x-auto">
+                  <Table className="w-full">
+                    <TableHeader>
+                      <TableRow className="border-b border-greyscale-blue-300 hover:bg-transparent">
+                        <TableHead className="px-4 py-3 text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
+                          Category Name
+                        </TableHead>
+                        <TableHead className="px-4 py-3 text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
+                          Movie Count
+                        </TableHead>
+                        <TableHead className="px-4 py-3 text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
+                          Description
+                        </TableHead>
+                        <TableHead className="px-4 py-3 text-sm font-brockmann-regular text-greyscale-blue-600 leading-5 text-right">
+                          Actions
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {group.categories.map((category, index) => (
+                        <TableRow
+                          key={category.id}
+                          className={`${
+                            index % 2 === 0 ? 'bg-greyscale-blue-150' : 'bg-transparent'
+                          } border-0 hover:bg-greyscale-blue-200`}
+                        >
+                          <TableCell className="px-4 py-3 text-sm font-brockmann-medium text-text-primary leading-5">
+                            {category.category_name}
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-sm font-brockmann-medium text-text-primary leading-5">
+                            {category.movie_tmdb_ids?.length || 0}
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-sm font-brockmann-medium text-text-primary leading-5">
+                            {category.description || '-'}
+                          </TableCell>
+                          <TableCell className="px-4 py-3 text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => onEdit(category)}
+                                disabled={loading}
+                                className="h-8 w-8 p-2 hover:bg-greyscale-blue-200"
+                              >
+                                <Edit2 className="w-4 h-4 text-text-primary" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteClick(category)}
+                                disabled={loading}
+                                className="h-8 w-8 p-2 hover:bg-greyscale-blue-200"
+                              >
+                                <Trash2 className="w-4 h-4 text-text-primary" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -215,7 +235,7 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               disabled={deleting}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-error-red-500 hover:bg-error-red-600"
             >
               {deleting ? 'Deleting...' : 'Delete'}
             </AlertDialogAction>
