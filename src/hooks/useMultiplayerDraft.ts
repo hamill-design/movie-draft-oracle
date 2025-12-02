@@ -74,6 +74,16 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   const draftChannelRef = useRef<any>(null);
   const picksChannelRef = useRef<any>(null);
   const participantsChannelRef = useRef<any>(null);
+  
+  // Connection monitoring and health checks
+  const [isConnected, setIsConnected] = useState(true);
+  const lastUpdateTimeRef = useRef<number>(Date.now());
+  const subscriptionHealthCheckRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isReconnectingRef = useRef(false);
+  const debounceReloadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const loadDraftRef = useRef<((id: string) => Promise<void>) | null>(null);
 
   // Get current participant name
   const getCurrentParticipantName = useCallback(() => {
@@ -90,6 +100,83 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     // This function is kept for backward compatibility but is now optional
     // Real-time updates are handled by database subscriptions
     console.log('Broadcast (optional):', type, payload);
+  }, []);
+
+  // Debounced reload function to prevent excessive reloads
+  const debouncedReload = useCallback((draftId: string) => {
+    if (debounceReloadTimeoutRef.current) {
+      clearTimeout(debounceReloadTimeoutRef.current);
+    }
+    debounceReloadTimeoutRef.current = setTimeout(() => {
+      console.log('🔄 Debounced reload triggered');
+      if (loadDraftRef.current) {
+        loadDraftRef.current(draftId);
+      }
+    }, 500);
+  }, []);
+
+  // Update last activity timestamp
+  const updateLastActivity = useCallback(() => {
+    lastUpdateTimeRef.current = Date.now();
+    setIsConnected(true);
+  }, []);
+
+  // Start fallback polling if subscriptions appear inactive
+  const startPolling = useCallback((draftId: string) => {
+    if (pollingIntervalRef.current) return; // Already polling
+    
+    console.log('📡 Starting fallback polling');
+    pollingIntervalRef.current = setInterval(() => {
+      const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
+      // If no updates for 10 seconds, reload draft
+      if (timeSinceLastUpdate > 10000) {
+        console.log('📡 Polling: No updates received, reloading draft');
+        if (loadDraftRef.current) {
+          loadDraftRef.current(draftId);
+        }
+      }
+    }, 5000); // Check every 5 seconds
+  }, []);
+
+  // Stop polling when subscriptions are healthy
+  const stopPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      console.log('📡 Stopping fallback polling');
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  }, []);
+
+  // Reconnect subscriptions
+  const reconnectSubscriptions = useCallback((draftId: string) => {
+    if (isReconnectingRef.current) return;
+    isReconnectingRef.current = true;
+    
+    console.log('🔄 Reconnecting subscriptions...');
+    
+    // Clean up existing subscriptions
+    if (draftChannelRef.current) {
+      supabase.removeChannel(draftChannelRef.current);
+      draftChannelRef.current = null;
+    }
+    if (picksChannelRef.current) {
+      supabase.removeChannel(picksChannelRef.current);
+      picksChannelRef.current = null;
+    }
+    if (participantsChannelRef.current) {
+      supabase.removeChannel(participantsChannelRef.current);
+      participantsChannelRef.current = null;
+    }
+    
+    // Reload draft to get fresh state
+    if (loadDraftRef.current) {
+      loadDraftRef.current(draftId).finally(() => {
+        // Reconnection will happen automatically via the subscription useEffect
+        isReconnectingRef.current = false;
+      });
+    } else {
+      isReconnectingRef.current = false;
+    }
   }, []);
 
   // Enrich participants with emails from profiles
@@ -223,8 +310,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           } else {
             const emailResults = inviteResponse.data;
             if (emailResults?.success && emailResults.invitations) {
-              const successful = emailResults.invitations.filter(inv => inv.status === 'sent').length;
-              const simulated = emailResults.invitations.filter(inv => inv.status === 'simulated').length;
+              const successful = emailResults.invitations.filter((inv: any) => inv.status === 'sent').length;
+              const simulated = emailResults.invitations.filter((inv: any) => inv.status === 'simulated').length;
               
               if (simulated > 0) {
                 toast({
@@ -277,16 +364,18 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       console.log('📋 Updated draft data:', updatedDraft);
 
       // Update local state
-      const newDraftState = {
-        ...draft,
-        turn_order: updatedDraft.draft_turn_order,
-        current_turn_user_id: updatedDraft.draft_current_turn_user_id,
-        current_turn_participant_id: updatedDraft.draft_current_turn_participant_id,
-        current_pick_number: updatedDraft.draft_current_pick_number
-      };
-      
-      console.log('🔄 Setting new draft state:', newDraftState);
-      setDraft(newDraftState);
+      if (draft) {
+        const newDraftState: MultiplayerDraft = {
+          ...draft,
+          turn_order: updatedDraft.draft_turn_order,
+          current_turn_user_id: updatedDraft.draft_current_turn_user_id,
+          current_turn_participant_id: updatedDraft.draft_current_turn_participant_id,
+          current_pick_number: updatedDraft.draft_current_pick_number
+        };
+        
+        console.log('🔄 Setting new draft state:', newDraftState);
+        setDraft(newDraftState);
+      }
 
       // Check if it's the current user's turn using unified ID
       const currentTurnId = updatedDraft.draft_current_turn_participant_id || updatedDraft.draft_current_turn_user_id;
@@ -295,7 +384,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       setIsMyTurn(isCurrentUserTurn);
 
       // Get first player name from turn order
-      const firstPlayerName = updatedDraft.draft_turn_order?.[0]?.participant_name || 'Unknown';
+      const turnOrder = updatedDraft.draft_turn_order as any;
+      const firstPlayerName = (Array.isArray(turnOrder) && turnOrder[0]?.participant_name) || 'Unknown';
       console.log('👤 First player:', firstPlayerName, 'Turn order:', updatedDraft.draft_turn_order);
 
       // Real-time updates are handled by database subscriptions
@@ -389,6 +479,11 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       throw error;
     }
   }, [participantId, toast, enrichParticipantsWithEmails]);
+
+  // Update the ref whenever loadDraft changes
+  useEffect(() => {
+    loadDraftRef.current = loadDraft;
+  }, [loadDraft]);
 
   // Join a draft by invite code
   const joinDraftByCode = useCallback(async (inviteCode: string, participantName: string) => {
@@ -506,8 +601,23 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         throw new Error(pickResult.message || 'Failed to make pick');
       }
 
+      // Update last activity
+      updateLastActivity();
+
       // Real-time updates are handled by database subscriptions
-      // No need to reload - subscriptions will update the UI automatically
+      // However, add a fallback reload after 2 seconds if subscription doesn't fire
+      const fallbackTimeout = setTimeout(() => {
+        console.log('⚠️ Fallback: Reloading draft after pick (subscription may have missed update)');
+        if (draft?.id) {
+          debouncedReload(draft.id);
+        }
+      }, 2000);
+
+      // Store timeout ref to clear if subscription fires
+      const timeoutRef = { current: fallbackTimeout };
+      
+      // Clear fallback if we get a subscription update (checked in subscription handler)
+      (window as any).__draftFallbackTimeout = timeoutRef;
 
       toast({
         title: "Pick Made!",
@@ -540,7 +650,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       }
       throw error;
     }
-  }, [draft?.id, participantId, loadDraft, toast]);
+  }, [draft?.id, participantId, toast, updateLastActivity, debouncedReload]);
 
   // Compute isMyTurn using unified participant ID
   const computedIsMyTurn = useMemo(() => {
@@ -571,15 +681,38 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   }, [draftId, participantId, draft, loadDraft]);
 
 
-  // Set up real-time database subscriptions
+  // Set up real-time database subscriptions with enhanced reliability
   useEffect(() => {
     if (!draftId || !participantId) return;
 
-    console.log(`🔴 Setting up database subscriptions for draft: ${draftId}, participant: ${participantId}`);
+    // Clean up any existing subscriptions first
+    if (draftChannelRef.current) {
+      supabase.removeChannel(draftChannelRef.current);
+      draftChannelRef.current = null;
+    }
+    if (picksChannelRef.current) {
+      supabase.removeChannel(picksChannelRef.current);
+      picksChannelRef.current = null;
+    }
+    if (participantsChannelRef.current) {
+      supabase.removeChannel(participantsChannelRef.current);
+      participantsChannelRef.current = null;
+    }
+
+    // Clear any existing timers
+    if (subscriptionHealthCheckRef.current) {
+      clearInterval(subscriptionHealthCheckRef.current);
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+    }
+
+    console.log(`🔴 Setting up enhanced database subscriptions for draft: ${draftId}, participant: ${participantId}`);
+    updateLastActivity();
 
     // Draft changes subscription (turn order, current turn, completion status)
     const draftChannel = supabase
-      .channel(`draft-${draftId}`)
+      .channel(`draft-${draftId}-${Date.now()}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -587,32 +720,49 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         filter: `id=eq.${draftId}`
       }, (payload) => {
         console.log('📥 Draft change received:', payload);
+        updateLastActivity();
+        stopPolling(); // Subscriptions are working, stop polling
+        
+        // Clear fallback timeout if it exists
+        if ((window as any).__draftFallbackTimeout) {
+          clearTimeout((window as any).__draftFallbackTimeout.current);
+          delete (window as any).__draftFallbackTimeout;
+        }
         
         // Update draft state directly from payload
         if (payload.new) {
-          setDraft(prev => ({
-            ...prev,
-            ...payload.new,
-            // Ensure we maintain the correct structure
-            current_turn_participant_id: payload.new.current_turn_participant_id || payload.new.current_turn_user_id,
-            current_pick_number: payload.new.current_pick_number,
-            is_complete: payload.new.is_complete,
-            turn_order: payload.new.turn_order
-          }));
+          const newPayload = payload.new as any;
+          const oldPayload = payload.old as any;
+          
+          setDraft(prev => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              ...newPayload,
+              // Ensure we maintain the correct structure
+              current_turn_participant_id: newPayload.current_turn_participant_id || newPayload.current_turn_user_id,
+              current_pick_number: newPayload.current_pick_number,
+              is_complete: newPayload.is_complete,
+              turn_order: newPayload.turn_order
+            };
+          });
           
           // Check if turn changed
-          const newTurnId = payload.new.current_turn_participant_id || payload.new.current_turn_user_id;
+          const newTurnId = newPayload.current_turn_participant_id || newPayload.current_turn_user_id;
           setIsMyTurn(newTurnId === participantId);
           
           // Show toast for important changes
           if (payload.eventType === 'UPDATE') {
-            if (payload.new.is_complete) {
+            if (newPayload.is_complete) {
               toast({
                 title: "Draft Complete!",
                 description: "All picks have been made!",
               });
-            } else if (payload.old?.current_turn_participant_id !== payload.new.current_turn_participant_id) {
-              // Turn changed
+            } else if (oldPayload?.current_turn_participant_id !== newPayload.current_turn_participant_id || 
+                       oldPayload?.current_turn_user_id !== newPayload.current_turn_user_id) {
+              // Turn changed - reload to get fresh participant data
+              debouncedReload(draftId);
+              
               const currentTurnPlayer = participants.find(p => 
                 (p.participant_id || p.user_id || p.guest_participant_id) === newTurnId
               );
@@ -626,11 +776,37 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           }
         }
       })
-      .subscribe();
+      .on('presence', { event: 'sync' }, () => {
+        console.log('👥 Presence sync');
+        updateLastActivity();
+      })
+      .on('broadcast', { event: 'heartbeat' }, () => {
+        console.log('💓 Heartbeat received');
+        updateLastActivity();
+      })
+      .subscribe((status) => {
+        console.log('📡 Draft channel status:', status);
+        if (status === 'SUBSCRIBED') {
+          setIsConnected(true);
+          stopPolling();
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn('⚠️ Draft channel error:', status);
+          setIsConnected(false);
+          startPolling(draftId);
+          
+          // Attempt reconnection after delay
+          if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
+          }
+          reconnectTimeoutRef.current = setTimeout(() => {
+            reconnectSubscriptions(draftId);
+          }, 3000);
+        }
+      });
 
     // Picks subscription (new picks added)
     const picksChannel = supabase
-      .channel(`picks-${draftId}`)
+      .channel(`picks-${draftId}-${Date.now()}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -638,10 +814,31 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         filter: `draft_id=eq.${draftId}`
       }, (payload) => {
         console.log('📥 New pick received:', payload);
+        updateLastActivity();
+        stopPolling(); // Subscriptions are working, stop polling
+        
+        // Clear fallback timeout if it exists
+        if ((window as any).__draftFallbackTimeout) {
+          clearTimeout((window as any).__draftFallbackTimeout.current);
+          delete (window as any).__draftFallbackTimeout;
+        }
         
         // Add new pick to state
         if (payload.new) {
-          setPicks(prev => [...prev, payload.new]);
+          setPicks(prev => {
+            // Check if pick already exists to avoid duplicates
+            const exists = prev.some(p => 
+              p.id === payload.new.id || 
+              (p.movie_id === payload.new.movie_id && 
+               p.player_id === payload.new.player_id && 
+               p.category === payload.new.category)
+            );
+            if (exists) return prev;
+            return [...prev, payload.new];
+          });
+          
+          // IMPORTANT: Also reload draft state to ensure turn information is updated
+          debouncedReload(draftId);
           
           // Show toast for new picks
           toast({
@@ -650,11 +847,21 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           });
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 Picks channel status:', status);
+        if (status === 'SUBSCRIBED') {
+          setIsConnected(true);
+          stopPolling();
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn('⚠️ Picks channel error:', status);
+          setIsConnected(false);
+          startPolling(draftId);
+        }
+      });
 
     // Participants subscription (joins/leaves)
     const participantsChannel = supabase
-      .channel(`participants-${draftId}`)
+      .channel(`participants-${draftId}-${Date.now()}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -662,9 +869,11 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         filter: `draft_id=eq.${draftId}`
       }, (payload) => {
         console.log('📥 Participant change received:', payload);
+        updateLastActivity();
+        stopPolling(); // Subscriptions are working, stop polling
         
-        // Reload participants when changes occur
-        loadDraft(draftId);
+        // Reload participants when changes occur (debounced)
+        debouncedReload(draftId);
         
         // Show toast for participant changes
         if (payload.eventType === 'INSERT') {
@@ -679,15 +888,53 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           });
         }
       })
-      .subscribe();
+      .subscribe((status) => {
+        console.log('📡 Participants channel status:', status);
+        if (status === 'SUBSCRIBED') {
+          setIsConnected(true);
+          stopPolling();
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+          console.warn('⚠️ Participants channel error:', status);
+          setIsConnected(false);
+          startPolling(draftId);
+        }
+      });
 
     // Store channel references
     draftChannelRef.current = draftChannel;
     picksChannelRef.current = picksChannel;
     participantsChannelRef.current = participantsChannel;
 
+    // Health check: monitor subscription activity
+    subscriptionHealthCheckRef.current = setInterval(() => {
+      const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
+      if (timeSinceLastUpdate > 15000) { // 15 seconds without updates
+        console.warn('⚠️ Health check: No updates for 15 seconds, starting polling');
+        setIsConnected(false);
+        startPolling(draftId);
+      }
+    }, 10000); // Check every 10 seconds
+
+    // Cleanup function
     return () => {
       console.log('🧹 Cleaning up database subscriptions');
+      
+      if (subscriptionHealthCheckRef.current) {
+        clearInterval(subscriptionHealthCheckRef.current);
+        subscriptionHealthCheckRef.current = null;
+      }
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      if (debounceReloadTimeoutRef.current) {
+        clearTimeout(debounceReloadTimeoutRef.current);
+        debounceReloadTimeoutRef.current = null;
+      }
       
       if (draftChannelRef.current) {
         supabase.removeChannel(draftChannelRef.current);
@@ -702,7 +949,59 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         participantsChannelRef.current = null;
       }
     };
-  }, [draftId, participantId, loadDraft, toast, participants]);
+  }, [draftId, participantId, toast, participants, updateLastActivity, stopPolling, startPolling, reconnectSubscriptions, debouncedReload]);
+
+  // Mobile-specific optimizations: Handle visibility changes (tab switching, app backgrounding)
+  useEffect(() => {
+    if (!draftId || !participantId) return;
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('👁️ Tab became visible, checking connection...');
+        updateLastActivity();
+        
+        // If we haven't received updates recently, reconnect
+        const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
+        if (timeSinceLastUpdate > 5000) {
+          console.log('🔄 Reconnecting after visibility change');
+          reconnectSubscriptions(draftId);
+        }
+      } else {
+        console.log('👁️ Tab became hidden');
+      }
+    };
+
+    const handleOnline = () => {
+      console.log('🌐 Network came online, reconnecting...');
+      updateLastActivity();
+      reconnectSubscriptions(draftId);
+    };
+
+    const handleOffline = () => {
+      console.log('🌐 Network went offline');
+      setIsConnected(false);
+      startPolling(draftId);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [draftId, participantId, updateLastActivity, reconnectSubscriptions, startPolling]);
+
+  // Manual refresh function for UI
+  const manualRefresh = useCallback(() => {
+    if (draftId && loadDraftRef.current) {
+      console.log('🔄 Manual refresh triggered');
+      loadDraftRef.current(draftId);
+      updateLastActivity();
+    }
+  }, [draftId, updateLastActivity]);
 
   return {
     draft,
@@ -710,10 +1009,12 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     picks,
     loading,
     isMyTurn,
+    isConnected,
     createMultiplayerDraft,
     joinDraftByCode,
     makePick,
     loadDraft,
     startDraft,
+    manualRefresh,
   };
 };

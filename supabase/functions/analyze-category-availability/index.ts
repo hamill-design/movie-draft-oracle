@@ -241,6 +241,38 @@ serve(async (req) => {
   }
 });
 
+// Helper function to get spec categories for an actor
+async function getActorSpecCategories(actorName: string): Promise<Map<string, number[]>> {
+  const specCategoriesMap = new Map<string, number[]>();
+  
+  try {
+    // Try exact match first
+    let { data, error } = await globalSupabase
+      .from('actor_spec_categories')
+      .select('category_name, movie_tmdb_ids')
+      .eq('actor_name', actorName);
+    
+    if (error || !data || data.length === 0) {
+      // Try case-insensitive match
+      ({ data, error } = await globalSupabase
+        .from('actor_spec_categories')
+        .select('category_name, movie_tmdb_ids')
+        .ilike('actor_name', actorName));
+    }
+    
+    if (!error && data && data.length > 0) {
+      data.forEach((row: any) => {
+        specCategoriesMap.set(row.category_name, row.movie_tmdb_ids || []);
+      });
+      console.log(`✅ Found ${specCategoriesMap.size} spec categories for ${actorName}`);
+    }
+  } catch (err) {
+    console.error(`Error fetching spec categories for ${actorName}:`, err);
+  }
+  
+  return specCategoriesMap;
+}
+
 async function analyzeCategoryMovies(
   supabase: any,
   category: string,
@@ -248,6 +280,12 @@ async function analyzeCategoryMovies(
   option: string,
   playerCount: number
 ): Promise<CategoryAvailabilityResult> {
+  
+  // Get spec categories if this is a person-based theme
+  let specCategoriesMap = new Map<string, number[]>();
+  if (theme === 'people' && option) {
+    specCategoriesMap = await getActorSpecCategories(option);
+  }
   
   // Map theme and option to proper fetch-movies parameters
   let fetchParams: any = {
@@ -320,7 +358,7 @@ async function analyzeCategoryMovies(
 
   // Filter movies that match the category
   const eligibleMovies = movies.filter((movie: any) => 
-    isMovieEligibleForCategory(movie, category)
+    isMovieEligibleForCategory(movie, category, theme, option, specCategoriesMap)
   );
 
   // Log decade coverage post-filter for decade categories
@@ -418,7 +456,27 @@ async function analyzeCategoryMovies(
   };
 }
 
-function isMovieEligibleForCategory(movie: any, category: string): boolean {
+function isMovieEligibleForCategory(
+  movie: any, 
+  category: string, 
+  theme?: string, 
+  option?: string, 
+  specCategoriesMap?: Map<string, number[]>
+): boolean {
+  // Check if this is a spec category for the current actor
+  if (theme === 'people' && option && specCategoriesMap && specCategoriesMap.has(category)) {
+    const allowedMovieIds = specCategoriesMap.get(category) || [];
+    const movieId = movie.id || movie.tmdbId;
+    
+    if (movieId && allowedMovieIds.includes(movieId)) {
+      console.log(`✅ Spec category match: "${movie.title}" (ID: ${movieId}) matches ${category} for ${option}`);
+      return true;
+    }
+    // If it's a spec category but movie ID doesn't match, return false
+    // (don't fall through to standard category logic for spec categories)
+    return false;
+  }
+  
   // Enhanced year extraction with comprehensive fallback logic
   let year = 0;
   

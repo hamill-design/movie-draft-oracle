@@ -32,11 +32,18 @@ const DraftHeader = ({
       {/* Draft Info */}
       <div className="mb-6">
         <div className="p-6">
-          <div className="flex flex-col justify-center items-center gap-4 text-center">
-            <span className="text-text-primary text-[32px] font-brockmann font-medium leading-[36px] tracking-[1.28px]">
+          <div className="flex flex-col justify-center items-center gap-4 text-center px-4">
+            <span className="text-text-primary text-[20px] sm:text-[24px] md:text-[32px] font-brockmann font-medium leading-tight tracking-[1.28px]">
               NOW DRAFTING
             </span>
-            <div className="text-[64px] font-chaney font-normal leading-[64px] text-center">
+            <div 
+              className="font-chaney font-normal text-center break-words"
+              style={{
+                fontSize: 'clamp(28px, 8vw, 64px)',
+                lineHeight: '1.1',
+                maxWidth: '100%'
+              }}
+            >
               <span className="text-purple-500">
                 {theme === 'people' ? getCleanActorName(draftOption).toUpperCase() + ' ' : draftOption.toString() + ' '}
               </span>

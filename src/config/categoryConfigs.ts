@@ -256,3 +256,49 @@ export const getCategoriesForTheme = (theme: string): CategoryConfig[] => {
     config.themes.includes(theme)
   );
 };
+
+/**
+ * Get spec categories for an actor as CategoryConfig objects
+ * This allows spec categories to be included in category selection UI
+ */
+export const getSpecCategoriesForActor = async (actorName: string): Promise<CategoryConfig[]> => {
+  try {
+    const { supabase } = await import('@/integrations/supabase/client');
+    
+    // Try exact match first
+    let { data, error } = await supabase
+      .from('actor_spec_categories')
+      .select('category_name, movie_tmdb_ids, description')
+      .eq('actor_name', actorName);
+
+    if (error || !data || data.length === 0) {
+      // Try case-insensitive match
+      ({ data, error } = await supabase
+        .from('actor_spec_categories')
+        .select('category_name, movie_tmdb_ids, description')
+        .ilike('actor_name', actorName));
+    }
+
+    if (error || !data || data.length === 0) {
+      return [];
+    }
+
+    // Convert spec categories to CategoryConfig format
+    return data.map((row: any) => ({
+      id: `spec-${row.category_name.toLowerCase().replace(/\s+/g, '-')}`,
+      name: row.category_name,
+      description: row.description || `Movies from ${row.category_name} for this actor`,
+      minMoviesRequired: (playerCount: number) => Math.max(playerCount * 1.0, 1),
+      validationRules: [
+        { type: 'minMovies', config: { minimum: 1 } },
+        { type: 'themeCompatible', config: { themes: ['people'] } }
+      ],
+      themes: ['people'],
+      popularity: 'medium' as const,
+      icon: '⭐'
+    }));
+  } catch (err) {
+    console.error('Error fetching spec categories:', err);
+    return [];
+  }
+};

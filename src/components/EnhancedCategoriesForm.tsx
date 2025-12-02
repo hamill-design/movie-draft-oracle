@@ -1,10 +1,137 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { CheckboxIcon } from '@/components/icons';
 import { categoryValidationService } from '@/services/categoryValidationService';
 import { progressiveCategoryService } from '@/services/progressiveCategoryService';
 import { CategoryAnalysisResponse, CategoryAvailabilityResult } from '@/types/categoryTypes';
-import { getCategoryConfig, getCategoriesForTheme } from '@/config/categoryConfigs';
+import { getCategoryConfig, getCategoriesForTheme, getSpecCategoriesForActor } from '@/config/categoryConfigs';
+import { getCleanActorName } from '@/lib/utils';
+
+/**
+ * Sort categories in the desired order:
+ * 1. Spec categories (custom)
+ * 2. Genres (Action/Adventure, Comedy, Drama/Romance, etc.)
+ * 3. Decades chronologically (30's, 40's, 50's, 60's, 70's, 80's, 90's, 2000's, 2010's, 2020's)
+ * 4. Academy Award and Blockbuster at the end
+ */
+const sortCategoriesForDisplay = (specCategories: string[], regularCategories: string[]): string[] => {
+  // Define category groups
+  const genreCategories = [
+    'Action/Adventure',
+    'Animated',
+    'Comedy',
+    'Drama/Romance',
+    'Horror/Thriller',
+    'Sci-Fi/Fantasy'
+  ];
+  
+  const decadeCategories = [
+    "30's",
+    "40's",
+    "50's",
+    "60's",
+    "70's",
+    "80's",
+    "90's",
+    "2000's",
+    "2010's",
+    "2020's"
+  ];
+  
+  const endCategories = [
+    'Academy Award Nominee or Winner',
+    'Blockbuster (minimum of $50 Mil)'
+  ];
+  
+  // Separate regular categories into groups
+  const genres: string[] = [];
+  const decades: string[] = [];
+  const end: string[] = [];
+  const other: string[] = [];
+  
+  regularCategories.forEach(category => {
+    if (genreCategories.includes(category)) {
+      genres.push(category);
+    } else if (decadeCategories.includes(category)) {
+      decades.push(category);
+    } else if (endCategories.includes(category)) {
+      end.push(category);
+    } else {
+      other.push(category);
+    }
+  });
+  
+  // Sort genres in the defined order
+  const sortedGenres = genreCategories.filter(cat => genres.includes(cat));
+  
+  // Sort decades chronologically
+  const sortedDecades = decadeCategories.filter(cat => decades.includes(cat));
+  
+  // Sort end categories in the defined order
+  const sortedEnd = endCategories.filter(cat => end.includes(cat));
+  
+  // Combine: spec categories first, then genres, then decades, then other, then end categories
+  // Build array step by step to ensure correct order
+  const sorted: string[] = [];
+  
+  // 1. Spec categories first
+  sorted.push(...specCategories);
+  
+  // 2. Genres
+  sorted.push(...sortedGenres);
+  
+  // 3. Decades chronologically
+  sorted.push(...sortedDecades);
+  
+  // 4. Other categories
+  sorted.push(...other);
+  
+  // 5. End categories (Academy Award and Blockbuster)
+  sorted.push(...sortedEnd);
+  
+  console.log('🔍 Sorting categories - INPUT:', {
+    specCategories,
+    regularCategories,
+    sortedGenres,
+    sortedDecades,
+    other,
+    sortedEnd
+  });
+  
+  // Verify the array was built correctly by checking each index
+  console.log('🔍 VERIFICATION - Array contents by index:');
+  for (let i = 0; i < sorted.length; i++) {
+    console.log(`  [${i}]: "${sorted[i]}"`);
+  }
+  
+  // Expected order verification
+  const expectedFirst = specCategories.length > 0 ? specCategories[0] : sortedGenres[0];
+  const actualFirst = sorted[0];
+  console.log(`🔍 First item - Expected: "${expectedFirst}", Actual: "${actualFirst}"`);
+  
+  if (actualFirst !== expectedFirst) {
+    console.error('❌ ARRAY ORDER IS WRONG! The first item does not match expected order!');
+    console.error('Expected order:', [
+      ...specCategories,
+      ...sortedGenres,
+      ...sortedDecades,
+      ...other,
+      ...sortedEnd
+    ]);
+    console.error('Actual order:', sorted);
+  }
+  
+  console.log('✅ Sorting categories - OUTPUT:', {
+    step1_specCategories: specCategories,
+    step2_sortedGenres: sortedGenres,
+    step3_sortedDecades: sortedDecades,
+    step4_other: other,
+    step5_sortedEnd: sortedEnd,
+    finalJSON: JSON.stringify(sorted)
+  });
+  
+  return sorted;
+}
 
 interface DraftSetupForm {
   participants: string[];
@@ -248,6 +375,88 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   const [analysisResult, setAnalysisResult] = useState<CategoryAnalysisResponse | null>(null);
   const [progressiveResults, setProgressiveResults] = useState<Map<string, CategoryAvailabilityResult>>(new Map());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [specCategories, setSpecCategories] = useState<string[]>([]);
+  const [specCategoryCounts, setSpecCategoryCounts] = useState<Map<string, number>>(new Map());
+  const [allCategories, setAllCategories] = useState<string[]>(() => sortCategoriesForDisplay([], categories));
+
+  // Fetch spec categories for people themes
+  useEffect(() => {
+    const fetchSpecCategories = async () => {
+      if (theme === 'people' && selectedOption) {
+        try {
+          const actorName = getCleanActorName(selectedOption);
+          
+          // Fetch spec categories directly to get movie counts
+          const { supabase } = await import('@/integrations/supabase/client');
+          let { data, error } = await supabase
+            .from('actor_spec_categories')
+            .select('category_name, movie_tmdb_ids')
+            .eq('actor_name', actorName);
+          
+          if (error || !data || data.length === 0) {
+            ({ data, error } = await supabase
+              .from('actor_spec_categories')
+              .select('category_name, movie_tmdb_ids')
+              .ilike('actor_name', actorName));
+          }
+          
+          if (error || !data || data.length === 0) {
+            setSpecCategories([]);
+            setSpecCategoryCounts(new Map());
+            // Sort regular categories even when no spec categories found
+            const sortedCategories = sortCategoriesForDisplay([], categories);
+            const freshArray = Array.from(sortedCategories);
+            setAllCategories(freshArray);
+            return;
+          }
+          
+          // Extract category names and counts
+          const specCategoryNames = data.map((row: any) => row.category_name);
+          const countsMap = new Map<string, number>();
+          
+          data.forEach((row: any) => {
+            const count = row.movie_tmdb_ids?.length || 0;
+            countsMap.set(row.category_name, count);
+          });
+          
+          setSpecCategories(specCategoryNames);
+          setSpecCategoryCounts(countsMap);
+          
+          // Sort categories: spec categories first, then genres, then decades chronologically, then Academy Award and Blockbuster
+          const sortedCategories = sortCategoriesForDisplay(specCategoryNames, categories);
+          // Create a completely fresh array to prevent any reference issues
+          const freshArray = Array.from(sortedCategories);
+          console.log('📝 BEFORE setState - freshArray:', JSON.stringify(freshArray));
+          console.log('📝 BEFORE setState - first item:', freshArray[0]);
+          setAllCategories(freshArray);
+        } catch (err) {
+          console.error('Failed to fetch spec categories:', err);
+          setSpecCategories([]);
+          setSpecCategoryCounts(new Map());
+          // Sort regular categories even on error
+          const sortedCategories = sortCategoriesForDisplay([], categories);
+          const freshArray = Array.from(sortedCategories);
+          setAllCategories(freshArray);
+        }
+      } else {
+        setSpecCategories([]);
+        setSpecCategoryCounts(new Map());
+        // Sort regular categories even when no spec categories
+        const sortedCategories = sortCategoriesForDisplay([], categories);
+        const freshArray = Array.from(sortedCategories);
+        console.log('📝 Setting allCategories (no spec):', freshArray);
+        setAllCategories(freshArray);
+      }
+    };
+
+    fetchSpecCategories();
+  }, [theme, selectedOption, categories]);
+
+  // Debug: Log whenever allCategories changes
+  useEffect(() => {
+    console.log('🔄 allCategories state changed:', JSON.stringify(allCategories));
+    console.log('🔄 allCategories first item:', allCategories[0]);
+  }, [allCategories]);
 
   // Force clear cache for person-based themes on component mount
   useEffect(() => {
@@ -259,29 +468,26 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
 
   // More permissive analysis - similar to local drafting
   const canAnalyze = () => {
-    return theme && selectedOption && categories.length > 0;
+    return theme && selectedOption && allCategories.length > 0;
   };
 
   // Effect for pre-analysis - triggers as soon as theme and option are selected
   useEffect(() => {
-    if (theme && selectedOption) {
+    if (theme && selectedOption && allCategories.length > 0) {
       preAnalyzeAllCategories();
     }
-  }, [theme, selectedOption, playerCount]);
+  }, [theme, selectedOption, playerCount, allCategories]);
 
   const preAnalyzeAllCategories = async () => {
     try {
       setIsAnalyzing(true);
       
-      // Get all available categories for this theme
-      const allCategories = getCategoriesForTheme(theme);
-      const categoryNames = allCategories.map(config => config.name);
-      
-      if (categoryNames.length > 0) {
+      // Use allCategories which includes spec categories for people themes
+      if (allCategories.length > 0) {
         const result = await categoryValidationService.analyzeCategoryAvailability({
           theme,
           option: selectedOption,
-          categories: categoryNames,
+          categories: allCategories,
           playerCount,
           draftMode: draftMode || 'single'
         });
@@ -301,7 +507,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
       setAnalysisResult(null);
       setIsAnalyzing(false);
     }
-  }, [categories, theme, selectedOption]);
+  }, [allCategories, theme, selectedOption]);
 
   const analyzeCategories = async () => {
     if (!canAnalyze()) return;
@@ -311,7 +517,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
     
     // Person theme uses stronger cache refresh; also refresh if any decade categories are selected
     const isPersonTheme = theme === 'people';
-    const includesDecadeCategories = categories.some(c => c.includes("'s"));
+    const includesDecadeCategories = allCategories.some(c => c.includes("'s"));
     
     try {
       // Use progressive loading for better UX, force refresh for person themes
@@ -319,7 +525,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
         {
           theme,
           option: selectedOption,
-          categories,
+          categories: allCategories,
           playerCount,
           draftMode: draftMode || 'single'
         },
@@ -335,31 +541,56 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
     }
   };
 
-  const handleCategoryToggle = (category: string, checked: boolean) => {
-    const currentCategories = form.getValues('categories');
-    const availability = analysisResult?.results.find(r => r.categoryId === category);
-    
-    // Prevent selection of insufficient categories
-    if (checked && availability?.status === 'insufficient') {
-      return;
-    }
-    
-    if (checked) {
-      form.setValue('categories', [...currentCategories, category]);
-    } else {
-      form.setValue('categories', currentCategories.filter(c => c !== category));
-    }
-  };
-
-  const selectedCategories = form.watch('categories') || [];
-  
   const getAvailabilityForCategory = (category: string) => {
+    // For spec categories, use the direct count from database
+    if (specCategories.includes(category)) {
+      const movieCount = specCategoryCounts.get(category) || 0;
+      const requiredCount = playerCount;
+      const status = movieCount >= requiredCount ? 'sufficient' : 
+                     movieCount > 0 ? 'limited' : 'insufficient';
+      
+      return {
+        categoryId: category,
+        available: movieCount >= requiredCount,
+        movieCount: movieCount,
+        sampleMovies: [],
+        status: status as 'sufficient' | 'limited' | 'insufficient',
+        isEstimate: false
+      };
+    }
+    
     // Check progressive results first, fallback to analysis result
     const progressiveResult = progressiveResults.get(category);
     if (progressiveResult) return progressiveResult;
     
     return analysisResult?.results.find(r => r.categoryId === category);
   };
+
+  const handleCategoryToggle = (category: string, checked: boolean) => {
+    console.log(`🔄 handleCategoryToggle called for "${category}":`, checked);
+    const currentCategories = form.getValues('categories');
+    // Use getAvailabilityForCategory to get the correct availability for both spec and regular categories
+    const availability = getAvailabilityForCategory(category);
+    console.log(`📊 Availability for "${category}":`, availability);
+    
+    // Prevent selection of insufficient categories
+    if (checked && availability?.status === 'insufficient') {
+      console.log(`❌ Blocked selection of "${category}" - insufficient`);
+      return;
+    }
+    
+    if (checked) {
+      const newCategories = [...currentCategories, category];
+      console.log(`✅ Adding "${category}" to categories:`, newCategories);
+      form.setValue('categories', newCategories);
+    } else {
+      const newCategories = currentCategories.filter(c => c !== category);
+      console.log(`✅ Removing "${category}" from categories:`, newCategories);
+      form.setValue('categories', newCategories);
+    }
+  };
+
+  const selectedCategories = form.watch('categories') || [];
 
   const getSummaryStats = () => {
     if (!analysisResult) return null;
@@ -398,18 +629,44 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           alignItems: 'start'
         }}
       >
-        {categories.map((category, index) => (
-          <CustomCheckbox
-            key={category}
-            id={category}
-            category={category}
-            isChecked={selectedCategories.includes(category)}
-            onToggle={(checked) => handleCategoryToggle(category, checked)}
-            availability={getAvailabilityForCategory(category)}
-            isAnalyzing={isAnalyzing}
-            index={index}
-          />
-        ))}
+        {useMemo(() => {
+          // Create a fresh copy to ensure correct order
+          const categoriesToRender = [...allCategories];
+          console.log('🎨 Rendering allCategories - length:', categoriesToRender.length);
+          console.log('🎨 Rendering allCategories - first item:', categoriesToRender[0]);
+          console.log('🎨 Rendering allCategories - JSON:', JSON.stringify(categoriesToRender));
+          return categoriesToRender;
+        }, [allCategories]).map((category, index) => {
+          const categoryConfig = getCategoryConfig(category);
+          const isSpecCategory = specCategories.includes(category);
+          const availability = getAvailabilityForCategory(category);
+          
+          // Debug logging for spec categories
+          if (isSpecCategory) {
+            console.log(`🔍 Spec category "${category}":`, {
+              availability,
+              isDisabled: availability?.status === 'insufficient',
+              movieCount: specCategoryCounts.get(category),
+              playerCount
+            });
+          }
+          
+          return (
+            <CustomCheckbox
+              key={category}
+              id={category}
+              category={category}
+              isChecked={selectedCategories.includes(category)}
+              onToggle={(checked) => {
+                console.log(`🖱️ Toggle clicked for "${category}":`, checked);
+                handleCategoryToggle(category, checked);
+              }}
+              availability={availability}
+              isAnalyzing={isAnalyzing}
+              index={index}
+            />
+          );
+        })}
       </div>
     </div>
   );

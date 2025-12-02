@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDrafts } from '@/hooks/useDrafts';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminAccess } from '@/hooks/useAdminAccess';
+import { Settings } from 'lucide-react';
 import BannerAd from '@/components/ads/BannerAd';
 import InlineAd from '@/components/ads/InlineAd';
 import { DraftActorPortrait } from '@/components/DraftActorPortrait';
@@ -29,9 +31,12 @@ import {
 const Profile = () => {
   const navigate = useNavigate();
   const { user, loading, signOut } = useAuth();
-  const { drafts, loading: draftsLoading, refetch, deleteDraft } = useDrafts();
+  const { drafts, loading: draftsLoading, error: draftsError, refetch, deleteDraft } = useDrafts();
   const { toast } = useToast();
+  const { isAdmin } = useAdminAccess();
   const [profile, setProfile] = useState<any>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -45,40 +50,70 @@ const Profile = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (user) {
+      if (!user) {
+        setProfileLoading(false);
+        return;
+      }
+
+      setProfileLoading(true);
+      setProfileError(null);
+      
+      try {
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', user.id)
           .maybeSingle();
         
-        if (!error && data) {
+        if (error) {
+          throw error;
+        }
+        
+        if (data) {
           setProfile(data);
           setNewName(data.name || '');
+        } else {
+          // Profile doesn't exist yet, which is fine
+          setProfile(null);
+          setNewName('');
         }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load profile';
+        setProfileError(errorMessage);
+        toast({
+          title: "Error loading profile",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      } finally {
+        setProfileLoading(false);
       }
     };
 
     fetchProfile();
-  }, [user]);
+  }, [user, toast]);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
 
-  const handleViewDraft = async (draft: any) => {
+  const handleViewDraft = useCallback(async (draft: any) => {
+    // Validate that participants and categories are arrays
+    const participants = Array.isArray(draft.participants) ? draft.participants : [];
+    const categories = Array.isArray(draft.categories) ? draft.categories : [];
+    
     navigate('/draft', {
       state: {
         theme: draft.theme,
         option: draft.option,
-        participants: draft.participants,
-        categories: draft.categories,
+        participants,
+        categories,
         existingDraftId: draft.id,
         isMultiplayer: draft.is_multiplayer
       }
     });
-  };
+  }, [navigate]);
 
   const handleDeleteDraft = async () => {
     if (!draftToDelete) return;
@@ -136,10 +171,10 @@ const Profile = () => {
     }
   };
 
-  const openDeleteDialog = (draftId: string) => {
+  const openDeleteDialog = useCallback((draftId: string) => {
     setDraftToDelete(draftId);
     setShowDeleteDialog(true);
-  };
+  }, []);
 
   const handleSaveName = async () => {
     try {
@@ -150,7 +185,7 @@ const Profile = () => {
 
       if (error) throw error;
 
-      setProfile({ ...profile, name: newName.trim() });
+      setProfile((prev) => prev ? { ...prev, name: newName.trim() } : { name: newName.trim() });
       setIsEditingName(false);
 
       toast({
@@ -171,7 +206,8 @@ const Profile = () => {
     setIsEditingName(false);
   };
 
-  if (loading || draftsLoading) {
+  // Show loading only for auth, allow profile and drafts to load independently
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
         <div className="text-text-primary text-xl">Loading...</div>
@@ -182,6 +218,131 @@ const Profile = () => {
   if (!user) {
     return null;
   }
+
+  // Memoize draft list to prevent unnecessary re-renders
+  const draftList = useMemo(() => {
+    return drafts.map((draft, index) => (
+      <div key={draft.id} className="w-full">
+        {/* New Draft Card Design */}
+        <div className="w-full p-6 bg-white shadow-[0px_1px_2px_rgba(0,0,0,0.05)] rounded-lg border border-[#D9E0DF] flex justify-between items-center flex-wrap gap-4">
+          {/* Left Container */}
+          <div className="flex-1 min-w-[240px] flex-col justify-start items-start gap-4 inline-flex">
+            {/* Header with Image and Info */}
+            <div className="justify-start items-end gap-3 inline-flex">
+              {/* Actor Portrait */}
+              <div className="w-14 h-14 rounded">
+                {draft.theme === 'people' ? (
+                  <DraftActorPortrait 
+                    actorName={getCleanActorName(draft.option)}
+                    size="lg"
+                    className="w-14 h-14 rounded object-cover"
+                  />
+                ) : (
+                  <div className="w-14 h-14 bg-greyscale-blue-200 rounded flex items-center justify-center">
+                    {draft.theme === 'year' ? (
+                      <Calendar size={24} className="text-greyscale-blue-500" />
+                    ) : (
+                      <User size={24} className="text-greyscale-blue-500" />
+                    )}
+                  </div>
+                )}
+              </div>
+              
+              {/* Title and Status */}
+              <div className="flex-col justify-start items-start gap-2 inline-flex">
+                <div className="flex-col justify-start items-start flex">
+                  <div className="justify-center flex flex-col text-[#2B2D2D] text-lg font-brockmann font-semibold leading-6">
+                    {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
+                  </div>
+                </div>
+                
+                {/* Status Chips */}
+                <div className="self-stretch h-6 justify-start items-start gap-1 inline-flex flex-wrap">
+                  {/* Multiplayer/Local Badge */}
+                  {draft.is_multiplayer ? (
+                    <div className="px-3 py-1 bg-[#EBFFFA] rounded-full justify-start items-center flex" style={{boxShadow: 'inset 0 0 0 0.5px #015E45'}}>
+                      <span className="text-[#015E45] text-xs font-brockmann font-semibold leading-4">Multiplayer</span>
+                    </div>
+                  ) : (
+                    <div className="px-3 py-1 bg-[#EDEBFF] rounded-full justify-start items-center flex" style={{boxShadow: 'inset 0 0 0 0.5px #3B0394'}}>
+                      <span className="text-[#3B0394] text-xs font-brockmann font-semibold leading-4">Local</span>
+                    </div>
+                  )}
+                  
+                  {/* Complete Badge */}
+                  {draft.is_complete && (
+                    <div className="px-3 py-1 bg-[#06C995] rounded-full justify-start items-center flex">
+                      <span className="text-white text-xs font-brockmann font-semibold leading-4">Complete</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Details */}
+            <div className="self-stretch justify-start items-center gap-2 inline-flex flex-wrap">
+              {/* Date */}
+              <div className="justify-start items-center gap-1 flex">
+                <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
+                  <Calendar size={12} className="text-[#828786]" />
+                </div>
+                <span className="text-[#828786] text-sm font-brockmann font-medium leading-5">
+                  {new Date(draft.created_at).toLocaleDateString()}
+                </span>
+              </div>
+              
+              {/* Players */}
+              <div className="justify-start items-center gap-1 flex">
+                <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
+                  <Users size={12} className="text-[#828786]" />
+                </div>
+                <span className="text-[#828786] text-sm font-brockmann font-medium leading-5">
+                  {draft.participants?.length ?? 0} players
+                </span>
+              </div>
+              
+              {/* Categories */}
+              <div className="justify-start items-center gap-1 flex">
+                <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
+                  <Trophy size={12} className="text-[#828786]" />
+                </div>
+                <span className="text-[#828786] text-sm font-brockmann font-medium leading-5">
+                  {draft.categories?.length ?? 0} categories
+                </span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Right Container - Action Buttons */}
+          <div className="flex-1 max-w-[360px] min-w-[240px] flex-col justify-start items-end gap-4 inline-flex">
+            {/* Continue/View Draft Button */}
+            <Button 
+              onClick={() => handleViewDraft(draft)}
+              variant="default"
+              size="default"
+              className="self-stretch bg-brand-primary hover:bg-purple-400 text-brand-primary-foreground"
+            >
+              {draft.is_complete ? 'View Draft' : 'Continue Draft'}
+            </Button>
+            
+            {/* Delete Button */}
+            <button 
+              onClick={() => openDeleteDialog(draft.id)}
+              className="px-3 py-2 rounded-sm justify-center items-center gap-2 inline-flex hover:bg-gray-100 transition-colors"
+            >
+              <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
+                <Trash2 size={12} className="text-[#646968]" />
+              </div>
+              <span className="text-center text-[#646968] text-sm font-brockmann font-medium leading-5">Delete</span>
+            </button>
+          </div>
+        </div>
+        
+        {/* Inline Ad after every 3 drafts - Hidden for now */}
+        {/* {index > 0 && (index + 1) % 3 === 0 && <InlineAd />} */}
+      </div>
+    ));
+  }, [drafts, handleViewDraft, openDeleteDialog]);
 
   return (
     <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
@@ -209,10 +370,22 @@ const Profile = () => {
         {/* <BannerAd className="mb-8" /> */}
 
         <div className="w-full h-full p-6 bg-greyscale-blue-100 shadow-[0px_0px_3px_rgba(0,0,0,0.25)] rounded flex-col justify-start items-start gap-3 inline-flex mb-8">
-          <div className="flex-col justify-start items-start flex">
-            <div className="justify-center flex flex-col text-text-primary text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
-              Account Information
+          <div className="w-full flex justify-between items-center">
+            <div className="flex-col justify-start items-start flex">
+              <div className="justify-center flex flex-col text-text-primary text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
+                Account Information
+              </div>
             </div>
+            {isAdmin && (
+              <Button
+                onClick={() => navigate('/admin')}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                Admin Panel
+              </Button>
+            )}
           </div>
           <div className="self-stretch justify-start items-center gap-4 inline-flex flex-wrap content-center">
             <div className="flex-1 min-w-[300px] justify-start items-center gap-1.5 flex">
@@ -290,133 +463,26 @@ const Profile = () => {
             </div>
           </div>
           <div className="w-full">
-            {drafts.length === 0 ? (
+            {draftsLoading ? (
+              <p className="text-greyscale-blue-600 text-center py-8 font-brockmann">
+                Loading drafts...
+              </p>
+            ) : draftsError ? (
+              <div className="text-center py-8">
+                <p className="text-red-600 font-brockmann mb-4">
+                  {draftsError}
+                </p>
+                <Button onClick={() => refetch()} variant="outline">
+                  Retry
+                </Button>
+              </div>
+            ) : drafts.length === 0 ? (
               <p className="text-greyscale-blue-600 text-center py-8 font-brockmann">
                 No saved drafts yet. Start a new draft to see it here!
               </p>
             ) : (
               <div className="grid gap-4 w-full">
-                {drafts.map((draft, index) => (
-                  <div key={draft.id} className="w-full">
-                    {/* New Draft Card Design */}
-                    <div className="w-full p-6 bg-white shadow-[0px_1px_2px_rgba(0,0,0,0.05)] rounded-lg border border-[#D9E0DF] flex justify-between items-center flex-wrap gap-4">
-                      {/* Left Container */}
-                      <div className="flex-1 min-w-[240px] flex-col justify-start items-start gap-4 inline-flex">
-                        {/* Header with Image and Info */}
-                        <div className="justify-start items-end gap-3 inline-flex">
-                          {/* Actor Portrait */}
-                          <div className="w-14 h-14 rounded">
-                            {draft.theme === 'people' ? (
-                              <DraftActorPortrait 
-                                actorName={getCleanActorName(draft.option)}
-                                size="lg"
-                                className="w-14 h-14 rounded object-cover"
-                              />
-                            ) : (
-                              <div className="w-14 h-14 bg-greyscale-blue-200 rounded flex items-center justify-center">
-                                {draft.theme === 'year' ? (
-                                  <Calendar size={24} className="text-greyscale-blue-500" />
-                                ) : (
-                                  <User size={24} className="text-greyscale-blue-500" />
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Title and Status */}
-                          <div className="flex-col justify-start items-start gap-2 inline-flex">
-                            <div className="flex-col justify-start items-start flex">
-                              <div className="justify-center flex flex-col text-[#2B2D2D] text-lg font-brockmann font-semibold leading-6">
-                                {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
-                              </div>
-                            </div>
-                            
-                            {/* Status Chips */}
-                            <div className="self-stretch h-6 justify-start items-start gap-1 inline-flex flex-wrap">
-                              {/* Multiplayer/Local Badge */}
-                              {draft.is_multiplayer ? (
-                                <div className="px-3 py-1 bg-[#EBFFFA] rounded-full justify-start items-center flex" style={{boxShadow: 'inset 0 0 0 0.5px #015E45'}}>
-                                  <span className="text-[#015E45] text-xs font-brockmann font-semibold leading-4">Multiplayer</span>
-                                </div>
-                              ) : (
-                                <div className="px-3 py-1 bg-[#EDEBFF] rounded-full justify-start items-center flex" style={{boxShadow: 'inset 0 0 0 0.5px #3B0394'}}>
-                                  <span className="text-[#3B0394] text-xs font-brockmann font-semibold leading-4">Local</span>
-                                </div>
-                              )}
-                              
-                              {/* Complete Badge */}
-                              {draft.is_complete && (
-                                <div className="px-3 py-1 bg-[#06C995] rounded-full justify-start items-center flex">
-                                  <span className="text-white text-xs font-brockmann font-semibold leading-4">Complete</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Details */}
-                        <div className="self-stretch justify-start items-center gap-2 inline-flex flex-wrap">
-                          {/* Date */}
-                          <div className="justify-start items-center gap-1 flex">
-                            <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
-                              <Calendar size={12} className="text-[#828786]" />
-                            </div>
-                            <span className="text-[#828786] text-sm font-brockmann font-medium leading-5">
-                              {new Date(draft.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                          
-                          {/* Players */}
-                          <div className="justify-start items-center gap-1 flex">
-                            <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
-                              <Users size={12} className="text-[#828786]" />
-                            </div>
-                            <span className="text-[#828786] text-sm font-brockmann font-medium leading-5">
-                              {draft.participants.length} players
-                            </span>
-                          </div>
-                          
-                          {/* Categories */}
-                          <div className="justify-start items-center gap-1 flex">
-                            <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
-                              <Trophy size={12} className="text-[#828786]" />
-                            </div>
-                            <span className="text-[#828786] text-sm font-brockmann font-medium leading-5">
-                              {draft.categories.length} categories
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Right Container - Action Buttons */}
-                      <div className="flex-1 max-w-[360px] min-w-[240px] flex-col justify-start items-end gap-4 inline-flex">
-                        {/* Continue/View Draft Button */}
-                        <Button 
-                          onClick={() => handleViewDraft(draft)}
-                          variant="default"
-                          size="default"
-                          className="self-stretch bg-brand-primary hover:bg-purple-400 text-brand-primary-foreground"
-                        >
-                          {draft.is_complete ? 'View Draft' : 'Continue Draft'}
-                        </Button>
-                        
-                        {/* Delete Button */}
-                        <button 
-                          onClick={() => openDeleteDialog(draft.id)}
-                          className="px-3 py-2 rounded-sm justify-center items-center gap-2 inline-flex hover:bg-gray-100 transition-colors"
-                        >
-                          <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
-                            <Trash2 size={12} className="text-[#646968]" />
-                          </div>
-                          <span className="text-center text-[#646968] text-sm font-brockmann font-medium leading-5">Delete</span>
-                        </button>
-                      </div>
-                    </div>
-                    
-                    {/* Inline Ad after every 3 drafts - Hidden for now */}
-                    {/* {index > 0 && (index + 1) % 3 === 0 && <InlineAd />} */}
-                  </div>
-                ))}
+                {draftList}
               </div>
             )}
           </div>

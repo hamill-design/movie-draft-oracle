@@ -213,6 +213,8 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
             onCategorySelect={handleCategorySelect}
             picks={picks}
             currentPlayerId={currentPlayer.id}
+            theme={draftState.theme}
+            option={draftState.option}
           />
 
           <PickConfirmation

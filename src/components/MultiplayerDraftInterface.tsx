@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Copy, Check, Users, Clock, Film, User, Calendar, Trophy } from 'lucide-react';
+import { Copy, Check, Users, Clock, Film, User, Calendar, Trophy, RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { MultiPersonIcon } from '@/components/icons/MultiPersonIcon';
 import { ClockIcon } from '@/components/icons/ClockIcon';
 import MovieSearch from '@/components/MovieSearch';
@@ -59,10 +59,12 @@ export const MultiplayerDraftInterface = ({
     picks,
     loading,
     isMyTurn,
+    isConnected,
     createMultiplayerDraft,
     joinDraftByCode,
     makePick,
-    startDraft
+    startDraft,
+    manualRefresh
   } = useMultiplayerDraft(draftId);
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -247,11 +249,18 @@ export const MultiplayerDraftInterface = ({
         {/* Header */}
         <div className="mb-6">
           <div className="p-6">
-            <div className="flex flex-col justify-center items-center gap-4 text-center">
-              <span className="text-text-primary text-[32px] font-brockmann font-medium leading-[36px] tracking-[1.28px]">
+            <div className="flex flex-col justify-center items-center gap-4 text-center px-4">
+              <span className="text-text-primary text-[20px] sm:text-[24px] md:text-[32px] font-brockmann font-medium leading-tight tracking-[1.28px]">
                 NOW DRAFTING
               </span>
-              <div className="text-[64px] font-chaney font-normal leading-[64px] text-center">
+              <div 
+                className="font-chaney font-normal text-center break-words"
+                style={{
+                  fontSize: 'clamp(28px, 8vw, 64px)',
+                  lineHeight: '1.1',
+                  maxWidth: '100%'
+                }}
+              >
                 <span className="text-purple-500">
                   {draft.theme === 'people' ? getCleanActorName(draft.option).toUpperCase() + ' ' : draft.option.toString() + ' '}
                 </span>
@@ -399,11 +408,29 @@ export const MultiplayerDraftInterface = ({
             {/* Participants section */}
             <div>
               {/* Participants header matching StyledHeading4 */}
-              <div className="flex items-center gap-2 mb-4">
-              <div className="w-6 h-6 flex flex-col justify-center items-center">
-                <MultiPersonIcon className="w-6 h-6 text-[#680AFF]" />
-              </div>
-                <span className="text-xl font-medium font-brockmann leading-7 text-[#2B2D2D]">Participants</span>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 flex flex-col justify-center items-center">
+                    <MultiPersonIcon className="w-6 h-6 text-[#680AFF]" />
+                  </div>
+                  <span className="text-xl font-medium font-brockmann leading-7 text-[#2B2D2D]">Participants</span>
+                </div>
+                {/* Connection status and refresh button */}
+                <div className="flex items-center gap-2">
+                  {!isConnected && (
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-yellow-50 border border-yellow-200 rounded">
+                      <WifiOff className="w-3 h-3 text-yellow-600" />
+                      <span className="text-xs font-brockmann text-yellow-700">Reconnecting...</span>
+                    </div>
+                  )}
+                  <button
+                    onClick={manualRefresh}
+                    className="p-1.5 hover:bg-purple-100 rounded transition-colors"
+                    title="Refresh draft"
+                  >
+                    <RefreshCw className={`w-4 h-4 text-[#680AFF] ${loading ? 'animate-spin' : ''}`} />
+                  </button>
+                </div>
               </div>
               
               {/* Participants list with proper gap */}
@@ -552,17 +579,26 @@ export const MultiplayerDraftInterface = ({
             {!isComplete && isMyTurn && <>
               <MovieSearch theme={draft.theme} option={getCleanActorName(draft.option)} searchQuery={searchQuery} onSearchChange={setSearchQuery} movies={movies} loading={moviesLoading} onMovieSelect={handleMovieSelect} selectedMovie={selectedMovie} themeParameter={themeConstraint} />
 
-              <EnhancedCategorySelection selectedMovie={selectedMovie} categories={draft.categories} selectedCategory={selectedCategory} onCategorySelect={handleCategorySelect} picks={picks.map(pick => ({
-                playerId: participants.findIndex(p => p.participant_name === pick.player_name) + 1,
-                playerName: pick.player_name,
-                movie: {
-                  id: pick.movie_id,
-                  title: pick.movie_title,
-                  year: pick.movie_year,
-                  poster_path: pick.poster_path
-                },
-                category: pick.category
-              }))} currentPlayerId={participants.findIndex(p => (p.user_id || p.guest_participant_id) === participantId) + 1} />
+              <EnhancedCategorySelection 
+                selectedMovie={selectedMovie} 
+                categories={draft.categories} 
+                selectedCategory={selectedCategory} 
+                onCategorySelect={handleCategorySelect} 
+                picks={picks.map(pick => ({
+                  playerId: participants.findIndex(p => p.participant_name === pick.player_name) + 1,
+                  playerName: pick.player_name,
+                  movie: {
+                    id: pick.movie_id,
+                    title: pick.movie_title,
+                    year: pick.movie_year,
+                    poster_path: pick.poster_path
+                  },
+                  category: pick.category
+                }))} 
+                currentPlayerId={participants.findIndex(p => (p.user_id || p.guest_participant_id) === participantId) + 1}
+                theme={draft.theme}
+                option={draft.option}
+              />
 
               <PickConfirmation currentPlayerName={currentTurnPlayer?.participant_name || 'You'} selectedMovie={selectedMovie} selectedCategory={selectedCategory} onConfirm={confirmPick} />
             </>
