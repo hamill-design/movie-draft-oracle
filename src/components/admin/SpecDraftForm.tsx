@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -206,12 +206,12 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
                 {/* Show current photo if it exists (from database) - show this FIRST */}
                 {specDraft?.photo_url && !photoFile && (
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-700">Current Photo:</p>
+                    <p className="text-sm font-medium text-text-primary">Current Photo:</p>
                     <div className="relative inline-block">
                       <img
                         src={specDraft.photo_url}
                         alt="Current spec draft photo"
-                        className="w-48 h-48 object-cover rounded-md border border-gray-300"
+                        className="w-48 h-48 object-cover rounded-md border border-greyscale-blue-300"
                         onError={(e) => {
                           console.error('Failed to load photo:', specDraft.photo_url);
                           // Don't hide, just log the error
@@ -227,19 +227,19 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
-                    <p className="text-xs text-gray-500">Click the X button to remove this photo</p>
+                    <p className="text-xs text-greyscale-blue-500">Click the X button to remove this photo</p>
                   </div>
                 )}
                 
                 {/* Show preview if a new photo was selected */}
                 {photoFile && photoPreview && (
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-700">New Photo Preview:</p>
+                    <p className="text-sm font-medium text-text-primary">New Photo Preview:</p>
                     <div className="relative inline-block">
                       <img
                         src={photoPreview}
                         alt="New photo preview"
-                        className="w-48 h-48 object-cover rounded-md border border-gray-300"
+                        className="w-48 h-48 object-cover rounded-md border border-greyscale-blue-300"
                       />
                       <Button
                         type="button"
@@ -251,15 +251,15 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
-                    <p className="text-xs text-gray-500">This will replace the current photo when you save</p>
+                    <p className="text-xs text-greyscale-blue-500">This will replace the current photo when you save</p>
                   </div>
                 )}
                 
                 {/* Show upload area if no photo exists and no new file selected */}
                 {!specDraft?.photo_url && !photoFile && (
-                  <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
-                    <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">No photo uploaded</p>
+                  <div className="border-2 border-dashed border-greyscale-blue-300 rounded-md p-6 text-center">
+                    <Upload className="w-8 h-8 mx-auto text-greyscale-blue-400 mb-2" />
+                    <p className="text-sm text-greyscale-blue-600 mb-2">No photo uploaded</p>
                   </div>
                 )}
                 
@@ -271,7 +271,7 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
                     onChange={handlePhotoChange}
                     className="cursor-pointer"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-greyscale-blue-500 mt-1">
                     {specDraft?.photo_url 
                       ? 'Upload a new photo to replace the current one (will be resized to 900x900). Max 5MB.'
                       : 'Upload a square image (will be resized to 900x900). Max 5MB.'}

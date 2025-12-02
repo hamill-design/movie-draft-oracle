@@ -1,10 +1,4 @@
-
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { ArrowLeft, Crown } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { DraftActorPortrait } from './DraftActorPortrait';
+import { Crown } from 'lucide-react';
 import { getCleanActorName } from '@/lib/utils';
 
 interface DraftHeaderProps {
@@ -23,8 +17,6 @@ const DraftHeader = ({
   currentPlayer,
   isComplete
 }: DraftHeaderProps) => {
-  const navigate = useNavigate();
-
   return <>
       {/* Header */}
       

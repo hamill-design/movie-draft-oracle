@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { MovieSearchSelector } from './MovieSearchSelector';
-import { X } from 'lucide-react';
 import { ActorSpecCategory } from '@/hooks/useActorSpecCategoriesAdmin';
+import { useToast } from '@/hooks/use-toast';
 
 interface ActorSpecCategoryFormProps {
   category?: ActorSpecCategory | null;
@@ -39,6 +39,7 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
   const [actorSearchQuery, setActorSearchQuery] = useState('');
   const actorInputRef = useRef<HTMLInputElement>(null);
   const suggestionsRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   const { people, loading: peopleLoading } = usePeopleSearch(actorSearchQuery);
 
@@ -84,16 +85,28 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
 
     // Validate
     if (!actorName.trim()) {
-      alert('Actor name is required');
+      toast({
+        title: 'Validation Error',
+        description: 'Actor name is required',
+        variant: 'destructive',
+      });
       return;
     }
     if (!categoryName.trim()) {
-      alert('Category name is required');
+      toast({
+        title: 'Validation Error',
+        description: 'Category name is required',
+        variant: 'destructive',
+      });
       return;
     }
 
     if (movieIds.length === 0) {
-      alert('At least one movie is required');
+      toast({
+        title: 'Validation Error',
+        description: 'At least one movie is required',
+        variant: 'destructive',
+      });
       return;
     }
 
@@ -139,21 +152,21 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
                 {showActorSuggestions && people.length > 0 && actorName.length >= 2 && (
                   <div
                     ref={suggestionsRef}
-                    className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
+                    className="absolute z-10 w-full mt-1 bg-ui-primary border border-greyscale-blue-300 rounded-md shadow-lg max-h-60 overflow-auto"
                   >
                     {peopleLoading && (
-                      <div className="p-2 text-sm text-gray-500">Searching...</div>
+                      <div className="p-2 text-sm text-greyscale-blue-500">Searching...</div>
                     )}
                     {!peopleLoading && people.map((person) => (
                       <button
                         key={person.id}
                         type="button"
                         onClick={() => handleActorSelect(person)}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                        className="w-full text-left px-4 py-2 hover:bg-greyscale-blue-150 flex items-center gap-2"
                       >
-                        <span className="font-medium">{person.name}</span>
+                        <span className="font-medium text-text-primary">{person.name}</span>
                         {person.known_for_department && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-greyscale-blue-500">
                             ({person.known_for_department})
                           </span>
                         )}
@@ -163,7 +176,7 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
                 )}
               </div>
               {actorTmdbId && (
-                <p className="text-xs text-gray-500">TMDB ID: {actorTmdbId}</p>
+                <p className="text-xs text-greyscale-blue-500">TMDB ID: {actorTmdbId}</p>
               )}
             </div>
 

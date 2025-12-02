@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { CheckboxIcon } from '@/components/icons';
 
@@ -13,11 +13,10 @@ interface CategoriesFormProps {
 }
 
 const CustomCheckbox = ({ 
-  id, 
   category, 
   isChecked, 
   onToggle 
-}: { 
+}: {
   id: string; 
   category: string; 
   isChecked: boolean; 
