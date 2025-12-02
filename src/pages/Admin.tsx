@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   SidebarProvider,
   Sidebar,
@@ -281,36 +280,27 @@ const Admin = () => {
 
               {/* Actor Spec Categories Section */}
               {activeSection === 'actor-categories' && (
-          <Tabs value={actorCategorySection} onValueChange={(v) => setActorCategorySection(v as 'list' | 'form')} className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="list">All Categories</TabsTrigger>
-              <TabsTrigger value="form">
-                {editingCategory ? 'Edit Category' : 'Create New'}
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="list" className="space-y-4">
-              <ActorSpecCategoryList
-                categories={categories}
-                onEdit={handleEdit}
-                onDelete={deleteCategory}
-                onCreateNew={() => {
-                  setEditingCategory(null);
-                  setActorCategorySection('form');
-                }}
-                loading={categoriesLoading}
-              />
-            </TabsContent>
-
-            <TabsContent value="form">
-              <ActorSpecCategoryForm
-                category={editingCategory}
-                onSubmit={editingCategory ? handleUpdate : handleCreate}
-                onCancel={handleCancel}
-                loading={categoriesLoading}
-              />
-            </TabsContent>
-          </Tabs>
+                <div className="space-y-6">
+                  {actorCategorySection === 'form' ? (
+                    <ActorSpecCategoryForm
+                      category={editingCategory}
+                      onSubmit={editingCategory ? handleUpdate : handleCreate}
+                      onCancel={handleCancel}
+                      loading={categoriesLoading}
+                    />
+                  ) : (
+                    <ActorSpecCategoryList
+                      categories={categories}
+                      onEdit={handleEdit}
+                      onDelete={deleteCategory}
+                      onCreateNew={() => {
+                        setEditingCategory(null);
+                        setActorCategorySection('form');
+                      }}
+                      loading={categoriesLoading}
+                    />
+                  )}
+                </div>
               )}
 
               {/* Spec Draft Builder Section */}
