@@ -1,8 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarInset,
+} from '@/components/ui/sidebar';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
 import { useActorSpecCategoriesAdmin, ActorSpecCategory } from '@/hooks/useActorSpecCategoriesAdmin';
 import { ActorSpecCategoryForm } from '@/components/admin/ActorSpecCategoryForm';
@@ -12,7 +21,7 @@ import { SpecDraftForm } from '@/components/admin/SpecDraftForm';
 import { SpecDraftList } from '@/components/admin/SpecDraftList';
 import { SpecDraftMovieManager } from '@/components/admin/SpecDraftMovieManager';
 import { SpecDraftCategoriesManager } from '@/components/admin/SpecDraftCategoriesManager';
-import { ArrowLeft, Plus, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Loader2, Users, Film } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Admin = () => {
@@ -29,7 +38,7 @@ const Admin = () => {
   const { toast } = useToast();
 
   const [editingCategory, setEditingCategory] = useState<ActorSpecCategory | null>(null);
-  const [activeTab, setActiveTab] = useState('actor-categories');
+  const [activeSection, setActiveSection] = useState<'actor-categories' | 'spec-drafts'>('actor-categories');
   const [actorCategorySection, setActorCategorySection] = useState<'list' | 'form'>('list');
   const [specDraftSection, setSpecDraftSection] = useState<'list' | 'form' | 'movies'>('list');
   const [editingSpecDraft, setEditingSpecDraft] = useState<SpecDraft | null>(null);
@@ -221,28 +230,64 @@ const Admin = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <div className="mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => navigate('/profile')}
-          className="mb-4"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Profile
-        </Button>
-        <h1 className="text-3xl font-bold">Admin Panel</h1>
-        <p className="text-gray-600 mt-2">Manage Actor Spec Categories and Spec Drafts</p>
-      </div>
+    <SidebarProvider 
+      className="min-h-screen"
+      style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}
+    >
+      <Sidebar 
+        collapsible="icon" 
+        className="border-r border-greyscale-blue-200 bg-ui-primary [&_[data-sidebar=sidebar]]:bg-ui-primary [&_[data-sidebar=sidebar]]:text-text-primary"
+      >
+        <SidebarHeader className="p-4 border-b border-greyscale-blue-200">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg font-brockmann-semibold text-text-primary">Admin Panel</h2>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActiveSection('actor-categories')}
+                isActive={activeSection === 'actor-categories'}
+                className="font-brockmann-medium data-[active=true]:bg-purple-100 data-[active=true]:text-brand-primary hover:bg-greyscale-blue-150"
+              >
+                <Users className="w-4 h-4" />
+                <span>Actor Spec Categories</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActiveSection('spec-drafts')}
+                isActive={activeSection === 'spec-drafts'}
+                className="font-brockmann-medium data-[active=true]:bg-purple-100 data-[active=true]:text-brand-primary hover:bg-greyscale-blue-150"
+              >
+                <Film className="w-4 h-4" />
+                <span>Spec Draft Builder</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
+      </Sidebar>
+      <SidebarInset className="flex flex-col">
+        <div className="flex-1 overflow-auto">
+          <div className="container mx-auto px-4 py-8 max-w-7xl">
+            <div className="mb-6">
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/profile')}
+                className="mb-4"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Profile
+              </Button>
+              <h1 className="text-3xl font-bold">Admin Panel</h1>
+              <p className="text-gray-600 mt-2">Manage Actor Spec Categories and Spec Drafts</p>
+            </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="actor-categories">Actor Spec Categories</TabsTrigger>
-          <TabsTrigger value="spec-drafts">Spec Draft Builder</TabsTrigger>
-        </TabsList>
+            <div className="space-y-6">
 
-        {/* Actor Spec Categories Tab */}
-        <TabsContent value="actor-categories" className="space-y-6">
+              {/* Actor Spec Categories Section */}
+              {activeSection === 'actor-categories' && (
           <Tabs value={actorCategorySection} onValueChange={(v) => setActorCategorySection(v as 'list' | 'form')} className="space-y-4">
             <TabsList>
               <TabsTrigger value="list">All Categories</TabsTrigger>
@@ -273,11 +318,12 @@ const Admin = () => {
               />
             </TabsContent>
           </Tabs>
-        </TabsContent>
+              )}
 
-        {/* Spec Draft Builder Tab */}
-        <TabsContent value="spec-drafts" className="space-y-6">
-          {specDraftSection === 'list' && (
+              {/* Spec Draft Builder Section */}
+              {activeSection === 'spec-drafts' && (
+                <>
+                  {specDraftSection === 'list' && (
             <div className="space-y-4">
               <div className="flex justify-end">
                 <Button onClick={() => {
@@ -372,9 +418,13 @@ const Admin = () => {
               />
             </div>
           )}
-        </TabsContent>
-      </Tabs>
-    </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 };
 
