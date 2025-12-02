@@ -38,6 +38,39 @@ export type Database = {
         }
         Relationships: []
       }
+      actor_spec_categories: {
+        Row: {
+          actor_name: string
+          actor_tmdb_id: number | null
+          category_name: string
+          created_at: string | null
+          description: string | null
+          id: string
+          movie_tmdb_ids: number[]
+          updated_at: string | null
+        }
+        Insert: {
+          actor_name: string
+          actor_tmdb_id?: number | null
+          category_name: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          movie_tmdb_ids: number[]
+          updated_at?: string | null
+        }
+        Update: {
+          actor_name?: string
+          actor_tmdb_id?: number | null
+          category_name?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          movie_tmdb_ids?: number[]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       draft_participants: {
         Row: {
           created_at: string
@@ -344,6 +377,144 @@ export type Database = {
         }
         Relationships: []
       }
+      spec_draft_categories: {
+        Row: {
+          category_name: string
+          created_at: string | null
+          description: string | null
+          id: string
+          spec_draft_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          category_name: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          spec_draft_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          category_name?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          spec_draft_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spec_draft_categories_spec_draft_id_fkey"
+            columns: ["spec_draft_id"]
+            isOneToOne: false
+            referencedRelation: "spec_drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spec_draft_movie_categories: {
+        Row: {
+          category_name: string
+          created_at: string | null
+          id: string
+          is_automated: boolean | null
+          spec_draft_movie_id: string
+        }
+        Insert: {
+          category_name: string
+          created_at?: string | null
+          id?: string
+          is_automated?: boolean | null
+          spec_draft_movie_id: string
+        }
+        Update: {
+          category_name?: string
+          created_at?: string | null
+          id?: string
+          is_automated?: boolean | null
+          spec_draft_movie_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spec_draft_movie_categories_spec_draft_movie_id_fkey"
+            columns: ["spec_draft_movie_id"]
+            isOneToOne: false
+            referencedRelation: "spec_draft_movies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spec_draft_movies: {
+        Row: {
+          created_at: string | null
+          id: string
+          movie_genres: number[] | null
+          movie_poster_path: string | null
+          movie_title: string
+          movie_tmdb_id: number
+          movie_year: number | null
+          oscar_status: string | null
+          revenue: number | null
+          spec_draft_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          movie_genres?: number[] | null
+          movie_poster_path?: string | null
+          movie_title: string
+          movie_tmdb_id: number
+          movie_year?: number | null
+          oscar_status?: string | null
+          revenue?: number | null
+          spec_draft_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          movie_genres?: number[] | null
+          movie_poster_path?: string | null
+          movie_title?: string
+          movie_tmdb_id?: number
+          movie_year?: number | null
+          oscar_status?: string | null
+          revenue?: number | null
+          spec_draft_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spec_draft_movies_spec_draft_id_fkey"
+            columns: ["spec_draft_id"]
+            isOneToOne: false
+            referencedRelation: "spec_drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      spec_drafts: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -364,10 +535,7 @@ export type Database = {
         Args: { p_draft_id: string; p_participant_id: string }
         Returns: boolean
       }
-      cleanup_expired_guest_sessions: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_expired_guest_sessions: { Args: never; Returns: undefined }
       create_guest_multiplayer_draft: {
         Args: {
           p_categories: string[]
@@ -433,16 +601,10 @@ export type Database = {
           picks_data: Json
         }[]
       }
-      current_guest_session: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
-      generate_invite_code: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      current_guest_session: { Args: never; Returns: string }
+      generate_invite_code: { Args: never; Returns: string }
       get_oscar_cache_stats: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           entries_needing_refresh: number
           nominees: number
@@ -572,7 +734,7 @@ export type Database = {
         Returns: undefined
       }
       refresh_oscar_cache_for_questionable_entries: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           entries_found: number
           refreshed_count: number

@@ -1,9 +1,4 @@
-
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { getEligibleCategories } from '@/utils/movieCategoryUtils';
-import { SearchIcon } from '@/components/icons/SearchIcon';
 import { CheckboxIcon } from '@/components/icons/CheckboxIcon';
 import { NAIcon } from '@/components/icons/NAIcon';
 

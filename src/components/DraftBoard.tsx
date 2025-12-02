@@ -1,8 +1,3 @@
-
-import React from 'react';
-import { DraftActorPortrait } from './DraftActorPortrait';
-import { getCleanActorName } from '@/lib/utils';
-
 interface Pick {
   playerId: number;
   playerName: string;
@@ -27,19 +22,15 @@ interface DraftBoardProps {
   };
 }
 
-const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPlayer }: DraftBoardProps) => {
+const DraftBoard = ({ players, categories, picks, currentPlayer }: DraftBoardProps) => {
   // Debug logging
   console.log('DraftBoard - Current player:', currentPlayer);
   console.log('DraftBoard - Players:', players);
-
-  // Extract actor name for people theme using standardized function
-  const actorName = theme === 'people' ? getCleanActorName(draftOption) : '';
 
   // Category display mapping - you can customize the display names here
   const categoryDisplayNames: { [key: string]: string } = {
     'Academy Award Nominee or Winner': 'Academy Award',
     'Blockbuster (minimum of $50 Mil)': 'Blockbuster',
-    // Add more mappings as needed
   };
 
   // Function to get display name for category
@@ -62,7 +53,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
             <div className="min-w-[128px] py-3 px-4 flex flex-col justify-center items-start">
               <span className="text-purple-700 text-sm font-brockmann font-medium leading-5">Player</span>
             </div>
-            {categories.map((category, index) => (
+            {categories.map((category) => (
               <div key={category} className="flex-1 min-w-[150px] py-3 px-4 flex flex-col justify-center items-center">
                 <span className="text-purple-700 text-sm font-brockmann font-medium leading-5 text-center">
                   {getCategoryDisplayName(category)}

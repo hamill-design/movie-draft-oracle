@@ -10,6 +10,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarInset,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
 import { useActorSpecCategoriesAdmin, ActorSpecCategory } from '@/hooks/useActorSpecCategoriesAdmin';
@@ -275,6 +276,10 @@ const Admin = () => {
         </SidebarContent>
       </Sidebar>
       <SidebarInset className="flex flex-col">
+        <div className="flex items-center h-12 px-4 border-b border-greyscale-blue-200">
+          <SidebarTrigger className="h-7 w-7" />
+          <span className="ml-3 text-text-primary font-brockmann-medium">Admin Panel</span>
+        </div>
         <div className="flex-1 overflow-auto">
           <div className="container mx-auto px-6 py-6 max-w-7xl">
             <div className="space-y-6">
@@ -308,100 +313,99 @@ const Admin = () => {
               {activeSection === 'spec-drafts' && (
                 <>
                   {specDraftSection === 'list' && (
-            <div className="space-y-4">
-              <div className="flex justify-end">
-                <Button onClick={() => {
-                  setEditingSpecDraft(null);
-                  setSpecDraftSection('form');
-                }}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create New Spec Draft
-                </Button>
-              </div>
-              <SpecDraftList
-                specDrafts={specDrafts}
-                onEdit={handleSpecDraftEdit}
-                onDelete={handleSpecDraftDelete}
-                onManageMovies={handleManageMovies}
-                loading={specDraftsLoading}
-              />
-            </div>
-          )}
-
-          {specDraftSection === 'form' && (
-            <SpecDraftForm
-              specDraft={editingSpecDraft}
-              onSubmit={editingSpecDraft ? handleSpecDraftUpdate : handleSpecDraftCreate}
-              onCancel={handleSpecDraftCancel}
-              loading={specDraftsLoading}
-            />
-          )}
-
-          {specDraftSection === 'movies' && managingMoviesForDraft && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold">{managingMoviesForDraft.name}</h2>
-                  {managingMoviesForDraft.description && (
-                    <p className="text-gray-600 mt-1">{managingMoviesForDraft.description}</p>
+                    <div className="space-y-4">
+                      <div className="flex justify-end">
+                        <Button onClick={() => {
+                          setEditingSpecDraft(null);
+                          setSpecDraftSection('form');
+                        }}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Create New Spec Draft
+                        </Button>
+                      </div>
+                      <SpecDraftList
+                        specDrafts={specDrafts}
+                        onEdit={handleSpecDraftEdit}
+                        onDelete={handleSpecDraftDelete}
+                        onManageMovies={handleManageMovies}
+                        loading={specDraftsLoading}
+                      />
+                    </div>
                   )}
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setManagingMoviesForDraft(null);
-                    setSpecDraftSection('list');
-                  }}
-                >
-                  Back to List
-                </Button>
-              </div>
 
-              {/* Custom Categories Section */}
-              <SpecDraftCategoriesManager
-                specDraftId={managingMoviesForDraft.id}
-                customCategories={managingMoviesForDraft.customCategories || []}
-                onCreate={async (categoryName, description) => {
-                  try {
-                    await createCustomCategory(managingMoviesForDraft.id, categoryName, description);
-                    // Wait a bit for the database to update, then refresh
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                    await handleMovieManagerRefresh();
-                  } catch (error) {
-                    console.error('Error creating custom category:', error);
-                  }
-                }}
-                onUpdate={async (id, updates) => {
-                  try {
-                    await updateCustomCategory(id, updates);
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                    await handleMovieManagerRefresh();
-                  } catch (error) {
-                    console.error('Error updating custom category:', error);
-                  }
-                }}
-                onDelete={async (id) => {
-                  try {
-                    await deleteCustomCategory(id);
-                    await new Promise(resolve => setTimeout(resolve, 300));
-                    await handleMovieManagerRefresh();
-                  } catch (error) {
-                    console.error('Error deleting custom category:', error);
-                  }
-                }}
-                loading={specDraftsLoading}
-              />
+                  {specDraftSection === 'form' && (
+                    <SpecDraftForm
+                      specDraft={editingSpecDraft}
+                      onSubmit={editingSpecDraft ? handleSpecDraftUpdate : handleSpecDraftCreate}
+                      onCancel={handleSpecDraftCancel}
+                      loading={specDraftsLoading}
+                    />
+                  )}
 
-              {/* Movies Section */}
-              <SpecDraftMovieManager
-                specDraft={managingMoviesForDraft}
-                onMovieAdded={handleMovieManagerRefresh}
-                onMovieRemoved={handleMovieManagerRefresh}
-                onCategoriesUpdated={handleMovieManagerRefresh}
-                loading={specDraftsLoading}
-              />
-            </div>
-          )}
+                  {specDraftSection === 'movies' && managingMoviesForDraft && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h2 className="text-2xl font-bold text-text-primary">{managingMoviesForDraft.name}</h2>
+                          {managingMoviesForDraft.description && (
+                            <p className="text-greyscale-blue-600 mt-1">{managingMoviesForDraft.description}</p>
+                          )}
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            setManagingMoviesForDraft(null);
+                            setSpecDraftSection('list');
+                          }}
+                        >
+                          Back to List
+                        </Button>
+                      </div>
+
+                      {/* Custom Categories Section */}
+                      <SpecDraftCategoriesManager
+                        specDraftId={managingMoviesForDraft.id}
+                        customCategories={managingMoviesForDraft.customCategories || []}
+                        onCreate={async (categoryName, description) => {
+                          try {
+                            await createCustomCategory(managingMoviesForDraft.id, categoryName, description);
+                            await new Promise(resolve => setTimeout(resolve, 300));
+                            await handleMovieManagerRefresh();
+                          } catch (error) {
+                            console.error('Error creating custom category:', error);
+                          }
+                        }}
+                        onUpdate={async (id, updates) => {
+                          try {
+                            await updateCustomCategory(id, updates);
+                            await new Promise(resolve => setTimeout(resolve, 300));
+                            await handleMovieManagerRefresh();
+                          } catch (error) {
+                            console.error('Error updating custom category:', error);
+                          }
+                        }}
+                        onDelete={async (id) => {
+                          try {
+                            await deleteCustomCategory(id);
+                            await new Promise(resolve => setTimeout(resolve, 300));
+                            await handleMovieManagerRefresh();
+                          } catch (error) {
+                            console.error('Error deleting custom category:', error);
+                          }
+                        }}
+                        loading={specDraftsLoading}
+                      />
+
+                      {/* Movies Section */}
+                      <SpecDraftMovieManager
+                        specDraft={managingMoviesForDraft}
+                        onMovieAdded={handleMovieManagerRefresh}
+                        onMovieRemoved={handleMovieManagerRefresh}
+                        onCategoriesUpdated={handleMovieManagerRefresh}
+                        loading={specDraftsLoading}
+                      />
+                    </div>
+                  )}
                 </>
               )}
             </div>

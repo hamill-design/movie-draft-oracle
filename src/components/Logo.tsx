@@ -1,11 +1,8 @@
-import React from 'react';
-
 interface LogoProps {
   className?: string;
-  size?: number;
 }
 
-const Logo = ({ className = "", size = 60 }: LogoProps) => {
+const Logo = ({ className = "" }: LogoProps) => {
   const height = 60;
   const width = height * (65.78 / 19.13); // maintain aspect ratio (width/height from viewBox)
   
