@@ -29,21 +29,23 @@ export const useActorSpecCategories = (actorName: string | null) => {
 
       try {
         // Try exact match first
-        let { data, error: fetchError } = await supabase
+        let { data, error } = await supabase
           .from('actor_spec_categories')
           .select('category_name, movie_tmdb_ids')
           .eq('actor_name', actorName);
 
-        if (fetchError || !data || data.length === 0) {
+        if (error || !data || data.length === 0) {
           // Try case-insensitive match
-          ({ data, fetchError } = await supabase
+          const fallbackResult = await supabase
             .from('actor_spec_categories')
             .select('category_name, movie_tmdb_ids')
-            .ilike('actor_name', actorName));
+            .ilike('actor_name', actorName);
+          data = fallbackResult.data;
+          error = fallbackResult.error;
         }
 
-        if (fetchError) {
-          throw fetchError;
+        if (error) {
+          throw error;
         }
 
         if (data && data.length > 0) {

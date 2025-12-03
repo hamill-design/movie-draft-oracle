@@ -49,7 +49,7 @@ export const SpecDraftList: React.FC<SpecDraftListProps> = ({
                   <p className="text-sm text-gray-600 mt-1">{specDraft.description}</p>
                 )}
                 <p className="text-xs text-gray-400 mt-2">
-                  Created: {new Date(specDraft.created_at).toLocaleDateString()}
+                  Created: {specDraft.created_at ? new Date(specDraft.created_at).toLocaleDateString() : 'Unknown'}
                 </p>
               </div>
               <div className="flex gap-2">
