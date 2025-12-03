@@ -9,8 +9,8 @@ export interface ActorSpecCategory {
   category_name: string;
   movie_tmdb_ids: number[];
   description: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export const useActorSpecCategoriesAdmin = () => {

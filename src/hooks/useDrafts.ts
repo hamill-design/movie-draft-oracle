@@ -10,10 +10,10 @@ export interface Draft {
   option: string;
   participants: string[];
   categories: string[];
-  is_complete: boolean;
-  is_multiplayer: boolean;
-  created_at: string;
-  updated_at: string;
+  is_complete: boolean | null;
+  is_multiplayer: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 export interface DraftPick {
