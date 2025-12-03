@@ -44,7 +44,7 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
   const [searchResults, setSearchResults] = useState<MovieSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [selectedMovieForCategories, setSelectedMovieForCategories] = useState<(SpecDraftMovie & { categories: SpecDraftMovieCategory[] }) | null>(null);
+  const [selectedMovieForCategories, setSelectedMovieForCategories] = useState<SpecDraftMovie | null>(null);
   const [categoryCheckboxes, setCategoryCheckboxes] = useState<Record<string, boolean>>({});
   const [updatingCategories, setUpdatingCategories] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -282,10 +282,10 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
     }
   };
 
-  const handleManageCategories = (movie: SpecDraftMovie & { categories: SpecDraftMovieCategory[] }) => {
+  const handleManageCategories = (movie: SpecDraftMovie) => {
     setSelectedMovieForCategories(movie);
     // Initialize checkboxes with current categories
-    const currentCategories = movie.categories.map((c: SpecDraftMovieCategory) => c.category_name);
+    const currentCategories = movie.categories.map(c => c.category_name);
     const checkboxes: Record<string, boolean> = {};
     allCategories.forEach(cat => {
       checkboxes[cat] = currentCategories.includes(cat);
@@ -302,18 +302,17 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
         .filter(([_, checked]) => checked)
         .map(([categoryName]) => categoryName);
 
-      // Get current automated categories (type assertion since selectedMovieForCategories has categories)
-      const movieWithCategories = selectedMovieForCategories as SpecDraftMovie & { categories: SpecDraftMovieCategory[] };
-      const _currentAutoCategories = movieWithCategories.categories
-        .filter((c: SpecDraftMovieCategory) => c.is_automated)
-        .map((c: SpecDraftMovieCategory) => c.category_name);
+      // Get current automated categories
+      const currentAutoCategories = selectedMovieForCategories.categories
+        .filter(c => c.is_automated)
+        .map(c => c.category_name);
 
       // Determine which categories are automated (those that match auto-detection)
       const movie = specDraft.movies.find(m => m.id === selectedMovieForCategories.id);
       if (movie) {
         // Convert oscar_status to hasOscar boolean for compatibility
         const hasOscar = movie.oscar_status === 'winner' || movie.oscar_status === 'nominee';
-        const isBlockbuster = movie.revenue != null && movie.revenue >= 50000000;
+        const isBlockbuster = movie.revenue && movie.revenue >= 50000000;
         
         // Convert genre IDs to genre string (same as fetch-movies does)
         const genreString = movie.movie_genres && movie.movie_genres.length > 0
@@ -578,7 +577,7 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                     ? movie.movie_genres.map((id: number) => getGenreName(id)).join(' ')
                     : '';
                   const hasOscar = movie && (movie.oscar_status === 'winner' || movie.oscar_status === 'nominee');
-                  const isBlockbuster = movie && movie.revenue != null && movie.revenue >= 50000000;
+                  const isBlockbuster = movie && movie.revenue && movie.revenue >= 50000000;
                   
                   const isAutoDetected = movie && mapGenresToCategories(
                     genreString || movie.movie_genres || [],

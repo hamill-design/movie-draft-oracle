@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, X, Loader2 } from 'lucide-react';
+import { Search, X, Plus, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Movie {
@@ -180,10 +180,10 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <label className="text-sm font-medium text-text-primary">Search and Add Movies *</label>
+        <label className="text-sm font-medium">Search and Add Movies *</label>
         <div className="relative">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-greyscale-blue-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               ref={searchInputRef}
               value={searchQuery}
@@ -203,7 +203,7 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
                 }}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2"
               >
-                <X className="w-4 h-4 text-greyscale-blue-400" />
+                <X className="w-4 h-4 text-gray-400" />
               </button>
             )}
           </div>
@@ -212,18 +212,18 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
           {showResults && (loading || movies.length > 0 || error) && (
             <div
               ref={resultsRef}
-              className="absolute z-50 w-full mt-1 bg-ui-primary border border-greyscale-blue-300 rounded-md shadow-lg max-h-96 overflow-auto"
+              className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-96 overflow-auto"
             >
               {loading && (
                 <div className="p-4 text-center">
-                  <Loader2 className="w-5 h-5 animate-spin mx-auto text-greyscale-blue-400" />
+                  <Loader2 className="w-5 h-5 animate-spin mx-auto text-gray-400" />
                 </div>
               )}
               {error && (
-                <div className="p-4 text-sm text-error-red-600">{error}</div>
+                <div className="p-4 text-sm text-red-600">{error}</div>
               )}
               {!loading && !error && movies.length === 0 && searchQuery.length >= 2 && (
-                <div className="p-4 text-sm text-greyscale-blue-500">No movies found</div>
+                <div className="p-4 text-sm text-gray-500">No movies found</div>
               )}
               {!loading && !error && movies.map((movie) => {
                 const movieId = movie.tmdbId || movie.id;
@@ -236,8 +236,8 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
                     type="button"
                     onClick={() => !isSelected && handleMovieSelect(movie)}
                     disabled={isSelected}
-                    className={`w-full text-left px-4 py-3 hover:bg-greyscale-blue-150 flex items-center gap-3 ${
-                      isSelected ? 'bg-positive-green-100 opacity-60 cursor-not-allowed' : ''
+                    className={`w-full text-left px-4 py-3 hover:bg-gray-100 flex items-center gap-3 ${
+                      isSelected ? 'bg-green-50 opacity-60 cursor-not-allowed' : ''
                     }`}
                   >
                     {posterUrl && (
@@ -251,12 +251,12 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
                       />
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate text-text-primary">{movie.title}</div>
-                      <div className="text-xs text-greyscale-blue-500">{movie.year}</div>
-                      <div className="text-xs text-greyscale-blue-400">ID: {movieId}</div>
+                      <div className="font-medium text-sm truncate">{movie.title}</div>
+                      <div className="text-xs text-gray-500">{movie.year}</div>
+                      <div className="text-xs text-gray-400">ID: {movieId}</div>
                     </div>
                     {isSelected && (
-                      <div className="text-positive-green-600 text-xs font-medium">Added</div>
+                      <div className="text-green-600 text-xs font-medium">Added</div>
                     )}
                   </button>
                 );
@@ -264,7 +264,7 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
             </div>
           )}
         </div>
-        <p className="text-xs text-greyscale-blue-500">
+        <p className="text-xs text-gray-500">
           Type to search for movies. Click a movie to add it to the category.
         </p>
       </div>
@@ -272,7 +272,7 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
       {/* Selected Movies List */}
       {selectedMovieIds.length > 0 && (
         <div className="space-y-2">
-          <label className="text-sm font-medium text-text-primary">
+          <label className="text-sm font-medium">
             Selected Movies ({selectedMovieIds.length})
           </label>
           <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -286,7 +286,7 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
               return (
                 <div
                   key={movieId}
-                  className="flex items-center gap-3 p-3 bg-greyscale-blue-100 rounded border"
+                  className="flex items-center gap-3 p-3 bg-gray-50 rounded border"
                 >
                   {posterUrl && (
                     <img
@@ -301,11 +301,11 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
                   <div className="flex-1 min-w-0">
                     {movie ? (
                       <>
-                        <div className="font-medium text-sm text-text-primary">{movie.title}</div>
-                        <div className="text-xs text-greyscale-blue-500">{movie.year}</div>
+                        <div className="font-medium text-sm">{movie.title}</div>
+                        <div className="text-xs text-gray-500">{movie.year}</div>
                       </>
                     ) : (
-                      <div className="text-sm text-greyscale-blue-600">Movie ID: {movieId}</div>
+                      <div className="text-sm text-gray-600">Movie ID: {movieId}</div>
                     )}
                   </div>
                   <Button
@@ -325,3 +325,4 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
     </div>
   );
 };
+

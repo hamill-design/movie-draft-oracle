@@ -483,7 +483,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
       setIsAnalyzing(true);
       
       // Use allCategories which includes spec categories for people themes
-      if (allCategories.length > 0 && selectedOption) {
+      if (allCategories.length > 0) {
         const result = await categoryValidationService.analyzeCategoryAvailability({
           theme,
           option: selectedOption,
@@ -521,7 +521,6 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
     
     try {
       // Use progressive loading for better UX, force refresh for person themes
-      if (!selectedOption) return;
       await progressiveCategoryService.analyzeCategoryProgressive(
         {
           theme,

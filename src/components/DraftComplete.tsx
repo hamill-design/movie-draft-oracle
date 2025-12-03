@@ -1,5 +1,7 @@
+
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Trophy } from 'lucide-react';
+import { Film, Trophy } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const DraftComplete = () => {

@@ -29,7 +29,7 @@ export const useProfileFixer = () => {
         .from('draft_participants')
         .select('id, participant_name')
         .eq('user_id', user.id)
-        .eq('participant_name', user.email || '');
+        .eq('participant_name', user.email);
 
       if (fetchError) {
         console.error('Error fetching participants to fix:', fetchError);
@@ -48,7 +48,7 @@ export const useProfileFixer = () => {
         .from('draft_participants')
         .update({ participant_name: profile.name })
         .eq('user_id', user.id)
-        .eq('participant_name', user.email || '');
+        .eq('participant_name', user.email);
 
       if (updateError) {
         console.error('Error fixing participant names:', updateError);

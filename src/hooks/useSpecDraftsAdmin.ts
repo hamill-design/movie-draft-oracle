@@ -7,8 +7,8 @@ export interface SpecDraft {
   name: string;
   description: string | null;
   photo_url: string | null;
-  created_at: string | null;
-  updated_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface SpecDraftMovie {
@@ -67,14 +67,13 @@ export const useSpecDraftsAdmin = () => {
 
       if (fetchError) {
         // If photo_url doesn't exist or there's a 400 error, try without it
-        const errorAny = fetchError as any;
         const isColumnError = 
           fetchError.message?.includes('photo_url') || 
           fetchError.message?.includes('column') ||
           fetchError.message?.includes('does not exist') ||
           fetchError.code === 'PGRST116' ||
-          errorAny.status === 400 ||
-          errorAny.statusCode === 400 ||
+          fetchError.status === 400 ||
+          fetchError.statusCode === 400 ||
           (fetchError.message && fetchError.message.toLowerCase().includes('photo'));
         
         if (isColumnError) {
@@ -93,7 +92,7 @@ export const useSpecDraftsAdmin = () => {
         throw fetchError;
       }
 
-      setSpecDrafts((data || []) as unknown as SpecDraft[]);
+      setSpecDrafts(data || []);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch spec drafts';
       setError(errorMessage);
@@ -121,14 +120,13 @@ export const useSpecDraftsAdmin = () => {
         .single();
       
       // If photo_url column doesn't exist or there's a 400 error, try without it
-      const draftErrorAny = draftError as any;
       const isColumnError = draftError && (
         draftError.message?.includes('photo_url') || 
         draftError.message?.includes('column') ||
         draftError.message?.includes('does not exist') ||
         draftError.code === 'PGRST116' ||
-        draftErrorAny.status === 400 ||
-        draftErrorAny.statusCode === 400 ||
+        draftError.status === 400 ||
+        draftError.statusCode === 400 ||
         (draftError.message && draftError.message.toLowerCase().includes('photo'))
       );
       
@@ -246,14 +244,14 @@ export const useSpecDraftsAdmin = () => {
 
       if (createError) throw createError;
 
-      setSpecDrafts(prev => [data as unknown as SpecDraft, ...prev]);
+      setSpecDrafts(prev => [data, ...prev]);
 
       toast({
         title: 'Success',
         description: `Spec draft "${name}" created successfully`,
       });
 
-      return data as unknown as SpecDraft;
+      return data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create spec draft';
       setError(errorMessage);
