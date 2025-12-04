@@ -296,6 +296,12 @@ export const useSpecDraftsAdmin = () => {
       let data: any;
       let updateError: any;
       
+      console.log('🔄 Updating spec draft in database:', {
+        id,
+        updateData,
+        photo_url: updates.photo_url,
+      });
+      
       const { data: updateResult, error: updateErr } = await supabase
         .from('spec_drafts')
         .update(updateData)
@@ -306,14 +312,22 @@ export const useSpecDraftsAdmin = () => {
       data = updateResult;
       updateError = updateErr;
       
+      console.log('📊 Update response:', {
+        data,
+        error: updateError,
+        photo_url_in_response: data?.photo_url,
+      });
+      
       // If photo_url column doesn't exist, try without it
       if (updateError && (
         updateError.message?.includes('photo_url') || 
         updateError.message?.includes('column') ||
+        updateError.message?.includes('does not exist') ||
         updateError.code === 'PGRST116' ||
         updateError.status === 400 ||
         updateError.statusCode === 400
       ) && updates.photo_url !== undefined) {
+        console.warn('⚠️ photo_url column may not exist, trying without it');
         // Remove photo_url from update and try again
         const { photo_url, ...updateWithoutPhoto } = updateData;
         const { data: fallbackResult, error: fallbackError } = await supabase
@@ -326,10 +340,9 @@ export const useSpecDraftsAdmin = () => {
         if (fallbackError) throw fallbackError;
         data = { ...fallbackResult, photo_url: null };
         updateError = null;
+        console.warn('⚠️ Updated without photo_url - column may not exist in database');
       }
       
-      if (updateError) throw updateError;
-
       if (updateError) throw updateError;
 
       setSpecDrafts(prev => prev.map(draft => 

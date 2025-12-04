@@ -27,6 +27,11 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
   onCancel,
   loading = false,
 }) => {
+  // Debug: Log when component loads to verify latest code is running
+  React.useEffect(() => {
+    console.log('✅ SpecDraftForm loaded with photo upload feature - version 2024-12-04');
+  }, []);
+  
   const [name, setName] = useState(specDraft?.name || '');
   const [description, setDescription] = useState(specDraft?.description || '');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -41,8 +46,10 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
       setName(specDraft.name || '');
       setDescription(specDraft.description || '');
       // Only update photoPreview if no new file is selected
+      // This ensures we show the existing photo when editing
       if (!photoFile) {
-        setPhotoPreview(specDraft.photo_url || null);
+        const photoUrl = specDraft.photo_url || null;
+        setPhotoPreview(photoUrl);
       }
     } else {
       // Reset form for new draft
@@ -51,7 +58,7 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
       setPhotoPreview(null);
       setPhotoFile(null);
     }
-  }, [specDraft]);
+  }, [specDraft, photoFile]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -128,7 +135,9 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
           }
 
           photoUrl = await uploadSpecDraftPhoto(specDraft.id, photoFile);
+          console.log('✅ Photo uploaded successfully, URL:', photoUrl);
         } catch (error) {
+          console.error('❌ Photo upload failed:', error);
           toast({
             title: 'Upload Error',
             description: error instanceof Error ? error.message : 'Failed to upload photo',
@@ -142,6 +151,7 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
       } else if (photoPreview && photoPreview === specDraft.photo_url) {
         // Keep existing photo
         photoUrl = specDraft.photo_url;
+        console.log('📸 Keeping existing photo:', photoUrl);
       } else if (!photoPreview && specDraft.photo_url) {
         // Photo was removed
         try {
@@ -151,10 +161,12 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
           // Continue anyway
         }
         photoUrl = undefined;
+        console.log('🗑️ Photo removed');
       }
     }
     // For new drafts, photoFile will be stored and uploaded after draft creation
 
+    console.log('📤 Submitting form with photoUrl:', photoUrl);
     // Submit the form
     // For new drafts, pass the photoFile so parent can upload after creation
     await onSubmit({
@@ -203,18 +215,19 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
             <div className="space-y-2">
               <Label>Photo (900x900 square)</Label>
               <div className="space-y-3">
-                {/* Show current photo if it exists (from database) - show this FIRST */}
-                {specDraft?.photo_url && !photoFile && (
+                {/* Show current photo if it exists (from database) - use photoPreview which is synced with specDraft.photo_url */}
+                {photoPreview && !photoFile && specDraft && (
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-gray-700">Current Photo:</p>
                     <div className="relative inline-block">
                       <img
-                        src={specDraft.photo_url}
+                        src={photoPreview}
                         alt="Current spec draft photo"
                         className="w-48 h-48 object-cover rounded-md border border-gray-300"
                         onError={(e) => {
-                          console.error('Failed to load photo:', specDraft.photo_url);
-                          // Don't hide, just log the error
+                          console.error('Failed to load photo:', photoPreview);
+                          // Hide the image on error
+                          (e.target as HTMLImageElement).style.display = 'none';
                         }}
                       />
                       <Button
@@ -256,7 +269,7 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
                 )}
                 
                 {/* Show upload area if no photo exists and no new file selected */}
-                {!specDraft?.photo_url && !photoFile && (
+                {!photoPreview && !photoFile && (
                   <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
                     <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
                     <p className="text-sm text-gray-600 mb-2">No photo uploaded</p>

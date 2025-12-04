@@ -388,18 +388,18 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           
           // Fetch spec categories directly to get movie counts
           const { supabase } = await import('@/integrations/supabase/client');
-          let { data, error } = await supabase
+          // Use 'from' in a way that bypasses type inference errors since this is a dynamic relation
+          let { data, error } = await (supabase as any)
             .from('actor_spec_categories')
             .select('category_name, movie_tmdb_ids')
             .eq('actor_name', actorName);
-          
+
           if (error || !data || data.length === 0) {
-            ({ data, error } = await supabase
+            ({ data, error } = await (supabase as any)
               .from('actor_spec_categories')
               .select('category_name, movie_tmdb_ids')
-              .ilike('actor_name', actorName));
+              .ilike('actor_name', `%${actorName}%`));
           }
-          
           if (error || !data || data.length === 0) {
             setSpecCategories([]);
             setSpecCategoryCounts(new Map());
@@ -484,12 +484,16 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
       
       // Use allCategories which includes spec categories for people themes
       if (allCategories.length > 0) {
+        // Added defensive checks for required values and normalized draftMode fallback
+        if (!theme || !selectedOption) {
+          throw new Error('Theme and selectedOption are required for category analysis.');
+        }
         const result = await categoryValidationService.analyzeCategoryAvailability({
           theme,
           option: selectedOption,
           categories: allCategories,
           playerCount,
-          draftMode: draftMode || 'single'
+          draftMode: draftMode ?? 'single'
         });
         
         setAnalysisResult(result);
