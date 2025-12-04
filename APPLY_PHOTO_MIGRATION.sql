@@ -70,3 +70,5 @@ USING (
 -- Should return one row with photo_url column
 
 
+
+

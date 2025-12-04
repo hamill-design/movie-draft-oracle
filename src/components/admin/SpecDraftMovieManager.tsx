@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Search, X, Loader2, CheckCircle2 } from 'lucide-react';
+import { Search, X, Loader2, CheckCircle2, Film, CheckSquare2, Edit2, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { SpecDraftWithMovies, SpecDraftMovie, SpecDraftMovieCategory } from '@/hooks/useSpecDraftsAdmin';
 import { mapGenresToCategories, getGenreName } from '@/utils/specDraftGenreMapper';
@@ -377,309 +374,413 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
     return `https://image.tmdb.org/t/p/w92${posterPath}`;
   };
 
+  // CustomCheckbox component for category selection
+  const CategoryCheckbox = ({ 
+    category, 
+    isChecked, 
+    onToggle 
+  }: { 
+    category: string; 
+    isChecked: boolean; 
+    onToggle: () => void; 
+  }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
+    return (
+      <div 
+        style={{
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+          gap: '8px',
+          display: 'inline-flex',
+          cursor: 'pointer',
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={onToggle}
+        title={category}
+      >
+        <div style={{
+          width: '16px',
+          height: '16px',
+          borderRadius: '4px',
+          outline: '1px var(--Purple-300, #907AFF) solid',
+          outlineOffset: '-1px',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: '10px',
+          display: 'flex',
+          background: isChecked ? 'var(--Brand-Primary, #680AFF)' : 'transparent'
+        }}>
+          {(isChecked || isHovered) && (
+            <svg width="9.33" height="6.42" viewBox="0 0 12 8" fill="none">
+              <path 
+                d="M10.6667 0.791687L4.25 7.20835L1.33333 4.29169" 
+                stroke={isChecked ? 'white' : 'var(--Purple-300, #907AFF)'}
+                strokeWidth="1.16667" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </div>
+        
+        <div style={{
+          flexDirection: 'column',
+          justifyContent: 'flex-start',
+          alignItems: 'flex-start',
+          display: 'inline-flex'
+        }}>
+          <div style={{
+            justifyContent: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            color: 'var(--Text-Primary, #2B2D2D)',
+            fontSize: '14px',
+            fontFamily: 'Brockmann',
+            fontWeight: '500',
+            lineHeight: '20px',
+            wordWrap: 'break-word'
+          }}>
+            {category}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Search and Add Movies */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Add Movies to Spec Draft</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                ref={searchInputRef}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => {
-                  if (searchResults.length > 0) setShowResults(true);
-                }}
-                placeholder="Search for movies..."
-                className="pl-9"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchQuery('');
-                    setShowResults(false);
-                  }}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
-                >
-                  <X className="w-4 h-4 text-gray-400" />
-                </button>
-              )}
+      <div className="bg-greyscale-blue-100 rounded-[8px] shadow-[0px_0px_3px_0px_rgba(0,0,0,0.25)] p-6 space-y-6">
+        {/* Header */}
+        <div className="flex gap-2 items-center">
+          <Film className="w-6 h-6 text-brand-primary" />
+          <h3
+            className="text-xl text-text-primary"
+            style={{ fontFamily: 'Brockmann', fontWeight: 500, lineHeight: '28px' }}
+          >
+            Add Movies
+          </h3>
+        </div>
+        {/* Search Input */}
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-greyscale-blue-400 pointer-events-none z-10" />
+          <Input
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => {
+              if (searchResults.length > 0) setShowResults(true);
+            }}
+            placeholder="Search for movies"
+            className="pl-14 h-12 pr-4 py-3 border-greyscale-blue-400 rounded-[2px] text-sm"
+            style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setShowResults(false);
+              }}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2"
+            >
+              <X className="w-4 h-4 text-greyscale-blue-400" />
+            </button>
+          )}
 
-              {/* Search Results */}
-              {showResults && (searchLoading || searchResults.length > 0) && (
-                <div
-                  ref={resultsRef}
-                  className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-96 overflow-auto"
-                >
-                  {searchLoading && (
-                    <div className="p-4 text-center">
-                      <Loader2 className="w-5 h-5 animate-spin mx-auto text-gray-400" />
-                    </div>
-                  )}
-                  {!searchLoading && searchResults.map((movie) => {
-                    const isAdded = specDraft.movies.some(m => m.movie_tmdb_id === movie.id);
-                    const posterUrl = getPosterUrl(movie.posterPath);
+          {/* Search Results */}
+          {showResults && (searchLoading || searchResults.length > 0) && (
+              <div
+                ref={resultsRef}
+                className="absolute z-50 w-full mt-1 bg-ui-primary border border-greyscale-blue-200 rounded-[8px] shadow-lg max-h-96 overflow-auto"
+              >
+                {searchLoading && (
+                  <div className="p-4 text-center">
+                    <Loader2 className="w-5 h-5 animate-spin mx-auto text-greyscale-blue-400" />
+                  </div>
+                )}
+                {!searchLoading && searchResults.map((movie) => {
+                  const isAdded = specDraft.movies.some(m => m.movie_tmdb_id === movie.id);
+                  const posterUrl = getPosterUrl(movie.posterPath);
 
-                    return (
-                      <button
-                        key={movie.id}
-                        type="button"
-                        onClick={() => !isAdded && handleAddMovie(movie)}
-                        disabled={isAdded}
-                        className={`w-full text-left px-4 py-3 hover:bg-gray-100 flex items-center gap-3 ${
-                          isAdded ? 'bg-green-50 opacity-60 cursor-not-allowed' : ''
-                        }`}
-                      >
-                        {posterUrl && (
-                          <img
-                            src={posterUrl}
-                            alt={movie.title}
-                            className="w-12 h-16 object-cover rounded"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
+                  return (
+                    <button
+                      key={movie.id}
+                      type="button"
+                      onClick={() => !isAdded && handleAddMovie(movie)}
+                      disabled={isAdded}
+                      className={`w-full text-left px-4 py-3 hover:bg-greyscale-blue-150 flex items-center gap-3 ${
+                        isAdded ? 'bg-positive-green-100 opacity-60 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {posterUrl && (
+                        <img
+                          src={posterUrl}
+                          alt={movie.title}
+                          className="w-12 h-16 object-cover rounded"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-brockmann-medium text-text-primary leading-5 truncate">{movie.title}</div>
+                        <div className="text-xs font-brockmann-regular text-greyscale-blue-600 leading-4">{movie.year}</div>
+                        {movie.genres && movie.genres.length > 0 && (
+                          <div className="text-xs font-brockmann-regular text-greyscale-blue-400 leading-4">
+                            {movie.genres.map(id => getGenreName(id)).join(', ')}
+                          </div>
                         )}
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm truncate">{movie.title}</div>
-                          <div className="text-xs text-gray-500">{movie.year}</div>
-                          {movie.genres && movie.genres.length > 0 && (
-                            <div className="text-xs text-gray-400">
-                              {movie.genres.map(id => getGenreName(id)).join(', ')}
-                            </div>
-                          )}
-                        </div>
-                        {isAdded && (
-                          <CheckCircle2 className="w-5 h-5 text-green-600" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                      </div>
+                      {isAdded && (
+                        <CheckCircle2 className="w-5 h-5 text-positive-green-600" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Movies List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Movies in Spec Draft ({specDraft.movies.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {specDraft.movies.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No movies added yet. Search and add movies above.</p>
-          ) : (
-            <div className="space-y-4">
-              {specDraft.movies.map((movie) => {
-                const posterUrl = getPosterUrl(movie.movie_poster_path);
-                const automatedCategories = movie.categories.filter(c => c.is_automated);
-                const manualCategories = movie.categories.filter(c => !c.is_automated);
+      <div className="bg-greyscale-blue-100 rounded-[8px] shadow-[0px_0px_3px_0px_rgba(0,0,0,0.25)] p-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+          <div className="flex gap-2 items-center">
+            <CheckSquare2 className="w-6 h-6 text-brand-primary" />
+            <h3
+              className="text-xl text-text-primary"
+              style={{ fontFamily: 'Brockmann', fontWeight: 500, lineHeight: '28px' }}
+            >
+              Eligible Movies ({specDraft.movies.length})
+            </h3>
+          </div>
+          <div className="flex-1 min-w-0 sm:min-w-[294px] sm:max-w-[480px]">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-greyscale-blue-400 pointer-events-none z-10" />
+              <Input
+                placeholder="Search for movies"
+                className="pl-10 h-8 pr-2 py-1.5 border-greyscale-blue-400 rounded-[2px] text-xs"
+                style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
+              />
+            </div>
+          </div>
+        </div>
 
-                return (
-                  <div
-                    key={movie.id}
-                    className="flex items-start gap-4 p-4 border rounded-lg"
-                  >
-                    {posterUrl && (
+        {/* Movies List */}
+        {specDraft.movies.length === 0 ? (
+          <div className="bg-ui-primary border border-greyscale-blue-200 rounded-[8px] p-6 text-center">
+            <p
+              className="text-greyscale-blue-600"
+              style={{ fontFamily: 'Brockmann', fontWeight: 400, fontSize: '14px', lineHeight: '20px' }}
+            >
+              No movies added yet. Search and add movies above.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {specDraft.movies.map((movie) => {
+              const posterUrl = getPosterUrl(movie.movie_poster_path);
+              const isManaging = selectedMovieForCategories?.id === movie.id;
+
+              return (
+                <div
+                  key={movie.id}
+                  className="bg-ui-primary border border-greyscale-blue-200 rounded-[8px] p-4 flex flex-col gap-4"
+                >
+                  {/* Movie Info Row - Always horizontal */}
+                  <div className="flex gap-4 items-start flex-1 min-w-0">
+                    {/* Poster */}
+                    {posterUrl ? (
                       <img
                         src={posterUrl}
                         alt={movie.movie_title}
-                        className="w-16 h-24 object-cover rounded"
+                        className="w-[69.33px] h-[104px] object-cover rounded-[4px] shrink-0"
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none';
                         }}
                       />
+                    ) : (
+                      <div className="w-[69.33px] h-[104px] bg-greyscale-blue-200 rounded-[4px] flex items-center justify-center shrink-0">
+                        <Film className="w-6 h-6 text-greyscale-blue-400" />
+                      </div>
                     )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <h3 className="font-medium">{movie.movie_title}</h3>
+
+                    {/* Movie Details */}
+                    <div className="flex flex-col gap-4 flex-1 min-w-0">
+                      {/* Title, Year, Actions */}
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex flex-col gap-[2px] min-w-0 flex-1">
+                          <h4
+                            className="text-base text-[#2b2f31] truncate"
+                            style={{ fontFamily: 'Brockmann', fontWeight: 600, fontSize: '16px', lineHeight: '24px', letterSpacing: '0.32px' }}
+                          >
+                            {movie.movie_title}
+                          </h4>
                           {movie.movie_year && (
-                            <p className="text-sm text-gray-500">{movie.movie_year}</p>
-                          )}
-                          {movie.movie_genres && movie.movie_genres.length > 0 && (
-                            <p className="text-xs text-gray-400 mt-1">
-                              {movie.movie_genres.map(id => getGenreName(id)).join(', ')}
+                            <p
+                              className="text-sm text-gray-500"
+                              style={{ fontFamily: 'Brockmann', fontWeight: 400, fontSize: '14px', lineHeight: '20px' }}
+                            >
+                              {movie.movie_year}
                             </p>
                           )}
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRemoveMovie(movie.id)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
+                        <div className="flex gap-2 shrink-0">
+                          <button
+                            onClick={() => handleManageCategories(movie)}
+                            className="p-2 rounded-[2px] hover:bg-greyscale-blue-200 transition-colors"
+                            title="Edit Categories"
+                          >
+                            <Edit2 className="w-4 h-4 text-text-primary" />
+                          </button>
+                          <button
+                            onClick={() => handleRemoveMovie(movie.id)}
+                            className="p-2 rounded-[2px] hover:bg-greyscale-blue-200 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4 text-text-primary" />
+                          </button>
+                        </div>
                       </div>
 
-                      {/* Categories */}
-                      <div className="mt-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Label className="text-sm font-medium">Categories:</Label>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleManageCategories(movie)}
-                          >
-                            Manage
-                          </Button>
-                        </div>
+                      {/* Categories Display */}
+                      <div className="flex flex-col gap-2">
+                        <Label
+                          className="text-sm text-greyscale-blue-700"
+                          style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '14px', lineHeight: '20px' }}
+                        >
+                          Categories
+                        </Label>
                         {movie.categories.length === 0 ? (
-                          <p className="text-xs text-gray-400">No categories assigned</p>
+                          <p
+                            className="text-xs text-gray-400"
+                            style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
+                          >
+                            No categories assigned
+                          </p>
                         ) : (
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-wrap gap-4">
                             {movie.categories.map((cat) => (
-                              <Badge key={cat.id} variant={cat.is_automated ? "secondary" : "outline"} className="text-xs">
+                              <span
+                                key={cat.id}
+                                className="text-xs text-purple-800"
+                                style={{ fontFamily: 'Brockmann', fontWeight: 600, fontSize: '12px', lineHeight: '16px' }}
+                              >
                                 {cat.category_name}
-                              </Badge>
+                              </span>
                             ))}
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Category Management Dialog */}
-      {selectedMovieForCategories && (
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle>Manage Categories for "{selectedMovieForCategories.movie_title}"</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                Select which categories this movie can apply to.
-              </p>
-              <div className="text-xs text-gray-500 mb-2">
-                Total categories: {allCategories.length} (Standard: {standardCategories.length}, Custom: {customCategoryNames.length})
-              </div>
-              <div className="border rounded-lg p-4">
-                <div className="grid grid-cols-2 gap-3">
-                {/* Standard Categories */}
-                {standardCategories.map((category) => {
-                  const isChecked = categoryCheckboxes[category] || false;
-                  const movie = specDraft.movies.find(m => m.id === selectedMovieForCategories.id);
-                  const genreString = movie && movie.movie_genres && movie.movie_genres.length > 0
-                    ? movie.movie_genres.map((id: number) => getGenreName(id)).join(' ')
-                    : '';
-                  const hasOscar = movie && (movie.oscar_status === 'winner' || movie.oscar_status === 'nominee');
-                  const isBlockbuster = movie && movie.revenue && movie.revenue >= 50000000;
-                  
-                  const isAutoDetected = movie && mapGenresToCategories(
-                    genreString || movie.movie_genres || [],
-                    movie.movie_year,
-                    movie.oscar_status,
-                    movie.revenue,
-                    hasOscar,
-                    isBlockbuster
-                  ).includes(category);
+                  {/* Expanded Category Management Section */}
+                  {isManaging && (
+                    <div className="border-t border-greyscale-blue-300 pt-4 mt-4 w-full">
+                      <div className="space-y-4">
+                        {/* Standard Categories Grid */}
+                        <div 
+                          style={{
+                            width: '100%',
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(2, 1fr)',
+                            gap: '20px',
+                            alignItems: 'start'
+                          }}
+                        >
+                          {standardCategories.map((category) => {
+                            const isChecked = categoryCheckboxes[category] || false;
 
-                  return (
-                    <div key={category} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`category-${category}`}
-                        checked={isChecked}
-                        onCheckedChange={(checked) => {
-                          setCategoryCheckboxes(prev => ({
-                            ...prev,
-                            [category]: checked === true,
-                          }));
-                        }}
-                      />
-                      <Label
-                        htmlFor={`category-${category}`}
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        {category}
-                        {isAutoDetected && (
-                          <span className="ml-1 text-xs text-gray-500">(auto)</span>
+                            return (
+                              <CategoryCheckbox
+                                key={category}
+                                category={category}
+                                isChecked={isChecked}
+                                onToggle={() => {
+                                  setCategoryCheckboxes(prev => ({
+                                    ...prev,
+                                    [category]: !isChecked,
+                                  }));
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+
+                        {/* Custom Categories Section */}
+                        {customCategoryNames.length > 0 && (
+                          <div className="border-t border-greyscale-blue-300 pt-3 mt-2">
+                            <div
+                              className="text-xs text-greyscale-blue-600 mb-3"
+                              style={{ fontFamily: 'Brockmann', fontWeight: 400, fontSize: '12px', lineHeight: '16px' }}
+                            >
+                              Custom Categories
+                            </div>
+                            <div 
+                              style={{
+                                width: '100%',
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(2, 1fr)',
+                                gap: '20px',
+                                alignItems: 'start'
+                              }}
+                            >
+                              {customCategoryNames.map((category, index) => {
+                                const isChecked = categoryCheckboxes[category] || false;
+
+                                return (
+                                  <CategoryCheckbox
+                                    key={`custom-${category}-${index}`}
+                                    category={category}
+                                    isChecked={isChecked}
+                                    onToggle={() => {
+                                      setCategoryCheckboxes(prev => ({
+                                        ...prev,
+                                        [category]: !isChecked,
+                                      }));
+                                    }}
+                                  />
+                                );
+                              })}
+                            </div>
+                          </div>
                         )}
-                      </Label>
-                    </div>
-                  );
-                })}
-                
-                {/* Custom Categories */}
-                {customCategoryNames.length > 0 && (
-                  <>
-                    <div className="col-span-2 border-t pt-3 mt-2">
-                      <div className="text-xs font-semibold text-gray-500 mb-2">
-                        Custom Categories ({customCategoryNames.length})
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-3 justify-end pt-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => setSelectedMovieForCategories(null)}
+                            disabled={updatingCategories}
+                            className="h-12 px-6 py-3 border-greyscale-blue-200 rounded-[2px] bg-ui-primary"
+                            style={{ fontFamily: 'Brockmann', fontWeight: 600, fontSize: '16px', lineHeight: '24px', letterSpacing: '0.32px' }}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={handleUpdateCategories}
+                            disabled={updatingCategories}
+                            className="h-12 px-6 py-3 bg-brand-primary text-ui-primary hover:bg-brand-primary/90 rounded-[2px]"
+                            style={{ fontFamily: 'Brockmann', fontWeight: 600, fontSize: '16px', lineHeight: '24px', letterSpacing: '0.32px' }}
+                          >
+                            {updatingCategories ? 'Updating...' : 'Update Category'}
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                    {customCategoryNames.map((category, index) => {
-                      const isChecked = categoryCheckboxes[category] || false;
-                      const customCategory = customCategories.find(c => c.category_name === category);
-
-                      // Debug: Log each category being rendered
-                      if (index === 0) {
-                        console.log('🎬 Rendering custom categories in dialog:', customCategoryNames);
-                      }
-
-                      return (
-                        <div 
-                          key={`custom-${category}-${customCategory?.id || index}`} 
-                          className="flex items-center space-x-2"
-                          data-category-name={category}
-                        >
-                          <Checkbox
-                            id={`category-custom-${category}`}
-                            checked={isChecked}
-                            onCheckedChange={(checked) => {
-                              setCategoryCheckboxes(prev => ({
-                                ...prev,
-                                [category]: checked === true,
-                              }));
-                            }}
-                          />
-                          <Label
-                            htmlFor={`category-custom-${category}`}
-                            className="text-sm font-normal cursor-pointer"
-                            title={customCategory?.description || undefined}
-                          >
-                            {category}
-                            <span className="ml-1 text-xs text-gray-400">(custom)</span>
-                          </Label>
-                        </div>
-                      );
-                    })}
-                  </>
-                )}
+                  )}
                 </div>
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setSelectedMovieForCategories(null)}
-                  disabled={updatingCategories}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleUpdateCategories}
-                  disabled={updatingCategories}
-                >
-                  {updatingCategories ? 'Updating...' : 'Update Categories'}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

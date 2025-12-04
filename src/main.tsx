@@ -4,11 +4,27 @@ import './index.css'
 
 // Force cache bust on every load in development
 if (import.meta.env.DEV) {
-  console.log('🔄 App loaded at:', new Date().toISOString());
+  const timestamp = new Date().toISOString();
+  console.log('🔄 App loaded at:', timestamp);
+  console.log('🔄 Cache bust timestamp:', Date.now());
+  
   // Clear any service worker caches
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(registrations => {
-      registrations.forEach(registration => registration.unregister());
+      registrations.forEach(registration => {
+        registration.unregister();
+        console.log('🗑️ Unregistered service worker');
+      });
+    });
+  }
+  
+  // Force reload if cache detected
+  if ('caches' in window) {
+    caches.keys().then(names => {
+      names.forEach(name => {
+        caches.delete(name);
+        console.log('🗑️ Deleted cache:', name);
+      });
     });
   }
 }
