@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Search, X, Loader2, CheckCircle2, Film, CheckSquare2, Edit2, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { SpecDraftWithMovies, SpecDraftMovie, SpecDraftMovieCategory } from '@/hooks/useSpecDraftsAdmin';
@@ -374,177 +377,96 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
     return `https://image.tmdb.org/t/p/w92${posterPath}`;
   };
 
-  // CustomCheckbox component for category selection
-  const CategoryCheckbox = ({ 
-    category, 
-    isChecked, 
-    onToggle 
-  }: { 
-    category: string; 
-    isChecked: boolean; 
-    onToggle: () => void; 
-  }) => {
-    const [isHovered, setIsHovered] = useState(false);
-
-    return (
-      <div 
-        style={{
-          justifyContent: 'flex-start',
-          alignItems: 'center',
-          gap: '8px',
-          display: 'inline-flex',
-          cursor: 'pointer',
-        }}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-        onClick={onToggle}
-        title={category}
-      >
-        <div style={{
-          width: '16px',
-          height: '16px',
-          borderRadius: '4px',
-          outline: '1px var(--Purple-300, #907AFF) solid',
-          outlineOffset: '-1px',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '10px',
-          display: 'flex',
-          background: isChecked ? 'var(--Brand-Primary, #680AFF)' : 'transparent'
-        }}>
-          {(isChecked || isHovered) && (
-            <svg width="9.33" height="6.42" viewBox="0 0 12 8" fill="none">
-              <path 
-                d="M10.6667 0.791687L4.25 7.20835L1.33333 4.29169" 
-                stroke={isChecked ? 'white' : 'var(--Purple-300, #907AFF)'}
-                strokeWidth="1.16667" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              />
-            </svg>
-          )}
-        </div>
-        
-        <div style={{
-          flexDirection: 'column',
-          justifyContent: 'flex-start',
-          alignItems: 'flex-start',
-          display: 'inline-flex'
-        }}>
-          <div style={{
-            justifyContent: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            color: 'var(--Text-Primary, #2B2D2D)',
-            fontSize: '14px',
-            fontFamily: 'Brockmann',
-            fontWeight: '500',
-            lineHeight: '20px',
-            wordWrap: 'break-word'
-          }}>
-            {category}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6">
       {/* Search and Add Movies */}
-      <div className="bg-greyscale-blue-100 rounded-[8px] shadow-[0px_0px_3px_0px_rgba(0,0,0,0.25)] p-6 space-y-6">
-        {/* Header */}
-        <div className="flex gap-2 items-center">
-          <Film className="w-6 h-6 text-brand-primary" />
-          <h3
-            className="text-xl text-text-primary"
-            style={{ fontFamily: 'Brockmann', fontWeight: 500, lineHeight: '28px' }}
-          >
-            Add Movies
-          </h3>
-        </div>
-        {/* Search Input */}
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-greyscale-blue-400 pointer-events-none z-10" />
-          <Input
-            ref={searchInputRef}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => {
-              if (searchResults.length > 0) setShowResults(true);
-            }}
-            placeholder="Search for movies"
-            className="pl-14 h-12 pr-4 py-3 border-greyscale-blue-400 rounded-[2px] text-sm"
-            style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearchQuery('');
-                setShowResults(false);
-              }}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2"
-            >
-              <X className="w-4 h-4 text-greyscale-blue-400" />
-            </button>
-          )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Add Movies to Spec Draft</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                ref={searchInputRef}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => {
+                  if (searchResults.length > 0) setShowResults(true);
+                }}
+                placeholder="Search for movies..."
+                className="pl-9"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setShowResults(false);
+                  }}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                >
+                  <X className="w-4 h-4 text-gray-400" />
+                </button>
+              )}
 
-          {/* Search Results */}
-          {showResults && (searchLoading || searchResults.length > 0) && (
-              <div
-                ref={resultsRef}
-                className="absolute z-50 w-full mt-1 bg-ui-primary border border-greyscale-blue-200 rounded-[8px] shadow-lg max-h-96 overflow-auto"
-              >
-                {searchLoading && (
-                  <div className="p-4 text-center">
-                    <Loader2 className="w-5 h-5 animate-spin mx-auto text-greyscale-blue-400" />
-                  </div>
-                )}
-                {!searchLoading && searchResults.map((movie) => {
-                  const isAdded = specDraft.movies.some(m => m.movie_tmdb_id === movie.id);
-                  const posterUrl = getPosterUrl(movie.posterPath);
+              {/* Search Results */}
+              {showResults && (searchLoading || searchResults.length > 0) && (
+                <div
+                  ref={resultsRef}
+                  className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-96 overflow-auto"
+                >
+                  {searchLoading && (
+                    <div className="p-4 text-center">
+                      <Loader2 className="w-5 h-5 animate-spin mx-auto text-gray-400" />
+                    </div>
+                  )}
+                  {!searchLoading && searchResults.map((movie) => {
+                    const isAdded = specDraft.movies.some(m => m.movie_tmdb_id === movie.id);
+                    const posterUrl = getPosterUrl(movie.posterPath);
 
-                  return (
-                    <button
-                      key={movie.id}
-                      type="button"
-                      onClick={() => !isAdded && handleAddMovie(movie)}
-                      disabled={isAdded}
-                      className={`w-full text-left px-4 py-3 hover:bg-greyscale-blue-150 flex items-center gap-3 ${
-                        isAdded ? 'bg-positive-green-100 opacity-60 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      {posterUrl && (
-                        <img
-                          src={posterUrl}
-                          alt={movie.title}
-                          className="w-12 h-16 object-cover rounded"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-brockmann-medium text-text-primary leading-5 truncate">{movie.title}</div>
-                        <div className="text-xs font-brockmann-regular text-greyscale-blue-600 leading-4">{movie.year}</div>
-                        {movie.genres && movie.genres.length > 0 && (
-                          <div className="text-xs font-brockmann-regular text-greyscale-blue-400 leading-4">
-                            {movie.genres.map(id => getGenreName(id)).join(', ')}
-                          </div>
+                    return (
+                      <button
+                        key={movie.id}
+                        type="button"
+                        onClick={() => !isAdded && handleAddMovie(movie)}
+                        disabled={isAdded}
+                        className={`w-full text-left px-4 py-3 hover:bg-gray-100 flex items-center gap-3 ${
+                          isAdded ? 'bg-green-50 opacity-60 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        {posterUrl && (
+                          <img
+                            src={posterUrl}
+                            alt={movie.title}
+                            className="w-12 h-16 object-cover rounded"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
                         )}
-                      </div>
-                      {isAdded && (
-                        <CheckCircle2 className="w-5 h-5 text-positive-green-600" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">{movie.title}</div>
+                          <div className="text-xs text-gray-500">{movie.year}</div>
+                          {movie.genres && movie.genres.length > 0 && (
+                            <div className="text-xs text-gray-400">
+                              {movie.genres.map(id => getGenreName(id)).join(', ')}
+                            </div>
+                          )}
+                        </div>
+                        {isAdded && (
+                          <CheckCircle2 className="w-5 h-5 text-green-600" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Movies List */}
       <div className="bg-greyscale-blue-100 rounded-[8px] shadow-[0px_0px_3px_0px_rgba(0,0,0,0.25)] p-6 space-y-6">
@@ -698,17 +620,69 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                             const isChecked = categoryCheckboxes[category] || false;
 
                             return (
-                              <CategoryCheckbox
+                              <div 
                                 key={category}
-                                category={category}
-                                isChecked={isChecked}
-                                onToggle={() => {
+                                style={{
+                                  justifyContent: 'flex-start',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  display: 'inline-flex',
+                                  cursor: 'pointer',
+                                }}
+                                onClick={() => {
                                   setCategoryCheckboxes(prev => ({
                                     ...prev,
                                     [category]: !isChecked,
                                   }));
                                 }}
-                              />
+                                title={category}
+                              >
+                                <div style={{
+                                  width: '16px',
+                                  height: '16px',
+                                  borderRadius: '4px',
+                                  outline: '1px var(--Purple-300, #907AFF) solid',
+                                  outlineOffset: '-1px',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  gap: '10px',
+                                  display: 'flex',
+                                  background: isChecked ? 'var(--Brand-Primary, #680AFF)' : 'transparent'
+                                }}>
+                                  {isChecked && (
+                                    <svg width="9.33" height="6.42" viewBox="0 0 12 8" fill="none">
+                                      <path 
+                                        d="M10.6667 0.791687L4.25 7.20835L1.33333 4.29169" 
+                                        stroke="white" 
+                                        strokeWidth="1.16667" 
+                                        strokeLinecap="round" 
+                                        strokeLinejoin="round"
+                                      />
+                                    </svg>
+                                  )}
+                                </div>
+                                
+                                <div style={{
+                                  flexDirection: 'column',
+                                  justifyContent: 'flex-start',
+                                  alignItems: 'flex-start',
+                                  display: 'inline-flex'
+                                }}>
+                                  <div style={{
+                                    justifyContent: 'center',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    color: 'var(--Text-Primary, #2B2D2D)',
+                                    fontSize: '14px',
+                                    fontFamily: 'Brockmann',
+                                    fontWeight: '500',
+                                    lineHeight: '20px',
+                                    wordWrap: 'break-word'
+                                  }}>
+                                    {category}
+                                  </div>
+                                </div>
+                              </div>
                             );
                           })}
                         </div>
@@ -735,17 +709,69 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                                 const isChecked = categoryCheckboxes[category] || false;
 
                                 return (
-                                  <CategoryCheckbox
+                                  <div 
                                     key={`custom-${category}-${index}`}
-                                    category={category}
-                                    isChecked={isChecked}
-                                    onToggle={() => {
+                                    style={{
+                                      justifyContent: 'flex-start',
+                                      alignItems: 'center',
+                                      gap: '8px',
+                                      display: 'inline-flex',
+                                      cursor: 'pointer',
+                                    }}
+                                    onClick={() => {
                                       setCategoryCheckboxes(prev => ({
                                         ...prev,
                                         [category]: !isChecked,
                                       }));
                                     }}
-                                  />
+                                    title={category}
+                                  >
+                                    <div style={{
+                                      width: '16px',
+                                      height: '16px',
+                                      borderRadius: '4px',
+                                      outline: '1px var(--Purple-300, #907AFF) solid',
+                                      outlineOffset: '-1px',
+                                      justifyContent: 'center',
+                                      alignItems: 'center',
+                                      gap: '10px',
+                                      display: 'flex',
+                                      background: isChecked ? 'var(--Brand-Primary, #680AFF)' : 'transparent'
+                                    }}>
+                                      {isChecked && (
+                                        <svg width="9.33" height="6.42" viewBox="0 0 12 8" fill="none">
+                                          <path 
+                                            d="M10.6667 0.791687L4.25 7.20835L1.33333 4.29169" 
+                                            stroke="white" 
+                                            strokeWidth="1.16667" 
+                                            strokeLinecap="round" 
+                                            strokeLinejoin="round"
+                                          />
+                                        </svg>
+                                      )}
+                                    </div>
+                                    
+                                    <div style={{
+                                      flexDirection: 'column',
+                                      justifyContent: 'flex-start',
+                                      alignItems: 'flex-start',
+                                      display: 'inline-flex'
+                                    }}>
+                                      <div style={{
+                                        justifyContent: 'center',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        color: 'var(--Text-Primary, #2B2D2D)',
+                                        fontSize: '14px',
+                                        fontFamily: 'Brockmann',
+                                        fontWeight: '500',
+                                        lineHeight: '20px',
+                                        wordWrap: 'break-word'
+                                      }}>
+                                        {category}
+                                      </div>
+                                    </div>
+                                  </div>
                                 );
                               })}
                             </div>

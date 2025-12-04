@@ -311,13 +311,10 @@ const Admin = () => {
                   {specDraftSection === 'list' && (
             <div className="space-y-4">
               <div className="flex justify-end">
-                <Button
-                  onClick={() => {
-                    setEditingSpecDraft(null);
-                    setSpecDraftSection('form');
-                  }}
-                  className="bg-brand-primary text-ui-primary hover:bg-brand-primary/90 h-12 px-6 py-3 rounded-[2px] font-brockmann-semibold text-base leading-6 tracking-[0.32px]"
-                >
+                <Button onClick={() => {
+                  setEditingSpecDraft(null);
+                  setSpecDraftSection('form');
+                }}>
                   <Plus className="w-4 h-4 mr-2" />
                   Create New Spec Draft
                 </Button>
