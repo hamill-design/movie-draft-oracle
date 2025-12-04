@@ -39,25 +39,29 @@ const App = () => (
         <Sonner />
         <AuthProvider>
           <BrowserRouter>
-            <AppHeader />
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/draft" element={<Index />} />
-              <Route path="/draft/:draftId" element={<Index />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/final-scores/:draftId" element={<FinalScores />} />
-              <Route path="/join-draft/:draftId" element={<JoinDraft />} />
-              <Route path="/join-draft" element={<JoinDraft />} />
-              <Route path="/learn-more" element={<LearnMore />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms-of-service" element={<TermsOfService />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <Footer />
+            <div className="flex flex-col min-h-screen">
+              <AppHeader />
+              <main className="flex-1">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/draft" element={<Index />} />
+                  <Route path="/draft/:draftId" element={<Index />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/final-scores/:draftId" element={<FinalScores />} />
+                  <Route path="/join-draft/:draftId" element={<JoinDraft />} />
+                  <Route path="/join-draft" element={<JoinDraft />} />
+                  <Route path="/learn-more" element={<LearnMore />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                  <Route path="/terms-of-service" element={<TermsOfService />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </main>
+              <Footer />
+            </div>
           </BrowserRouter>
         </AuthProvider>
       </TooltipProvider>

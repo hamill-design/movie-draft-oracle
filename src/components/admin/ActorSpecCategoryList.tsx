@@ -138,16 +138,25 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
                 {/* Actor Header with Purple Background */}
                 <div className="bg-purple-100 px-3 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-base font-brockmann-semibold text-text-primary leading-6 tracking-[0.32px]">
+                    <h3 
+                      className="text-base text-text-primary leading-6 tracking-[0.32px]"
+                      style={{ fontFamily: 'Brockmann', fontWeight: 600 }}
+                    >
                       {group.actor_name}
                     </h3>
                     {group.actor_tmdb_id && (
-                      <span className="text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
+                      <span 
+                        className="text-sm text-greyscale-blue-600 leading-5"
+                        style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
+                      >
                         (ID: {group.actor_tmdb_id})
                       </span>
                     )}
                   </div>
-                  <div className="text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
+                  <div 
+                    className="text-sm text-greyscale-blue-600 leading-5"
+                    style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
+                  >
                     {group.categories.length} {group.categories.length === 1 ? 'category' : 'categories'}
                   </div>
                 </div>
@@ -157,16 +166,28 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
                   <Table className="w-full">
                     <TableHeader>
                       <TableRow className="border-b border-greyscale-blue-300 hover:bg-transparent">
-                        <TableHead className="px-4 py-3 text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
+                        <TableHead 
+                          className="px-4 py-3 text-sm text-greyscale-blue-600 leading-5"
+                          style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
+                        >
                           Category Name
                         </TableHead>
-                        <TableHead className="px-4 py-3 text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
+                        <TableHead 
+                          className="px-4 py-3 text-sm text-greyscale-blue-600 leading-5"
+                          style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
+                        >
                           Movie Count
                         </TableHead>
-                        <TableHead className="px-4 py-3 text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
+                        <TableHead 
+                          className="px-4 py-3 text-sm text-greyscale-blue-600 leading-5"
+                          style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
+                        >
                           Description
                         </TableHead>
-                        <TableHead className="px-4 py-3 text-sm font-brockmann-regular text-greyscale-blue-600 leading-5 text-right">
+                        <TableHead 
+                          className="px-4 py-3 text-sm text-greyscale-blue-600 leading-5 text-right"
+                          style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
+                        >
                           Actions
                         </TableHead>
                       </TableRow>
@@ -176,16 +197,27 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
                         <TableRow
                           key={category.id}
                           className={`${
-                            index % 2 === 0 ? 'bg-greyscale-blue-150' : 'bg-transparent'
-                          } border-0 hover:bg-greyscale-blue-200`}
+                            index % 2 === 0 
+                              ? 'bg-greyscale-blue-150 hover:bg-greyscale-blue-150' 
+                              : 'bg-transparent hover:bg-transparent'
+                          } border-0`}
                         >
-                          <TableCell className="px-4 py-3 text-sm font-brockmann-medium text-text-primary leading-5">
+                          <TableCell 
+                            className="px-4 py-3 text-sm text-text-primary leading-5"
+                            style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
+                          >
                             {category.category_name}
                           </TableCell>
-                          <TableCell className="px-4 py-3 text-sm font-brockmann-medium text-text-primary leading-5">
+                          <TableCell 
+                            className="px-4 py-3 text-sm text-text-primary leading-5"
+                            style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
+                          >
                             {category.movie_tmdb_ids?.length || 0}
                           </TableCell>
-                          <TableCell className="px-4 py-3 text-sm font-brockmann-medium text-text-primary leading-5">
+                          <TableCell 
+                            className="px-4 py-3 text-sm text-text-primary leading-5"
+                            style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
+                          >
                             {category.description || '-'}
                           </TableCell>
                           <TableCell className="px-4 py-3 text-right">

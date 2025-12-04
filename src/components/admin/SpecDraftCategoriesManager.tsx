@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Plus, X, Edit2, Trash2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Plus, Edit2, Trash2 } from 'lucide-react';
 import { SpecDraftCategory } from '@/hooks/useSpecDraftsAdmin';
 
 interface SpecDraftCategoriesManagerProps {
@@ -99,120 +104,138 @@ export const SpecDraftCategoriesManager: React.FC<SpecDraftCategoriesManagerProp
   };
 
   return (
-    <Card>
-      <CardHeader>
+    <>
+      <div className="bg-greyscale-blue-100 rounded-[8px] shadow-[0px_0px_3px_0px_rgba(0,0,0,0.25)] p-6 space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <CardTitle>Custom Categories</CardTitle>
-          {!isCreating && !editingId && (
-            <Button
-              size="sm"
-              onClick={() => {
-                setIsCreating(true);
-                setEditingId(null);
-                setCategoryName('');
-                setDescription('');
-              }}
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Category
-            </Button>
-          )}
+          <h3
+            className="text-xl text-text-primary"
+            style={{ fontFamily: 'Brockmann', fontWeight: 500, lineHeight: '28px' }}
+          >
+            Custom Categories
+          </h3>
+          <Button
+            onClick={() => {
+              setIsCreating(true);
+              setEditingId(null);
+              setCategoryName('');
+              setDescription('');
+            }}
+            className="bg-brand-primary text-ui-primary hover:bg-brand-primary/90 px-3 py-2 rounded-[2px] flex items-center gap-2"
+            style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '14px', lineHeight: '20px' }}
+          >
+            <Plus className="w-4 h-4" />
+            Create Category
+          </Button>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {/* Create/Edit Form */}
-          {(isCreating || editingId) && (
-            <div className="p-4 border rounded-lg bg-gray-50">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="category-name">Category Name *</Label>
-                  <Input
-                    id="category-name"
-                    value={categoryName}
-                    onChange={(e) => setCategoryName(e.target.value)}
-                    placeholder="e.g., Superhero Movies"
-                    required
-                  />
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="category-description">Description (Optional)</Label>
-                  <Textarea
-                    id="category-description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="e.g., Movies featuring superhero characters"
-                    rows={2}
-                  />
-                </div>
-
-                <div className="flex gap-2 justify-end">
-                  <Button variant="outline" onClick={handleCancel} disabled={loading}>
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={() => editingId ? handleUpdate(editingId) : handleCreate()}
-                    disabled={loading}
-                  >
-                    {loading ? 'Saving...' : editingId ? 'Update' : 'Create'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Categories List */}
-          {customCategories.length === 0 && !isCreating && !editingId ? (
-            <p className="text-sm text-gray-500 text-center py-4">
-              No custom categories yet. Click "Add Category" to create one.
+        {/* Categories List */}
+        {customCategories.length === 0 ? (
+          <div className="bg-ui-primary border border-greyscale-blue-200 rounded-[8px] p-6 text-center">
+            <p
+              className="text-greyscale-blue-600"
+              style={{ fontFamily: 'Brockmann', fontWeight: 400, fontSize: '14px', lineHeight: '20px' }}
+            >
+              No custom categories yet. Click "Create Category" to add one.
             </p>
-          ) : (
-            <div className="space-y-2">
-              {customCategories.length > 0 && (
-                <div className="text-xs text-gray-500 mb-2">
-                  Showing {customCategories.length} custom categor{customCategories.length === 1 ? 'y' : 'ies'}
-                </div>
-              )}
-              {customCategories.map((category) => (
-                <div
-                  key={category.id}
-                  className="flex items-start justify-between p-3 border rounded-lg"
-                >
-                  <div className="flex-1">
-                    <div className="font-medium">{category.category_name}</div>
-                    {category.description && (
-                      <div className="text-sm text-gray-500 mt-1">{category.description}</div>
-                    )}
-                  </div>
-                  {editingId !== category.id && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(category)}
-                        disabled={loading}
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(category.id, category.category_name)}
-                        disabled={loading}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {customCategories.map((category) => (
+              <div
+                key={category.id}
+                className="bg-ui-primary border border-greyscale-blue-200 rounded-[8px] px-[18px] py-4 flex items-center justify-between gap-4"
+              >
+                <div className="flex flex-col gap-[2px] flex-1 min-w-0">
+                  <h4
+                    className="text-lg text-[#2b2f31] truncate"
+                    style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '18px', lineHeight: '26px' }}
+                  >
+                    {category.category_name}
+                  </h4>
+                  {category.description && (
+                    <p
+                      className="text-sm text-gray-500 truncate"
+                      style={{ fontFamily: 'Brockmann', fontWeight: 400, fontSize: '14px', lineHeight: '20px' }}
+                    >
+                      {category.description}
+                    </p>
                   )}
                 </div>
-              ))}
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() => handleEdit(category)}
+                    disabled={loading}
+                    className="p-3 rounded-[2px] hover:bg-greyscale-blue-200 transition-colors"
+                    title="Edit"
+                  >
+                    <Edit2 className="w-6 h-6 text-text-primary" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(category.id, category.category_name)}
+                    disabled={loading}
+                    className="p-3 rounded-[2px] hover:bg-greyscale-blue-200 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="w-6 h-6 text-text-primary" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Create/Edit Dialog */}
+      <Dialog open={isCreating || editingId !== null} onOpenChange={(open) => {
+        if (!open) {
+          handleCancel();
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingId ? 'Edit Custom Category' : 'Create Custom Category'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="category-name">Category Name *</Label>
+              <Input
+                id="category-name"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                placeholder="e.g., Superhero Movies"
+                required
+              />
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+
+            <div className="space-y-2">
+              <Label htmlFor="category-description">Description (Optional)</Label>
+              <Textarea
+                id="category-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="e.g., Movies featuring superhero characters"
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" onClick={handleCancel} disabled={loading}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => editingId ? handleUpdate(editingId) : handleCreate()}
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : editingId ? 'Update' : 'Create'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

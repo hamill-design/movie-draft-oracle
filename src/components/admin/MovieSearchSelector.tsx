@@ -180,10 +180,15 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <label className="text-sm font-medium">Search and Add Movies *</label>
+        <label 
+          className="text-sm text-greyscale-blue-800"
+          style={{ fontFamily: 'Brockmann', fontWeight: 500, lineHeight: '20px' }}
+        >
+          Search to add Movies
+        </label>
         <div className="relative">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-greyscale-blue-400 pointer-events-none z-10" />
             <Input
               ref={searchInputRef}
               value={searchQuery}
@@ -191,8 +196,9 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
               onFocus={() => {
                 if (movies.length > 0) setShowResults(true);
               }}
-              placeholder="Search for movies (e.g., Mission Impossible, Top Gun)..."
-              className="pl-9"
+              placeholder="e.g. Top Gun Maverick"
+              className="pl-14 h-12 pr-4 py-3 border-greyscale-blue-400 rounded-[2px] text-sm"
+              style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
             />
             {searchQuery && (
               <button
@@ -203,7 +209,7 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
                 }}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2"
               >
-                <X className="w-4 h-4 text-gray-400" />
+                <X className="w-4 h-4 text-greyscale-blue-400" />
               </button>
             )}
           </div>
@@ -264,18 +270,18 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
             </div>
           )}
         </div>
-        <p className="text-xs text-gray-500">
-          Type to search for movies. Click a movie to add it to the category.
-        </p>
       </div>
 
       {/* Selected Movies List */}
       {selectedMovieIds.length > 0 && (
         <div className="space-y-2">
-          <label className="text-sm font-medium">
+          <label 
+            className="text-sm text-greyscale-blue-800"
+            style={{ fontFamily: 'Brockmann', fontWeight: 500, lineHeight: '20px' }}
+          >
             Selected Movies ({selectedMovieIds.length})
           </label>
-          <div className="space-y-2 max-h-64 overflow-y-auto">
+          <div className="space-y-[5px] max-h-[256px] overflow-y-auto">
             {selectedMovieIds.map((movieId) => {
               // Try to find the movie details from cache or search results
               const cachedMovie = selectedMoviesCache.get(movieId);
@@ -286,36 +292,54 @@ export const MovieSearchSelector: React.FC<MovieSearchSelectorProps> = ({
               return (
                 <div
                   key={movieId}
-                  className="flex items-center gap-3 p-3 bg-gray-50 rounded border"
+                  className="bg-ui-primary border border-greyscale-blue-200 rounded-[4px] flex gap-4 items-center p-3"
                 >
-                  {posterUrl && (
+                  {posterUrl ? (
                     <img
                       src={posterUrl}
                       alt={movie?.title || 'Movie'}
-                      className="w-12 h-16 object-cover rounded"
+                      className="w-12 h-16 object-cover rounded-[4px]"
                       onError={(e) => {
                         (e.target as HTMLImageElement).style.display = 'none';
                       }}
                     />
+                  ) : (
+                    <div className="w-12 h-16 bg-greyscale-blue-200 rounded-[4px] flex items-center justify-center">
+                      <span className="text-xs text-greyscale-blue-400">No Image</span>
+                    </div>
                   )}
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 space-y-[2px]">
                     {movie ? (
                       <>
-                        <div className="font-medium text-sm">{movie.title}</div>
-                        <div className="text-xs text-gray-500">{movie.year}</div>
+                        <div 
+                          className="text-base text-text-primary"
+                          style={{ fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '24px', letterSpacing: '0.32px' }}
+                        >
+                          {movie.title}
+                        </div>
+                        <div 
+                          className="text-sm text-greyscale-blue-500"
+                          style={{ fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '20px' }}
+                        >
+                          {movie.year}
+                        </div>
                       </>
                     ) : (
-                      <div className="text-sm text-gray-600">Movie ID: {movieId}</div>
+                      <div 
+                        className="text-sm text-text-primary"
+                        style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
+                      >
+                        Movie ID: {movieId}
+                      </div>
                     )}
                   </div>
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    size="icon"
                     onClick={() => handleRemoveMovie(movieId)}
+                    className="p-3 rounded-[2px] hover:bg-greyscale-blue-200 transition-colors"
                   >
-                    <X className="w-4 h-4" />
-                  </Button>
+                    <X className="w-6 h-6 text-text-primary" />
+                  </button>
                 </div>
               );
             })}
