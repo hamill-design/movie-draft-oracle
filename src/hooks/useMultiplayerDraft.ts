@@ -128,18 +128,22 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   const startPolling = useCallback((draftId: string) => {
     if (pollingIntervalRef.current) return; // Already polling
     
-    console.log('📡 Starting fallback polling');
+    // For guest users, use more frequent polling
+    const pollingInterval = isGuest ? 3000 : 5000; // 3s for guests, 5s for authenticated
+    
+    console.log(`📡 Starting fallback polling (interval: ${pollingInterval}ms)`);
     pollingIntervalRef.current = setInterval(() => {
       const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
-      // If no updates for 10 seconds, reload draft
-      if (timeSinceLastUpdate > 10000) {
+      // If no updates for threshold, reload draft
+      const threshold = isGuest ? 8000 : 10000; // 8s for guests, 10s for authenticated
+      if (timeSinceLastUpdate > threshold) {
         console.log('📡 Polling: No updates received, reloading draft');
         if (loadDraftRef.current) {
           loadDraftRef.current(draftId);
         }
       }
-    }, 5000); // Check every 5 seconds
-  }, []);
+    }, pollingInterval);
+  }, [isGuest]);
 
   // Stop polling when subscriptions are healthy
   const stopPolling = useCallback(() => {
@@ -692,7 +696,12 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
 
   // Set up real-time database subscriptions with enhanced reliability
   useEffect(() => {
+    // IMPORTANT: For guest users, wait for guestSession to be available
     if (!normalizedDraftId || !participantId) return;
+    if (isGuest && !guestSession) {
+      console.log('⏳ Waiting for guest session before setting up subscriptions...');
+      return;
+    }
 
     // Clean up any existing subscriptions first
     if (draftChannelRef.current) {
@@ -716,8 +725,15 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       clearTimeout(reconnectTimeoutRef.current);
     }
 
-    console.log(`🔴 Setting up enhanced database subscriptions for draft: ${normalizedDraftId}, participant: ${participantId}`);
+    console.log(`🔴 Setting up enhanced database subscriptions for draft: ${normalizedDraftId}, participant: ${participantId}, isGuest: ${isGuest}`);
     updateLastActivity();
+
+    // For guest users, use a more aggressive polling fallback since real-time might not work reliably
+    if (isGuest) {
+      console.log('👤 Guest user detected - enabling enhanced polling fallback');
+      // Start polling immediately for guest users as a backup
+      startPolling(normalizedDraftId);
+    }
 
     // Draft changes subscription (turn order, current turn, completion status)
     const draftChannel = supabase
@@ -730,7 +746,10 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       }, (payload) => {
         console.log('📥 Draft change received:', payload);
         updateLastActivity();
-        stopPolling(); // Subscriptions are working, stop polling
+        // For guest users, don't stop polling completely - keep it as backup
+        if (!isGuest) {
+          stopPolling();
+        }
         
         // Clear fallback timeout if it exists
         if ((window as any).__draftFallbackTimeout) {
@@ -797,7 +816,11 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         console.log('📡 Draft channel status:', status);
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
-          stopPolling();
+          // For guest users, keep polling as backup even when subscribed
+          // because RLS might block some updates
+          if (!isGuest) {
+            stopPolling();
+          }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           console.warn('⚠️ Draft channel error:', status);
           setIsConnected(false);
@@ -824,7 +847,10 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       }, (payload) => {
         console.log('📥 New pick received:', payload);
         updateLastActivity();
-        stopPolling(); // Subscriptions are working, stop polling
+        // For guest users, don't stop polling completely - keep it as backup
+        if (!isGuest) {
+          stopPolling();
+        }
         
         // Clear fallback timeout if it exists
         if ((window as any).__draftFallbackTimeout) {
@@ -860,7 +886,9 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         console.log('📡 Picks channel status:', status);
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
-          stopPolling();
+          if (!isGuest) {
+            stopPolling();
+          }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           console.warn('⚠️ Picks channel error:', status);
           setIsConnected(false);
@@ -879,7 +907,9 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       }, (payload) => {
         console.log('📥 Participant change received:', payload);
         updateLastActivity();
-        stopPolling(); // Subscriptions are working, stop polling
+        if (!isGuest) {
+          stopPolling();
+        }
         
         // Reload participants when changes occur (debounced)
         debouncedReload(normalizedDraftId);
@@ -901,11 +931,13 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         console.log('📡 Participants channel status:', status);
         if (status === 'SUBSCRIBED') {
           setIsConnected(true);
-          stopPolling();
+          if (!isGuest) {
+            stopPolling();
+          }
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           console.warn('⚠️ Participants channel error:', status);
           setIsConnected(false);
-          startPolling(draftId);
+          startPolling(normalizedDraftId);
         }
       });
 
@@ -915,14 +947,17 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     participantsChannelRef.current = participantsChannel;
 
     // Health check: monitor subscription activity
+    // For guest users, use more aggressive polling
+    const healthCheckInterval = isGuest ? 5000 : 10000; // Check every 5s for guests, 10s for authenticated
     subscriptionHealthCheckRef.current = setInterval(() => {
       const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
-      if (timeSinceLastUpdate > 15000) { // 15 seconds without updates
-        console.warn('⚠️ Health check: No updates for 15 seconds, starting polling');
+      const threshold = isGuest ? 10000 : 15000; // 10s for guests, 15s for authenticated
+      if (timeSinceLastUpdate > threshold) {
+        console.warn(`⚠️ Health check: No updates for ${threshold/1000}s, starting polling`);
         setIsConnected(false);
-        startPolling(draftId);
+        startPolling(normalizedDraftId);
       }
-    }, 10000); // Check every 10 seconds
+    }, healthCheckInterval);
 
     // Cleanup function
     return () => {
@@ -958,7 +993,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         participantsChannelRef.current = null;
       }
     };
-  }, [normalizedDraftId, participantId, toast, participants, updateLastActivity, stopPolling, startPolling, reconnectSubscriptions, debouncedReload]);
+  }, [normalizedDraftId, participantId, isGuest, guestSession, toast, participants, updateLastActivity, stopPolling, startPolling, reconnectSubscriptions, debouncedReload]);
 
   // Mobile-specific optimizations: Handle visibility changes (tab switching, app backgrounding)
   useEffect(() => {

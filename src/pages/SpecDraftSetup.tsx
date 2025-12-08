@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Users, CheckSquare2 } from 'lucide-react';
+import { X, Users, User } from 'lucide-react';
+import { CheckboxIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useAuth } from '@/contexts/AuthContext';
@@ -452,7 +453,7 @@ const SpecDraftSetup = () => {
                 }`}
                 style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '18px', lineHeight: '26px' }}
               >
-                <Users className="w-6 h-6" />
+                <User className="w-6 h-6" />
                 <span>Local Draft</span>
               </button>
               <button
@@ -479,7 +480,7 @@ const SpecDraftSetup = () => {
               </h3>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 placeholder="Enter player name, email, or ID"
                 value={newParticipant}
@@ -495,7 +496,7 @@ const SpecDraftSetup = () => {
               />
               <Button
                 onClick={handleAddParticipant}
-                className="bg-brand-primary text-ui-primary px-4 py-2 rounded-[2px]"
+                className="bg-brand-primary text-ui-primary px-4 h-12 rounded-[2px]"
                 style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '14px', lineHeight: '20px' }}
               >
                 Add
@@ -520,7 +521,7 @@ const SpecDraftSetup = () => {
                 <div className="flex flex-wrap gap-2">
                   {draftMode === 'multiplayer' && hostName && (
                     <div
-                      className="bg-purple-150 flex gap-2 items-center pl-4 pr-2.5 py-2 rounded-[4px] border-2 border-brand-primary"
+                      className="bg-purple-150 flex gap-2 items-center pl-4 pr-4 py-2 rounded-[4px] border-2 border-brand-primary"
                       title="Host (cannot be removed)"
                     >
                       <span className="text-text-primary" style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '14px', lineHeight: '20px' }}>
@@ -552,7 +553,7 @@ const SpecDraftSetup = () => {
           {/* Select Categories */}
           <div className="w-full p-6 bg-greyscale-blue-100 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
             <div className="flex gap-2 items-center">
-              <CheckSquare2 className="w-6 h-6 text-brand-primary" />
+              <CheckboxIcon className="w-6 h-6 text-brand-primary" />
               <h3 className="text-xl text-text-primary" style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '20px', lineHeight: '28px' }}>
                 Choose Categories
               </h3>

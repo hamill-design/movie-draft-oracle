@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -22,10 +22,13 @@ export const SpecDraftSelector = () => {
     const fetchSpecDrafts = async () => {
       try {
         // Try to fetch with photo_url first
-        const { data, error } = await supabase
-          .from('spec_drafts')
+        const queryResult = await supabase
+          .from('spec_drafts' as any)
           .select('id, name, description, photo_url, created_at, updated_at')
           .order('created_at', { ascending: false });
+        
+        const result = queryResult as { data: SpecDraft[] | null; error: any };
+        const { data, error } = result;
 
         if (error) {
           // If photo_url column doesn't exist, fetch without it
@@ -34,16 +37,19 @@ export const SpecDraftSelector = () => {
             error.message?.includes('column') ||
             error.message?.includes('does not exist') ||
             error.code === 'PGRST116' ||
-            error.status === 400;
+            (typeof error === 'object' && 'status' in error && error.status === 400);
 
           if (isColumnError) {
-            const { data: fallbackData, error: fallbackError } = await supabase
-              .from('spec_drafts')
+            const fallbackQueryResult = await supabase
+              .from('spec_drafts' as any)
               .select('id, name, description, created_at, updated_at')
               .order('created_at', { ascending: false });
             
+            const fallbackResult = fallbackQueryResult as { data: Omit<SpecDraft, 'photo_url'>[] | null; error: any };
+            const { data: fallbackData, error: fallbackError } = fallbackResult;
+            
             if (fallbackError) throw fallbackError;
-            setSpecDrafts((fallbackData || []).map(draft => ({ ...draft, photo_url: null })));
+            setSpecDrafts((fallbackData || []).map(draft => ({ ...draft, photo_url: null } as SpecDraft)));
           } else {
             throw error;
           }
