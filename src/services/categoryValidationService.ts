@@ -1,6 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
 import { CategoryAnalysisRequest, CategoryAnalysisResponse, CategoryAvailabilityResult } from '@/types/categoryTypes';
-import { getCategoryConfig } from '@/config/categoryConfigs';
 
 export class CategoryValidationService {
   private static instance: CategoryValidationService;
@@ -25,7 +24,7 @@ export class CategoryValidationService {
     return theme === 'actor' || theme === 'actress' || theme === 'director';
   }
 
-  private getCacheDuration(theme: string, isLocal: boolean = false): number {
+  private getCacheDuration(_theme: string, isLocal: boolean = false): number {
     // Use standard cache duration for all themes
     return isLocal ? this.LOCAL_CACHE_DURATION : this.CACHE_DURATION;
   }
@@ -38,6 +37,27 @@ export class CategoryValidationService {
   private isValidLocalCache(timestamp: number, theme: string): boolean {
     const duration = this.getCacheDuration(theme, true);
     return Date.now() - timestamp < duration;
+  }
+
+  /**
+   * Check if results contain error responses (Analysis failed)
+   */
+  private hasErrorResults(results: CategoryAvailabilityResult[]): boolean {
+    if (!results || results.length === 0) return false;
+    
+    // Check if all results have error indicators
+    const allHaveErrors = results.every(result => 
+      result.reason?.includes('Analysis failed') || 
+      (result.movieCount === 0 && result.status === 'insufficient' && result.reason)
+    );
+    
+    // Also check if most results have errors (more than 50%)
+    const errorCount = results.filter(result => 
+      result.reason?.includes('Analysis failed') || 
+      (result.movieCount === 0 && result.status === 'insufficient' && result.reason)
+    ).length;
+    
+    return allHaveErrors || (errorCount > results.length * 0.5);
   }
 
   private getFromLocalStorage(cacheKey: string, theme: string): CategoryAnalysisResponse | null {
@@ -75,7 +95,14 @@ export class CategoryValidationService {
     if (!forceRefresh) {
       const cached = this.cache.get(cacheKey);
       if (cached && this.isValidCache(cached.analysisTimestamp, request.theme)) {
-        return { ...cached, cacheHit: true };
+        // Don't return cached error results - clear them and force refresh
+        if (this.hasErrorResults(cached.results)) {
+          console.warn('⚠️ Detected error results in cache, clearing and forcing refresh');
+          this.cache.delete(cacheKey);
+          // Continue to fetch fresh data
+        } else {
+          return { ...cached, cacheHit: true };
+        }
       }
     }
 
@@ -83,21 +110,45 @@ export class CategoryValidationService {
     if (!forceRefresh) {
       const localCached = this.getFromLocalStorage(cacheKey, request.theme);
       if (localCached) {
-        // Also store in memory cache for faster access
-        this.cache.set(cacheKey, localCached);
-        return { ...localCached, cacheHit: true };
+        // Don't return cached error results - clear them and force refresh
+        if (this.hasErrorResults(localCached.results)) {
+          console.warn('⚠️ Detected error results in localStorage cache, clearing and forcing refresh');
+          localStorage.removeItem(`${this.localStorageCache}_${cacheKey}`);
+          // Continue to fetch fresh data
+        } else {
+          // Also store in memory cache for faster access
+          this.cache.set(cacheKey, localCached);
+          return { ...localCached, cacheHit: true };
+        }
       }
     }
 
     try {
       // Call the edge function for analysis
+      console.log('📞 Calling analyze-category-availability with:', JSON.stringify({
+        theme: request.theme,
+        option: request.option,
+        categories: request.categories,
+        playerCount: request.playerCount,
+        draftMode: request.draftMode
+      }, null, 2));
+      
       const { data, error } = await supabase.functions.invoke('analyze-category-availability', {
         body: request
       });
 
       if (error) {
-        console.error('Error analyzing category availability:', error);
+        console.error('❌ Error analyzing category availability:', error);
         throw error;
+      }
+
+      console.log('📥 Edge function response:', JSON.stringify(data, null, 2));
+      console.log('📥 Edge function results:', JSON.stringify(data?.results, null, 2));
+      if (data?.results && data.results.length > 0) {
+        console.log('📥 First result from edge function:', JSON.stringify(data.results[0], null, 2));
+        console.log('📥 All result category IDs:', data.results.map((r: any) => r.categoryId));
+        console.log('📥 All result movie counts:', data.results.map((r: any) => ({ category: r.categoryId, count: r.movieCount, status: r.status, reason: r.reason })));
+        console.log('📥 Sample of results (first 3):', JSON.stringify(data.results.slice(0, 3), null, 2));
       }
 
       const response: CategoryAnalysisResponse = {
@@ -105,10 +156,17 @@ export class CategoryValidationService {
         analysisTimestamp: Date.now(),
         cacheHit: false
       };
+      
+      console.log('📦 Formatted response:', response);
 
-      // Cache the response in both memory and localStorage
-      this.cache.set(cacheKey, response);
-      this.setToLocalStorage(cacheKey, response);
+      // Only cache successful results (not error results)
+      if (!this.hasErrorResults(response.results)) {
+        console.log('✅ Caching successful results');
+        this.cache.set(cacheKey, response);
+        this.setToLocalStorage(cacheKey, response);
+      } else {
+        console.warn('⚠️ Not caching error results - will force fresh fetch on next request');
+      }
 
       return response;
     } catch (error) {
@@ -137,7 +195,7 @@ export class CategoryValidationService {
     }
   }
 
-  private estimateMovieCount(category: string, theme: string): number {
+  private estimateMovieCount(category: string, _theme: string): number {
     // Rough estimates based on category popularity
     const estimates: Record<string, number> = {
       'Action/Adventure': 150,
@@ -194,6 +252,48 @@ export class CategoryValidationService {
     }
   }
 
+  /**
+   * Public method to clear all error caches - can be called from browser console
+   * Usage: categoryValidationService.clearErrorCaches()
+   */
+
+  /**
+   * Clear all error caches (results with "Analysis failed" errors)
+   */
+  public clearErrorCaches(): void {
+    // Clear error results from memory cache
+    const keysToDelete: string[] = [];
+    this.cache.forEach((response, key) => {
+      if (this.hasErrorResults(response.results)) {
+        keysToDelete.push(key);
+      }
+    });
+    keysToDelete.forEach(key => this.cache.delete(key));
+    
+    // Clear error results from localStorage
+    if (typeof localStorage !== 'undefined') {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith(this.localStorageCache)) {
+          try {
+            const stored = localStorage.getItem(key);
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              if (this.hasErrorResults(parsed.results || [])) {
+                localStorage.removeItem(key);
+                console.log(`🗑️ Cleared error cache: ${key}`);
+              }
+            }
+          } catch {
+            // If parsing fails, remove it anyway
+            localStorage.removeItem(key);
+          }
+        }
+      });
+    }
+    
+    console.log(`✅ Cleared ${keysToDelete.length} error cache entries`);
+  }
+
   public clearAllCaches(): void {
     this.cache.clear();
     // Clear localStorage cache as well
@@ -204,6 +304,7 @@ export class CategoryValidationService {
         }
       });
     }
+    console.log('✅ Cleared all caches');
   }
 
   public forceRefreshPersonThemes(): void {

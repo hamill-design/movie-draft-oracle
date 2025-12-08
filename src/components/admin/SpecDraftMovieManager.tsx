@@ -3,9 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Search, X, Loader2, CheckCircle2, Film, CheckSquare2, Edit2, Trash2 } from 'lucide-react';
-import { CheckboxIcon } from '@/components/icons/CheckboxIcon';
 import { supabase } from '@/integrations/supabase/client';
-import { SpecDraftWithMovies, SpecDraftMovie, SpecDraftMovieCategory } from '@/hooks/useSpecDraftsAdmin';
+import { SpecDraftWithMovies, SpecDraftMovie } from '@/hooks/useSpecDraftsAdmin';
 import { mapGenresToCategories, getGenreName } from '@/utils/specDraftGenreMapper';
 import { useToast } from '@/hooks/use-toast';
 
@@ -33,12 +32,10 @@ interface MovieSearchResult {
 
 // CustomCheckbox Component (reused from EnhancedCategoriesForm)
 const CustomCheckbox = ({ 
-  id, 
   category, 
   isChecked, 
   onToggle
 }: { 
-  id: string; 
   category: string; 
   isChecked: boolean; 
   onToggle: (checked: boolean) => void; 
@@ -134,13 +131,12 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
   onMovieAdded,
   onMovieRemoved,
   onCategoriesUpdated,
-  loading = false,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<MovieSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [selectedMovieForCategories, setSelectedMovieForCategories] = useState<SpecDraftMovie | null>(null);
+  const [selectedMovieForCategories, setSelectedMovieForCategories] = useState<(SpecDraftMovie & { categories: Array<{ id: string; spec_draft_movie_id: string; category_name: string; is_automated: boolean }> }) | null>(null);
   const [categoryCheckboxes, setCategoryCheckboxes] = useState<Record<string, boolean>>({});
   const [updatingCategories, setUpdatingCategories] = useState(false);
   const [movieFilterQuery, setMovieFilterQuery] = useState('');
@@ -299,33 +295,33 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
 
       // Add movie to spec draft with all available data
       const { data: movieData, error: insertError } = await supabase
-        .from('spec_draft_movies')
+        .from('spec_draft_movies' as any)
         .insert({
           spec_draft_id: specDraft.id,
           movie_tmdb_id: movie.id,
           movie_title: movie.title,
-          movie_year: movie.year,
-          movie_poster_path: movie.posterPath,
+          movie_year: movie.year ?? null,
+          movie_poster_path: movie.posterPath ?? null,
           movie_genres: movie.genres || [],
-          oscar_status: movie.oscarStatus || null,
-          revenue: movie.revenue || null,
-        })
+          oscar_status: movie.oscarStatus ?? null,
+          revenue: movie.revenue ?? null,
+        } as any)
         .select()
         .single();
 
       if (insertError) throw insertError;
 
       // Add auto-detected categories
-      if (autoCategories.length > 0 && movieData) {
+      if (autoCategories.length > 0 && movieData && 'id' in movieData) {
         const categoriesToInsert = autoCategories.map(categoryName => ({
-          spec_draft_movie_id: movieData.id,
+          spec_draft_movie_id: (movieData as any).id,
           category_name: categoryName,
           is_automated: true,
         }));
 
         const { error: categoriesError } = await supabase
-          .from('spec_draft_movie_categories')
-          .insert(categoriesToInsert);
+          .from('spec_draft_movie_categories' as any)
+          .insert(categoriesToInsert as any);
 
         if (categoriesError) {
           console.error('Error adding auto-categories:', categoriesError);
@@ -357,7 +353,7 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
 
     try {
       const { error } = await supabase
-        .from('spec_draft_movies')
+        .from('spec_draft_movies' as any)
         .delete()
         .eq('id', movieId);
 
@@ -379,10 +375,10 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
     }
   };
 
-  const handleManageCategories = (movie: SpecDraftMovie) => {
+  const handleManageCategories = (movie: SpecDraftMovie & { categories: Array<{ id: string; spec_draft_movie_id: string; category_name: string; is_automated: boolean }> }) => {
     setSelectedMovieForCategories(movie);
     // Initialize checkboxes with current categories
-    const currentCategories = movie.categories.map(c => c.category_name);
+    const currentCategories = movie.categories.map((c: { id: string; spec_draft_movie_id: string; category_name: string; is_automated: boolean }) => c.category_name);
     const checkboxes: Record<string, boolean> = {};
     allCategories.forEach(cat => {
       checkboxes[cat] = currentCategories.includes(cat);
@@ -399,17 +395,17 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
         .filter(([_, checked]) => checked)
         .map(([categoryName]) => categoryName);
 
-      // Get current automated categories
-      const currentAutoCategories = selectedMovieForCategories.categories
-        .filter(c => c.is_automated)
-        .map(c => c.category_name);
+      // Get current automated categories (unused but kept for potential future use)
+      // const currentAutoCategories = selectedMovieForCategories.categories
+      //   .filter((c: { id: string; spec_draft_movie_id: string; category_name: string; is_automated: boolean }) => c.is_automated)
+      //   .map((c: { id: string; spec_draft_movie_id: string; category_name: string; is_automated: boolean }) => c.category_name);
 
       // Determine which categories are automated (those that match auto-detection)
       const movie = specDraft.movies.find(m => m.id === selectedMovieForCategories.id);
       if (movie) {
         // Convert oscar_status to hasOscar boolean for compatibility
         const hasOscar = movie.oscar_status === 'winner' || movie.oscar_status === 'nominee';
-        const isBlockbuster = movie.revenue && movie.revenue >= 50000000;
+        const isBlockbuster = !!(movie.revenue && movie.revenue >= 50000000);
         
         // Convert genre IDs to genre string (same as fetch-movies does)
         const genreString = movie.movie_genres && movie.movie_genres.length > 0
@@ -421,13 +417,13 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
           movie.movie_year,
           movie.oscar_status,
           movie.revenue,
-          hasOscar,
-          isBlockbuster
+          hasOscar ? true : undefined,
+          isBlockbuster ? true : undefined
         );
 
         // Update categories
         const { error: deleteError } = await supabase
-          .from('spec_draft_movie_categories')
+          .from('spec_draft_movie_categories' as any)
           .delete()
           .eq('spec_draft_movie_id', selectedMovieForCategories.id);
 
@@ -442,8 +438,8 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
           }));
 
           const { error: insertError } = await supabase
-            .from('spec_draft_movie_categories')
-            .insert(categoriesToInsert);
+            .from('spec_draft_movie_categories' as any)
+            .insert(categoriesToInsert as any);
 
           if (insertError) throw insertError;
         }
@@ -754,18 +750,17 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                           {standardCategories.map((category) => {
                             const isChecked = categoryCheckboxes[category] || false;
 
-                            return (
-                              <CustomCheckbox
-                                key={category}
-                                id={`category-${movie.id}-${category}`}
-                                category={category}
-                                isChecked={isChecked}
-                                onToggle={(checked) => {
-                                  setCategoryCheckboxes(prev => ({
-                                    ...prev,
-                                    [category]: checked,
-                                  }));
-                                }}
+                              return (
+                                <CustomCheckbox
+                                  key={category}
+                                  category={category}
+                                  isChecked={isChecked}
+                                  onToggle={(checked) => {
+                                    setCategoryCheckboxes(prev => ({
+                                      ...prev,
+                                      [category]: checked,
+                                    }));
+                                  }}
                               />
                             );
                           })}
@@ -796,7 +791,6 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                                 return (
                                   <CustomCheckbox
                                     key={`custom-${category}-${customCategory?.id || index}`}
-                                    id={`category-custom-${movie.id}-${category}`}
                                     category={category}
                                     isChecked={isChecked}
                                     onToggle={(checked) => {

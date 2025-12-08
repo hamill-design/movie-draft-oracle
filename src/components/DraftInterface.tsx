@@ -60,6 +60,13 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(draftState?.existingDraftId || null);
   
+  // Update currentDraftId when existingDraftId changes (e.g., when restored from database)
+  useEffect(() => {
+    if (draftState?.existingDraftId && !currentDraftId) {
+      setCurrentDraftId(draftState.existingDraftId);
+    }
+  }, [draftState?.existingDraftId, currentDraftId]);
+  
   const { autoSaveDraft } = useDraftOperations();
   
   const {
@@ -80,7 +87,9 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
 
   // Get the base category for initial movie loading
   const getBaseCategory = () => {
-    if (draftState?.theme === 'year') {
+    if (draftState?.theme === 'spec-draft') {
+      return 'spec-draft';
+    } else if (draftState?.theme === 'year') {
       return 'year';
     } else if (draftState?.theme === 'people') {
       return 'person';
@@ -90,9 +99,9 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
 
   const baseCategory = getBaseCategory();
   
-  // For theme-based drafts, pass the theme option (year or person name) as the constraint
-  // This will fetch ALL movies for that year/person
-  const themeConstraint = draftState?.theme === 'year' || draftState?.theme === 'people' 
+  // For theme-based drafts, pass the theme option (year, person name, or spec draft ID) as the constraint
+  // This will fetch ALL movies for that year/person/spec draft
+  const themeConstraint = draftState?.theme === 'year' || draftState?.theme === 'people' || draftState?.theme === 'spec-draft'
     ? draftState.option 
     : '';
   

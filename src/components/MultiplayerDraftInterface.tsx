@@ -70,19 +70,52 @@ export const MultiplayerDraftInterface = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
+  const [specDraftName, setSpecDraftName] = useState<string | null>(null);
+
+  // Fetch spec draft name if theme is spec-draft
+  useEffect(() => {
+    const fetchSpecDraftName = async () => {
+      if (draft?.theme === 'spec-draft' && draft.option) {
+        try {
+          const { supabase } = await import('@/integrations/supabase/client');
+          const { data, error } = await (supabase as any)
+            .from('spec_drafts')
+            .select('name')
+            .eq('id', draft.option)
+            .single();
+
+          if (error) throw error;
+          if (data) {
+            setSpecDraftName(data.name);
+          }
+        } catch (err) {
+          console.error('Error fetching spec draft name:', err);
+        }
+      }
+    };
+
+    if (draft?.theme === 'spec-draft') {
+      fetchSpecDraftName();
+    }
+  }, [draft?.theme, draft?.option]);
 
   // Get base category for movie search
   const getBaseCategory = () => {
     if (!draft) return '';
+    if (draft.theme === 'spec-draft') {
+      return 'spec-draft';
+    }
     if (draft.theme === 'people') {
       return 'person';
     }
     return 'popular';
   };
 
-  // For theme-based drafts, pass the theme option (year or person name) as the constraint
-  // This will fetch ALL movies for that year/person
-  const themeConstraint = draft?.theme === 'year' || draft?.theme === 'people' ? draft.option : '';
+  // For theme-based drafts, pass the theme option (year, person name, or spec draft ID) as the constraint
+  // This will fetch ALL movies for that year/person/spec draft
+  const themeConstraint = draft?.theme === 'year' || draft?.theme === 'people' || draft?.theme === 'spec-draft' 
+    ? draft.option 
+    : '';
   const {
     movies,
     loading: moviesLoading
@@ -93,7 +126,7 @@ export const MultiplayerDraftInterface = ({
     if (initialData && !draftId && participantId) {
       const createDraft = async () => {
         try {
-          const newDraft = await createMultiplayerDraft({
+          const newDraftId = await createMultiplayerDraft({
             title: initialData.option,
             theme: initialData.theme,
             option: initialData.option,
@@ -102,16 +135,8 @@ export const MultiplayerDraftInterface = ({
           });
 
           // Navigate to the draft page with the multiplayer data
-          navigate('/draft', {
-            replace: true,
-            state: {
-              theme: initialData.theme,
-              option: initialData.option,
-              participants: initialData.participants,
-              categories: initialData.categories,
-              existingDraftId: newDraft.id,
-              isMultiplayer: true
-            }
+          navigate(`/draft/${newDraftId}`, {
+            replace: true
           });
         } catch (error) {
           console.error('Failed to create draft:', error);
@@ -262,11 +287,17 @@ export const MultiplayerDraftInterface = ({
                 }}
               >
                 <span className="text-purple-500">
-                  {draft.theme === 'people' ? getCleanActorName(draft.option).toUpperCase() + ' ' : draft.option.toString() + ' '}
+                  {draft.theme === 'spec-draft' 
+                    ? (specDraftName || draft.option).toUpperCase()
+                    : draft.theme === 'people' 
+                      ? getCleanActorName(draft.option).toUpperCase() + ' '
+                      : draft.option.toString() + ' '}
                 </span>
-                <span className="text-text-primary">
-                  MOVIES
-                </span>
+                {draft.theme !== 'spec-draft' && (
+                  <span className="text-text-primary">
+                    MOVIES
+                  </span>
+                )}
               </div>
               
             </div>

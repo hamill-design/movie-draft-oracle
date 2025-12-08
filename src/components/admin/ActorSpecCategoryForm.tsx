@@ -114,13 +114,13 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
           className="text-xl text-text-primary"
           style={{ fontFamily: 'Brockmann', fontWeight: 500, lineHeight: '28px' }}
         >
-          {category ? 'Edit Actor Spec Category' : 'Create New Actor Spec Category'}
+            {category ? 'Edit Actor Spec Category' : 'Create New Actor Spec Category'}
         </h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Actor Name with Autocomplete */}
-        <div className="space-y-2">
+            {/* Actor Name with Autocomplete */}
+            <div className="space-y-2">
           <Label 
             htmlFor="actor-name"
             className="text-sm text-greyscale-blue-800"
@@ -128,63 +128,63 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
           >
             Actor Name
           </Label>
-          <div className="relative">
-            <Input
-              ref={actorInputRef}
-              id="actor-name"
-              value={actorName}
-              onChange={(e) => {
-                setActorName(e.target.value);
-                setShowActorSuggestions(true);
-              }}
-              onFocus={() => {
-                if (actorName.length >= 2) {
-                  setShowActorSuggestions(true);
-                }
-              }}
+              <div className="relative">
+                <Input
+                  ref={actorInputRef}
+                  id="actor-name"
+                  value={actorName}
+                  onChange={(e) => {
+                    setActorName(e.target.value);
+                    setShowActorSuggestions(true);
+                  }}
+                  onFocus={() => {
+                    if (actorName.length >= 2) {
+                      setShowActorSuggestions(true);
+                    }
+                  }}
               placeholder="Search Actor"
               className="h-12 px-4 py-3 border-greyscale-blue-400 rounded-[2px] text-sm"
               style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
-              required
-            />
-            {showActorSuggestions && people.length > 0 && actorName.length >= 2 && (
-              <div
-                ref={suggestionsRef}
-                className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
-              >
-                {peopleLoading && (
-                  <div className="p-2 text-sm text-gray-500">Searching...</div>
-                )}
-                {!peopleLoading && people.map((person) => (
-                  <button
-                    key={person.id}
-                    type="button"
-                    onClick={() => handleActorSelect(person)}
-                    className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                  required
+                />
+                {showActorSuggestions && people.length > 0 && actorName.length >= 2 && (
+                  <div
+                    ref={suggestionsRef}
+                    className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto"
                   >
-                    <span className="font-medium">{person.name}</span>
-                    {person.known_for_department && (
-                      <span className="text-xs text-gray-500">
-                        ({person.known_for_department})
-                      </span>
+                    {peopleLoading && (
+                      <div className="p-2 text-sm text-gray-500">Searching...</div>
                     )}
-                  </button>
-                ))}
+                    {!peopleLoading && people.map((person) => (
+                      <button
+                        key={person.id}
+                        type="button"
+                        onClick={() => handleActorSelect(person)}
+                        className="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2"
+                      >
+                        <span className="font-medium">{person.name}</span>
+                        {person.known_for_department && (
+                          <span className="text-xs text-gray-500">
+                            ({person.known_for_department})
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          {actorTmdbId && (
+              {actorTmdbId && (
             <p 
               className="text-xs text-gray-500"
               style={{ fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px' }}
             >
               TMDB ID: {actorTmdbId}
             </p>
-          )}
-        </div>
+              )}
+            </div>
 
-        {/* Category Name */}
-        <div className="space-y-2">
+            {/* Category Name */}
+            <div className="space-y-2">
           <Label 
             htmlFor="category-name"
             className="text-sm text-greyscale-blue-800"
@@ -192,30 +192,30 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
           >
             Category
           </Label>
-          <Input
-            id="category-name"
-            value={categoryName}
-            onChange={(e) => setCategoryName(e.target.value)}
+              <Input
+                id="category-name"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
             placeholder="Name the Category"
             className="h-12 px-4 py-3 border-greyscale-blue-400 rounded-[2px] text-sm"
             style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
-            required
-          />
-        </div>
+                required
+              />
+            </div>
 
-        {/* Movie Search and Selection */}
-        <MovieSearchSelector
-          selectedMovieIds={movieIds}
-          onMoviesChange={handleMoviesChange}
-          initialMovies={category?.movie_tmdb_ids?.map(id => ({
-            id,
-            title: `Movie ID: ${id}`, // Placeholder - will be replaced when searched
-            year: 0,
-          })) || []}
-        />
+            {/* Movie Search and Selection */}
+            <MovieSearchSelector
+              selectedMovieIds={movieIds}
+              onMoviesChange={handleMoviesChange}
+              initialMovies={category?.movie_tmdb_ids?.map(id => ({
+                id,
+                title: `Movie ID: ${id}`, // Placeholder - will be replaced when searched
+                year: 0,
+              })) || []}
+            />
 
-        {/* Description */}
-        <div className="space-y-2">
+            {/* Description */}
+            <div className="space-y-2">
           <Label 
             htmlFor="description"
             className="text-sm text-greyscale-blue-800"
@@ -223,20 +223,20 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
           >
             Description Optional
           </Label>
-          <Textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="e.g., Movies from the Mission Impossible franchise"
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="e.g., Movies from the Mission Impossible franchise"
             className="px-4 py-3 border-greyscale-blue-400 rounded-[2px] text-sm min-h-[48px]"
             style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
-            rows={3}
-          />
-        </div>
+                rows={3}
+              />
+            </div>
 
-        {/* Actions */}
-        <div className="flex gap-3 justify-end">
-          {onCancel && (
+            {/* Actions */}
+            <div className="flex gap-3 justify-end">
+              {onCancel && (
             <Button 
               type="button" 
               variant="outline" 
@@ -245,19 +245,19 @@ export const ActorSpecCategoryForm: React.FC<ActorSpecCategoryFormProps> = ({
               className="h-12 px-6 py-3 border-greyscale-blue-200 rounded-[2px] bg-ui-primary"
               style={{ fontFamily: 'Brockmann', fontWeight: 600, fontSize: '16px', lineHeight: '24px', letterSpacing: '0.32px' }}
             >
-              Cancel
-            </Button>
-          )}
+                  Cancel
+                </Button>
+              )}
           <Button 
             type="submit" 
             disabled={loading}
             className="h-12 px-6 py-3 bg-brand-primary text-ui-primary hover:bg-brand-primary/90 rounded-[2px]"
             style={{ fontFamily: 'Brockmann', fontWeight: 600, fontSize: '16px', lineHeight: '24px', letterSpacing: '0.32px' }}
           >
-            {loading ? 'Saving...' : category ? 'Update Category' : 'Create Category'}
-          </Button>
-        </div>
-      </form>
+                {loading ? 'Saving...' : category ? 'Update Category' : 'Create Category'}
+              </Button>
+            </div>
+          </form>
     </div>
   );
 };

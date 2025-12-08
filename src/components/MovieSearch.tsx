@@ -40,7 +40,9 @@ const MovieSearch = ({
   });
 
   const getPlaceholderText = () => {
-    if (theme === 'year') {
+    if (theme === 'spec-draft') {
+      return `Search movies...`;
+    } else if (theme === 'year') {
       return `Search within ${option} movies...`;
     } else if (theme === 'people') {
       return `Search within ${getCleanActorName(option)} movies...`;
@@ -50,6 +52,7 @@ const MovieSearch = ({
   };
 
   // Apply frontend filtering as a safety net for year-based drafts
+  // Note: spec-draft movies are already filtered by the useMovies hook, so no additional filtering needed
   let filteredMoviesByTheme = movies;
   if (theme === 'year') {
     const requestedYear = parseInt(option);
@@ -66,6 +69,7 @@ const MovieSearch = ({
       console.log(`Frontend safety filter: ${movies.length} → ${filteredMoviesByTheme.length} movies after year filtering`);
     }
   }
+  // For spec-draft, movies are already filtered by spec_draft_id in useMovies, so no additional filtering needed
 
   // Filter by search query within the theme-constrained results
   const filteredMovies = searchQuery.trim() 
@@ -76,7 +80,7 @@ const MovieSearch = ({
 
   console.log('MovieSearch - Final filtered movies:', filteredMovies.length, 'from theme-filtered:', filteredMoviesByTheme.length, 'from total:', movies.length);
 
-  // Only show results if user has started typing
+  // Only show results when user has started typing (same behavior for all themes)
   const shouldShowResults = searchQuery.trim().length > 0;
 
   return (
@@ -87,7 +91,7 @@ const MovieSearch = ({
         </div>
         <span className="text-text-primary text-xl font-brockmann font-medium leading-7">
           Search Movies
-          {theme === 'year' ? ` from ${option}` : theme === 'people' ? ` featuring ${getCleanActorName(option)}` : ''}
+          {theme === 'spec-draft' ? '' : theme === 'year' ? ` from ${option}` : theme === 'people' ? ` featuring ${getCleanActorName(option)}` : ''}
         </span>
       </div>
       
@@ -117,11 +121,11 @@ const MovieSearch = ({
               <div className="text-text-primary font-brockmann font-medium text-sm leading-5">Loading movies...</div>
             ) : filteredMoviesByTheme.length === 0 ? (
               <div className="text-text-primary font-brockmann font-medium text-sm leading-5">
-                No movies available for {theme === 'year' ? `${option}` : theme === 'people' ? `${getCleanActorName(option)}` : 'this search'}
+                No movies available {theme === 'spec-draft' ? 'for this draft' : theme === 'year' ? `for ${option}` : theme === 'people' ? `for ${getCleanActorName(option)}` : 'for this search'}
               </div>
             ) : filteredMovies.length === 0 ? (
               <div className="text-text-primary font-brockmann font-medium text-sm leading-5">
-                No movies found matching "{searchQuery}" {theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${getCleanActorName(option)}` : ''}
+                No movies found matching "{searchQuery}" {theme === 'spec-draft' ? '' : theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${getCleanActorName(option)}` : ''}
               </div>
             ) : (
               filteredMovies.slice(0, 50).map((movie) => (
@@ -145,7 +149,7 @@ const MovieSearch = ({
                     <span className={`text-sm font-brockmann font-normal leading-5 ${
                       selectedMovie?.id === movie.id ? 'text-ui-primary' : 'text-text-primary'
                     }`}>
-                      {movie.year} • {movie.genre}
+                      {movie.year}
                       {theme === 'year' && movie.year !== parseInt(option) && (
                         <span className="text-error-red-500 ml-2">[YEAR MISMATCH: {movie.year}]</span>
                       )}

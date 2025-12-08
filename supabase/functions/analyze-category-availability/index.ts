@@ -191,7 +191,32 @@ serve(async (req) => {
 
     const { theme, option, categories, playerCount, preferFreshOscarStatus }: any = await req.json();
 
-    console.log('Analyzing categories:', { theme, option, categories, playerCount });
+    console.log('📥 Received request:', JSON.stringify({ theme, option, categories, playerCount, preferFreshOscarStatus }, null, 2));
+    
+    // Validate required parameters
+    if (!theme) {
+      console.error('❌ Missing theme parameter');
+      return new Response(
+        JSON.stringify({ error: 'Theme parameter is required' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      );
+    }
+    
+    if (!categories || !Array.isArray(categories) || categories.length === 0) {
+      console.error('❌ Missing or invalid categories parameter');
+      return new Response(
+        JSON.stringify({ error: 'Categories parameter is required and must be a non-empty array' }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
+        }
+      );
+    }
+
+    console.log('✅ Analyzing categories:', { theme, option, categories, playerCount });
 
     // Enhanced logging for specific debug cases
     if (option === 'Clark Gable' && categories.includes("50's")) {
@@ -201,15 +226,17 @@ serve(async (req) => {
     // Analyze all categories in parallel for better performance
     const categoryPromises = categories.map(async (category) => {
       try {
-        return await analyzeCategoryMovies(supabase, category, theme, option, playerCount);
+        return await analyzeCategoryMovies(supabase, category, theme, option, playerCount, preferFreshOscarStatus);
       } catch (error) {
-        console.error(`Error analyzing category ${category}:`, error);
+        console.error(`❌ Error analyzing category "${category}":`, error);
+        console.error(`   Error details:`, JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+        console.error(`   Theme: "${theme}", Option: "${option}", PlayerCount: ${playerCount}`);
         return {
           categoryId: category,
           available: false,
           movieCount: 0,
           sampleMovies: [],
-          reason: 'Analysis failed',
+          reason: `Analysis failed: ${error instanceof Error ? error.message : String(error)}`,
           status: 'insufficient'
         } as CategoryAvailabilityResult;
       }
@@ -278,7 +305,8 @@ async function analyzeCategoryMovies(
   category: string,
   theme: string,
   option: string,
-  playerCount: number
+  playerCount: number,
+  preferFreshOscarStatus?: boolean
 ): Promise<CategoryAvailabilityResult> {
   
   // Get spec categories if this is a person-based theme

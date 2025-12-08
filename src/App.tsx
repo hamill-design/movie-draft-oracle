@@ -20,6 +20,7 @@ import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 import { JoinDraft } from "./pages/JoinDraft";
 import LearnMore from "./pages/LearnMore";
+import SpecDraftSetup from "./pages/SpecDraftSetup";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,27 +41,28 @@ const App = () => (
         <AuthProvider>
           <BrowserRouter>
             <div className="flex flex-col min-h-screen">
-              <AppHeader />
+            <AppHeader />
               <main className="flex-1">
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/draft" element={<Index />} />
-                  <Route path="/draft/:draftId" element={<Index />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="/final-scores/:draftId" element={<FinalScores />} />
-                  <Route path="/join-draft/:draftId" element={<JoinDraft />} />
-                  <Route path="/join-draft" element={<JoinDraft />} />
-                  <Route path="/learn-more" element={<LearnMore />} />
-                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                  <Route path="/terms-of-service" element={<TermsOfService />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/draft" element={<Index />} />
+              <Route path="/draft/:draftId" element={<Index />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/final-scores/:draftId" element={<FinalScores />} />
+              <Route path="/join-draft/:draftId" element={<JoinDraft />} />
+              <Route path="/join-draft" element={<JoinDraft />} />
+              <Route path="/learn-more" element={<LearnMore />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/terms-of-service" element={<TermsOfService />} />
+              <Route path="/spec-draft/:specDraftId/setup" element={<SpecDraftSetup />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
               </main>
-              <Footer />
+            <Footer />
             </div>
           </BrowserRouter>
         </AuthProvider>

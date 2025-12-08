@@ -36,8 +36,8 @@ export const SpecDraftList: React.FC<SpecDraftListProps> = ({
   if (loading) {
     return (
       <div className="bg-greyscale-blue-100 rounded-[8px] shadow-[0px_0px_3px_0px_rgba(0,0,0,0.25)] p-6">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
         </div>
       </div>
     );
@@ -116,7 +116,7 @@ export const SpecDraftList: React.FC<SpecDraftListProps> = ({
                       style={{ fontFamily: 'Brockmann', fontWeight: 400, fontSize: '14px', lineHeight: '20px' }}
                     >
                       {specDraft.description}
-                    </p>
+                </p>
                   )}
                 </div>
               </div>
@@ -150,7 +150,7 @@ export const SpecDraftList: React.FC<SpecDraftListProps> = ({
                 </button>
               </div>
             </div>
-          ))}
+      ))}
         </div>
       )}
     </div>

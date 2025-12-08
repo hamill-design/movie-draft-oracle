@@ -1,19 +1,15 @@
-import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { ThemeButton } from '@/components/ui/theme-button';
-import { Trash2, Users, User, Calendar, Film, Search, Mail } from 'lucide-react';
-import { FilmReelIcon, PersonIcon, CalendarIcon, SearchIcon, EmailIcon, CheckboxIcon, MultiPersonIcon, TrashIcon } from '@/components/icons';
+import { Users, User, Mail } from 'lucide-react';
+import { PersonIcon, CalendarIcon, EmailIcon, MultiPersonIcon, TrashIcon } from '@/components/icons';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { useAuth } from '@/contexts/AuthContext';
 import { ActorPortrait } from '@/components/ActorPortrait';
 import { useDraftCategories } from '@/hooks/useDraftCategories';
-import CategoriesForm from '@/components/CategoriesForm';
 import EnhancedCategoriesForm from '@/components/EnhancedCategoriesForm';
 import { JoinDraftForm } from '@/components/JoinDraftForm';
+import { SpecDraftSelector } from '@/components/SpecDraftSelector';
 import { HeaderIcon3 } from '@/components/HeaderIcon3';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
@@ -23,13 +19,11 @@ import { useDraftForm, DraftSetupForm } from '@/hooks/useDraftForm';
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user, loading, signOut, isGuest } = useAuth();
+  const { loading } = useAuth();
   const { toast } = useToast();
   
   const {
     state: { theme, searchQuery, selectedOption, participants, newParticipant, draftMode },
-    getCurrentStep,
-    isStepComplete,
     isStepVisible,
     setTheme,
     setSelectedOption,
@@ -39,8 +33,6 @@ const Home = () => {
     addParticipant,
     removeParticipant,
     isEmailValid,
-    validateStep,
-    canStartDraft,
   } = useDraftForm();
 
   const form = useForm<DraftSetupForm>({
@@ -121,11 +113,6 @@ const Home = () => {
     setSelectedOption(year);
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/auth');
-  };
-
   const shouldShowResults = theme === 'people' && searchQuery.trim().length > 0;
 
   // Show loading state while initializing
@@ -144,6 +131,9 @@ const Home = () => {
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Join Existing Draft */}
           <JoinDraftForm />
+          
+          {/* Start a Special Draft */}
+          <SpecDraftSelector />
           
           {/* Theme Selection */}
           <div className="w-full p-6 bg-greyscale-blue-100 rounded flex flex-col gap-6" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
@@ -221,7 +211,7 @@ const Home = () => {
                           people.slice(0, 10).map((person) => (
                             <div
                               key={person.id}
-                              onClick={() => handleOptionSelect({ title: person.name, profile_path: person.profile_path })}
+                              onClick={() => handleOptionSelect({ title: person.name, profile_path: person.profile_path ?? undefined })}
                               className={`w-full py-4 px-4 pr-6 bg-white rounded border border-[#D9E0DF] cursor-pointer transition-colors flex items-start gap-4 ${
                                 selectedOption === person.name
                                   ? 'bg-yellow-400 text-black'

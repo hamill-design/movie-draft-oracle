@@ -114,19 +114,19 @@ export const SpecDraftCategoriesManager: React.FC<SpecDraftCategoriesManagerProp
           >
             Custom Categories
           </h3>
-          <Button
-            onClick={() => {
-              setIsCreating(true);
-              setEditingId(null);
-              setCategoryName('');
-              setDescription('');
-            }}
+            <Button
+              onClick={() => {
+                setIsCreating(true);
+                setEditingId(null);
+                setCategoryName('');
+                setDescription('');
+              }}
             className="bg-brand-primary text-ui-primary hover:bg-brand-primary/90 px-3 py-2 rounded-[2px] flex items-center gap-2"
             style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '14px', lineHeight: '20px' }}
-          >
+            >
             <Plus className="w-4 h-4" />
             Create Category
-          </Button>
+            </Button>
         </div>
 
         {/* Categories List */}
@@ -140,7 +140,7 @@ export const SpecDraftCategoriesManager: React.FC<SpecDraftCategoriesManagerProp
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
+        <div className="space-y-4">
             {customCategories.map((category) => (
               <div
                 key={category.id}
@@ -198,41 +198,41 @@ export const SpecDraftCategoriesManager: React.FC<SpecDraftCategoriesManagerProp
               {editingId ? 'Edit Custom Category' : 'Create Custom Category'}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="category-name">Category Name *</Label>
-              <Input
-                id="category-name"
-                value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
-                placeholder="e.g., Superhero Movies"
-                required
-              />
-            </div>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category-name">Category Name *</Label>
+                  <Input
+                    id="category-name"
+                    value={categoryName}
+                    onChange={(e) => setCategoryName(e.target.value)}
+                    placeholder="e.g., Superhero Movies"
+                    required
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="category-description">Description (Optional)</Label>
-              <Textarea
-                id="category-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g., Movies featuring superhero characters"
+                <div className="space-y-2">
+                  <Label htmlFor="category-description">Description (Optional)</Label>
+                  <Textarea
+                    id="category-description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="e.g., Movies featuring superhero characters"
                 rows={3}
-              />
-            </div>
+                  />
+                </div>
 
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={handleCancel} disabled={loading}>
-                Cancel
-              </Button>
-              <Button
-                onClick={() => editingId ? handleUpdate(editingId) : handleCreate()}
-                disabled={loading}
-              >
-                {loading ? 'Saving...' : editingId ? 'Update' : 'Create'}
-              </Button>
-            </div>
-          </div>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={handleCancel} disabled={loading}>
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={() => editingId ? handleUpdate(editingId) : handleCreate()}
+                    disabled={loading}
+                  >
+                    {loading ? 'Saving...' : editingId ? 'Update' : 'Create'}
+                  </Button>
+                </div>
+              </div>
         </DialogContent>
       </Dialog>
     </>

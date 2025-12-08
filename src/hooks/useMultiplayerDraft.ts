@@ -55,6 +55,9 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   const { toast } = useToast();
   const navigate = useNavigate();
   
+  // Normalize draftId to ensure it's a string
+  const normalizedDraftId = typeof draftId === 'string' ? draftId : (draftId && typeof draftId === 'object' && 'id' in draftId ? String(draftId.id) : undefined);
+  
   // Use ref to track current participantId for real-time subscriptions
   const participantIdRef = useRef(participantId);
   
@@ -332,7 +335,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         }
       }
 
-      return newDraft;
+      return newDraft.id;
     } catch (error) {
       console.error('Error creating multiplayer draft:', error);
       throw error;
@@ -413,11 +416,17 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   // Load draft data
   const loadDraft = useCallback(async (id: string) => {
     if (!participantId) throw new Error('No participant ID available');
+    
+    // Ensure id is a string, not an object
+    const draftIdString = typeof id === 'string' ? id : (id?.id || String(id));
+    if (!draftIdString || typeof draftIdString !== 'string') {
+      throw new Error(`Invalid draft ID: expected string, got ${typeof id}`);
+    }
 
     try {
       // Use unified function
       const result = await supabase.rpc('load_draft_unified', {
-        p_draft_id: id,
+        p_draft_id: draftIdString,
         p_participant_id: participantId
       });
 
@@ -668,22 +677,22 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
 
   // Load draft when draftId changes
   useEffect(() => {
-    if (draftId && participantId) {
-      loadDraft(draftId);
+    if (normalizedDraftId && participantId) {
+      loadDraft(normalizedDraftId);
     }
-  }, [draftId, participantId, loadDraft]);
+  }, [normalizedDraftId, participantId, loadDraft]);
 
   // Separate effect to reload draft when participantId becomes available
   useEffect(() => {
-    if (draftId && participantId && !draft) {
-      loadDraft(draftId);
+    if (normalizedDraftId && participantId && !draft) {
+      loadDraft(normalizedDraftId);
     }
-  }, [draftId, participantId, draft, loadDraft]);
+  }, [normalizedDraftId, participantId, draft, loadDraft]);
 
 
   // Set up real-time database subscriptions with enhanced reliability
   useEffect(() => {
-    if (!draftId || !participantId) return;
+    if (!normalizedDraftId || !participantId) return;
 
     // Clean up any existing subscriptions first
     if (draftChannelRef.current) {
@@ -707,17 +716,17 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       clearTimeout(reconnectTimeoutRef.current);
     }
 
-    console.log(`🔴 Setting up enhanced database subscriptions for draft: ${draftId}, participant: ${participantId}`);
+    console.log(`🔴 Setting up enhanced database subscriptions for draft: ${normalizedDraftId}, participant: ${participantId}`);
     updateLastActivity();
 
     // Draft changes subscription (turn order, current turn, completion status)
     const draftChannel = supabase
-      .channel(`draft-${draftId}-${Date.now()}`)
+      .channel(`draft-${normalizedDraftId}-${Date.now()}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'drafts',
-        filter: `id=eq.${draftId}`
+        filter: `id=eq.${normalizedDraftId}`
       }, (payload) => {
         console.log('📥 Draft change received:', payload);
         updateLastActivity();
@@ -761,7 +770,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
             } else if (oldPayload?.current_turn_participant_id !== newPayload.current_turn_participant_id || 
                        oldPayload?.current_turn_user_id !== newPayload.current_turn_user_id) {
               // Turn changed - reload to get fresh participant data
-              debouncedReload(draftId);
+              debouncedReload(normalizedDraftId);
               
               const currentTurnPlayer = participants.find(p => 
                 (p.participant_id || p.user_id || p.guest_participant_id) === newTurnId
@@ -792,26 +801,26 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           console.warn('⚠️ Draft channel error:', status);
           setIsConnected(false);
-          startPolling(draftId);
+          startPolling(normalizedDraftId);
           
           // Attempt reconnection after delay
           if (reconnectTimeoutRef.current) {
             clearTimeout(reconnectTimeoutRef.current);
           }
           reconnectTimeoutRef.current = setTimeout(() => {
-            reconnectSubscriptions(draftId);
+            reconnectSubscriptions(normalizedDraftId);
           }, 3000);
         }
       });
 
     // Picks subscription (new picks added)
     const picksChannel = supabase
-      .channel(`picks-${draftId}-${Date.now()}`)
+      .channel(`picks-${normalizedDraftId}-${Date.now()}`)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'draft_picks',
-        filter: `draft_id=eq.${draftId}`
+        filter: `draft_id=eq.${normalizedDraftId}`
       }, (payload) => {
         console.log('📥 New pick received:', payload);
         updateLastActivity();
@@ -838,7 +847,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
           });
           
           // IMPORTANT: Also reload draft state to ensure turn information is updated
-          debouncedReload(draftId);
+          debouncedReload(normalizedDraftId);
           
           // Show toast for new picks
           toast({
@@ -855,25 +864,25 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
           console.warn('⚠️ Picks channel error:', status);
           setIsConnected(false);
-          startPolling(draftId);
+          startPolling(normalizedDraftId);
         }
       });
 
     // Participants subscription (joins/leaves)
     const participantsChannel = supabase
-      .channel(`participants-${draftId}-${Date.now()}`)
+      .channel(`participants-${normalizedDraftId}-${Date.now()}`)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'draft_participants',
-        filter: `draft_id=eq.${draftId}`
+        filter: `draft_id=eq.${normalizedDraftId}`
       }, (payload) => {
         console.log('📥 Participant change received:', payload);
         updateLastActivity();
         stopPolling(); // Subscriptions are working, stop polling
         
         // Reload participants when changes occur (debounced)
-        debouncedReload(draftId);
+        debouncedReload(normalizedDraftId);
         
         // Show toast for participant changes
         if (payload.eventType === 'INSERT') {
@@ -949,11 +958,11 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         participantsChannelRef.current = null;
       }
     };
-  }, [draftId, participantId, toast, participants, updateLastActivity, stopPolling, startPolling, reconnectSubscriptions, debouncedReload]);
+  }, [normalizedDraftId, participantId, toast, participants, updateLastActivity, stopPolling, startPolling, reconnectSubscriptions, debouncedReload]);
 
   // Mobile-specific optimizations: Handle visibility changes (tab switching, app backgrounding)
   useEffect(() => {
-    if (!draftId || !participantId) return;
+    if (!normalizedDraftId || !participantId) return;
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -964,7 +973,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         const timeSinceLastUpdate = Date.now() - lastUpdateTimeRef.current;
         if (timeSinceLastUpdate > 5000) {
           console.log('🔄 Reconnecting after visibility change');
-          reconnectSubscriptions(draftId);
+          reconnectSubscriptions(normalizedDraftId);
         }
       } else {
         console.log('👁️ Tab became hidden');
@@ -974,13 +983,13 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     const handleOnline = () => {
       console.log('🌐 Network came online, reconnecting...');
       updateLastActivity();
-      reconnectSubscriptions(draftId);
+      reconnectSubscriptions(normalizedDraftId);
     };
 
     const handleOffline = () => {
       console.log('🌐 Network went offline');
       setIsConnected(false);
-      startPolling(draftId);
+      startPolling(normalizedDraftId);
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -992,16 +1001,16 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [draftId, participantId, updateLastActivity, reconnectSubscriptions, startPolling]);
+  }, [normalizedDraftId, participantId, updateLastActivity, reconnectSubscriptions, startPolling]);
 
   // Manual refresh function for UI
   const manualRefresh = useCallback(() => {
-    if (draftId && loadDraftRef.current) {
+    if (normalizedDraftId && loadDraftRef.current) {
       console.log('🔄 Manual refresh triggered');
-      loadDraftRef.current(draftId);
+      loadDraftRef.current(normalizedDraftId);
       updateLastActivity();
     }
-  }, [draftId, updateLastActivity]);
+  }, [normalizedDraftId, updateLastActivity]);
 
   return {
     draft,

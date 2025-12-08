@@ -41,6 +41,7 @@ const Profile = () => {
   const [newName, setNewName] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [draftToDelete, setDraftToDelete] = useState<string | null>(null);
+  const [specDraftData, setSpecDraftData] = useState<Map<string, { name: string; photo_url: string | null }>>(new Map());
 
   useEffect(() => {
     if (!loading && !user) {
@@ -92,6 +93,46 @@ const Profile = () => {
 
     fetchProfile();
   }, [user, toast]);
+
+  // Fetch spec draft data for spec-draft themes
+  useEffect(() => {
+    const fetchSpecDraftData = async () => {
+      if (!drafts || drafts.length === 0) return;
+
+      const specDraftIds = drafts
+        .filter(draft => draft.theme === 'spec-draft' && draft.option)
+        .map(draft => draft.option as string);
+
+      if (specDraftIds.length === 0) return;
+
+      try {
+        const { data, error } = await (supabase as any)
+          .from('spec_drafts')
+          .select('id, name, photo_url')
+          .in('id', specDraftIds);
+
+        if (error) {
+          console.error('Error fetching spec draft data:', error);
+          return;
+        }
+
+        if (data) {
+          const specDraftMap = new Map<string, { name: string; photo_url: string | null }>();
+          data.forEach((specDraft: any) => {
+            specDraftMap.set(specDraft.id, {
+              name: specDraft.name,
+              photo_url: specDraft.photo_url
+            });
+          });
+          setSpecDraftData(specDraftMap);
+        }
+      } catch (err) {
+        console.error('Error in fetchSpecDraftData:', err);
+      }
+    };
+
+    fetchSpecDraftData();
+  }, [drafts]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -177,15 +218,17 @@ const Profile = () => {
   }, []);
 
   const handleSaveName = async () => {
+    if (!user?.id) return;
+    
     try {
       const { error } = await supabase
         .from('profiles')
         .update({ name: newName.trim() })
-        .eq('id', user?.id);
+        .eq('id', user.id);
 
       if (error) throw error;
 
-      setProfile((prev) => prev ? { ...prev, name: newName.trim() } : { name: newName.trim() });
+      setProfile((prev: any) => prev ? { ...prev, name: newName.trim() } : { name: newName.trim() });
       setIsEditingName(false);
 
       toast({
@@ -229,9 +272,24 @@ const Profile = () => {
           <div className="flex-1 min-w-[240px] flex-col justify-start items-start gap-4 inline-flex">
             {/* Header with Image and Info */}
             <div className="justify-start items-end gap-3 inline-flex">
-              {/* Actor Portrait */}
-              <div className="w-14 h-14 rounded">
-                {draft.theme === 'people' ? (
+              {/* Actor Portrait / Spec Draft Image */}
+              <div className="w-14 h-14 rounded overflow-hidden">
+                {draft.theme === 'spec-draft' ? (
+                  (() => {
+                    const specData = specDraftData.get(draft.option);
+                    return specData?.photo_url ? (
+                      <img 
+                        src={specData.photo_url} 
+                        alt={specData.name || 'Spec Draft'}
+                        className="w-14 h-14 rounded object-cover"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 bg-greyscale-blue-200 rounded flex items-center justify-center">
+                        <User size={24} className="text-greyscale-blue-500" />
+                      </div>
+                    );
+                  })()
+                ) : draft.theme === 'people' ? (
                   <DraftActorPortrait 
                     actorName={getCleanActorName(draft.option)}
                     size="lg"
@@ -252,7 +310,11 @@ const Profile = () => {
               <div className="flex-col justify-start items-start gap-2 inline-flex">
                 <div className="flex-col justify-start items-start flex">
                   <div className="justify-center flex flex-col text-[#2B2D2D] text-lg font-brockmann font-semibold leading-6">
-                    {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
+                    {draft.theme === 'spec-draft' 
+                      ? (specDraftData.get(draft.option)?.name || draft.option)
+                      : draft.theme === 'people' 
+                        ? getCleanActorName(draft.option) 
+                        : draft.option}
                   </div>
                 </div>
                 
@@ -342,7 +404,7 @@ const Profile = () => {
         {/* {index > 0 && (index + 1) % 3 === 0 && <InlineAd />} */}
       </div>
     ));
-  }, [drafts, handleViewDraft, openDeleteDialog]);
+  }, [drafts, handleViewDraft, openDeleteDialog, specDraftData]);
 
   return (
     <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>

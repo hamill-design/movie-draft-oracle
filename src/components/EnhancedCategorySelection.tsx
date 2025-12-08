@@ -1,14 +1,12 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useMemo, useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { getEligibleCategories } from '@/utils/movieCategoryUtils';
-import { SearchIcon } from '@/components/icons/SearchIcon';
 import { CheckboxIcon } from '@/components/icons/CheckboxIcon';
 import { NAIcon } from '@/components/icons/NAIcon';
 import { getCategoryConfig } from '@/config/categoryConfigs';
 import { useActorSpecCategories } from '@/hooks/useActorSpecCategories';
 import { getCleanActorName } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Pick {
   playerId: number;
@@ -93,6 +91,8 @@ const EnhancedCategorySelection = ({
   if (!selectedMovie) return null;
 
   const [houseOverrideEnabled, setHouseOverrideEnabled] = useState(false);
+  const [specDraftMovieCategories, setSpecDraftMovieCategories] = useState<string[]>([]);
+  const [loadingSpecCategories, setLoadingSpecCategories] = useState(false);
 
   // Get actor name for spec categories lookup
   const actorName = theme === 'people' && option ? getCleanActorName(option) : null;
@@ -103,11 +103,64 @@ const EnhancedCategorySelection = ({
     setHouseOverrideEnabled(false);
   }, [selectedMovie?.id]);
 
+  // Fetch spec draft movie categories when theme is spec-draft
+  useEffect(() => {
+    const fetchSpecDraftMovieCategories = async () => {
+      if (theme === 'spec-draft' && option && selectedMovie?.id) {
+        setLoadingSpecCategories(true);
+        try {
+          // First, find the spec_draft_movie record using the movie's TMDB ID
+          const { data: movieRecord, error: movieError } = await (supabase as any)
+            .from('spec_draft_movies')
+            .select('id')
+            .eq('spec_draft_id', option)
+            .eq('movie_tmdb_id', selectedMovie.id)
+            .single();
+
+          if (movieError || !movieRecord) {
+            console.error('Error finding spec draft movie:', movieError);
+            setSpecDraftMovieCategories([]);
+            return;
+          }
+
+          // Fetch categories for this movie
+          const { data: categoriesData, error: categoriesError } = await (supabase as any)
+            .from('spec_draft_movie_categories')
+            .select('category_name')
+            .eq('spec_draft_movie_id', movieRecord.id);
+
+          if (categoriesError) {
+            console.error('Error fetching spec draft movie categories:', categoriesError);
+            setSpecDraftMovieCategories([]);
+          } else {
+            const categoryNames = (categoriesData || []).map((cat: any) => cat.category_name);
+            setSpecDraftMovieCategories(categoryNames);
+            console.log('Fetched spec draft movie categories:', categoryNames);
+          }
+        } catch (err) {
+          console.error('Error in fetchSpecDraftMovieCategories:', err);
+          setSpecDraftMovieCategories([]);
+        } finally {
+          setLoadingSpecCategories(false);
+        }
+      } else {
+        setSpecDraftMovieCategories([]);
+      }
+    };
+
+    fetchSpecDraftMovieCategories();
+  }, [theme, option, selectedMovie?.id]);
+
   // Get eligible categories for the selected movie
-  const eligibleCategories = useMemo(() => 
-    getEligibleCategories(selectedMovie, categories, theme, option, specCategories), 
-    [selectedMovie, categories, theme, option, specCategories]
-  );
+  // For spec-draft, use the categories from the database
+  // For other themes, use the standard eligibility logic
+  const eligibleCategories = useMemo(() => {
+    if (theme === 'spec-draft' && specDraftMovieCategories.length > 0) {
+      // Filter to only include categories that are in the draft's category list
+      return specDraftMovieCategories.filter(cat => categories.includes(cat));
+    }
+    return getEligibleCategories(selectedMovie, categories, theme, option, specCategories);
+  }, [selectedMovie, categories, theme, option, specCategories, specDraftMovieCategories]);
 
   const getCategoryTooltip = (category: string) => {
     const config = getCategoryConfig(category);

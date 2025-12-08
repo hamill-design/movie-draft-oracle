@@ -108,12 +108,12 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
           <div className="flex-1 min-w-0 sm:min-w-[294px]">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-greyscale-blue-400 pointer-events-none" />
-              <Input
+                <Input
                 placeholder="Search for actors, directors..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 h-12 border-greyscale-blue-400 text-sm font-brockmann-medium leading-5 placeholder:text-greyscale-blue-400"
-              />
+                />
             </div>
           </div>
           {onCreateNew && (
@@ -127,12 +127,12 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
         </div>
 
         {/* Categories List */}
-        {groupedArray.length === 0 ? (
+          {groupedArray.length === 0 ? (
           <div className="text-center py-8 text-greyscale-blue-600 font-brockmann-regular text-sm leading-5">
-            {searchQuery ? 'No categories match your search' : 'No categories found'}
-          </div>
-        ) : (
-          <div className="space-y-6">
+              {searchQuery ? 'No categories match your search' : 'No categories found'}
+            </div>
+          ) : (
+            <div className="space-y-6">
             {groupedArray.map((group, groupIndex) => (
               <div key={`${group.actor_name}_${group.actor_tmdb_id || 'no-id'}`} className="space-y-0">
                 {/* Actor Header with Purple Background */}
@@ -157,14 +157,14 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
                     className="text-sm text-greyscale-blue-600 leading-5"
                     style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
                   >
-                    {group.categories.length} {group.categories.length === 1 ? 'category' : 'categories'}
+                      {group.categories.length} {group.categories.length === 1 ? 'category' : 'categories'}
                   </div>
-                </div>
+                  </div>
 
-                {/* Categories Table */}
-                <div className="overflow-x-auto">
-                  <Table className="w-full">
-                    <TableHeader>
+                  {/* Categories Table */}
+                  <div className="overflow-x-auto">
+                    <Table className="w-full">
+                      <TableHeader>
                       <TableRow className="border-b border-greyscale-blue-300 hover:bg-transparent">
                         <TableHead 
                           className="px-4 py-3 text-sm text-greyscale-blue-600 leading-5"
@@ -190,9 +190,9 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
                         >
                           Actions
                         </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                       {group.categories.map((category, index) => (
                         <TableRow
                           key={category.id}
@@ -206,51 +206,51 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
                             className="px-4 py-3 text-sm text-text-primary leading-5"
                             style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
                           >
-                            {category.category_name}
-                          </TableCell>
+                              {category.category_name}
+                            </TableCell>
                           <TableCell 
                             className="px-4 py-3 text-sm text-text-primary leading-5"
                             style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
                           >
                             {category.movie_tmdb_ids?.length || 0}
-                          </TableCell>
+                            </TableCell>
                           <TableCell 
                             className="px-4 py-3 text-sm text-text-primary leading-5"
                             style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
                           >
-                            {category.description || '-'}
-                          </TableCell>
+                                {category.description || '-'}
+                            </TableCell>
                           <TableCell className="px-4 py-3 text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
+                              <div className="flex justify-end gap-2">
+                                <Button
                                 variant="ghost"
-                                size="icon"
-                                onClick={() => onEdit(category)}
-                                disabled={loading}
+                                  size="icon"
+                                  onClick={() => onEdit(category)}
+                                  disabled={loading}
                                 className="h-8 w-8 p-2 hover:bg-greyscale-blue-200"
-                              >
+                                >
                                 <Edit2 className="w-4 h-4 text-text-primary" />
-                              </Button>
-                              <Button
+                                </Button>
+                                <Button
                                 variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteClick(category)}
-                                disabled={loading}
+                                  size="icon"
+                                  onClick={() => handleDeleteClick(category)}
+                                  disabled={loading}
                                 className="h-8 w-8 p-2 hover:bg-greyscale-blue-200"
-                              >
+                                >
                                 <Trash2 className="w-4 h-4 text-text-primary" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
