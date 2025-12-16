@@ -258,7 +258,7 @@ const Admin = () => {
   return (
     <SidebarProvider 
       className="flex flex-col min-h-full"
-      style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}
+      style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}
     >
       <SidebarInset className="flex flex-col bg-transparent flex-1">
         <div className="flex-1">

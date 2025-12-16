@@ -45,9 +45,9 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
         width: '100%',
         height: '100%',
         padding: '24px',
-        background: 'hsl(var(--greyscale-blue-100))',
-        boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)',
-        borderRadius: '4px',
+        background: 'var(--Section-Container, #0E0E0F)',
+        boxShadow: '0px 0px 6px #3B0394',
+        borderRadius: '8px',
         flexDirection: 'column',
         justifyContent: 'flex-start',
         alignItems: 'center',
@@ -92,7 +92,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                       justifyContent: 'center', 
                       display: 'flex', 
                       flexDirection: 'column', 
-                      color: 'var(--Text-Primary, #2B2D2D)', 
+                      color: 'var(--Text-Primary, #FCFFFF)', 
                       fontSize: '24px', 
                       fontFamily: 'Brockmann', 
                       fontWeight: 600, 
@@ -107,7 +107,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                       justifyContent: 'center', 
                       display: 'flex', 
                       flexDirection: 'column', 
-                      color: 'var(--Text-Primary, #2B2D2D)', 
+                      color: 'var(--Text-Primary, #FCFFFF)', 
                       fontSize: '14px', 
                       fontFamily: 'Brockmann', 
                       fontWeight: 400, 
@@ -118,20 +118,21 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                     </div>
                   </div>
                 </div>
-                <div style={{ flex: '1 1 0', minWidth: '86px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-end', display: 'inline-flex', marginTop: '12px' }}>
+                <div style={{ flex: '1 1 0', minWidth: '86px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-end', display: 'inline-flex' }}>
                   <div style={{ 
                     textAlign: 'right', 
                     justifyContent: 'center', 
                     display: 'flex', 
                     flexDirection: 'column', 
-                    color: 'var(--Brand-Primary, #680AFF)', 
+                    color: 'var(--Text-Purple, #907AFF)', 
                     fontSize: '32px', 
                     fontFamily: 'Brockmann', 
-                    fontWeight: 500, 
-                    lineHeight: '28px', 
+                    fontWeight: 700, 
+                    lineHeight: '36px', 
+                    letterSpacing: '1.28px',
                     wordWrap: 'break-word' 
                   }}>
-                    {scoreBreakdown.finalScore}
+                    {scoreBreakdown.finalScore.toFixed(2)}
                   </div>
                 </div>
               </div>
@@ -144,30 +145,30 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
       <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '16px', display: 'flex' }}>
         {/* Pick Number and Category */}
         {pickNumber && category && (
-          <div style={{ justifyContent: 'flex-start', alignItems: 'flex-start', gap: '6px', display: 'inline-flex' }}>
-            <div style={{ width: '28px', height: '28px' }}>
+          <div style={{ width: '100%', height: '100%', justifyContent: 'flex-start', alignItems: 'center', gap: '6px', display: 'inline-flex' }}>
+            <div style={{ 
+              width: '28px', 
+              height: '28px', 
+              paddingTop: '5px', 
+              paddingBottom: '5px', 
+              paddingLeft: '7.50px', 
+              paddingRight: '9px', 
+              background: 'var(--Brand-Primary, #7142FF)', 
+              borderRadius: '99999px', 
+              flexDirection: 'column', 
+              justifyContent: 'center', 
+              alignItems: 'center', 
+              display: 'inline-flex' 
+            }}>
               <div style={{ 
-                width: '100%', 
-                height: '100%', 
-                borderRadius: '99999px', 
-                outline: '1px var(--Brand-Primary, #680AFF) solid', 
-                outlineOffset: '-1px', 
-                flexDirection: 'column', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
-                display: 'inline-flex' 
+                color: 'var(--Text-Primary, #FCFFFF)', 
+                fontSize: '18px', 
+                fontFamily: 'Brockmann', 
+                fontWeight: 400, 
+                lineHeight: '18px', 
+                wordWrap: 'break-word' 
               }}>
-                <div style={{ 
-                  textAlign: 'center', 
-                  color: 'var(--Brand-Primary, #680AFF)', 
-                  fontSize: '14px', 
-                  fontFamily: 'Brockmann', 
-                  fontWeight: 400, 
-                  lineHeight: '16px', 
-                  wordWrap: 'break-word' 
-                }}>
-                  {pickNumber}
-                </div>
+                {pickNumber}
               </div>
             </div>
             <div style={{ 
@@ -175,8 +176,10 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
               paddingRight: '8px', 
               paddingTop: '4px', 
               paddingBottom: '4px', 
-              background: 'var(--Purple-150, #D3CFFF)', 
+              background: 'var(--UI-Primary-Pressed, #25015E)', 
               borderRadius: '4px', 
+              outline: '1px solid #907AFF', 
+              outlineOffset: '-1px',
               flexDirection: 'column', 
               justifyContent: 'flex-start', 
               alignItems: 'flex-start', 
@@ -186,11 +189,11 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                 justifyContent: 'center', 
                 display: 'flex', 
                 flexDirection: 'column', 
-                color: 'var(--Purple-700, #3B0394)', 
-                fontSize: '14px', 
+                color: 'var(--Text-Primary, #FCFFFF)', 
+                fontSize: '12px', 
                 fontFamily: 'Brockmann', 
-                fontWeight: 500, 
-                lineHeight: '20px', 
+                fontWeight: 400, 
+                lineHeight: '16px', 
                 wordWrap: 'break-word' 
               }}>
                 {category}
@@ -200,7 +203,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
         )}
 
         {/* Score Breakdown Section */}
-        <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '16px', display: 'flex' }}>
+        <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '12px', display: 'flex' }}>
           <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '12px', display: 'flex' }}>
             <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex' }}>
               <div style={{ 
@@ -208,7 +211,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                 justifyContent: 'center', 
                 display: 'flex', 
                 flexDirection: 'column', 
-                color: 'var(--Text-Primary, #2B2D2D)', 
+                color: 'var(--Text-Primary, #FCFFFF)', 
                 fontSize: '16px', 
                 fontFamily: 'Brockmann', 
                 fontWeight: 600, 
@@ -221,32 +224,32 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
             </div>
 
             {/* Score Metrics */}
-            <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '12px', display: 'flex' }}>
+            <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '7px', display: 'flex' }}>
               
               {/* Box Office Profit */}
               {scoreBreakdown.availableComponents.includes('Box Office') && (
                 <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex' }}>
-                  <div style={{ alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex' }}>
+                    <div style={{ alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex' }}>
                     <div style={{ justifyContent: 'flex-start', alignItems: 'center', gap: '8px', display: 'flex' }}>
-                       <DollarIcon style={{ width: '16px', height: '16px', color: 'hsl(var(--greyscale-blue-500))' }} />
+                       <DollarIcon style={{ width: '16px', height: '16px', color: 'var(--Text-Light-grey, #BDC3C2)' }} />
                       <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
-                        <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', wordWrap: 'break-word' }}>
+                        <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', wordWrap: 'break-word' }}>
                           Box Office Profit
                         </div>
                       </div>
                     </div>
                     <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
-                      <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '16px', wordWrap: 'break-word' }}>
+                      <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '16px', wordWrap: 'break-word' }}>
                         {((scoringData.revenue && scoringData.budget) ? ((scoringData.revenue - scoringData.budget) / scoringData.budget * 100).toFixed(2) : 0)}%
                       </div>
                     </div>
                   </div>
-                   <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: 'hsl(var(--greyscale-blue-200))', overflow: 'hidden', borderRadius: '9999px' }}>
+                   <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: '#2C2B2D', overflow: 'hidden', borderRadius: '9999px' }}>
                     <div style={{ 
                       width: `${Math.min(((scoreBreakdown.boxOfficeScore / 200) * 100), 100)}%`, 
                       height: '8px', 
                       position: 'absolute', 
-                      background: 'var(--Purple-500, #680AFF)' 
+                      background: 'var(--Brand-Primary, #7142FF)' 
                     }}></div>
                   </div>
                 </div>
@@ -257,25 +260,25 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                 <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex' }}>
                   <div style={{ alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex' }}>
                     <div style={{ justifyContent: 'flex-start', alignItems: 'center', gap: '8px', display: 'flex' }}>
-                       <RibbonIcon style={{ width: '16px', height: '16px', color: 'hsl(var(--greyscale-blue-500))' }} />
+                       <RibbonIcon style={{ width: '16px', height: '16px', color: 'var(--Text-Light-grey, #BDC3C2)' }} />
                       <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
-                        <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', wordWrap: 'break-word' }}>
+                        <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', wordWrap: 'break-word' }}>
                           RT Critics
                         </div>
                       </div>
                     </div>
                     <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
-                      <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '16px', wordWrap: 'break-word' }}>
+                      <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '16px', wordWrap: 'break-word' }}>
                         {scoringData.rtCriticsScore || 0}%
                       </div>
                     </div>
                   </div>
-                   <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: 'hsl(var(--greyscale-blue-200))', overflow: 'hidden', borderRadius: '9999px' }}>
+                   <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: '#2C2B2D', overflow: 'hidden', borderRadius: '9999px' }}>
                     <div style={{ 
                       width: `${Math.min(((scoringData.rtCriticsScore || 0) / 100) * 100, 100)}%`, 
                       height: '8px', 
                       position: 'absolute', 
-                      background: 'var(--Purple-500, #680AFF)' 
+                      background: 'var(--Brand-Primary, #7142FF)' 
                     }}></div>
                   </div>
                 </div>
@@ -286,25 +289,25 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                 <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex' }}>
                   <div style={{ alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex' }}>
                     <div style={{ justifyContent: 'flex-start', alignItems: 'center', gap: '8px', display: 'flex' }}>
-                       <StarIcon style={{ width: '16px', height: '16px', color: 'hsl(var(--greyscale-blue-500))' }} />
+                       <StarIcon style={{ width: '16px', height: '16px', color: 'var(--Text-Light-grey, #BDC3C2)' }} />
                       <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
-                        <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', wordWrap: 'break-word' }}>
+                        <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', wordWrap: 'break-word' }}>
                           Metacritic
                         </div>
                       </div>
                     </div>
                     <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
-                      <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '16px', wordWrap: 'break-word' }}>
+                      <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '16px', wordWrap: 'break-word' }}>
                         {scoringData.metacriticScore || 0}/100
                       </div>
                     </div>
                   </div>
-                   <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: 'hsl(var(--greyscale-blue-200))', overflow: 'hidden', borderRadius: '9999px' }}>
+                   <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: '#2C2B2D', overflow: 'hidden', borderRadius: '9999px' }}>
                     <div style={{ 
                       width: `${Math.min(((scoringData.metacriticScore || 0) / 100) * 100, 100)}%`, 
                       height: '8px', 
                       position: 'absolute', 
-                      background: 'var(--Purple-500, #680AFF)' 
+                      background: 'var(--Brand-Primary, #7142FF)' 
                     }}></div>
                   </div>
                 </div>
@@ -315,25 +318,25 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                 <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex' }}>
                   <div style={{ alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex' }}>
                     <div style={{ justifyContent: 'flex-start', alignItems: 'center', gap: '8px', display: 'flex' }}>
-                       <FilmReelIcon style={{ width: '16px', height: '16px', color: 'hsl(var(--greyscale-blue-500))' }} />
+                       <FilmReelIcon style={{ width: '16px', height: '16px', color: 'var(--Text-Light-grey, #BDC3C2)' }} />
                       <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
-                        <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', wordWrap: 'break-word' }}>
+                        <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', wordWrap: 'break-word' }}>
                           IMDB 
                         </div>
                       </div>
                     </div>
                     <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
-                      <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '16px', wordWrap: 'break-word' }}>
+                      <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '16px', wordWrap: 'break-word' }}>
                         {Math.round((scoringData.imdbRating || 0) * 10)}%
                       </div>
                     </div>
                   </div>
-                  <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: 'hsl(var(--greyscale-blue-200))', overflow: 'hidden', borderRadius: '9999px' }}>
+                  <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: '#2C2B2D', overflow: 'hidden', borderRadius: '9999px' }}>
                     <div style={{ 
                       width: `${Math.min(((scoringData.imdbRating || 0) / 10) * 100, 100)}%`, 
                       height: '8px', 
                       position: 'absolute', 
-                      background: 'var(--Purple-500, #680AFF)' 
+                      background: 'var(--Brand-Primary, #7142FF)' 
                     }}></div>
                   </div>
                 </div>
@@ -342,47 +345,46 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
               {/* Oscar Status */}
               <div style={{ alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex' }}>
                 <div style={{ justifyContent: 'flex-start', alignItems: 'center', gap: '8px', display: 'flex' }}>
-                   <TrophyIcon style={{ width: '16px', height: '16px', color: 'hsl(var(--yellow-500))' }} />
+                   <TrophyIcon style={{ width: '16px', height: '16px', color: 'var(--Yellow-500, #FFD60A)' }} />
                   <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
-                    <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', wordWrap: 'break-word' }}>
+                    <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', wordWrap: 'break-word' }}>
                       Oscar Status 
                     </div>
                   </div>
                 </div>
                 <div style={{ justifyContent: 'flex-start', alignItems: 'center', gap: '7.99px', display: 'flex' }}>
                   <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
-                    <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '16px', wordWrap: 'break-word' }}>
+                    <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '16px', wordWrap: 'break-word' }}>
                       +{scoreBreakdown.oscarBonus} pts
                     </div>
                   </div>
-                  <div style={{ 
-                    paddingLeft: '12px', 
-                    paddingRight: '12px', 
-                    paddingTop: '4px', 
-                    paddingBottom: '4px', 
-                     background: scoringData.oscarStatus === 'winner' ? 'hsl(var(--yellow-500))' : 
-                                scoringData.oscarStatus === 'nominee' ? 'hsl(var(--yellow-200))' : 
-                                'hsl(var(--greyscale-blue-200))',
-                    borderRadius: '9999px', 
-                    justifyContent: 'flex-start', 
-                    alignItems: 'center', 
-                    display: 'flex' 
-                  }}>
+                  {scoringData.oscarStatus === 'nominee' && (
                     <div style={{ 
-                      justifyContent: 'center', 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      color: 'var(--Text-Primary, #2B2D2D)', 
-                      fontSize: '12px', 
-                      fontFamily: 'Brockmann', 
-                      fontWeight: 600, 
-                      lineHeight: '16px', 
-                      wordWrap: 'break-word' 
+                      paddingLeft: '12px', 
+                      paddingRight: '12px', 
+                      paddingTop: '4px', 
+                      paddingBottom: '4px', 
+                      background: 'var(--Yellow-200, #FFF2B2)',
+                      borderRadius: '9999px', 
+                      justifyContent: 'flex-start', 
+                      alignItems: 'center', 
+                      display: 'flex' 
                     }}>
-                      {scoringData.oscarStatus === 'winner' ? 'Winner' : 
-                       scoringData.oscarStatus === 'nominee' ? 'Nominee' : 'None'}
+                      <div style={{ 
+                        justifyContent: 'center', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        color: 'var(--UI-Primary, #1D1D1F)', 
+                        fontSize: '12px', 
+                        fontFamily: 'Brockmann', 
+                        fontWeight: 600, 
+                        lineHeight: '16px', 
+                        wordWrap: 'break-word' 
+                      }}>
+                        Nominee
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -390,14 +392,14 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
 
           {/* Box Office Data */}
           {(scoringData.budget || scoringData.revenue) && (
-            <div style={{ alignSelf: 'stretch', paddingTop: '12px', borderTop: '1px hsl(var(--greyscale-blue-700)) solid', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex' }}>
+            <div style={{ alignSelf: 'stretch', paddingTop: '12px', borderTop: '1px var(--Item-Stroke, #49474B) solid', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex' }}>
               <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'flex' }}>
                 <div style={{ 
                   alignSelf: 'stretch', 
                   justifyContent: 'center', 
                   display: 'flex', 
                   flexDirection: 'column', 
-                  color: 'var(--Text-Primary, #2B2D2D)', 
+                  color: 'var(--Text-Primary, #FCFFFF)', 
                   fontSize: '16px', 
                   fontFamily: 'Brockmann', 
                   fontWeight: 600, 
@@ -411,20 +413,20 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
               <div style={{ alignSelf: 'stretch', justifyContent: 'center', alignItems: 'flex-start', gap: '8px', display: 'inline-flex', flexWrap: 'wrap', alignContent: 'flex-start' }}>
                 {scoringData.budget && (
                   <div style={{ flex: '1 1 0', height: '20px', minWidth: '160px', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex' }}>
-                    <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-600, #646968)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '20px', wordWrap: 'break-word' }}>
+                    <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Light-grey, #BDC3C2)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '20px', wordWrap: 'break-word' }}>
                       Budget:
                     </div>
-                    <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: 500, lineHeight: '20px', wordWrap: 'break-word' }}>
+                    <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: 500, lineHeight: '20px', wordWrap: 'break-word' }}>
                       {formatCurrency(scoringData.budget)}
                     </div>
                   </div>
                 )}
                 {scoringData.revenue && (
                   <div style={{ flex: '1 1 0', height: '20px', minWidth: '145px', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex' }}>
-                    <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-600, #646968)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '20px', wordWrap: 'break-word' }}>
+                    <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Light-grey, #BDC3C2)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '20px', wordWrap: 'break-word' }}>
                       Revenue:
                     </div>
-                    <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: 500, lineHeight: '20px', wordWrap: 'break-word' }}>
+                    <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: 500, lineHeight: '20px', wordWrap: 'break-word' }}>
                       {formatCurrency(scoringData.revenue)}
                     </div>
                   </div>

@@ -1,21 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMovies } from '@/hooks/useMovies';
 import { useToast } from '@/hooks/use-toast';
-import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Copy, Check, Users, Clock, Film, User, Calendar, Trophy, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import { Copy, Check, Users, Clock, Film, Trophy, RefreshCw, WifiOff } from 'lucide-react';
 import { MultiPersonIcon } from '@/components/icons/MultiPersonIcon';
 import { ClockIcon } from '@/components/icons/ClockIcon';
 import MovieSearch from '@/components/MovieSearch';
-import { DraftActorPortrait } from '@/components/DraftActorPortrait';
-import CategorySelection from '@/components/CategorySelection';
 import EnhancedCategorySelection from '@/components/EnhancedCategorySelection';
 import PickConfirmation from '@/components/PickConfirmation';
 import DraftBoard from '@/components/DraftBoard';
@@ -32,22 +27,14 @@ interface MultiplayerDraftInterfaceProps {
     categories: string[];
     isHost?: boolean;
   };
-  initialDraftData?: {
-    draft: any;
-    participants: any[];
-    picks: any[];
-  };
 }
 
 export const MultiplayerDraftInterface = ({
   draftId,
-  initialData,
-  initialDraftData
+  initialData
 }: MultiplayerDraftInterfaceProps) => {
   const {
-    participantId,
-    isAuthenticated,
-    user
+    participantId
   } = useCurrentUser();
   const {
     toast
@@ -61,7 +48,6 @@ export const MultiplayerDraftInterface = ({
     isMyTurn,
     isConnected,
     createMultiplayerDraft,
-    joinDraftByCode,
     makePick,
     startDraft,
     manualRefresh
@@ -268,25 +254,25 @@ export const MultiplayerDraftInterface = ({
 
   return (
     <div className="min-h-screen" style={{
-      background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'
+      background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'
     }}>
       <div className="max-w-6xl mx-auto p-4 space-y-6">
         {/* Header */}
         <div className="mb-6">
-          <div className="p-6">
-            <div className="flex flex-col justify-center items-center gap-4 text-center px-4">
-              <span className="text-text-primary text-[20px] sm:text-[24px] md:text-[32px] font-brockmann font-medium leading-tight tracking-[1.28px]">
+          <div className="p-6 rounded-[8px]">
+            <div className="flex flex-col justify-center items-center gap-4 text-center">
+              <span className="text-purple-300 text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px]">
                 NOW DRAFTING
               </span>
               <div 
                 className="font-chaney font-normal text-center break-words"
                 style={{
-                  fontSize: 'clamp(28px, 8vw, 64px)',
-                  lineHeight: '1.1',
+                  fontSize: '64px',
+                  lineHeight: '64px',
                   maxWidth: '100%'
                 }}
               >
-                <span className="text-purple-500">
+                <span className="text-greyscale-blue-100">
                   {draft.theme === 'spec-draft' 
                     ? (specDraftName || draft.option).toUpperCase()
                     : draft.theme === 'people' 
@@ -294,7 +280,7 @@ export const MultiplayerDraftInterface = ({
                       : draft.option.toString() + ' '}
                 </span>
                 {draft.theme !== 'spec-draft' && (
-                  <span className="text-text-primary">
+                  <span className="text-purple-300">
                     MOVIES
                   </span>
                 )}

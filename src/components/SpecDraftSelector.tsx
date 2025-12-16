@@ -80,8 +80,8 @@ export const SpecDraftSelector = () => {
 
   if (loading) {
     return (
-      <div className="w-full p-6 bg-greyscale-blue-100 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
-        <div className="text-center text-greyscale-blue-600" style={{ fontFamily: 'Brockmann', fontWeight: 400, fontSize: '14px' }}>
+      <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+        <div className="text-center text-greyscale-blue-100" style={{ fontFamily: 'Brockmann', fontWeight: 400, fontSize: '14px' }}>
           Loading special drafts...
         </div>
       </div>
@@ -93,11 +93,11 @@ export const SpecDraftSelector = () => {
   }
 
   return (
-    <div className="w-full p-6 bg-greyscale-blue-100 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
+    <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
       {/* Header */}
       <div className="flex flex-col gap-2 items-center justify-center">
         <h2
-          className="text-2xl text-text-primary"
+          className="text-2xl text-greyscale-blue-100"
           style={{ 
             fontFamily: 'Brockmann', 
             fontWeight: 700, 
@@ -118,10 +118,11 @@ export const SpecDraftSelector = () => {
           return (
             <div
               key={draft.id}
-              className="bg-ui-primary border border-greyscale-blue-200 rounded-[6px] p-[18px] flex gap-4 items-center min-h-[218px] min-w-[310px] flex-1"
+              className="bg-greyscale-purp-850 rounded-[6px] p-[18px] flex flex-col md:flex-row gap-4 items-center min-h-[218px] w-full md:flex-1 md:min-w-0"
+              style={{outline: '1px solid #49474B', outlineOffset: '-1px'}}
             >
               {/* Poster/Image */}
-              <div className="h-[182px] min-h-[182px] min-w-[182px] relative rounded-[3px] shrink-0">
+              <div className="h-[182px] min-h-[182px] min-w-[182px] w-full md:w-[182px] md:flex-shrink-0 relative rounded-[3px]">
                 {posterUrl ? (
                   <img
                     src={posterUrl}
@@ -132,18 +133,18 @@ export const SpecDraftSelector = () => {
                     }}
                   />
                 ) : (
-                  <div className="w-full h-full bg-greyscale-blue-200 rounded-[3px] flex items-center justify-center">
+                  <div className="w-full h-full bg-greyscale-purp-800 rounded-[3px] flex items-center justify-center">
                     <Film className="w-12 h-12 text-greyscale-blue-400" />
                   </div>
                 )}
               </div>
 
               {/* Content */}
-              <div className="flex flex-col gap-6 items-start flex-1 min-w-[182px]">
+              <div className="flex flex-col gap-6 items-start flex-1 w-full min-w-0">
                 {/* Title and Description */}
                 <div className="flex flex-col gap-2 items-start w-full">
                   <h3
-                    className="text-2xl text-text-primary"
+                    className="text-2xl text-greyscale-blue-100"
                     style={{ 
                       fontFamily: 'Brockmann', 
                       fontWeight: 600, 
@@ -156,7 +157,7 @@ export const SpecDraftSelector = () => {
                   </h3>
                   {draft.description && (
                     <p
-                      className="text-sm text-text-primary"
+                      className="text-sm text-greyscale-blue-100"
                       style={{ 
                         fontFamily: 'Brockmann', 
                         fontWeight: 400, 
@@ -172,7 +173,7 @@ export const SpecDraftSelector = () => {
                 {/* Begin Setup Button */}
                 <Button
                   onClick={() => handleBeginSetup(draft.id)}
-                  className="bg-brand-primary text-ui-primary h-9 px-4 py-2 rounded-[2px] w-full"
+                  className="bg-brand-primary hover:bg-purple-300 text-greyscale-blue-100 h-9 px-4 py-2 rounded-[2px] w-full transition-colors"
                   style={{ 
                     fontFamily: 'Brockmann', 
                     fontWeight: 500, 

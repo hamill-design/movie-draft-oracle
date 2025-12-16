@@ -134,7 +134,7 @@ const Index = () => {
   // Show loading state while loading existing draft (only for non-multiplayer drafts)
   if (loading || (loadingExistingDraft && !draftState?.isMultiplayer)) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
+      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <div className="text-text-primary text-xl">
           {loadingExistingDraft ? 'Loading draft...' : 'Loading...'}
         </div>
@@ -153,13 +153,12 @@ const Index = () => {
       <MultiplayerDraftInterface 
         draftId={urlDraftId || draftState?.existingDraftId}
         initialData={!urlDraftId && !draftState?.existingDraftId ? draftState : undefined}
-        initialDraftData={(location.state as any)?.initialDraftData}
       />
     );
   }
 
   return (
-    <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
+    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <div className="container mx-auto px-4 py-8">
         <DraftHeader
           draftOption={draftState.option}

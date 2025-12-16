@@ -317,7 +317,7 @@ async function analyzeCategoryMovies(
   
   // Map theme and option to proper fetch-movies parameters
   let fetchParams: any = {
-    fetchAll: true,
+    fetchAll: theme !== 'year', // Don't use fetchAll for year themes to avoid timeout
     limit: 1000
   };
 

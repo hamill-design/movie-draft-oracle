@@ -13,6 +13,7 @@ import TeamRoster from '@/components/TeamRoster';
 import ShareResultsButton from '@/components/ShareResultsButton';
 import SaveDraftButton from '@/components/SaveDraftButton';
 import { getScoreColor, getScoreGrade } from '@/utils/scoreCalculator';
+import RankBadge from '@/components/RankBadge';
 
 interface TeamScore {
   playerName: string;
@@ -363,7 +364,7 @@ const FinalScores = () => {
 
   if (loading || loadingData) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
+      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <div className="text-text-primary text-xl">
           {enrichingData ? (
             <div className="flex items-center gap-3">
@@ -392,57 +393,33 @@ const FinalScores = () => {
   }).length;
 
   return (
-    <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
+    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div style={{
-          width: '100%', 
-          height: '100%', 
-          padding: '24px', 
-          borderRadius: '8px', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          display: 'flex', 
-          flexDirection: 'column'
-        }}>
-          <div style={{
-            flex: '1 1 0', 
-            flexDirection: 'column', 
-            justifyContent: 'flex-start', 
-            alignItems: 'flex-start', 
-            gap: '24px', 
-            display: 'flex'
-          }}>
-            <div style={{
-              alignSelf: 'stretch', 
-              minWidth: '310px', 
-              textAlign: 'center', 
-              justifyContent: 'center', 
-              display: 'flex', 
-              flexDirection: 'column'
-            }}>
+        <div className="w-full p-6 rounded-[8px] flex flex-wrap items-start content-start">
+          <div className="flex-1 flex flex-col gap-6">
+            <div className="self-stretch min-w-[310px] text-center flex flex-col justify-center">
               <div 
                 className="break-words"
                 style={{
-                  color: 'var(--Greyscale-(Blue)-800, #2B2D2D)', 
-                  fontSize: 'clamp(28px, 8vw, 64px)', 
+                  fontSize: '64px', 
                   fontFamily: 'CHANEY', 
                   fontWeight: '400', 
-                  lineHeight: '1.1',
+                  lineHeight: '64px',
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
                   flexWrap: 'wrap',
-                  gap: '0.25ch',
-                  maxWidth: '100%',
-                  padding: '0 1rem'
+                  gap: '0px',
+                  gridGap: '0px',
+                  maxWidth: '100%'
                 }}
               >
-                <span>THE</span>
-                <span style={{ color: 'var(--Brand-Primary, #680AFF)', margin: '0 0.5ch' }}>
+                <span className="text-greyscale-blue-100">THE</span>
+                <span className="text-brand-primary" style={{ margin: '0 0.5ch' }}>
                   {draft.title}
                 </span>
-                <span>DRAFT</span>
+                <span className="text-greyscale-blue-100">DRAFT</span>
               </div>
               {enrichingData && (
                 <p className="text-yellow-400 text-sm mt-1 flex items-center gap-2 justify-center">
@@ -499,208 +476,60 @@ const FinalScores = () => {
 
         <div className="space-y-6">
           {/* Leaderboard */}
-          <div style={{
-            width: '100%',
-            height: '100%',
-            padding: '24px',
-            background: 'hsl(var(--greyscale-blue-100))',
-            boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)',
-            borderRadius: '4px',
-            flexDirection: 'column',
-            justifyContent: 'flex-start',
-            alignItems: 'flex-start',
-            gap: '24px',
-            display: 'inline-flex'
-          }}>
-            <div style={{
-              alignSelf: 'stretch',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: '8px',
-              display: 'flex'
-            }}>
-              <div style={{
-                justifyContent: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                color: 'var(--Text-Primary, #2B2D2D)',
-                fontSize: '24px',
-                fontFamily: 'Brockmann',
-                fontWeight: '700',
-                lineHeight: '32px',
-                letterSpacing: '0.96px',
-                wordWrap: 'break-word'
-              }}>
+          <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+            <div className="self-stretch flex flex-col justify-center items-center gap-2">
+              <div className="text-center flex flex-col text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
                 FINAL SCORES
               </div>
             </div>
-            <div style={{
-              alignSelf: 'stretch',
-              flexDirection: 'column',
-              justifyContent: 'flex-start',
-              alignItems: 'flex-start',
-              gap: '16px',
-              display: 'flex'
-            }}>
+            <div className="self-stretch flex flex-col gap-4">
               {teamScores.map((team, index) => {
-                const badgeStyle = getRankingBadgeStyle(index);
+                const isSelected = selectedTeam === team.playerName;
+                const isHovered = hoveredTeam === team.playerName;
+                const isFirstPlace = index === 0;
+                
                 return (
                   <div
                     key={team.playerName}
                     onClick={() => setSelectedTeam(team.playerName)}
                     onMouseEnter={() => setHoveredTeam(team.playerName)}
                     onMouseLeave={() => setHoveredTeam('')}
+                    className={`self-stretch py-4 pl-4 pr-6 rounded-[8px] flex items-center gap-4 cursor-pointer transition-colors ${
+                      isSelected 
+                        ? 'bg-brand-primary' 
+                        : isHovered 
+                          ? 'bg-greyscale-purp-800' 
+                          : 'bg-greyscale-purp-850'
+                    }`}
                     style={{
-                      alignSelf: 'stretch',
-                      paddingTop: '16px',
-                      paddingBottom: '16px',
-                      paddingLeft: '16px',
-                      paddingRight: '24px',
-                      background: selectedTeam === team.playerName 
-                        ? 'var(--Purple-100, #EDEBFF)' 
-                        : hoveredTeam === team.playerName 
-                          ? 'var(--Purple-50, #F8F7FF)' 
-                          : 'var(--UI-Primary, white)',
-                      borderRadius: '8px',
-                      outline: selectedTeam === team.playerName 
-                        ? '1px var(--Purple-200, #BCB2FF) solid' 
-                        : '1px var(--Purple-100, #EDEBFF) solid',
-                      outlineOffset: '-1px',
-                      justifyContent: 'flex-start',
-                      alignItems: 'center',
-                      gap: '16px',
-                      display: 'inline-flex',
-                      cursor: 'pointer'
+                      outline: isSelected 
+                        ? 'none' 
+                        : '1px solid #49474B',
+                      outlineOffset: '-1px'
                     }}
                   >
-                     <div style={{
-                       width: '32px',
-                       height: '32px',
-                       ...badgeStyle,
-                       borderRadius: '9999px',
-                       overflow: 'hidden',
-                       justifyContent: 'center',
-                       alignItems: 'center',
-                       display: 'flex'
-                     }}>
-                       {index <= 2 ? (
-                         // Top 3 places with inner circle for proper gradient border
-                         <div style={{
-                           width: '28px',
-                           height: '28px',
-                           background: index === 0 ? 'var(--Yellow-500, #FFD60A)' : 
-                                      index === 1 ? 'var(--Greyscale-300, #CCCCCC)' : 
-                                      '#DE7E3E',
-                           borderRadius: '9999px',
-                           justifyContent: 'center',
-                           alignItems: 'center',
-                           display: 'flex'
-                         }}>
-                           <div style={{
-                             textAlign: 'center',
-                             justifyContent: 'center',
-                             display: 'flex',
-                             flexDirection: 'column',
-                             color: badgeStyle.color,
-                             fontSize: '16px',
-                             fontFamily: 'Brockmann',
-                             fontWeight: '700',
-                             lineHeight: '24px',
-                             wordWrap: 'break-word'
-                           }}>
-                             {index + 1}
-                           </div>
-                         </div>
-                       ) : (
-                         <div style={{
-                           textAlign: 'center',
-                           justifyContent: 'center',
-                           display: 'flex',
-                           flexDirection: 'column',
-                           color: badgeStyle.color,
-                           fontSize: '16px',
-                           fontFamily: 'Brockmann',
-                           fontWeight: '700',
-                           lineHeight: '24px',
-                           wordWrap: 'break-word'
-                         }}>
-                           {index + 1}
-                          </div>
-                        )}
-                      </div>
-                    <div style={{
-                      flex: '1 1 0',
-                      paddingBottom: '2px',
-                      flexDirection: 'column',
-                      justifyContent: 'flex-start',
-                      alignItems: 'flex-start',
-                      gap: '2px',
-                      display: 'inline-flex'
-                    }}>
-                      <div style={{
-                        alignSelf: 'stretch',
-                        justifyContent: 'center',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        color: selectedTeam === team.playerName ? 'var(--Greyscale-(Blue)-800, #2B2D2D)' : 'var(--Text-Primary, #2B2D2D)',
-                        fontSize: '16px',
-                        fontFamily: 'Brockmann',
-                        fontWeight: '600',
-                        lineHeight: '24px',
-                        letterSpacing: '0.32px',
-                        wordWrap: 'break-word'
-                      }}>
+                    {/* Badge */}
+                    <RankBadge rank={index + 1} size={32} />
+                    <div className="flex-1 pb-0.5 flex flex-col gap-0.5">
+                      <div className="self-stretch flex flex-col text-greyscale-blue-100 text-base font-brockmann font-semibold leading-6 tracking-[0.32px]">
                         {team.playerName}
                       </div>
-                      <div style={{
-                        alignSelf: 'stretch',
-                        justifyContent: 'center',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        color: selectedTeam === team.playerName ? 'var(--Greyscale-(Blue)-800, #2B2D2D)' : 'var(--Text-Primary, #2B2D2D)',
-                        fontSize: '14px',
-                        fontFamily: 'Brockmann',
-                        fontWeight: '400',
-                        lineHeight: '20px',
-                        wordWrap: 'break-word'
-                      }}>
-                         {(() => {
-                           const topMovie = team.picks
-                             .filter(pick => (pick as any).calculated_score > 0)
-                             .sort((a, b) => (b as any).calculated_score - (a as any).calculated_score)[0];
-                           return topMovie ? `Top Movie: ${topMovie.movie_title}` : `${team.completedPicks}/${team.totalPicks} movies scored`;
-                         })()}
+                      <div className={`self-stretch flex flex-col text-sm font-brockmann font-normal leading-5 ${
+                        isSelected ? 'text-greyscale-blue-100' : 'text-greyscale-blue-300'
+                      }`}>
+                        {(() => {
+                          const topMovie = team.picks
+                            .filter(pick => (pick as any).calculated_score > 0)
+                            .sort((a, b) => (b as any).calculated_score - (a as any).calculated_score)[0];
+                          return topMovie ? `Top Movie: ${topMovie.movie_title}` : `${team.completedPicks}/${team.totalPicks} movies scored`;
+                        })()}
                       </div>
                     </div>
-                    <div style={{
-                      flexDirection: 'column',
-                      justifyContent: 'flex-start',
-                      alignItems: 'flex-start',
-                      display: 'inline-flex'
-                    }}>
-                      <div style={{
-                        alignSelf: 'stretch',
-                        flexDirection: 'column',
-                        justifyContent: 'flex-start',
-                        alignItems: 'flex-end',
-                        display: 'flex'
-                      }}>
-                        <div style={{
-                          textAlign: 'right',
-                          justifyContent: 'center',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          color: 'var(--Brand-Primary, #680AFF)',
-                          fontSize: '32px',
-                          fontFamily: 'Brockmann',
-                          fontWeight: '500',
-                          lineHeight: '36px',
-                          letterSpacing: '1.28px',
-                          wordWrap: 'break-word'
-                        }}>
-                          {team.averageScore.toFixed(1)}
-                        </div>
+                    <div className="flex flex-col items-end">
+                      <div className={`text-right flex flex-col text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px] ${
+                        isSelected ? 'text-greyscale-blue-100' : 'text-purple-300'
+                      }`}>
+                        {team.averageScore.toFixed(2)}
                       </div>
                     </div>
                   </div>

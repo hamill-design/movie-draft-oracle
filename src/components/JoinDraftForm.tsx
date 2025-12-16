@@ -101,9 +101,9 @@ export const JoinDraftForm = () => {
           title="Join A Draft" 
           icon={
             <FilmReelIcon 
-              className={`w-6 h-6 transition-colors ${
+              className={`w-6 h-6 ${
                 hasInviteCode 
-                  ? 'text-brand-primary hover:text-purple-400' 
+                  ? 'text-purple-300' 
                   : 'text-greyscale-blue-500'
               }`} 
             />
@@ -156,7 +156,7 @@ export const JoinDraftForm = () => {
         <button
           type="submit"
           disabled={isButtonDisabled}
-          className="self-stretch px-6 py-3 bg-brand-primary hover:bg-brand-primary/90 disabled:bg-greyscale-purp-800 disabled:text-greyscale-blue-500 rounded-[2px] flex justify-center items-center"
+          className="self-stretch px-6 py-3 bg-brand-primary join-draft-button-hover disabled:bg-greyscale-purp-800 disabled:text-greyscale-blue-500 rounded-[2px] flex justify-center items-center"
         >
           <div className="text-center flex flex-col justify-center text-greyscale-blue-100 text-base font-semibold leading-6 tracking-[0.32px] font-brockmann">
             {(loading || isJoining) ? 'Joining...' : 'Join Draft'}

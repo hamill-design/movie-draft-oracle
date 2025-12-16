@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useDraftGame } from '@/hooks/useDraftGame';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { useMovies } from '@/hooks/useMovies';
@@ -27,19 +27,21 @@ interface DraftInterfaceProps {
 
 const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const { toast } = useToast();
+  const hasShownToast = useRef(false);
+  
+  // Show success message for multiplayer draft creation
+  useEffect(() => {
+    if (draftState.isMultiplayer && !draftState.existingDraftId && !hasShownToast.current) {
+      hasShownToast.current = true;
+      toast({
+        title: "Multiplayer Draft Created!",
+        description: `Email invitations have been sent to ${draftState.participants.length} participant(s)`,
+      });
+    }
+  }, [draftState.isMultiplayer, draftState.existingDraftId, draftState.participants.length, toast]);
   
   // If this is a multiplayer draft, use the multiplayer interface
   if (draftState.isMultiplayer) {
-    // Show success message for multiplayer draft creation
-    useEffect(() => {
-      if (!draftState.existingDraftId) {
-        toast({
-          title: "Multiplayer Draft Created!",
-          description: `Email invitations have been sent to ${draftState.participants.length} participant(s)`,
-        });
-      }
-    }, [draftState.existingDraftId, draftState.participants.length, toast]);
-
     return (
       <MultiplayerDraftInterface 
         draftId={draftState.existingDraftId}

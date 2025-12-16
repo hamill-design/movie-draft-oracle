@@ -73,6 +73,18 @@ const Home = () => {
   const handleStartDraft = (data: DraftSetupForm) => {
     if (!selectedOption || !data.categories.length) return;
 
+    // For local drafts, require at least 2 participants
+    if (draftMode === 'single') {
+      if (participants.length < 2) {
+        toast({
+          title: "Not Enough Participants",
+          description: "Please add at least 2 participants to create a local draft.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     // For multiplayer, validate that all participants are valid emails
     if (draftMode === 'multiplayer') {
       const invalidEmails = participants.filter(p => !isEmailValid(p));
@@ -125,7 +137,7 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
+    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <div className="container mx-auto px-4 py-8">
 
         <div className="max-w-4xl mx-auto space-y-8">
@@ -136,9 +148,9 @@ const Home = () => {
           <SpecDraftSelector />
           
           {/* Theme Selection */}
-          <div className="w-full p-6 bg-greyscale-blue-100 rounded flex flex-col gap-6" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
+          <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
             <div className="self-stretch flex flex-col justify-center items-center gap-2">
-              <div className="text-foreground text-2xl font-bold leading-8 tracking-wide font-brockmann">
+              <div className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann">
                 Choose Your Draft Theme
               </div>
             </div>
@@ -149,11 +161,12 @@ const Home = () => {
                   setSelectedOption('');
                   setSearchQuery('');
                 }}
-                className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] border flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                   theme === 'people'
-                    ? 'bg-purple-500 border-purple-500 text-white'
-                    : 'bg-ui-primary border-greyscale-blue-200 text-text-primary hover:bg-purple-100 hover:border-purple-200 active:bg-purple-200 active:border-purple-300'
+                    ? 'bg-brand-primary text-greyscale-blue-100'
+                    : 'bg-greyscale-purp-850 hover:bg-greyscale-purp-800 active:bg-purple-800 text-greyscale-blue-100'
                 }`}
+                style={theme !== 'people' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : undefined}
               >
                 <div className="w-6 h-6 flex justify-center items-center">
                   <PersonIcon className="w-6 h-6" />
@@ -166,11 +179,12 @@ const Home = () => {
                   setSelectedOption('');
                   setSearchQuery('');
                 }}
-                className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] border flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                   theme === 'year'
-                    ? 'bg-purple-500 border-purple-500 text-white'
-                    : 'bg-ui-primary border-greyscale-blue-200 text-text-primary hover:bg-purple-100 hover:border-purple-200 active:bg-purple-200 active:border-purple-300'
+                    ? 'bg-brand-primary text-greyscale-blue-100'
+                    : 'bg-greyscale-purp-850 hover:bg-greyscale-purp-800 active:bg-purple-800 text-greyscale-blue-100'
                 }`}
+                style={theme !== 'year' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : undefined}
               >
                 <div className="w-6 h-6 flex justify-center items-center">
                   <CalendarIcon className="w-6 h-6" />
@@ -182,12 +196,12 @@ const Home = () => {
 
           {/* Option Selection */}
           {isStepVisible('option') && (
-            <div className="p-6 bg-greyscale-blue-100 rounded space-y-4" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
+            <div className="p-6 bg-greyscale-purp-900 rounded-[8px] space-y-4" style={{boxShadow: '0px 0px 6px #3B0394'}}>
                 <HeaderIcon3 
                   title={theme === 'people' ? 'Search for a Person' : 'Select a Year'} 
                   icon={theme === 'people' ? 
-                    <PersonIcon className="w-6 h-6 text-primary" /> : 
-                    <CalendarIcon className="w-6 h-6 text-primary" />
+                    <PersonIcon className="w-6 h-6 text-purple-300" /> : 
+                    <CalendarIcon className="w-6 h-6 text-purple-300" />
                   } 
                 />
                 
@@ -197,26 +211,31 @@ const Home = () => {
                       placeholder="Search for actors, directors..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="mb-4 rounded-[2px]"
+                      className="mb-4 rounded-[2px] bg-greyscale-purp-850 text-greyscale-blue-100 placeholder:text-greyscale-blue-500 border-0 focus:border-0"
+                      style={{outline: '1px solid #666469', outlineOffset: '-1px'}}
                     />
                     
                     
                     {shouldShowResults && (
                       <div className="max-h-60 overflow-y-auto space-y-2">
                         {peopleLoading ? (
-                          <div className="text-gray-400">Searching...</div>
+                          <div className="text-greyscale-blue-500">Searching...</div>
                         ) : people.length === 0 ? (
-                          <div className="text-gray-400">No people found</div>
+                          <div className="text-greyscale-blue-500">No people found</div>
                         ) : (
                           people.slice(0, 10).map((person) => (
                             <div
                               key={person.id}
                               onClick={() => handleOptionSelect({ title: person.name, profile_path: person.profile_path ?? undefined })}
-                              className={`w-full py-4 px-4 pr-6 bg-white rounded border border-[#D9E0DF] cursor-pointer transition-colors flex items-start gap-4 ${
+                              className={`w-full py-4 px-4 pr-6 rounded cursor-pointer transition-colors flex items-start gap-4 ${
                                 selectedOption === person.name
-                                  ? 'bg-yellow-400 text-black'
-                                  : 'hover:bg-[#F8F7FF] hover:border-[#EDEBFF] active:bg-[#EDEBFF] active:border-[#BCB2FF]'
+                                  ? 'bg-greyscale-purp-850 text-greyscale-blue-100'
+                                  : 'bg-greyscale-purp-850 hover:bg-greyscale-purp-800 active:bg-purple-800 text-greyscale-blue-100'
                               }`}
+                              style={selectedOption === person.name 
+                                ? {outline: '2px solid #7142FF', outlineOffset: '-1px'}
+                                : {outline: '1px solid #49474B', outlineOffset: '-1px'}
+                              }
                             >
                               <div className="w-12 h-12 overflow-hidden rounded-full flex justify-center items-start">
                                 <ActorPortrait 
@@ -227,12 +246,12 @@ const Home = () => {
                               </div>
                               <div className="flex-1 pb-0.5 flex flex-col justify-start items-start gap-0.5">
                                 <div className="self-stretch flex flex-col justify-start items-start">
-                                  <span className="text-text-primary text-base font-semibold leading-6 tracking-[0.32px] font-brockmann">
+                                  <span className="text-greyscale-blue-100 text-lg font-bold leading-[26px] font-brockmann">
                                     {person.name}
                                   </span>
                                 </div>
                                 <div className="self-stretch flex flex-col justify-start items-start">
-                                  <span className="text-[#828786] text-sm font-normal leading-5 font-brockmann">
+                                  <span className="text-greyscale-blue-500 text-sm font-normal leading-5 font-brockmann">
                                     {person.known_for_department} • Known for: {person.known_for.slice(0, 2).map(item => item.title).join(', ')}
                                   </span>
                                 </div>
@@ -246,10 +265,10 @@ const Home = () => {
                     {selectedOption && (
                       <div className="mb-4">
                         <div className="w-full h-full flex-col justify-start items-center gap-1.5 inline-flex">
-                          <span className="text-muted-foreground text-sm font-medium leading-5 font-brockmann">
+                          <span className="text-greyscale-blue-100 text-sm font-medium leading-5 font-brockmann">
                             You've Selected
                           </span>
-                          <span className="text-primary text-lg font-semibold leading-6 font-brockmann">
+                          <span className="text-purple-300 text-2xl font-bold leading-8 font-brockmann">
                             {selectedOption}
                           </span>
                         </div>
@@ -259,36 +278,37 @@ const Home = () => {
                 ) : (
                   <>
                     
-                    <div className="max-h-60 overflow-y-auto">
+                    <div className="max-h-60 overflow-y-auto p-2">
                       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
                         {years.map((year) => (
-                          <Button
+                          <button
                             key={year}
                             onClick={() => handleYearSelect(year)}
-                            variant={selectedOption === year ? 'default' : 'outline'}
-                            className={`h-12 text-sm font-brockmann-medium transition-colors ${
+                            className={`h-12 w-full px-6 py-2 text-sm font-brockmann-medium transition-colors text-greyscale-blue-100 border-0 box-border ${
                               selectedOption === year
-                                ? 'bg-purple-500 text-white hover:bg-purple-500 border-0'
-                                : 'bg-ui-primary text-text-primary border-0 hover:bg-purple-100 active:bg-greyscale-blue-150'
+                                ? 'bg-brand-primary hover:bg-brand-primary'
+                                : 'bg-greyscale-purp-850 hover:bg-greyscale-purp-800'
                             }`}
                             style={{
                               borderRadius: '6px',
-                              outline: selectedOption === year ? '1px solid hsl(var(--purple-500))' : '0.5px solid hsl(var(--text-primary))',
-                              outlineOffset: '-1px'
+                              outline: selectedOption === year ? '0.50px solid #7142FF' : '0.50px solid #666469',
+                              outlineOffset: '-0.50px',
+                              minWidth: '0',
+                              flexShrink: 0
                             }}
                           >
                             {year}
-                          </Button>
+                          </button>
                         ))}
                       </div>
                     </div>
 
                     {selectedOption && (
                       <div className="w-full flex flex-col justify-start items-center gap-1.5 mt-4">
-                        <span className="text-greyscale-blue-600 text-sm font-brockmann-medium leading-5">
+                        <span className="text-greyscale-blue-300 text-sm font-brockmann font-medium leading-5">
                           You've Selected
                         </span>
-                        <span className="text-brand-primary text-lg font-brockmann font-semibold leading-6">
+                        <span className="text-purple-300 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
                           {selectedOption}
                         </span>
                       </div>
@@ -300,9 +320,9 @@ const Home = () => {
 
           {/* Draft Mode Selection */}
           {isStepVisible('mode') && (
-            <div className="w-full p-6 bg-greyscale-blue-100 rounded flex flex-col gap-6" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
+            <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
               <div className="self-stretch flex flex-col justify-center items-center gap-2">
-                <div className="text-foreground text-2xl font-bold leading-8 tracking-wide font-brockmann">
+                <div className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann">
                   Select A Mode
                 </div>
               </div>
@@ -310,11 +330,12 @@ const Home = () => {
                 <button
                   type="button"
                   onClick={() => setDraftMode('single')}
-                  className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] border flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                  className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                     draftMode === 'single'
-                      ? 'bg-purple-500 border-purple-500 text-white'
-                      : 'bg-ui-primary border-greyscale-blue-200 text-text-primary hover:bg-purple-100 hover:border-purple-400 active:bg-purple-200 active:border-purple-300'
+                      ? 'bg-brand-primary text-greyscale-blue-100'
+                      : 'bg-greyscale-purp-850 text-greyscale-blue-100 hover:bg-greyscale-purp-800 active:bg-purple-800'
                   }`}
+                  style={draftMode !== 'single' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : undefined}
                 >
                   <div className="w-6 h-6 flex justify-center items-center">
                     <User className="w-6 h-6" />
@@ -324,11 +345,12 @@ const Home = () => {
                 <button
                   type="button"
                   onClick={() => setDraftMode('multiplayer')}
-                  className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] border flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                  className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                     draftMode === 'multiplayer'
-                      ? 'bg-purple-500 border-purple-500 text-white'
-                      : 'bg-ui-primary border-greyscale-blue-200 text-text-primary hover:bg-purple-100 hover:border-purple-200 active:bg-purple-200 active:border-purple-300'
+                      ? 'bg-brand-primary text-greyscale-blue-100'
+                      : 'bg-greyscale-purp-850 text-greyscale-blue-100 hover:bg-greyscale-purp-800 active:bg-purple-800'
                   }`}
+                  style={draftMode !== 'multiplayer' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : undefined}
                 >
                   <div className="w-6 h-6 flex justify-center items-center">
                     <Users className="w-6 h-6" />
@@ -337,13 +359,10 @@ const Home = () => {
                 </button>
               </div>
               {draftMode === 'multiplayer' && (
-                <div className="self-stretch p-4 bg-teal-100 rounded border border-teal-700 flex flex-col">
+                <div className="self-stretch p-4 bg-teal-900 rounded flex flex-col" style={{outline: '1px solid #B2FFEA', outlineOffset: '-1px'}}>
                   <div className="self-stretch flex flex-col">
-                    <span className="text-teal-700 text-sm font-bold leading-5 font-brockmann">
-                      Multiplayer Mode:
-                    </span>
-                    <span className="text-teal-700 text-sm font-medium leading-5 font-brockmann">
-                      {" "}Enter email addresses of friends you want to invite. They'll receive an email invitation to join your draft.
+                    <span className="text-teal-200 text-sm font-medium leading-5 font-brockmann">
+                      <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They'll receive an email invitation to join your draft.
                     </span>
                   </div>
                 </div>
@@ -353,12 +372,12 @@ const Home = () => {
 
           {/* Participants */}
           {isStepVisible('participants') && (
-            <div className="p-6 bg-greyscale-blue-100 rounded flex flex-col gap-6" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
+            <div className="p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 flex justify-center items-center">
-                  <MultiPersonIcon className="w-6 h-6 text-primary" />
+                  <MultiPersonIcon className="w-6 h-6 text-purple-300" />
                 </div>
-                <span className="text-text-primary text-xl font-brockmann font-medium leading-7">
+                <span className="text-greyscale-blue-100 text-xl font-brockmann font-medium leading-7">
                   Add Participants
                 </span>
               </div>
@@ -369,27 +388,25 @@ const Home = () => {
                   value={newParticipant}
                   onChange={(e) => setNewParticipant(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddParticipant()}
-                  className="rounded-[2px]"
+                  className="rounded-[2px] bg-greyscale-purp-850 text-greyscale-blue-100 placeholder:text-greyscale-blue-500 border-0 focus:border-0"
+                  style={{outline: '1px solid #666469', outlineOffset: '-1px'}}
                 />
                 <button 
                   onClick={handleAddParticipant} 
-                  className="px-4 py-2 bg-purple-500 text-white text-sm font-brockmann font-medium leading-5 rounded-[2px] flex justify-center items-center"
+                  className="px-4 py-2 bg-brand-primary hover:bg-purple-300 text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5 rounded-[2px] flex justify-center items-center transition-colors"
                 >
                   Add
                 </button>
               </div>
 
               {draftMode === 'multiplayer' && (
-                <div className="p-4 bg-teal-100 border border-teal-700 rounded flex items-center gap-2">
+                <div className="p-4 bg-teal-900 rounded flex items-center gap-2" style={{outline: '1px solid #B2FFEA', outlineOffset: '-1px'}}>
                   <div className="w-6 h-6 flex justify-center items-center">
-                    <EmailIcon className="w-6 h-6 text-teal-700" />
+                    <EmailIcon className="w-6 h-6 text-teal-200" />
                   </div>
                   <div className="flex-1">
-                    <span className="text-teal-700 text-sm font-brockmann font-bold leading-5">
-                      Multiplayer Mode:
-                    </span>
-                    <span className="text-teal-700 text-sm font-brockmann font-medium leading-5">
-                      {" "}Enter email addresses of friends you want to invite. They'll receive an email invitation to join.
+                    <span className="text-teal-200 text-sm font-brockmann font-medium leading-5">
+                      <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They'll receive an email invitation to join.
                     </span>
                   </div>
                 </div>
@@ -398,7 +415,7 @@ const Home = () => {
               {participants.length > 0 && (
                 <div className="flex flex-col gap-3">
                   <div>
-                    <span className="text-greyscale-blue-600 text-base font-brockmann leading-6">
+                    <span className="text-greyscale-blue-300 text-base font-normal leading-6 font-brockmann">
                       Participants ({participants.length}):
                     </span>
                   </div>
@@ -406,25 +423,25 @@ const Home = () => {
                     {participants.map((participant) => (
                       <div
                         key={participant}
-                        className={`py-2 px-4 pr-2.5 bg-purple-150 rounded flex items-center gap-2 ${
+                        className={`py-2 pl-4 pr-[10px] bg-brand-primary rounded flex items-center gap-2 ${
                           draftMode === 'multiplayer' && !isEmailValid(participant)
-                            ? 'bg-red-200 border border-red-500'
+                            ? 'bg-red-900 border border-red-500'
                             : ''
                         }`}
                       >
-                        {draftMode === 'multiplayer' && <Mail size={16} className="text-primary" />}
-                        <span className="text-text-primary text-sm font-brockmann font-medium leading-5">
+                        {draftMode === 'multiplayer' && <Mail size={16} className="text-greyscale-blue-100" />}
+                        <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
                           {participant}
                         </span>
                         {draftMode === 'multiplayer' && !isEmailValid(participant) && (
-                          <span className="text-xs text-red-600 ml-1">Invalid</span>
+                          <span className="text-xs text-red-400 ml-1">Invalid</span>
                         )}
                         <button
                           onClick={() => handleRemoveParticipant(participant)}
-                          className="p-1 rounded-xl hover:bg-purple-100 transition-colors flex justify-center items-center"
+                          className="p-1 rounded-xl flex justify-center items-center hover:bg-purple-300 transition-colors"
                         >
                           <div className="w-4 h-4 flex justify-center items-center">
-                            <TrashIcon className="w-4 h-4 text-foreground" />
+                            <TrashIcon className="w-4 h-4 text-greyscale-blue-100" />
                           </div>
                         </button>
                       </div>

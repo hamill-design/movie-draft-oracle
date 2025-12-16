@@ -123,7 +123,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(140deg, #FCFFFF 0%, #F0F1FF 50%, #FCFFFF 100%)'}}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <div className="w-full max-w-md" style={{
         background: 'hsl(var(--greyscale-blue-100))',
         boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)',

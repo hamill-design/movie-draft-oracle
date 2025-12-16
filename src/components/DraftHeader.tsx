@@ -57,20 +57,20 @@ const DraftHeader = ({
 
       {/* Draft Info */}
       <div className="mb-6">
-        <div className="p-6">
-          <div className="flex flex-col justify-center items-center gap-4 text-center px-4">
-            <span className="text-text-primary text-[20px] sm:text-[24px] md:text-[32px] font-brockmann font-medium leading-tight tracking-[1.28px]">
+        <div className="p-6 rounded-[8px]">
+          <div className="flex flex-col justify-center items-center gap-4 text-center">
+            <span className="text-purple-300 text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px]">
               NOW DRAFTING
             </span>
             <div 
               className="font-chaney font-normal text-center break-words"
               style={{
-                fontSize: 'clamp(28px, 8vw, 64px)',
-                lineHeight: '1.1',
+                fontSize: '64px',
+                lineHeight: '64px',
                 maxWidth: '100%'
               }}
             >
-              <span className="text-purple-500">
+              <span className="text-greyscale-blue-100">
                 {theme === 'spec-draft' 
                   ? (specDraftName || draftOption).toUpperCase()
                   : theme === 'people' 
@@ -78,7 +78,7 @@ const DraftHeader = ({
                     : draftOption.toString() + ' '}
               </span>
               {theme !== 'spec-draft' && (
-                <span className="text-text-primary">
+                <span className="text-purple-300">
                   MOVIES
                 </span>
               )}

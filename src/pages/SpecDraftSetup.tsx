@@ -7,7 +7,6 @@ import { X, Users, User } from 'lucide-react';
 import { CheckboxIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
-import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 // Simple checkbox component for category selection with live counter
 const CategoryCheckbox = ({ 
@@ -141,8 +140,7 @@ const SpecDraftSetup = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { createMultiplayerDraft, loading: creatingDraft } = useMultiplayerDraft();
-  const { user } = useAuth();
-  const { getDisplayName, profile, loading: profileLoading } = useProfile();
+  const { getDisplayName, loading: profileLoading } = useProfile();
 
   const [specDraft, setSpecDraft] = useState<SpecDraft | null>(null);
   const [, setCustomCategories] = useState<SpecDraftCategory[]>([]);
@@ -369,6 +367,18 @@ const SpecDraftSetup = () => {
       return;
     }
 
+    // For local drafts, require at least 2 participants
+    if (draftMode === 'local') {
+      if (participants.length < 2) {
+        toast({
+          title: 'Not Enough Participants',
+          description: 'Please add at least 2 participants to create a local draft.',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     try {
       if (draftMode === 'multiplayer') {
         // Create multiplayer draft
@@ -410,7 +420,7 @@ const SpecDraftSetup = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
+      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <div className="text-text-primary text-xl">Loading...</div>
       </div>
     );
@@ -425,7 +435,7 @@ const SpecDraftSetup = () => {
     .map(([category]) => category);
 
   return (
-    <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
+    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Draft Title - No background container */}

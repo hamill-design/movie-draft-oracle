@@ -23,20 +23,78 @@ const DraftComplete = () => {
 
   return (
     <div className="p-6 rounded-lg">
-      <div className="w-full h-full flex flex-col justify-start items-start">
-        <div className="self-stretch flex flex-col justify-start items-center gap-4">
-          <div className="self-stretch flex flex-col justify-start items-start gap-2">
-            <div className="self-stretch flex flex-col justify-start items-center">
-              <div className="text-center flex flex-col justify-center text-foreground text-xl font-brockmann-medium leading-7">
-                Draft Complete!
-              </div>
-            </div>
-            <div className="self-stretch flex flex-col justify-start items-center">
-              <div className="self-stretch text-center flex flex-col justify-center text-muted-foreground text-sm font-brockmann leading-5">
-                All players have made their selections.
-              </div>
-            </div>
+      <div 
+        style={{
+          width: '100%',
+          height: '100%',
+          flexDirection: 'column',
+          justifyContent: 'flex-start',
+          alignItems: 'flex-start',
+          gap: '8px',
+          display: 'inline-flex'
+        }}
+      >
+        <div 
+          style={{
+            alignSelf: 'stretch',
+            flexDirection: 'column',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            display: 'flex'
+          }}
+        >
+          <div 
+            style={{
+              textAlign: 'center',
+              justifyContent: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              color: '#FCFFFF',
+              fontSize: '20px',
+              fontFamily: 'Brockmann',
+              fontWeight: 500,
+              lineHeight: '28px'
+            }}
+          >
+            Draft Complete!
           </div>
+        </div>
+        <div 
+          style={{
+            alignSelf: 'stretch',
+            flexDirection: 'column',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            display: 'flex'
+          }}
+        >
+          <div 
+            style={{
+              alignSelf: 'stretch',
+              textAlign: 'center',
+              justifyContent: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              color: '#BDC3C2',
+              fontSize: '14px',
+              fontFamily: 'Brockmann',
+              fontWeight: 400,
+              lineHeight: '20px'
+            }}
+          >
+            All players have made their selections.
+          </div>
+        </div>
+        <div 
+          style={{
+            alignSelf: 'stretch',
+            flexDirection: 'column',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            display: 'flex',
+            marginTop: '16px'
+          }}
+        >
           <Button
             onClick={handleViewScores}
             className="px-3 py-2 bg-purple-500 hover:bg-purple-400 rounded-[2px] flex justify-center items-center gap-2"

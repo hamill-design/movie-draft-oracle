@@ -80,7 +80,7 @@ const ResetPassword = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <Card className="w-full max-w-md bg-gray-800 border-gray-600">
           <CardContent className="p-6 text-center">
             <CheckCircle className="mx-auto mb-4 text-green-400" size={48} />
@@ -101,7 +101,7 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <Card className="w-full max-w-md bg-gray-800 border-gray-600">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">

@@ -231,7 +231,7 @@ const CustomCheckbox = ({
     if (isChecked) {
       return {
         ...baseStyle,
-        background: 'var(--Brand-Primary, #680AFF)',
+        background: 'var(--Brand-Primary, #7142FF)',
       };
     } else {
       return baseStyle;
@@ -262,15 +262,15 @@ const CustomCheckbox = ({
   const getCountBadgeStyle = () => {
     if (!availability) return { display: 'none' };
     
-    let backgroundColor = 'var(--Utility-Colors-Positive-Green-200, #ADF2CC)';
-    let borderColor = 'var(--Utility-Colors-Positive-Green-500, #13CE66)';
+    let backgroundColor = 'var(--Utility-Colors-Positive-Green-400, #41DA86)';
+    let borderColor = 'var(--Utility-Colors-Positive-Green-200, #ADF2CC)';
     
     if (availability.status === 'limited') {
-      backgroundColor = 'var(--Utility-Colors-Warning-Yellow-200, #FFF2CC)';
-      borderColor = 'var(--Utility-Colors-Warning-Yellow-500, #FFB800)';
+      backgroundColor = 'var(--Yellow-400, #FFDF42)';
+      borderColor = 'var(--Yellow-200, #FFF2B2)';
     } else if (availability.status === 'insufficient') {
-      backgroundColor = 'var(--Utility-Colors-Negative-Red-200, #FFCCCC)';
-      borderColor = 'var(--Utility-Colors-Negative-Red-500, #FF4444)';
+      backgroundColor = 'var(--Utility-Colors-Error-Red-400, #FF6C6C)';
+      borderColor = 'var(--Utility-Colors-Error-Red-200, #FFC0C0)';
     }
     
     return {
@@ -286,6 +286,18 @@ const CustomCheckbox = ({
       alignItems: 'center',
       display: 'flex'
     };
+  };
+
+  const getCountBadgeTextColor = () => {
+    if (!availability) return 'var(--Text-Primary, #FCFFFF)';
+    
+    if (availability.status === 'limited') {
+      return 'var(--Yellow-900, #292200)';
+    } else if (availability.status === 'insufficient') {
+      return 'var(--UI-Primary, #1D1D1F)';
+    } else {
+      return 'var(--Utility-Colors-Positive-Green-900, #002912)';
+    }
   };
 
   const getTooltipText = () => {
@@ -336,7 +348,7 @@ const CustomCheckbox = ({
           justifyContent: 'center',
           display: 'flex',
           flexDirection: 'column',
-          color: 'var(--Text-Primary, #2B2D2D)',
+          color: 'var(--Text-Primary, #FCFFFF)',
           fontSize: '14px',
           fontFamily: 'Brockmann',
           fontWeight: '500',
@@ -356,7 +368,7 @@ const CustomCheckbox = ({
             justifyContent: 'center',
             display: 'flex',
             flexDirection: 'column',
-            color: 'var(--Text-Primary, #2B2D2D)',
+            color: getCountBadgeTextColor(),
             fontSize: '12px',
             fontFamily: 'Brockmann',
             fontWeight: '400',
@@ -722,15 +734,15 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
 
   return (
     <div 
-      className="w-full bg-greyscale-blue-100 rounded-lg flex flex-col"
-      style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)', padding: '24px', gap: '24px'}}
+      className="w-full bg-greyscale-purp-900 rounded-[8px] flex flex-col"
+      style={{boxShadow: '0px 0px 6px #3B0394', padding: '24px', gap: '24px'}}
     >
       {/* Header */}
       <div className="flex items-center gap-2">
         <div className="flex justify-center items-center" style={{ width: '24px', height: '24px', padding: '2px' }}>
-          <CheckboxIcon className="text-primary" />
+          <CheckboxIcon className="text-purple-300" />
         </div>
-        <span className="text-foreground text-xl font-brockmann font-medium leading-7">
+        <span className="text-greyscale-blue-100 text-xl font-brockmann font-medium leading-7">
           Choose Categories
         </span>
       </div>
