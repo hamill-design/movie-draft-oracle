@@ -1,8 +1,6 @@
-
-import React from 'react';
 import { Movie } from '@/data/movies';
 import { getCleanActorName } from '@/lib/utils';
-import { sanitizeHtml, INPUT_LIMITS } from '@/utils/inputValidation';
+import { INPUT_LIMITS } from '@/utils/inputValidation';
 import { SearchIcon } from '@/components/icons/SearchIcon';
 
 interface MovieSearchProps {
@@ -146,7 +144,7 @@ const MovieSearch = ({
               lineHeight: 0
             }}
           >
-            <SearchIcon style={{ width: '100%', height: '100%', display: 'block' }} />
+            <SearchIcon className="w-full h-full" />
           </div>
         </div>
         <div 
@@ -196,9 +194,9 @@ const MovieSearch = ({
                 placeholder={getPlaceholderText()}
                 value={searchQuery}
                 onChange={(e) => {
-                  const sanitizedValue = sanitizeHtml(e.target.value);
-                  if (sanitizedValue.length <= INPUT_LIMITS.MAX_SEARCH_QUERY_LENGTH) {
-                    onSearchChange(sanitizedValue);
+                  const value = e.target.value;
+                  if (value.length <= INPUT_LIMITS.MAX_SEARCH_QUERY_LENGTH) {
+                    onSearchChange(value);
                   }
                 }}
                 maxLength={INPUT_LIMITS.MAX_SEARCH_QUERY_LENGTH}
@@ -221,11 +219,12 @@ const MovieSearch = ({
         
         {shouldShowResults && (
           <div 
-            className="overflow-y-auto flex flex-col justify-start items-center"
+            className="flex flex-col justify-start items-center"
             style={{
               alignSelf: 'stretch',
               maxHeight: '240px',
-              overflow: 'hidden',
+              overflowY: 'auto',
+              overflowX: 'hidden',
               gap: '8px'
             }}
           >

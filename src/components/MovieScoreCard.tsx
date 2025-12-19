@@ -16,6 +16,7 @@ interface MovieScoreCardProps {
   pickNumber?: number;
   category?: string;
   className?: string;
+  calculatedScore?: number | null; // Use stored calculated_score if available
 }
 
 const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
@@ -26,9 +27,15 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
   posterUrl,
   pickNumber,
   category,
-  className = ''
+  className = '',
+  calculatedScore
 }) => {
   const scoreBreakdown = calculateDetailedScore(scoringData);
+  
+  // Use stored calculated_score if provided, otherwise use calculated score from breakdown
+  const displayScore = calculatedScore !== null && calculatedScore !== undefined 
+    ? calculatedScore 
+    : scoreBreakdown.finalScore;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -132,7 +139,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                     letterSpacing: '1.28px',
                     wordWrap: 'break-word' 
                   }}>
-                    {scoreBreakdown.finalScore.toFixed(2)}
+                    {displayScore.toFixed(2)}
                   </div>
                 </div>
               </div>
@@ -240,13 +247,13 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                     </div>
                     <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
                       <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '16px', wordWrap: 'break-word' }}>
-                        {((scoringData.revenue && scoringData.budget) ? ((scoringData.revenue - scoringData.budget) / scoringData.budget * 100).toFixed(2) : 0)}%
+                        {((scoringData.revenue && scoringData.budget) ? ((scoringData.revenue - scoringData.budget) / scoringData.revenue * 100).toFixed(2) : 0)}%
                       </div>
                     </div>
                   </div>
                    <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: '#2C2B2D', overflow: 'hidden', borderRadius: '9999px' }}>
                     <div style={{ 
-                      width: `${Math.min(((scoreBreakdown.boxOfficeScore / 200) * 100), 100)}%`, 
+                      width: `${Math.min(scoreBreakdown.boxOfficeScore, 100)}%`, 
                       height: '8px', 
                       position: 'absolute', 
                       background: 'var(--Brand-Primary, #7142FF)' 

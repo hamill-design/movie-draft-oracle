@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Hash, Users, Lock } from 'lucide-react';
+import { Hash, Users } from 'lucide-react';
 import { FilmReelIcon } from '@/components/icons';
 import { validateInviteCode, validateParticipantName, sanitizeHtml } from '@/utils/inputValidation';
 import { HeaderIcon3 } from '@/components/HeaderIcon3';
@@ -137,9 +137,6 @@ export const JoinDraftForm = () => {
             </div>
             <div className="self-stretch flex flex-col items-start">
               <div className="self-stretch px-4 py-3 bg-greyscale-purp-850 overflow-hidden rounded-[2px] flex items-center gap-3" style={{outline: '1px solid #666469', outlineOffset: '-1px'}}>
-                <div className="w-6 h-6 p-0.5 flex justify-center items-center">
-                  <Lock size={18} className="text-greyscale-blue-300" />
-                </div>
                 <div className="flex-1 overflow-hidden flex flex-col items-start">
                   <input
                     id="participant-name"
@@ -158,7 +155,7 @@ export const JoinDraftForm = () => {
           disabled={isButtonDisabled}
           className="self-stretch px-6 py-3 bg-brand-primary join-draft-button-hover disabled:bg-greyscale-purp-800 disabled:text-greyscale-blue-500 rounded-[2px] flex justify-center items-center"
         >
-          <div className="text-center flex flex-col justify-center text-greyscale-blue-100 text-base font-semibold leading-6 tracking-[0.32px] font-brockmann">
+          <div className="text-center flex flex-col justify-center text-base font-semibold leading-6 tracking-[0.32px] font-brockmann" style={{color: 'var(--Text-Primary, #FCFFFF)'}}>
             {(loading || isJoining) ? 'Joining...' : 'Join Draft'}
           </div>
         </button>

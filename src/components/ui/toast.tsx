@@ -27,7 +27,7 @@ const toastVariants = cva(
   {
     variants: {
       variant: {
-        default: "border bg-background text-foreground",
+        default: "border-greyscale-purp-700 bg-greyscale-purp-850 text-greyscale-blue-100",
         destructive:
           "destructive group border-destructive bg-destructive text-destructive-foreground",
       },
@@ -75,7 +75,7 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-error-red-300 group-[.destructive]:hover:text-error-red-100 group-[.destructive]:focus:ring-error-red-400 group-[.destructive]:focus:ring-offset-error-red-600",
+      "absolute right-2 top-2 rounded-md p-1 text-greyscale-blue-300 opacity-0 transition-opacity hover:text-greyscale-blue-100 focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-error-red-300 group-[.destructive]:hover:text-error-red-100 group-[.destructive]:focus:ring-error-red-400 group-[.destructive]:focus:ring-offset-error-red-600",
       className
     )}
     toast-close=""
@@ -104,7 +104,7 @@ const ToastDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Description
     ref={ref}
-    className={cn("text-sm opacity-90 font-brockmann", className)}
+    className={cn("text-sm text-greyscale-blue-300 font-brockmann", className)}
     {...props}
   />
 ))

@@ -81,7 +81,7 @@ export const SpecDraftSelector = () => {
   if (loading) {
     return (
       <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
-        <div className="text-center text-greyscale-blue-100" style={{ fontFamily: 'Brockmann', fontWeight: 400, fontSize: '14px' }}>
+        <div className="text-center" style={{ color: 'var(--Text-Primary, #FCFFFF)', fontFamily: 'Brockmann', fontWeight: 400, fontSize: '14px' }}>
           Loading special drafts...
         </div>
       </div>

@@ -157,7 +157,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
                     style={{ 
                       paddingTop: '16px',
                       paddingBottom: '16px',
-                      background: isCurrentPlayer ? '#2C2B2D' : 'transparent',
+                      background: isCurrentPlayer ? 'var(--Purple-800, #25015E)' : 'transparent',
                       width: '100%'
                     }}
                   >

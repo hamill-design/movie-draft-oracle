@@ -253,7 +253,7 @@ const Profile = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-        <div className="text-text-primary text-xl">Loading...</div>
+        <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>Loading...</div>
       </div>
     );
   }
@@ -566,7 +566,13 @@ const Profile = () => {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteDraft}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-[#CE0606]"
+              style={{
+                backgroundClip: 'unset',
+                WebkitBackgroundClip: 'unset',
+                backgroundColor: 'rgba(158, 3, 3, 1)',
+                color: 'rgba(248, 250, 252, 1)'
+              }}
             >
               Delete Draft
             </AlertDialogAction>

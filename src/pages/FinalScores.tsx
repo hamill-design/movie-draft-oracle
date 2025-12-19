@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,6 +26,7 @@ interface TeamScore {
 const FinalScores = () => {
   const { draftId } = useParams<{ draftId: string; }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading, isGuest } = useAuth();
   const { getDraftWithPicks } = useDraftOperations();
   const { toast } = useToast();
@@ -34,7 +35,6 @@ const FinalScores = () => {
   const [picks, setPicks] = useState<DraftPick[]>([]);
   const [teamScores, setTeamScores] = useState<TeamScore[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [enrichingData, setEnrichingData] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [hoveredTeam, setHoveredTeam] = useState<string>('');
@@ -85,21 +85,126 @@ const FinalScores = () => {
       let draftData: any;
       let picksData: any[] = [];
       
-      // For public views, try to load draft without authentication checks
+      // Check location state first - if draft data was passed via navigation, use it
+      const stateData = location.state as any;
+      if (stateData?.draftData && stateData?.picks) {
+        // Use data from navigation state - no database query needed
+        console.log('Using draft data from navigation state', {
+          draftData: stateData.draftData,
+          picksCount: stateData.picks?.length,
+          firstPick: stateData.picks?.[0],
+          picksSample: stateData.picks?.slice(0, 3)
+        });
+        setDraft(stateData.draftData);
+        setPicks(stateData.picks);
+        
+        // Process initial team scores (may have 0 scores if no scoring data yet)
+        const teams = processTeamScores(stateData.picks || []);
+        console.log('Processed team scores:', teams);
+        setTeamScores(teams);
+        if (teams.length > 0) {
+          setSelectedTeam(teams[0].playerName);
+        }
+        setLoadingData(false);
+        
+        // Check if picks need enrichment (don't have scoring data)
+        const needsEnrichment = stateData.picks?.some((pick: any) => 
+          !pick.calculated_score && (!pick.rt_critics_score && !pick.imdb_rating && !pick.metacritic_score)
+        );
+        
+        if (needsEnrichment) {
+          // Enrich in background and update state
+          autoEnrichMovieData(stateData.picks).catch(err => {
+            console.error('Background enrichment failed:', err);
+          });
+        }
+        
+        return;
+      }
+      
+      // Check localStorage for local drafts (fallback when database save failed)
+      if (draftId) {
+        try {
+          const localDraftKey = `local_draft_${draftId}`;
+          const localDraftJson = localStorage.getItem(localDraftKey);
+          if (localDraftJson) {
+            const localDraft = JSON.parse(localDraftJson);
+            if (localDraft.isLocal && localDraft.picks) {
+              console.log('Using local draft data from localStorage');
+              setDraft({
+                id: localDraft.id,
+                title: localDraft.option || localDraft.title,
+                theme: localDraft.theme,
+                option: localDraft.option,
+                participants: localDraft.participants,
+                categories: localDraft.categories,
+                is_complete: localDraft.isComplete || localDraft.is_complete,
+                isLocal: true
+              });
+              // Convert picks to DraftPick format
+              const formattedPicks = localDraft.picks.map((pick: any, index: number) => ({
+                id: pick.movie?.id || `local_${index}`,
+                draft_id: localDraft.id,
+                player_id: pick.playerId,
+                player_name: pick.playerName,
+                movie_id: pick.movie?.id || '',
+                movie_title: pick.movie?.title || '',
+                movie_year: pick.movie?.year || null,
+                movie_genre: pick.movie?.genre || 'Unknown',
+                category: pick.category,
+                pick_order: pick.pick_order || index + 1,
+                poster_path: pick.movie?.posterPath || pick.movie?.poster_path || null
+              }));
+              setPicks(formattedPicks);
+              const teams = processTeamScores(formattedPicks);
+              setTeamScores(teams);
+              if (teams.length > 0) {
+                setSelectedTeam(teams[0].playerName);
+              }
+              setLoadingData(false);
+              return;
+            }
+          }
+        } catch (localError) {
+          console.error('Error loading local draft:', localError);
+          // Continue to try database fetch
+        }
+      }
+      
+      // Otherwise, fetch from database
+      // For public views, use the "Anyone can view completed drafts" RLS policy
+      // Query for completed drafts - this should work without authentication
       if (isPublicView) {
         const { data: publicDraft, error: draftError } = await supabase
           .from('drafts')
           .select('*')
           .eq('id', draftId!)
+          .eq('is_complete', true)  // Filter by is_complete to match the RLS policy
           .single();
           
+        if (draftError) {
+          console.error('Failed to load completed draft:', {
+            error: draftError,
+            draftId,
+            code: draftError.code,
+            message: draftError.message
+          });
+          throw new Error('Failed to load public draft data');
+        }
+        
         const { data: publicPicks, error: picksError } = await supabase
           .from('draft_picks')
           .select('*')
           .eq('draft_id', draftId!)
           .order('pick_order');
           
-        if (draftError || picksError) {
+        if (picksError) {
+          console.error('Failed to load picks:', {
+            error: picksError,
+            draftId,
+            code: picksError.code,
+            message: picksError.message
+          });
           throw new Error('Failed to load public draft data');
         }
         
@@ -189,6 +294,7 @@ const FinalScores = () => {
     }
   };
 
+
   const autoEnrichMovieData = async (picksData: DraftPick[]) => {
     // First, fix any incorrect movie years
     await fixMovieYears();
@@ -209,16 +315,16 @@ const FinalScores = () => {
       return;
     }
 
-    setEnrichingData(true);
-    toast({
-      title: "Loading movie data",
-      description: `Processing ${moviesToEnrich.length} movies automatically...`
-    });
-
+    // Silently enrich in background
     try {
+      // Create a copy of picks to update
+      const enrichedPicks = [...picksData];
+      
       // Process movies one by one to avoid rate limiting
-      for (const pick of moviesToEnrich) {
+      for (let i = 0; i < moviesToEnrich.length; i++) {
+        const pick = moviesToEnrich[i];
         console.log(`Auto-processing movie: ${pick.movie_title} (${pick.movie_year})`);
+        
         const { data, error } = await supabase.functions.invoke('enrich-movie-data', {
           body: {
             movieId: pick.movie_id,
@@ -229,35 +335,97 @@ const FinalScores = () => {
 
         if (error) {
           console.error(`Error enriching ${pick.movie_title}:`, error);
-        } else {
+        } else if (data?.enrichmentData || data?.success) {
           console.log(`Successfully enriched ${pick.movie_title}:`, data);
+          
+          // Find the pick in our array and update it
+          const pickIndex = enrichedPicks.findIndex(p => p.id === pick.id);
+          if (pickIndex !== -1) {
+            const enrichmentData = data.enrichmentData || data;
+            const enrichedPick = enrichedPicks[pickIndex] as any;
+            
+            enrichedPick.rt_critics_score = enrichmentData.rtCriticsScore || enrichmentData.rt_critics_score || enrichedPick.rt_critics_score || null;
+            enrichedPick.metacritic_score = enrichmentData.metacriticScore || enrichmentData.metacritic_score || enrichedPick.metacritic_score || null;
+            enrichedPick.imdb_rating = enrichmentData.imdbRating || enrichmentData.imdb_rating || enrichedPick.imdb_rating || null;
+            enrichedPick.movie_budget = enrichmentData.budget || enrichmentData.movie_budget || enrichedPick.movie_budget || null;
+            enrichedPick.movie_revenue = enrichmentData.revenue || enrichmentData.movie_revenue || enrichedPick.movie_revenue || null;
+            enrichedPick.oscar_status = enrichmentData.oscarStatus || enrichmentData.oscar_status || enrichedPick.oscar_status || null;
+            enrichedPick.poster_path = enrichmentData.posterPath || enrichmentData.poster_path || enrichedPick.poster_path || null;
+            
+            // Use calculatedScore from response, or calculate it ourselves if missing
+            let calculatedScore = enrichmentData.calculatedScore || enrichmentData.calculated_score;
+            
+            if (!calculatedScore && (enrichedPick.rt_critics_score || enrichedPick.imdb_rating || enrichedPick.metacritic_score)) {
+              // Calculate score manually if not provided
+              const componentScores: number[] = [];
+              
+              // Box Office
+              if (enrichedPick.movie_budget && enrichedPick.movie_revenue && enrichedPick.movie_budget > 0) {
+                const profit = enrichedPick.movie_revenue - enrichedPick.movie_budget;
+                const profitPercentage = (profit / enrichedPick.movie_revenue) * 100;
+                componentScores.push(Math.min(Math.max(profitPercentage, 0), 100));
+              }
+              
+              // RT Critics
+              if (enrichedPick.rt_critics_score) {
+                componentScores.push(enrichedPick.rt_critics_score);
+              }
+              
+              // Metacritic
+              if (enrichedPick.metacritic_score) {
+                componentScores.push(enrichedPick.metacritic_score);
+              }
+              
+              // IMDB
+              if (enrichedPick.imdb_rating) {
+                componentScores.push((enrichedPick.imdb_rating / 10) * 100);
+              }
+              
+              // Calculate average
+              const averageScore = componentScores.length > 0 
+                ? componentScores.reduce((sum, score) => sum + score, 0) / componentScores.length
+                : 0;
+              
+              // Add Oscar bonus
+              let oscarBonus = 0;
+              if (enrichedPick.oscar_status === 'winner') {
+                oscarBonus = 10;
+              } else if (enrichedPick.oscar_status === 'nominee') {
+                oscarBonus = 5;
+              }
+              
+              calculatedScore = Math.round((averageScore + oscarBonus) * 100) / 100;
+            }
+            
+            enrichedPick.calculated_score = calculatedScore || null;
+            enrichedPick.scoring_data_complete = enrichmentData.scoringComplete !== undefined 
+              ? enrichmentData.scoringComplete 
+              : (enrichmentData.scoring_data_complete !== undefined ? enrichmentData.scoring_data_complete : false);
+            
+            console.log(`Updated ${pick.movie_title} - calculated_score:`, enrichedPick.calculated_score);
+          }
         }
 
         // Small delay to avoid overwhelming the APIs
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (i < moviesToEnrich.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
 
-      // Refresh data after all movies are processed
-      const { draft: refreshedDraft, picks: refreshedPicks } = await getDraftWithPicks(draftId!);
-      setPicks(refreshedPicks || []);
+      // Update state with enriched picks (don't try to fetch from database for local drafts)
+      setPicks(enrichedPicks);
 
-      // Recalculate team scores
-      const refreshedTeams = processTeamScores(refreshedPicks || []);
+      // Recalculate team scores with enriched data
+      const refreshedTeams = processTeamScores(enrichedPicks);
       setTeamScores(refreshedTeams);
+      
+      console.log('Updated picks with scores:', enrichedPicks.map((p: any) => ({
+        title: p.movie_title,
+        calculated_score: p.calculated_score
+      })));
 
-      toast({
-        title: "Movie data loaded",
-        description: "All movie scoring data has been updated automatically"
-      });
     } catch (error) {
       console.error('Error auto-enriching movie data:', error);
-      toast({
-        title: "Data loading failed",
-        description: "Some movies could not be processed automatically",
-        variant: "destructive"
-      });
-    } finally {
-      setEnrichingData(false);
     }
   };
 
@@ -279,9 +447,31 @@ const FinalScores = () => {
         .filter(pick => (pick as any).calculated_score !== null && (pick as any).calculated_score !== undefined)
         .map(pick => (pick as any).calculated_score!);
       
+      // DEBUG: Log detailed calculation for each player
+      console.log(`\n=== Score Calculation Debug: ${playerName} ===`);
+      console.log(`Total picks: ${playerPicks.length}`);
+      console.log(`All picks with scores:`, playerPicks.map(p => ({
+        title: p.movie_title,
+        pick_order: p.pick_order,
+        category: p.category,
+        score: (p as any).calculated_score,
+        score_type: (p as any).calculated_score === null ? 'null' : 
+                    (p as any).calculated_score === undefined ? 'undefined' : 
+                    (p as any).calculated_score === 0 ? 'zero' : 'valid'
+      })));
+      console.log(`Valid scores included in average:`, validScores);
+      console.log(`Number of valid scores: ${validScores.length}`);
+      
+      const sum = validScores.reduce((sum: number, score: number) => sum + score, 0);
+      console.log(`Sum of valid scores: ${sum.toFixed(2)}`);
+      
       const averageScore = validScores.length > 0 
         ? validScores.reduce((sum: number, score: number) => sum + score, 0) / validScores.length
         : 0;
+      
+      console.log(`Calculated average: ${averageScore.toFixed(2)}`);
+      console.log(`Calculation: (${validScores.join(' + ')}) / ${validScores.length} = ${averageScore.toFixed(2)}`);
+      console.log(`=== End Debug: ${playerName} ===\n`);
 
       teams.push({
         playerName,
@@ -365,15 +555,8 @@ const FinalScores = () => {
   if (loading || loadingData) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-        <div className="text-text-primary text-xl">
-          {enrichingData ? (
-            <div className="flex items-center gap-3">
-              <RefreshCw size={24} className="animate-spin" />
-              Loading movie data...
-            </div>
-          ) : (
-            'Loading...'
-          )}
+        <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>
+          Loading...
         </div>
       </div>
     );
@@ -421,23 +604,26 @@ const FinalScores = () => {
                 </span>
                 <span className="text-greyscale-blue-100">DRAFT</span>
               </div>
-              {enrichingData && (
-                <p className="text-yellow-400 text-sm mt-1 flex items-center gap-2 justify-center">
-                  <RefreshCw size={14} className="animate-spin" />
-                  Processing movie data automatically...
-                </p>
-              )}
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 justify-center mb-8">
+        <div className="flex flex-col md:flex-row items-center md:items-stretch justify-center gap-3 mb-8">
           {/* Save Draft Button for Guest Users and Anonymous Viewers */}
           {(isGuest || isPublicView) && !user && (
             <Button
               onClick={handleAuthRedirect}
-              className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+              className="bg-yellow-400 hover:bg-yellow-500 text-black w-full md:w-auto !h-auto"
+              style={{
+                fontSize: '16px',
+                fontFamily: 'Brockmann',
+                fontWeight: '600',
+                lineHeight: '24px',
+                letterSpacing: '0.32px',
+                alignSelf: 'stretch',
+                height: 'auto'
+              }}
             >
               Save Draft
             </Button>
@@ -449,7 +635,7 @@ const FinalScores = () => {
           )}
           
           {/* Share Results Button */}
-          {teamScores.length > 0 && !enrichingData && (
+          {teamScores.length > 0 && (
             <ShareResultsButton
               draftTitle={draft.title}
               teamScores={teamScores}
@@ -461,18 +647,6 @@ const FinalScores = () => {
         </div>
 
 
-        {/* Show loading state while enriching */}
-        {enrichingData && (
-          <Card className="bg-gray-800 border-gray-600 mb-6">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <RefreshCw size={32} className="animate-spin text-yellow-400 mx-auto mb-3" />
-                <p className="text-white text-lg">Processing movie scoring data...</p>
-                <p className="text-gray-400 text-sm">Please wait while we gather data from movie databases</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         <div className="space-y-6">
           {/* Leaderboard */}

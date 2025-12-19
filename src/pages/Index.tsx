@@ -135,7 +135,7 @@ const Index = () => {
   if (loading || (loadingExistingDraft && !draftState?.isMultiplayer)) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-        <div className="text-text-primary text-xl">
+        <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>
           {loadingExistingDraft ? 'Loading draft...' : 'Loading...'}
         </div>
       </div>

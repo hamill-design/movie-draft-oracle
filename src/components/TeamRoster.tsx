@@ -43,6 +43,7 @@ const TeamRoster: React.FC<TeamRosterProps> = ({
                 posterUrl={pick.movie_id ? `https://image.tmdb.org/t/p/w200${pickWithScoring.poster_path || ''}` : null}
                 pickNumber={pick.pick_order}
                 category={pick.category}
+                calculatedScore={pickWithScoring.calculated_score}
                 scoringData={{
                   budget: pickWithScoring.movie_budget,
                   revenue: pickWithScoring.movie_revenue,

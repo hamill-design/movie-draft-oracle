@@ -54,7 +54,16 @@ const SaveDraftButton = ({ draftData }: SaveDraftButtonProps) => {
       onClick={handleSave}
       disabled={saving}
       variant="outline"
-      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+      className="border-gray-600 text-gray-300 hover:bg-gray-700 w-full md:w-auto !h-auto"
+      style={{
+        fontSize: '16px',
+        fontFamily: 'Brockmann',
+        fontWeight: '600',
+        lineHeight: '24px',
+        letterSpacing: '0.32px',
+        alignSelf: 'stretch',
+        height: 'auto'
+      }}
     >
       <Save size={16} className="mr-2" />
       {saving ? 'Saving...' : 'Save Draft'}

@@ -555,15 +555,53 @@ const EnhancedCategorySelection = ({
 
       {/* Enhanced feedback messages */}
       {eligibleCategories.length === 0 && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-          <div className="flex items-center gap-2">
-            <span className="text-red-700 font-brockmann font-medium">
-              No eligible categories found
-            </span>
+        <div style={{
+          width: '100%',
+          padding: '16px',
+          background: 'var(--Utility-Colors-Error-Red-900, #3D0000)',
+          borderRadius: '4px',
+          outline: '1px var(--Utility-Colors-Error-Red-200, #FFC0C0) solid',
+          outlineOffset: '-1px',
+          flexDirection: 'column',
+          justifyContent: 'flex-start',
+          alignItems: 'flex-start',
+          display: 'flex'
+        }}>
+          <div style={{
+            alignSelf: 'stretch',
+            flexDirection: 'column',
+            justifyContent: 'flex-start',
+            alignItems: 'flex-start',
+            display: 'flex'
+          }}>
+            <div style={{
+              alignSelf: 'stretch',
+              justifyContent: 'center',
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <span style={{
+                color: 'var(--Utility-Colors-Error-Red-200, #FFC0C0)',
+                fontSize: '14px',
+                fontFamily: 'Brockmann',
+                fontWeight: '700',
+                lineHeight: '20px',
+                wordWrap: 'break-word'
+              }}>
+                No eligible categories found
+              </span>
+              <span style={{
+                color: 'var(--Utility-Colors-Error-Red-200, #FFC0C0)',
+                fontSize: '14px',
+                fontFamily: 'Brockmann',
+                fontWeight: '500',
+                lineHeight: '20px',
+                wordWrap: 'break-word'
+              }}>
+                {' '}This movie doesn't match any of the available categories. Please select a different movie that better fits your draft's theme and categories.
+              </span>
+            </div>
           </div>
-          <p className="text-red-600 text-sm mt-1 font-brockmann">
-            This movie doesn't match any of the available categories. Please select a different movie that better fits your draft's theme and categories.
-          </p>
         </div>
       )}
 

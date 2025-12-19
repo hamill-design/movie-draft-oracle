@@ -28,6 +28,7 @@ interface DraftParticipant {
   status: 'invited' | 'joined' | 'left';
   is_host: boolean;
   joined_at: string | null;
+  created_at?: string | null; // Used for sorting to match player_id calculation
   email?: string | null; // User's email from profiles
 }
 

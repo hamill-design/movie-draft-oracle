@@ -273,16 +273,19 @@ const Admin = () => {
                     onClick={() => setActiveSection('actor-categories')}
                     className={`self-stretch px-3 py-1.5 flex justify-start items-center border-l-2 ${
                       activeSection === 'actor-categories'
-                        ? 'border-brand-primary'
+                        ? 'border-purple-300'
                         : 'border-transparent'
                     }`}
+                    style={{
+                      fontFamily: 'Brockmann',
+                      fontWeight: 600
+                    }}
                   >
                     <span className={`text-left whitespace-nowrap ${
                       activeSection === 'actor-categories'
-                        ? 'text-brand-primary'
-                        : 'text-text-primary'
+                        ? 'text-purple-300'
+                        : 'text-greyscale-blue-100'
                     } text-base leading-6 tracking-[0.32px]`}
-                    style={{ fontFamily: 'Brockmann', fontWeight: 600 }}
                     >
                       Actor Spec Categories
                     </span>
@@ -293,16 +296,19 @@ const Admin = () => {
                     onClick={() => setActiveSection('spec-drafts')}
                     className={`self-stretch px-3 py-1.5 flex justify-start items-center border-l-2 ${
                       activeSection === 'spec-drafts'
-                        ? 'border-brand-primary'
+                        ? 'border-purple-300'
                         : 'border-transparent'
                     }`}
+                    style={{
+                      fontFamily: 'Brockmann',
+                      fontWeight: 600
+                    }}
                   >
                     <span className={`text-left whitespace-nowrap ${
                       activeSection === 'spec-drafts'
-                        ? 'text-brand-primary'
-                        : 'text-text-primary'
+                        ? 'text-purple-300'
+                        : 'text-greyscale-blue-100'
                     } text-base leading-6 tracking-[0.32px]`}
-                    style={{ fontFamily: 'Brockmann', fontWeight: 600 }}
                     >
                       Spec Draft Builder
                     </span>
@@ -379,7 +385,7 @@ const Admin = () => {
                                     </button>
                                     <div className="flex flex-col gap-1 flex-1 min-w-0">
                                       <h2
-                                        className="text-[48px] text-greyscale-blue-900 uppercase"
+                                        className="text-[48px] text-greyscale-blue-100 uppercase"
                                         style={{ 
                                           fontFamily: 'CHANEY', 
                                           fontWeight: 400, 
