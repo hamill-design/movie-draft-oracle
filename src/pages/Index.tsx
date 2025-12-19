@@ -21,13 +21,14 @@ const Index = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { draftId: urlDraftId } = useParams();
-  const { user, loading } = useAuth();
+  const { user, loading, guestSession } = useAuth();
   const { getDraftWithPicks } = useDraftOperations();
   const draftState = location.state as DraftState;
   const hasLoadedDraft = useRef(false);
   
   const [loadingExistingDraft, setLoadingExistingDraft] = useState(false);
   const [existingPicks, setExistingPicks] = useState<any[]>([]);
+  const [restoredDraftId, setRestoredDraftId] = useState<string | null>(null);
   
   useEffect(() => {
     if (!draftState && !urlDraftId) {
@@ -35,17 +36,81 @@ const Index = () => {
     }
   }, [draftState, urlDraftId, navigate]);
 
-  // Load existing draft data only for non-multiplayer drafts
+  // Try to find existing draft by theme and option if no existingDraftId is provided
   useEffect(() => {
-    const loadExistingDraft = async () => {
-      if (!draftState?.existingDraftId || hasLoadedDraft.current || draftState.isMultiplayer) return;
+    const findExistingDraft = async () => {
+      // Skip if we already have an existingDraftId, or if it's multiplayer, or if we've already loaded
+      if (draftState?.existingDraftId || draftState?.isMultiplayer || hasLoadedDraft.current || !draftState) return;
+      
+      // Only try to restore for authenticated users or guests with a session
+      if (!user && !guestSession) return;
 
       hasLoadedDraft.current = true;
       setLoadingExistingDraft(true);
       
       try {
-        console.log('Loading existing draft:', draftState.existingDraftId);
-        const { draft, picks } = await getDraftWithPicks(draftState.existingDraftId);
+        const { supabase } = await import('@/integrations/supabase/client');
+        
+        // Build query to find matching draft
+        let query = supabase
+          .from('drafts')
+          .select('id')
+          .eq('theme', draftState.theme)
+          .eq('option', draftState.option)
+          .eq('is_multiplayer', false)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        // Filter by user or guest session
+        if (user) {
+          query = query.eq('user_id', user.id);
+        } else if (guestSession) {
+          query = query.eq('guest_session_id', guestSession.id);
+        }
+
+        const { data: drafts, error } = await query;
+
+        if (error) {
+          console.error('Error finding existing draft:', error);
+          return;
+        }
+
+        if (drafts && drafts.length > 0) {
+          const foundDraftId = drafts[0].id;
+          console.log('Found existing draft:', foundDraftId);
+          setRestoredDraftId(foundDraftId);
+          
+          // Load the draft and picks
+          const { draft, picks } = await getDraftWithPicks(foundDraftId);
+          console.log('Draft loaded:', draft);
+          console.log('Picks loaded:', picks);
+          
+          if (picks && picks.length > 0) {
+            setExistingPicks(picks);
+          }
+        }
+      } catch (error) {
+        console.error('Error finding existing draft:', error);
+      } finally {
+        setLoadingExistingDraft(false);
+      }
+    };
+
+    findExistingDraft();
+  }, [draftState, user, guestSession, getDraftWithPicks]);
+
+  // Load existing draft data if existingDraftId is provided
+  useEffect(() => {
+    const loadExistingDraft = async () => {
+      const draftIdToLoad = draftState?.existingDraftId || restoredDraftId;
+      if (!draftIdToLoad || hasLoadedDraft.current || draftState?.isMultiplayer) return;
+
+      hasLoadedDraft.current = true;
+      setLoadingExistingDraft(true);
+      
+      try {
+        console.log('Loading existing draft:', draftIdToLoad);
+        const { draft, picks } = await getDraftWithPicks(draftIdToLoad);
         
         console.log('Draft loaded:', draft);
         console.log('Picks loaded:', picks);
@@ -61,16 +126,16 @@ const Index = () => {
       }
     };
 
-    if (draftState?.existingDraftId && !hasLoadedDraft.current && !draftState.isMultiplayer) {
+    if ((draftState?.existingDraftId || restoredDraftId) && !hasLoadedDraft.current && !draftState?.isMultiplayer) {
       loadExistingDraft();
     }
-  }, [draftState?.existingDraftId, draftState?.isMultiplayer, getDraftWithPicks]);
+  }, [draftState?.existingDraftId, restoredDraftId, draftState?.isMultiplayer, getDraftWithPicks]);
 
   // Show loading state while loading existing draft (only for non-multiplayer drafts)
   if (loading || (loadingExistingDraft && !draftState?.isMultiplayer)) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
-        <div className="text-text-primary text-xl">
+      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+        <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>
           {loadingExistingDraft ? 'Loading draft...' : 'Loading...'}
         </div>
       </div>
@@ -88,13 +153,12 @@ const Index = () => {
       <MultiplayerDraftInterface 
         draftId={urlDraftId || draftState?.existingDraftId}
         initialData={!urlDraftId && !draftState?.existingDraftId ? draftState : undefined}
-        initialDraftData={(location.state as any)?.initialDraftData}
       />
     );
   }
 
   return (
-    <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
+    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <div className="container mx-auto px-4 py-8">
         <DraftHeader
           draftOption={draftState.option}
@@ -104,7 +168,10 @@ const Index = () => {
         />
 
         <DraftInterface 
-          draftState={draftState} 
+          draftState={{
+            ...draftState,
+            existingDraftId: draftState.existingDraftId || restoredDraftId || undefined
+          }} 
           existingPicks={existingPicks}
         />
       </div>

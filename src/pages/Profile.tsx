@@ -41,6 +41,7 @@ const Profile = () => {
   const [newName, setNewName] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [draftToDelete, setDraftToDelete] = useState<string | null>(null);
+  const [specDraftData, setSpecDraftData] = useState<Map<string, { name: string; photo_url: string | null }>>(new Map());
 
   useEffect(() => {
     if (!loading && !user) {
@@ -92,6 +93,46 @@ const Profile = () => {
 
     fetchProfile();
   }, [user, toast]);
+
+  // Fetch spec draft data for spec-draft themes
+  useEffect(() => {
+    const fetchSpecDraftData = async () => {
+      if (!drafts || drafts.length === 0) return;
+
+      const specDraftIds = drafts
+        .filter(draft => draft.theme === 'spec-draft' && draft.option)
+        .map(draft => draft.option as string);
+
+      if (specDraftIds.length === 0) return;
+
+      try {
+        const { data, error } = await (supabase as any)
+          .from('spec_drafts')
+          .select('id, name, photo_url')
+          .in('id', specDraftIds);
+
+        if (error) {
+          console.error('Error fetching spec draft data:', error);
+          return;
+        }
+
+        if (data) {
+          const specDraftMap = new Map<string, { name: string; photo_url: string | null }>();
+          data.forEach((specDraft: any) => {
+            specDraftMap.set(specDraft.id, {
+              name: specDraft.name,
+              photo_url: specDraft.photo_url
+            });
+          });
+          setSpecDraftData(specDraftMap);
+        }
+      } catch (err) {
+        console.error('Error in fetchSpecDraftData:', err);
+      }
+    };
+
+    fetchSpecDraftData();
+  }, [drafts]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -177,15 +218,17 @@ const Profile = () => {
   }, []);
 
   const handleSaveName = async () => {
+    if (!user?.id) return;
+    
     try {
       const { error } = await supabase
         .from('profiles')
         .update({ name: newName.trim() })
-        .eq('id', user?.id);
+        .eq('id', user.id);
 
       if (error) throw error;
 
-      setProfile((prev) => prev ? { ...prev, name: newName.trim() } : { name: newName.trim() });
+      setProfile((prev: any) => prev ? { ...prev, name: newName.trim() } : { name: newName.trim() });
       setIsEditingName(false);
 
       toast({
@@ -209,8 +252,8 @@ const Profile = () => {
   // Show loading only for auth, allow profile and drafts to load independently
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
-        <div className="text-text-primary text-xl">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+        <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>Loading...</div>
       </div>
     );
   }
@@ -224,25 +267,40 @@ const Profile = () => {
     return drafts.map((draft, index) => (
       <div key={draft.id} className="w-full">
         {/* New Draft Card Design */}
-        <div className="w-full p-6 bg-white shadow-[0px_1px_2px_rgba(0,0,0,0.05)] rounded-lg border border-[#D9E0DF] flex justify-between items-center flex-wrap gap-4">
+        <div className="w-full p-6 bg-greyscale-purp-850 rounded-[8px] flex justify-between items-center flex-wrap gap-4" style={{boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', outline: '1px solid #49474B', outlineOffset: '-1px'}}>
           {/* Left Container */}
           <div className="flex-1 min-w-[240px] flex-col justify-start items-start gap-4 inline-flex">
             {/* Header with Image and Info */}
-            <div className="justify-start items-end gap-3 inline-flex">
-              {/* Actor Portrait */}
-              <div className="w-14 h-14 rounded">
-                {draft.theme === 'people' ? (
+            <div className="justify-start items-start gap-3 inline-flex">
+              {/* Actor Portrait / Spec Draft Image */}
+              <div className="w-14 h-14 rounded-[4px] overflow-hidden">
+                {draft.theme === 'spec-draft' ? (
+                  (() => {
+                    const specData = specDraftData.get(draft.option);
+                    return specData?.photo_url ? (
+                      <img 
+                        src={specData.photo_url} 
+                        alt={specData.name || 'Spec Draft'}
+                        className="w-14 h-14 rounded-[4px] object-cover"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 bg-greyscale-purp-800 rounded-[4px] flex items-center justify-center">
+                        <User size={24} className="text-greyscale-blue-300" />
+                      </div>
+                    );
+                  })()
+                ) : draft.theme === 'people' ? (
                   <DraftActorPortrait 
                     actorName={getCleanActorName(draft.option)}
                     size="lg"
-                    className="w-14 h-14 rounded object-cover"
+                    className="w-14 h-14 rounded-[4px] object-cover"
                   />
                 ) : (
-                  <div className="w-14 h-14 bg-greyscale-blue-200 rounded flex items-center justify-center">
+                  <div className="w-14 h-14 bg-greyscale-purp-800 rounded-[4px] flex items-center justify-center">
                     {draft.theme === 'year' ? (
-                      <Calendar size={24} className="text-greyscale-blue-500" />
+                      <Calendar size={24} className="text-greyscale-blue-300" />
                     ) : (
-                      <User size={24} className="text-greyscale-blue-500" />
+                      <User size={24} className="text-greyscale-blue-300" />
                     )}
                   </div>
                 )}
@@ -251,28 +309,32 @@ const Profile = () => {
               {/* Title and Status */}
               <div className="flex-col justify-start items-start gap-2 inline-flex">
                 <div className="flex-col justify-start items-start flex">
-                  <div className="justify-center flex flex-col text-[#2B2D2D] text-lg font-brockmann font-semibold leading-6">
-                    {draft.theme === 'people' ? getCleanActorName(draft.option) : draft.option}
+                  <div className="justify-center flex flex-col text-greyscale-blue-100 text-lg font-brockmann font-semibold leading-6">
+                    {draft.theme === 'spec-draft' 
+                      ? (specDraftData.get(draft.option)?.name || draft.option)
+                      : draft.theme === 'people' 
+                        ? getCleanActorName(draft.option) 
+                        : draft.option}
                   </div>
                 </div>
                 
                 {/* Status Chips */}
-                <div className="self-stretch h-6 justify-start items-start gap-1 inline-flex flex-wrap">
+                <div className="self-stretch h-6 justify-start items-start gap-1.5 inline-flex flex-wrap">
                   {/* Multiplayer/Local Badge */}
                   {draft.is_multiplayer ? (
-                    <div className="px-3 py-1 bg-[#EBFFFA] rounded-full justify-start items-center flex" style={{boxShadow: 'inset 0 0 0 0.5px #015E45'}}>
-                      <span className="text-[#015E45] text-xs font-brockmann font-semibold leading-4">Multiplayer</span>
+                    <div className="px-3 py-1 bg-teal-900 rounded-full justify-start items-center flex" style={{outline: '0.50px solid #B2FFEA', outlineOffset: '-0.50px'}}>
+                      <span className="text-teal-200 text-xs font-brockmann font-semibold leading-4">Multiplayer</span>
                     </div>
                   ) : (
-                    <div className="px-3 py-1 bg-[#EDEBFF] rounded-full justify-start items-center flex" style={{boxShadow: 'inset 0 0 0 0.5px #3B0394'}}>
-                      <span className="text-[#3B0394] text-xs font-brockmann font-semibold leading-4">Local</span>
+                    <div className="px-3 py-1 bg-purple-800 rounded-full justify-start items-center flex" style={{outline: '0.50px solid #EDEBFF', outlineOffset: '-0.50px'}}>
+                      <span className="text-purple-100 text-xs font-brockmann font-semibold leading-4">Local</span>
                     </div>
                   )}
                   
                   {/* Complete Badge */}
                   {draft.is_complete && (
-                    <div className="px-3 py-1 bg-[#06C995] rounded-full justify-start items-center flex">
-                      <span className="text-white text-xs font-brockmann font-semibold leading-4">Complete</span>
+                    <div className="px-3 py-1 bg-teal-500 rounded-full justify-start items-center flex">
+                      <span className="text-greyscale-purp-850 text-xs font-brockmann font-semibold leading-4">Complete</span>
                     </div>
                   )}
                 </div>
@@ -280,13 +342,13 @@ const Profile = () => {
             </div>
             
             {/* Details */}
-            <div className="self-stretch justify-start items-center gap-2 inline-flex flex-wrap">
+            <div className="self-stretch justify-start items-center gap-4 inline-flex flex-wrap">
               {/* Date */}
               <div className="justify-start items-center gap-1 flex">
                 <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
-                  <Calendar size={12} className="text-[#828786]" />
+                  <Calendar size={16} className="text-greyscale-blue-300" />
                 </div>
-                <span className="text-[#828786] text-sm font-brockmann font-medium leading-5">
+                <span className="text-greyscale-blue-300 text-sm font-brockmann font-medium leading-5">
                   {new Date(draft.created_at).toLocaleDateString()}
                 </span>
               </div>
@@ -294,9 +356,9 @@ const Profile = () => {
               {/* Players */}
               <div className="justify-start items-center gap-1 flex">
                 <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
-                  <Users size={12} className="text-[#828786]" />
+                  <Users size={16} className="text-greyscale-blue-300" />
                 </div>
-                <span className="text-[#828786] text-sm font-brockmann font-medium leading-5">
+                <span className="text-greyscale-blue-300 text-sm font-brockmann font-medium leading-5">
                   {draft.participants?.length ?? 0} players
                 </span>
               </div>
@@ -304,9 +366,9 @@ const Profile = () => {
               {/* Categories */}
               <div className="justify-start items-center gap-1 flex">
                 <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
-                  <Trophy size={12} className="text-[#828786]" />
+                  <Trophy size={16} className="text-greyscale-blue-300" />
                 </div>
-                <span className="text-[#828786] text-sm font-brockmann font-medium leading-5">
+                <span className="text-greyscale-blue-300 text-sm font-brockmann font-medium leading-5">
                   {draft.categories?.length ?? 0} categories
                 </span>
               </div>
@@ -314,13 +376,13 @@ const Profile = () => {
           </div>
           
           {/* Right Container - Action Buttons */}
-          <div className="flex-1 max-w-[360px] min-w-[240px] flex-col justify-start items-end gap-4 inline-flex">
+          <div className="flex-1 max-w-[360px] min-w-[240px] h-[90px] flex-col justify-between items-end inline-flex">
             {/* Continue/View Draft Button */}
             <Button 
               onClick={() => handleViewDraft(draft)}
               variant="default"
               size="default"
-              className="self-stretch bg-brand-primary hover:bg-purple-400 text-brand-primary-foreground"
+              className="self-stretch bg-brand-primary hover:bg-purple-300 text-greyscale-blue-100 rounded-[2px] px-4 py-2"
             >
               {draft.is_complete ? 'View Draft' : 'Continue Draft'}
             </Button>
@@ -328,12 +390,12 @@ const Profile = () => {
             {/* Delete Button */}
             <button 
               onClick={() => openDeleteDialog(draft.id)}
-              className="px-3 py-2 rounded-sm justify-center items-center gap-2 inline-flex hover:bg-gray-100 transition-colors"
+              className="px-3 py-2 rounded-[2px] justify-center items-center gap-2 inline-flex transition-colors"
             >
               <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
-                <Trash2 size={12} className="text-[#646968]" />
+                <Trash2 size={16} className="text-greyscale-blue-300" />
               </div>
-              <span className="text-center text-[#646968] text-sm font-brockmann font-medium leading-5">Delete</span>
+              <span className="text-center text-greyscale-blue-300 text-sm font-brockmann font-medium leading-5">Delete</span>
             </button>
           </div>
         </div>
@@ -342,25 +404,25 @@ const Profile = () => {
         {/* {index > 0 && (index + 1) % 3 === 0 && <InlineAd />} */}
       </div>
     ));
-  }, [drafts, handleViewDraft, openDeleteDialog]);
+  }, [drafts, handleViewDraft, openDeleteDialog, specDraftData]);
 
   return (
-    <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
+    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="w-full h-full justify-between items-center inline-flex mb-8">
           <div className="justify-start items-center gap-4 flex">
             <div className="flex-col justify-start items-start inline-flex">
-              <div className="justify-center flex flex-col text-greyscale-blue-900 text-5xl font-chaney font-normal leading-[52px] tracking-[1.92px]">
+              <div className="justify-center flex flex-col text-greyscale-blue-100 text-5xl font-chaney font-normal leading-[52px] tracking-[1.92px]">
                 Profile
               </div>
             </div>
           </div>
           <div 
             onClick={handleSignOut}
-            className="px-4 py-2 bg-purple-150 rounded-[2px] justify-center items-center flex cursor-pointer hover:bg-purple-200 transition-colors"
+            className="px-4 py-2 bg-brand-primary hover:bg-purple-300 rounded-[2px] justify-center items-center flex cursor-pointer transition-colors"
           >
-            <div className="text-center justify-center flex flex-col text-text-primary text-sm font-brockmann font-medium leading-5">
+            <div className="text-center justify-center flex flex-col text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
               Sign Out
             </div>
           </div>
@@ -369,10 +431,10 @@ const Profile = () => {
         {/* Banner Ad - Hidden for now */}
         {/* <BannerAd className="mb-8" /> */}
 
-        <div className="w-full h-full p-6 bg-greyscale-blue-100 shadow-[0px_0px_3px_rgba(0,0,0,0.25)] rounded flex-col justify-start items-start gap-3 inline-flex mb-8">
+        <div className="w-full h-full p-6 bg-greyscale-purp-900 rounded-[8px] flex-col justify-start items-start gap-3 inline-flex mb-8" style={{boxShadow: '0px 0px 6px #3B0394'}}>
           <div className="w-full flex justify-between items-center">
             <div className="flex-col justify-start items-start flex">
-              <div className="justify-center flex flex-col text-text-primary text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
+              <div className="justify-center flex flex-col text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
                 Account Information
               </div>
             </div>
@@ -389,7 +451,7 @@ const Profile = () => {
           </div>
           <div className="self-stretch justify-start items-center gap-4 inline-flex flex-wrap content-center">
             <div className="flex-1 min-w-[300px] justify-start items-center gap-1.5 flex">
-              <div className="justify-center flex flex-col text-greyscale-blue-600 text-base font-brockmann font-semibold leading-6 tracking-[0.32px]">
+              <div className="justify-center flex flex-col text-greyscale-blue-300 text-base font-brockmann font-semibold leading-6 tracking-[0.32px]">
                 Name:
               </div>
               <div className="flex-col justify-start items-start inline-flex">
@@ -398,13 +460,13 @@ const Profile = () => {
                     <Input
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
-                      className="bg-gray-700 border-gray-600 text-white"
+                      className="bg-greyscale-purp-850 border-greyscale-purp-600 text-greyscale-blue-100"
                       placeholder="Enter your name"
                     />
                     <Button
                       onClick={handleSaveName}
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-positive-green-500 hover:bg-positive-green-600"
                     >
                       <Save size={16} />
                     </Button>
@@ -412,13 +474,13 @@ const Profile = () => {
                       onClick={handleCancelEdit}
                       size="sm"
                       variant="outline"
-                      className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                      className="border-greyscale-purp-600 text-greyscale-blue-300 hover:bg-greyscale-purp-800"
                     >
                       <X size={16} />
                     </Button>
                   </div>
                 ) : (
-                  <div className="justify-center flex flex-col text-greyscale-blue-600 text-base font-brockmann font-normal leading-6">
+                  <div className="justify-center flex flex-col text-greyscale-blue-300 text-base font-brockmann font-normal leading-6">
                     {profile?.name || 'No name set'}
                   </div>
                 )}
@@ -426,29 +488,29 @@ const Profile = () => {
               {!isEditingName && (
                 <div 
                   onClick={() => setIsEditingName(true)}
-                  className="p-1 rounded-md justify-center items-center flex cursor-pointer hover:bg-greyscale-blue-200"
+                  className="p-1 rounded-md justify-center items-center flex cursor-pointer hover:bg-greyscale-purp-800"
                 >
                   <div className="w-4 h-4 relative">
-                    <Edit3 size={16} className="text-greyscale-blue-600" />
+                    <Edit3 size={16} className="text-greyscale-blue-300" />
                   </div>
                 </div>
               )}
             </div>
             <div className="flex-1 min-w-[300px] justify-start items-center gap-1.5 flex">
               <div className="justify-center flex flex-col">
-                <span className="text-greyscale-blue-600 text-base font-brockmann font-bold leading-6">Email:</span>
-                <span className="text-greyscale-blue-600 text-base font-brockmann font-normal leading-6"> </span>
+                <span className="text-greyscale-blue-300 text-base font-brockmann font-bold leading-6">Email:</span>
+                <span className="text-greyscale-blue-300 text-base font-brockmann font-normal leading-6"> </span>
               </div>
-              <div className="justify-center flex flex-col text-greyscale-blue-600 text-base font-brockmann font-normal leading-6">
+              <div className="justify-center flex flex-col text-greyscale-blue-300 text-base font-brockmann font-normal leading-6">
                 {user.email}
               </div>
             </div>
             <div className="flex-1 min-w-[300px] justify-start items-start gap-1.5 flex">
               <div className="justify-center flex flex-col">
-                <span className="text-greyscale-blue-600 text-base font-brockmann font-bold leading-6">Total Drafts:</span>
-                <span className="text-greyscale-blue-600 text-base font-brockmann font-normal leading-6"> </span>
+                <span className="text-greyscale-blue-300 text-base font-brockmann font-bold leading-6">Total Drafts:</span>
+                <span className="text-greyscale-blue-300 text-base font-brockmann font-normal leading-6"> </span>
               </div>
-              <div className="justify-center flex flex-col text-greyscale-blue-600 text-base font-brockmann font-normal leading-6">
+              <div className="justify-center flex flex-col text-greyscale-blue-300 text-base font-brockmann font-normal leading-6">
                 {drafts.length}
               </div>
             </div>
@@ -456,20 +518,20 @@ const Profile = () => {
         </div>
 
         {/* Saved Drafts */}
-        <div className="w-full h-full p-6 bg-greyscale-blue-100 shadow-[0px_0px_3px_rgba(0,0,0,0.25)] rounded flex-col justify-start items-start gap-6 inline-flex">
+        <div className="w-full h-full p-6 bg-greyscale-purp-900 rounded-[8px] flex-col justify-start items-start gap-6 inline-flex" style={{boxShadow: '0px 0px 6px #3B0394'}}>
           <div className="flex-col justify-start items-start flex">
-            <div className="justify-center flex flex-col text-text-primary text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
+            <div className="justify-center flex flex-col text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
               Saved Drafts
             </div>
           </div>
           <div className="w-full">
             {draftsLoading ? (
-              <p className="text-greyscale-blue-600 text-center py-8 font-brockmann">
+              <p className="text-greyscale-blue-300 text-center py-8 font-brockmann">
                 Loading drafts...
               </p>
             ) : draftsError ? (
               <div className="text-center py-8">
-                <p className="text-red-600 font-brockmann mb-4">
+                <p className="text-error-red-400 font-brockmann mb-4">
                   {draftsError}
                 </p>
                 <Button onClick={() => refetch()} variant="outline">
@@ -477,11 +539,11 @@ const Profile = () => {
                 </Button>
               </div>
             ) : drafts.length === 0 ? (
-              <p className="text-greyscale-blue-600 text-center py-8 font-brockmann">
+              <p className="text-greyscale-blue-300 text-center py-8 font-brockmann">
                 No saved drafts yet. Start a new draft to see it here!
               </p>
             ) : (
-              <div className="grid gap-4 w-full">
+              <div className="flex flex-col gap-4 w-full">
                 {draftList}
               </div>
             )}
@@ -504,7 +566,13 @@ const Profile = () => {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteDraft}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-[#CE0606]"
+              style={{
+                backgroundClip: 'unset',
+                WebkitBackgroundClip: 'unset',
+                backgroundColor: 'rgba(158, 3, 3, 1)',
+                color: 'rgba(248, 250, 252, 1)'
+              }}
             >
               Delete Draft
             </AlertDialogAction>

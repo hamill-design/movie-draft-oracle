@@ -421,10 +421,30 @@ export const debugShareImageHTML = async (draftData: DraftData): Promise<void> =
 
 // Utility function to download the image
 export const downloadImage = (dataUrl: string, filename: string = 'draft-results.png'): void => {
+  // Convert data URL to blob for reliable downloads
+  const byteString = atob(dataUrl.split(',')[1]);
+  const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i);
+  }
+  const blob = new Blob([ab], { type: mimeString });
+  const blobUrl = URL.createObjectURL(blob);
+  
+  // Create download link
   const link = document.createElement('a');
   link.download = filename;
-  link.href = dataUrl;
+  link.href = blobUrl;
+  link.style.display = 'none';
+  
+  // Append to body, trigger click, then remove
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
+  
+  // Clean up immediately after click
+  requestAnimationFrame(() => {
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  });
 };

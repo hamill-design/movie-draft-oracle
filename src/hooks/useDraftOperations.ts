@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const useDraftOperations = () => {
-  const { user, guestSession, isGuest } = useAuth();
+  const { user, guestSession } = useAuth();
 
   const autoSaveDraft = useCallback(async (draftData: {
     theme: string;
@@ -21,15 +21,37 @@ export const useDraftOperations = () => {
 
     if (existingDraftId) {
       // Update existing draft
+      const updateData: any = {
+        is_complete: draftData.isComplete,
+        updated_at: new Date().toISOString()
+      };
+      
+      // For guest drafts, mark as public when completed so they can be viewed
+      if (draftData.isComplete && !user && guestSession) {
+        updateData.is_public = true;
+        
+        // Set guest session context before updating so RLS policy can match
+        try {
+          await supabase.rpc('set_guest_session_context', {
+            session_id: guestSession.id
+          });
+        } catch (contextError) {
+          console.warn('Failed to set guest session context:', contextError);
+          // Continue anyway - the update might still work if RLS allows it
+        }
+      }
+      
+      console.log('Draft updated:', existingDraftId);
+      
       const { error: draftError } = await supabase
         .from('drafts')
-        .update({
-          is_complete: draftData.isComplete,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', existingDraftId);
 
-      if (draftError) throw draftError;
+      if (draftError) {
+        console.error('Draft update error:', draftError);
+        throw draftError;
+      }
 
       // Delete existing picks and re-insert them
       await supabase
@@ -75,6 +97,11 @@ export const useDraftOperations = () => {
       } else if (guestSession) {
         draftInsert.guest_session_id = guestSession.id;
         draftInsert.user_id = '00000000-0000-0000-0000-000000000000'; // Placeholder UUID for guest drafts
+        
+        // For guest drafts, mark as public when completed so they can be viewed
+        if (draftData.isComplete) {
+          draftInsert.is_public = true;
+        }
       }
 
       const { data: draft, error: draftError } = await supabase
@@ -84,6 +111,8 @@ export const useDraftOperations = () => {
         .single();
 
       if (draftError) throw draftError;
+      
+      console.log('Draft created with ID:', draft.id, 'Theme:', draftData.theme, 'Guest:', !!guestSession);
 
       // Save picks if any exist
       if (draftData.picks.length > 0) {

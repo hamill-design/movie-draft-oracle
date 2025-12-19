@@ -1,0 +1,198 @@
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Button } from '@/components/ui/button';
+import { Film } from 'lucide-react';
+
+interface SpecDraft {
+  id: string;
+  name: string;
+  description: string | null;
+  photo_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const SpecDraftSelector = () => {
+  const navigate = useNavigate();
+  const [specDrafts, setSpecDrafts] = useState<SpecDraft[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSpecDrafts = async () => {
+      try {
+        // Try to fetch with photo_url first
+        const queryResult = await supabase
+          .from('spec_drafts' as any)
+          .select('id, name, description, photo_url, created_at, updated_at')
+          .order('created_at', { ascending: false });
+        
+        const result = queryResult as { data: SpecDraft[] | null; error: any };
+        const { data, error } = result;
+
+        if (error) {
+          // If photo_url column doesn't exist, fetch without it
+          const isColumnError = 
+            error.message?.includes('photo_url') || 
+            error.message?.includes('column') ||
+            error.message?.includes('does not exist') ||
+            error.code === 'PGRST116' ||
+            (typeof error === 'object' && 'status' in error && error.status === 400);
+
+          if (isColumnError) {
+            const fallbackQueryResult = await supabase
+              .from('spec_drafts' as any)
+              .select('id, name, description, created_at, updated_at')
+              .order('created_at', { ascending: false });
+            
+            const fallbackResult = fallbackQueryResult as { data: Omit<SpecDraft, 'photo_url'>[] | null; error: any };
+            const { data: fallbackData, error: fallbackError } = fallbackResult;
+            
+            if (fallbackError) throw fallbackError;
+            setSpecDrafts((fallbackData || []).map(draft => ({ ...draft, photo_url: null } as SpecDraft)));
+          } else {
+            throw error;
+          }
+        } else {
+          setSpecDrafts(data || []);
+        }
+      } catch (err) {
+        console.error('Error fetching spec drafts:', err);
+        setSpecDrafts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSpecDrafts();
+  }, []);
+
+  const handleBeginSetup = (specDraftId: string) => {
+    // Navigate to a new page for setting up the spec draft
+    navigate(`/spec-draft/${specDraftId}/setup`);
+  };
+
+  const getPosterUrl = (posterPath: string | null) => {
+    if (!posterPath) return null;
+    if (posterPath.startsWith('http')) return posterPath;
+    return `https://image.tmdb.org/t/p/w500${posterPath}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+        <div className="text-center" style={{ color: 'var(--Text-Primary, #FCFFFF)', fontFamily: 'Brockmann', fontWeight: 400, fontSize: '14px' }}>
+          Loading special drafts...
+        </div>
+      </div>
+    );
+  }
+
+  if (specDrafts.length === 0) {
+    return null; // Don't show the section if there are no spec drafts
+  }
+
+  return (
+    <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+      {/* Header */}
+      <div className="flex flex-col gap-2 items-center justify-center">
+        <h2
+          className="text-2xl text-greyscale-blue-100"
+          style={{ 
+            fontFamily: 'Brockmann', 
+            fontWeight: 700, 
+            fontSize: '24px', 
+            lineHeight: '32px',
+            letterSpacing: '0.96px'
+          }}
+        >
+          Start a Special Draft!
+        </h2>
+      </div>
+
+      {/* Spec Drafts Grid */}
+      <div className="flex flex-wrap gap-4 items-start">
+        {specDrafts.map((draft) => {
+          const posterUrl = getPosterUrl(draft.photo_url);
+          
+          return (
+            <div
+              key={draft.id}
+              className="bg-greyscale-purp-850 rounded-[6px] p-[18px] flex flex-col md:flex-row gap-4 items-center min-h-[218px] w-full md:flex-1 md:min-w-0"
+              style={{outline: '1px solid #49474B', outlineOffset: '-1px'}}
+            >
+              {/* Poster/Image */}
+              <div className="h-[182px] min-h-[182px] min-w-[182px] w-full md:w-[182px] md:flex-shrink-0 relative rounded-[3px]">
+                {posterUrl ? (
+                  <img
+                    src={posterUrl}
+                    alt={draft.name}
+                    className="w-full h-full object-cover rounded-[3px]"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-full bg-greyscale-purp-800 rounded-[3px] flex items-center justify-center">
+                    <Film className="w-12 h-12 text-greyscale-blue-400" />
+                  </div>
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="flex flex-col gap-6 items-start flex-1 w-full min-w-0">
+                {/* Title and Description */}
+                <div className="flex flex-col gap-2 items-start w-full">
+                  <h3
+                    className="text-2xl text-greyscale-blue-100"
+                    style={{ 
+                      fontFamily: 'Brockmann', 
+                      fontWeight: 600, 
+                      fontSize: '24px', 
+                      lineHeight: '30px',
+                      letterSpacing: '0.48px'
+                    }}
+                  >
+                    {draft.name}
+                  </h3>
+                  {draft.description && (
+                    <p
+                      className="text-sm text-greyscale-blue-100"
+                      style={{ 
+                        fontFamily: 'Brockmann', 
+                        fontWeight: 400, 
+                        fontSize: '14px', 
+                        lineHeight: '20px' 
+                      }}
+                    >
+                      {draft.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* Begin Setup Button */}
+                <Button
+                  onClick={() => handleBeginSetup(draft.id)}
+                  className="bg-brand-primary hover:bg-purple-300 text-greyscale-blue-100 h-9 px-4 py-2 rounded-[2px] w-full transition-colors"
+                  style={{ 
+                    fontFamily: 'Brockmann', 
+                    fontWeight: 500, 
+                    fontSize: '14px', 
+                    lineHeight: '20px' 
+                  }}
+                >
+                  Begin Setup
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+
+
+
+

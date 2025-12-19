@@ -1,21 +1,15 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMovies } from '@/hooks/useMovies';
 import { useToast } from '@/hooks/use-toast';
-import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Copy, Check, Users, Clock, Film, User, Calendar, Trophy, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import { Copy, Check, Clock, Film, Trophy } from 'lucide-react';
 import { MultiPersonIcon } from '@/components/icons/MultiPersonIcon';
-import { ClockIcon } from '@/components/icons/ClockIcon';
+import { PersonIcon } from '@/components/icons/PersonIcon';
 import MovieSearch from '@/components/MovieSearch';
-import { DraftActorPortrait } from '@/components/DraftActorPortrait';
-import CategorySelection from '@/components/CategorySelection';
 import EnhancedCategorySelection from '@/components/EnhancedCategorySelection';
 import PickConfirmation from '@/components/PickConfirmation';
 import DraftBoard from '@/components/DraftBoard';
@@ -32,22 +26,14 @@ interface MultiplayerDraftInterfaceProps {
     categories: string[];
     isHost?: boolean;
   };
-  initialDraftData?: {
-    draft: any;
-    participants: any[];
-    picks: any[];
-  };
 }
 
 export const MultiplayerDraftInterface = ({
   draftId,
-  initialData,
-  initialDraftData
+  initialData
 }: MultiplayerDraftInterfaceProps) => {
   const {
-    participantId,
-    isAuthenticated,
-    user
+    participantId
   } = useCurrentUser();
   const {
     toast
@@ -61,7 +47,6 @@ export const MultiplayerDraftInterface = ({
     isMyTurn,
     isConnected,
     createMultiplayerDraft,
-    joinDraftByCode,
     makePick,
     startDraft,
     manualRefresh
@@ -70,19 +55,52 @@ export const MultiplayerDraftInterface = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
+  const [specDraftName, setSpecDraftName] = useState<string | null>(null);
+
+  // Fetch spec draft name if theme is spec-draft
+  useEffect(() => {
+    const fetchSpecDraftName = async () => {
+      if (draft?.theme === 'spec-draft' && draft.option) {
+        try {
+          const { supabase } = await import('@/integrations/supabase/client');
+          const { data, error } = await (supabase as any)
+            .from('spec_drafts')
+            .select('name')
+            .eq('id', draft.option)
+            .single();
+
+          if (error) throw error;
+          if (data) {
+            setSpecDraftName(data.name);
+          }
+        } catch (err) {
+          console.error('Error fetching spec draft name:', err);
+        }
+      }
+    };
+
+    if (draft?.theme === 'spec-draft') {
+      fetchSpecDraftName();
+    }
+  }, [draft?.theme, draft?.option]);
 
   // Get base category for movie search
   const getBaseCategory = () => {
     if (!draft) return '';
+    if (draft.theme === 'spec-draft') {
+      return 'spec-draft';
+    }
     if (draft.theme === 'people') {
       return 'person';
     }
     return 'popular';
   };
 
-  // For theme-based drafts, pass the theme option (year or person name) as the constraint
-  // This will fetch ALL movies for that year/person
-  const themeConstraint = draft?.theme === 'year' || draft?.theme === 'people' ? draft.option : '';
+  // For theme-based drafts, pass the theme option (year, person name, or spec draft ID) as the constraint
+  // This will fetch ALL movies for that year/person/spec draft
+  const themeConstraint = draft?.theme === 'year' || draft?.theme === 'people' || draft?.theme === 'spec-draft' 
+    ? draft.option 
+    : '';
   const {
     movies,
     loading: moviesLoading
@@ -93,7 +111,7 @@ export const MultiplayerDraftInterface = ({
     if (initialData && !draftId && participantId) {
       const createDraft = async () => {
         try {
-          const newDraft = await createMultiplayerDraft({
+          const newDraftId = await createMultiplayerDraft({
             title: initialData.option,
             theme: initialData.theme,
             option: initialData.option,
@@ -102,16 +120,8 @@ export const MultiplayerDraftInterface = ({
           });
 
           // Navigate to the draft page with the multiplayer data
-          navigate('/draft', {
-            replace: true,
-            state: {
-              theme: initialData.theme,
-              option: initialData.option,
-              participants: initialData.participants,
-              categories: initialData.categories,
-              existingDraftId: newDraft.id,
-              isMultiplayer: true
-            }
+          navigate(`/draft/${newDraftId}`, {
+            replace: true
           });
         } catch (error) {
           console.error('Failed to create draft:', error);
@@ -138,6 +148,17 @@ export const MultiplayerDraftInterface = ({
     if (!selectedMovie || !selectedCategory) {
       return;
     }
+    
+    // Double-check it's the user's turn before making the pick
+    if (!isMyTurn) {
+      toast({
+        title: "Not Your Turn",
+        description: "It's not your turn to make a pick. Please wait for your turn.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     try {
       await makePick(selectedMovie.id, selectedMovie.title, selectedMovie.releaseDate ? new Date(selectedMovie.releaseDate).getFullYear() : new Date().getFullYear(), selectedMovie.genre_names?.[0] || 'Unknown', selectedCategory, selectedMovie.poster_path);
       setSelectedMovie(null);
@@ -211,7 +232,7 @@ export const MultiplayerDraftInterface = ({
         <Card>
           <CardHeader>
             <CardTitle>Authentication Required</CardTitle>
-            <CardDescription>
+            <CardDescription style={{color: 'var(--Text-Primary, #FCFFFF)'}}>
               Loading your session to participate in the draft...
             </CardDescription>
           </CardHeader>
@@ -243,30 +264,36 @@ export const MultiplayerDraftInterface = ({
 
   return (
     <div className="min-h-screen" style={{
-      background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'
+      background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'
     }}>
       <div className="max-w-6xl mx-auto p-4 space-y-6">
         {/* Header */}
         <div className="mb-6">
-          <div className="p-6">
-            <div className="flex flex-col justify-center items-center gap-4 text-center px-4">
-              <span className="text-text-primary text-[20px] sm:text-[24px] md:text-[32px] font-brockmann font-medium leading-tight tracking-[1.28px]">
+          <div className="p-6 rounded-[8px]">
+            <div className="flex flex-col justify-center items-center gap-4 text-center">
+              <span className="text-purple-300 text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px]">
                 NOW DRAFTING
               </span>
               <div 
                 className="font-chaney font-normal text-center break-words"
                 style={{
-                  fontSize: 'clamp(28px, 8vw, 64px)',
-                  lineHeight: '1.1',
+                  fontSize: '64px',
+                  lineHeight: '64px',
                   maxWidth: '100%'
                 }}
               >
-                <span className="text-purple-500">
-                  {draft.theme === 'people' ? getCleanActorName(draft.option).toUpperCase() + ' ' : draft.option.toString() + ' '}
+                <span className="text-greyscale-blue-100">
+                  {draft.theme === 'spec-draft' 
+                    ? (specDraftName || draft.option).toUpperCase()
+                    : draft.theme === 'people' 
+                      ? getCleanActorName(draft.option).toUpperCase() + ' '
+                      : draft.option.toString() + ' '}
                 </span>
-                <span className="text-text-primary">
-                  MOVIES
-                </span>
+                {draft.theme !== 'spec-draft' && (
+                  <span className="text-purple-300">
+                    MOVIES
+                  </span>
+                )}
               </div>
               
             </div>
@@ -274,20 +301,75 @@ export const MultiplayerDraftInterface = ({
         </div>
 
         {/* Status and Participants */}
-        <div className="grid md:grid-cols-2 gap-6">
-          <div style={{width: '100%', height: '100%', padding: '24px', background: '#FCFFFF', boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)', borderRadius: '4px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '24px', display: 'inline-flex'}}>
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '16px 24px',
+          justifyContent: 'center',
+          alignItems: 'flex-start',
+          width: '100%'
+        }}>
+          <div style={{
+            flex: '1 1 0',
+            minWidth: '342px',
+            height: '100%', 
+            padding: '24px', 
+            background: 'var(--Section-Container, #0E0E0F)', 
+            boxShadow: '0px 0px 6px #3B0394', 
+            borderRadius: '8px', 
+            flexDirection: 'column', 
+            justifyContent: 'flex-start', 
+            alignItems: 'flex-start', 
+            gap: '24px', 
+            display: 'inline-flex'
+          }}>
             <div style={{alignSelf: 'stretch', justifyContent: 'flex-start', alignItems: 'center', gap: '8px', display: 'inline-flex'}}>
               <div style={{width: '24px', padding: '2px', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '10px', display: 'inline-flex'}}>
-                <Clock size={24} color="#680AFF" />
+                <Clock size={24} color="#907AFF" />
               </div>
-              <div style={{flex: '1 1 0', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '20px', fontFamily: 'Brockmann', fontWeight: '500', lineHeight: '28px', wordWrap: 'break-word'}}>Draft Status</div>
+              <div style={{
+                flex: '1 1 0', 
+                justifyContent: 'center', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                color: 'var(--Text-Primary, #FCFFFF)', 
+                fontSize: '20px', 
+                fontFamily: 'Brockmann', 
+                fontWeight: '500', 
+                lineHeight: '28px', 
+                wordWrap: 'break-word'
+              }}>Draft Status</div>
             </div>
             
             {isComplete ? (
               <>
                 <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '12px', display: 'flex'}}>
-                  <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '16px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', wordWrap: 'break-word'}}>Draft Complete</div>
-                  <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-600, #646968)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>All picks have been made!</div>
+                  <div style={{
+                    alignSelf: 'stretch', 
+                    textAlign: 'center', 
+                    justifyContent: 'center', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    color: 'var(--Text-Primary, #FCFFFF)', 
+                    fontSize: '16px', 
+                    fontFamily: 'Brockmann', 
+                    fontWeight: '600', 
+                    lineHeight: '24px', 
+                    wordWrap: 'break-word'
+                  }}>Draft Complete</div>
+                  <div style={{
+                    alignSelf: 'stretch', 
+                    textAlign: 'center', 
+                    justifyContent: 'center', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    color: 'var(--Text-Light-grey, #BDC3C2)', 
+                    fontSize: '14px', 
+                    fontFamily: 'Brockmann', 
+                    fontWeight: '400', 
+                    lineHeight: '20px', 
+                    wordWrap: 'break-word'
+                  }}>All picks have been made!</div>
                 </div>
               </>
             ) : (
@@ -295,30 +377,132 @@ export const MultiplayerDraftInterface = ({
                 <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '12px', display: 'flex'}}>
                   <div style={{alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex'}}>
                     <div style={{flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
-                      <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-600, #646968)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>Pick Number:</div>
+                      <div style={{
+                        justifyContent: 'center', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        color: 'var(--Text-Light-grey, #BDC3C2)', 
+                        fontSize: '14px', 
+                        fontFamily: 'Brockmann', 
+                        fontWeight: '400', 
+                        lineHeight: '20px', 
+                        wordWrap: 'break-word'
+                      }}>Pick Number:</div>
                     </div>
                     <div style={{flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
-                      <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '500', lineHeight: '20px', wordWrap: 'break-word'}}>{draft.current_pick_number}</div>
+                      <div style={{
+                        justifyContent: 'center', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        color: 'var(--Text-Primary, #FCFFFF)', 
+                        fontSize: '14px', 
+                        fontFamily: 'Brockmann', 
+                        fontWeight: '500', 
+                        lineHeight: '20px', 
+                        wordWrap: 'break-word'
+                      }}>{draft.current_pick_number}</div>
                     </div>
                   </div>
                   <div style={{alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex'}}>
                     <div style={{flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
-                      <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-600, #646968)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>Current Turn:</div>
+                      <div style={{
+                        justifyContent: 'center', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        color: 'var(--Text-Light-grey, #BDC3C2)', 
+                        fontSize: '14px', 
+                        fontFamily: 'Brockmann', 
+                        fontWeight: '400', 
+                        lineHeight: '20px', 
+                        wordWrap: 'break-word'
+                      }}>Current Turn:</div>
                     </div>
-                    <div style={{justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '500', lineHeight: '20px', wordWrap: 'break-word'}}>{currentTurnPlayer?.participant_name || 'Unknown'}</div>
+                    <div style={{
+                      justifyContent: 'center', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      color: 'var(--Text-Primary, #FCFFFF)', 
+                      fontSize: '14px', 
+                      fontFamily: 'Brockmann', 
+                      fontWeight: '500', 
+                      lineHeight: '20px', 
+                      wordWrap: 'break-word'
+                    }}>{currentTurnPlayer?.participant_name || 'Unknown'}</div>
                   </div>
                 </div>
                 {!isMyTurn && draftHasStarted && (
-                  <div className="relative w-full h-full pt-[22px] pb-6 px-6 bg-greyscale-blue-150 rounded-lg border border-greyscale-blue-300 flex flex-col justify-center items-center">
-                    <div className="w-full flex flex-col justify-center items-center gap-3">
-                      <div className="w-6 p-0.5 flex flex-col justify-center items-center gap-2.5">
-                        <ClockIcon className="w-6 h-6 text-greyscale-blue-500" />
+                  <div style={{
+                    width: '100%', 
+                    height: '100%', 
+                    paddingTop: '22px', 
+                    paddingBottom: '24px', 
+                    paddingLeft: '24px', 
+                    paddingRight: '24px', 
+                    background: 'var(--UI-Primary, #1D1D1F)', 
+                    borderRadius: '8px', 
+                    outline: '1px var(--Item-Stroke, #49474B) solid', 
+                    outlineOffset: '-1px', 
+                    flexDirection: 'column', 
+                    justifyContent: 'flex-start', 
+                    alignItems: 'flex-start', 
+                    display: 'inline-flex'
+                  }}>
+                    <div style={{
+                      alignSelf: 'stretch', 
+                      flexDirection: 'column', 
+                      justifyContent: 'flex-start', 
+                      alignItems: 'center', 
+                      gap: '12px', 
+                      display: 'flex'
+                    }}>
+                      <div style={{
+                        width: '24px', 
+                        padding: '2px', 
+                        flexDirection: 'column', 
+                        justifyContent: 'center', 
+                        alignItems: 'center', 
+                        gap: '10px', 
+                        display: 'flex'
+                      }}>
+                        <Clock size={20} color="#BDC3C2" />
                       </div>
-                      <div className="w-full flex flex-col justify-start items-center gap-1">
-                        <div className="w-full text-center text-greyscale-blue-800 text-base font-brockmann font-semibold leading-6 tracking-wide">
+                      <div style={{
+                        alignSelf: 'stretch', 
+                        flexDirection: 'column', 
+                        justifyContent: 'flex-start', 
+                        alignItems: 'center', 
+                        gap: '4px', 
+                        display: 'flex'
+                      }}>
+                        <div style={{
+                          alignSelf: 'stretch', 
+                          textAlign: 'center', 
+                          justifyContent: 'center', 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          color: 'var(--Text-Primary, #FCFFFF)', 
+                          fontSize: '16px', 
+                          fontFamily: 'Brockmann', 
+                          fontWeight: '600', 
+                          lineHeight: '24px', 
+                          letterSpacing: '0.32px', 
+                          wordWrap: 'break-word'
+                        }}>
                           Waiting for {currentTurnPlayer?.participant_name}
                         </div>
-                        <div className="w-full text-center text-greyscale-blue-500 text-sm font-brockmann font-normal leading-5">
+                        <div style={{
+                          alignSelf: 'stretch', 
+                          textAlign: 'center', 
+                          justifyContent: 'center', 
+                          display: 'flex', 
+                          flexDirection: 'column', 
+                          color: 'var(--Text-Light-grey, #BDC3C2)', 
+                          fontSize: '14px', 
+                          fontFamily: 'Brockmann', 
+                          fontWeight: '400', 
+                          lineHeight: '20px', 
+                          wordWrap: 'break-word'
+                        }}>
                           It's their turn to make a pick
                         </div>
                       </div>
@@ -332,8 +516,8 @@ export const MultiplayerDraftInterface = ({
                         <Film size={24} color="#FFD60A" />
                       </div>
                       <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '3px', display: 'flex'}}>
-                        <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--UI-Primary, white)', fontSize: '16px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', letterSpacing: '0.32px', wordWrap: 'break-word'}}>It's Your Turn!</div>
-                        <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--UI-Primary, white)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>Make your next pick to your movie roster</div>
+                        <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '16px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', letterSpacing: '0.32px', wordWrap: 'break-word'}}>It's Your Turn!</div>
+                        <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>Make your next pick to your movie roster</div>
                       </div>
                     </div>
                   </div>
@@ -343,35 +527,103 @@ export const MultiplayerDraftInterface = ({
           </div>
 
           {/* Unified participants container with background treatment */}
-          <div className="w-full bg-[#FCFFFF] p-6 rounded shadow-[0px_0px_3px_rgba(0,0,0,0.25)] flex flex-col gap-6">
+          <div style={{
+            flex: '1 1 0',
+            minWidth: '342px',
+            height: '100%', 
+            padding: '24px', 
+            background: 'var(--Section-Container, #0E0E0F)', 
+            boxShadow: '0px 0px 6px #3B0394', 
+            borderRadius: '8px', 
+            flexDirection: 'column', 
+            justifyContent: 'flex-start', 
+            alignItems: 'flex-start', 
+            gap: '24px', 
+            display: 'inline-flex'
+          }}>
             {/* Join Code section */}
-            <div className="flex items-center flex-wrap gap-4">
-              <div className="flex-1">
-                <CardTitle className="text-2xl font-bold font-brockmann" style={{letterSpacing: '0.24px'}}>
+            <div style={{
+              alignSelf: 'stretch', 
+              flexDirection: 'column',
+              justifyContent: 'flex-start', 
+              alignItems: 'flex-start', 
+              gap: '16px',
+              display: 'flex'
+            }}>
+              <div style={{
+                alignSelf: 'stretch', 
+                justifyContent: 'space-between', 
+                alignItems: 'center', 
+                display: 'inline-flex', 
+                flexWrap: 'wrap'
+              }}>
+                <div style={{
+                  minWidth: '120px', 
+                  justifyContent: 'center', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  color: 'var(--Text-Primary, #FCFFFF)', 
+                  fontSize: '24px', 
+                  fontFamily: 'Brockmann', 
+                  fontWeight: '700', 
+                  lineHeight: '24px', 
+                  letterSpacing: '0.24px', 
+                  wordWrap: 'break-word'
+                }}>
                   Join Code
-                </CardTitle>
+                </div>
               </div>
-              {draft.invite_code && <div className="flex items-center gap-2 justify-end ml-auto">
-                  <Badge variant="outline" className="font-mono text-lg px-3 py-1 bg-white text-foreground">
-                    {draft.invite_code}
-                  </Badge>
+              {draft.invite_code && <div style={{
+                alignSelf: 'flex-end',
+                flexDirection: 'row', 
+                justifyContent: 'flex-end', 
+                alignItems: 'center', 
+                gap: '8px', 
+                display: 'inline-flex'
+              }}>
+                  <div style={{
+                    paddingLeft: '14px', 
+                    paddingRight: '14px', 
+                    paddingTop: '4px', 
+                    paddingBottom: '4px', 
+                    background: 'var(--UI-Primary, #1D1D1F)', 
+                    borderRadius: '9999px', 
+                    outline: '1px var(--Text-Primary, #FCFFFF) solid', 
+                    outlineOffset: '-1px', 
+                    justifyContent: 'flex-start', 
+                    alignItems: 'center', 
+                    display: 'flex'
+                  }}>
+                    <div style={{
+                      justifyContent: 'center', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      color: 'var(--Text-Primary, #FCFFFF)', 
+                      fontSize: '18px', 
+                      fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace', 
+                      fontWeight: '400', 
+                      lineHeight: '28px', 
+                      letterSpacing: '1.08px', 
+                      wordWrap: 'break-word'
+                    }}>
+                      {draft.invite_code}
+                    </div>
+                  </div>
                   <button 
                     onClick={copyInviteCode}
                     style={{
-                      width: '100%', 
-                      height: '100%', 
                       paddingLeft: '12px', 
                       paddingRight: '12px', 
                       paddingTop: '8px', 
                       paddingBottom: '8px', 
-                      background: 'white', 
+                      background: 'var(--UI-Primary, #1D1D1F)', 
                       borderRadius: '2px', 
-                      outline: '1px var(--Greyscale-(Blue)-200, #D9E0DF) solid', 
+                      outline: '1px var(--Text-Primary, #FCFFFF) solid', 
                       outlineOffset: '-1px', 
                       justifyContent: 'center', 
                       alignItems: 'center', 
                       gap: '8px', 
-                      display: 'inline-flex',
+                      display: 'flex',
                       cursor: 'pointer',
                       border: 'none'
                     }}
@@ -385,14 +637,14 @@ export const MultiplayerDraftInterface = ({
                       gap: '10px', 
                       display: 'inline-flex'
                     }}>
-                      {copySuccess ? <Check size={16} color="#2B2D2D" /> : <Copy size={16} color="#2B2D2D" />}
+                      {copySuccess ? <Check size={16} color="#FCFFFF" /> : <Copy size={16} color="#FCFFFF" />}
                     </div>
                     <div style={{
                       textAlign: 'center', 
                       justifyContent: 'center', 
                       display: 'flex', 
                       flexDirection: 'column', 
-                      color: 'var(--Text-Primary, #2B2D2D)', 
+                      color: 'var(--Text-Primary, #FCFFFF)', 
                       fontSize: '14px', 
                       fontFamily: 'Brockmann', 
                       fontWeight: '500', 
@@ -402,66 +654,211 @@ export const MultiplayerDraftInterface = ({
                       {copySuccess ? 'Copied!' : 'Copy'}
                     </div>
                   </button>
-                </div>}
+              </div>}
             </div>
             
             {/* Participants section */}
-            <div>
-              {/* Participants header matching StyledHeading4 */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 flex flex-col justify-center items-center">
-                    <MultiPersonIcon className="w-6 h-6 text-[#680AFF]" />
-                  </div>
-                  <span className="text-xl font-medium font-brockmann leading-7 text-[#2B2D2D]">Participants</span>
+            <div style={{
+              alignSelf: 'stretch', 
+              flexDirection: 'column', 
+              justifyContent: 'flex-start', 
+              alignItems: 'flex-start', 
+              gap: '16px', 
+              display: 'flex'
+            }}>
+              <div style={{
+                justifyContent: 'flex-start', 
+                alignItems: 'center', 
+                gap: '8px', 
+                display: 'inline-flex'
+              }}>
+                <div style={{
+                  width: '24px', 
+                  height: '24px', 
+                  padding: '2px', 
+                  flexDirection: 'column', 
+                  justifyContent: 'center', 
+                  alignItems: 'center', 
+                  gap: '10px', 
+                  display: 'inline-flex',
+                  color: 'var(--Text-Purple, #907AFF)'
+                }}>
+                  <MultiPersonIcon className="w-6 h-6" />
                 </div>
-                {/* Connection status and refresh button */}
-                <div className="flex items-center gap-2">
-                  {!isConnected && (
-                    <div className="flex items-center gap-1.5 px-2 py-1 bg-yellow-50 border border-yellow-200 rounded">
-                      <WifiOff className="w-3 h-3 text-yellow-600" />
-                      <span className="text-xs font-brockmann text-yellow-700">Reconnecting...</span>
-                    </div>
-                  )}
-                  <button
-                    onClick={manualRefresh}
-                    className="p-1.5 hover:bg-purple-100 rounded transition-colors"
-                    title="Refresh draft"
-                  >
-                    <RefreshCw className={`w-4 h-4 text-[#680AFF] ${loading ? 'animate-spin' : ''}`} />
-                  </button>
+                <div style={{
+                  justifyContent: 'center', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  color: 'var(--Text-Primary, #FCFFFF)', 
+                  fontSize: '20px', 
+                  fontFamily: 'Brockmann', 
+                  fontWeight: '500', 
+                  lineHeight: '28px', 
+                  wordWrap: 'break-word'
+                }}>
+                  Participants
                 </div>
               </div>
               
               {/* Participants list with proper gap */}
-              <div className="flex flex-col gap-2">
+              <div style={{
+                alignSelf: 'stretch', 
+                flexDirection: 'column', 
+                justifyContent: 'flex-start', 
+                alignItems: 'flex-start', 
+                gap: '8px', 
+                display: 'flex'
+              }}>
                 {participants.map(participant => {
                   const pId = participant.user_id || participant.guest_participant_id;
                   const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
                   const isCurrentTurn = pId === currentTurnId;
                   return (
-                    <div key={participant.id} className="flex items-center gap-2 py-3 px-4 bg-white" style={{borderRadius: '2px', outline: '0.5px solid #BDC3C2', outlineOffset: '-0.5px'}}>
-                      <div className="flex-1 flex flex-col gap-1 pb-0.5">
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1 flex flex-col">
-                            <span className="font-semibold text-base font-brockmann leading-6 tracking-wide text-[#2B2D2D]">{participant.participant_name}</span>
+                    <div key={participant.id} style={{
+                      alignSelf: 'stretch', 
+                      paddingTop: '12px', 
+                      paddingBottom: '12px', 
+                      paddingLeft: '16px', 
+                      paddingRight: '12px', 
+                      background: 'var(--UI-Primary, #1D1D1F)', 
+                      borderRadius: '2px', 
+                      outline: '0.50px var(--Item-Stroke, #49474B) solid', 
+                      outlineOffset: '-0.50px', 
+                      justifyContent: 'flex-start', 
+                      alignItems: 'center', 
+                      gap: '8px', 
+                      display: 'inline-flex'
+                    }}>
+                      <div style={{
+                        flex: '1 1 0', 
+                        paddingBottom: '2px', 
+                        flexDirection: 'column', 
+                        justifyContent: 'flex-start', 
+                        alignItems: 'flex-start', 
+                        gap: '4px', 
+                        display: 'inline-flex'
+                      }}>
+                        <div style={{
+                          alignSelf: 'stretch', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center', 
+                          display: 'inline-flex'
+                        }}>
+                          <div style={{
+                            flex: '1 1 0', 
+                            flexDirection: 'column', 
+                            justifyContent: 'flex-start', 
+                            alignItems: 'flex-start', 
+                            display: 'inline-flex'
+                          }}>
+                            <div style={{
+                              justifyContent: 'center', 
+                              display: 'flex', 
+                              flexDirection: 'column', 
+                              color: 'var(--Text-Primary, #FCFFFF)', 
+                              fontSize: '16px', 
+                              fontFamily: 'Brockmann', 
+                              fontWeight: '600', 
+                              lineHeight: '24px', 
+                              letterSpacing: '0.32px', 
+                              wordWrap: 'break-word'
+                            }}>
+                              {participant.participant_name}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                            {participant.is_host && <div className="w-full h-full px-3 py-1 bg-[#F8F7FF] rounded-full" style={{outline: '0.50px #25015E solid', outlineOffset: '-0.50px', justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
-                                <div className="flex flex-col justify-center text-[#100029] text-xs font-brockmann font-semibold leading-4">Host</div>
-                              </div>}
-                            {isCurrentTurn && !isComplete && draftHasStarted && <div className="w-full h-full px-3 py-1 bg-[#25015E] rounded-full whitespace-nowrap" style={{justifyContent: 'flex-start', alignItems: 'center', display: 'inline-flex'}}>
-                                <span className="text-xs font-semibold font-brockmann leading-4 text-white">Your Pick</span>
-                              </div>}
+                          <div style={{
+                            justifyContent: 'flex-start', 
+                            alignItems: 'center', 
+                            gap: '4px', 
+                            display: 'flex'
+                          }}>
+                            {participant.is_host && <div style={{
+                              paddingLeft: '12px', 
+                              paddingRight: '12px', 
+                              paddingTop: '4px', 
+                              paddingBottom: '4px', 
+                              background: 'var(--Purple-100, #EDEBFF)', 
+                              borderRadius: '9999px', 
+                              outline: '0.50px var(--Purple-800, #25015E) solid', 
+                              outlineOffset: '-0.50px', 
+                              justifyContent: 'flex-start', 
+                              alignItems: 'center', 
+                              display: 'flex'
+                            }}>
+                              <div style={{
+                                justifyContent: 'center', 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                color: 'var(--Purple-900, #100029)', 
+                                fontSize: '12px', 
+                                fontFamily: 'Brockmann', 
+                                fontWeight: '600', 
+                                lineHeight: '16px', 
+                                wordWrap: 'break-word'
+                              }}>
+                                Host
+                              </div>
+                            </div>}
+                            {isCurrentTurn && !isComplete && draftHasStarted && <div style={{
+                              paddingLeft: '12px', 
+                              paddingRight: '12px', 
+                              paddingTop: '4px', 
+                              paddingBottom: '4px', 
+                              background: 'var(--Brand-Primary, #7142FF)', 
+                              borderRadius: '9999px', 
+                              justifyContent: 'flex-start', 
+                              alignItems: 'center', 
+                              display: 'flex'
+                            }}>
+                              <div style={{
+                                justifyContent: 'center', 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                color: 'var(--Text-Primary, #FCFFFF)', 
+                                fontSize: '12px', 
+                                fontFamily: 'Brockmann', 
+                                fontWeight: '600', 
+                                lineHeight: '16px', 
+                                wordWrap: 'break-word'
+                              }}>
+                                Current Turn
+                              </div>
+                            </div>}
                           </div>
                         </div>
-                        <div className="flex items-start gap-1">
-                          <span className="text-xs font-normal font-brockmann leading-4 text-[#06C995]">
+                        <div style={{
+                          alignSelf: 'stretch', 
+                          justifyContent: 'flex-start', 
+                          alignItems: 'flex-start', 
+                          gap: '4px', 
+                          display: 'inline-flex'
+                        }}>
+                          <div style={{
+                            justifyContent: 'center', 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            color: 'var(--Teal-500, #0AFFBE)', 
+                            fontSize: '12px', 
+                            fontFamily: 'Brockmann', 
+                            fontWeight: '400', 
+                            lineHeight: '16px', 
+                            wordWrap: 'break-word'
+                          }}>
                             {participant.status === 'joined' ? 'Joined' : participant.status}
-                          </span>
-                          {participant.email && <span className="text-xs font-normal font-brockmann leading-4 text-[#828786]">
-                              {participant.email}
-                            </span>}
+                          </div>
+                          {participant.email && <div style={{
+                            justifyContent: 'center', 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            color: 'var(--Text-Light-grey, #BDC3C2)', 
+                            fontSize: '12px', 
+                            fontFamily: 'Brockmann', 
+                            fontWeight: '400', 
+                            lineHeight: '16px', 
+                            wordWrap: 'break-word'
+                          }}>
+                            {participant.email}
+                          </div>}
                         </div>
                       </div>
                     </div>
@@ -477,10 +874,10 @@ export const MultiplayerDraftInterface = ({
             <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '16px', display: 'flex'}}>
               <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex'}}>
                 <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', display: 'flex'}}>
-                  <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #2B2D2D)', fontSize: '20px', fontFamily: 'Brockmann', fontWeight: '500', lineHeight: '28px', wordWrap: 'break-word'}}>Everybody Ready?</div>
+                  <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px', fontFamily: 'Brockmann', fontWeight: '500', lineHeight: '28px', wordWrap: 'break-word'}}>Everybody Ready?</div>
                 </div>
                 <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', display: 'flex'}}>
-                  <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Greyscale-(Blue)-600, #646968)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>{participants.length} players have joined. Click below to randomize turn order and start the draft!</div>
+                  <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Light-grey, #BDC3C2)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>{participants.length} players have joined. Click below to randomize turn order and start the draft!</div>
                 </div>
               </div>
               <div 
@@ -489,7 +886,7 @@ export const MultiplayerDraftInterface = ({
                 onMouseLeave={(e) => e.currentTarget.style.background = 'var(--Purple-500, #680AFF)'}
                 style={{paddingLeft: '32px', paddingRight: '32px', paddingTop: '16px', paddingBottom: '16px', background: 'var(--Purple-500, #680AFF)', borderRadius: '2px', justifyContent: 'center', alignItems: 'center', display: 'inline-flex', cursor: 'pointer', transition: 'background 0.2s ease'}}
               >
-                <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--UI-Primary, white)', fontSize: '18px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', wordWrap: 'break-word'}}>
+                <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '18px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', wordWrap: 'break-word'}}>
                   {loading ? 'Starting...' : 'Start Draft'}
                 </div>
               </div>
@@ -497,17 +894,21 @@ export const MultiplayerDraftInterface = ({
           </div>}
 
         {/* Waiting for Players - Show when not enough players */}
-        {!draftHasStarted && participants.length < 2 && <Card>
-            <CardContent className="p-6 text-center">
-              <div className="space-y-2">
-                <Users className="h-8 w-8 mx-auto text-muted-foreground" />
-                <h3 className="font-semibold">Waiting for Players</h3>
-                <p className="text-sm text-muted-foreground">
-                  Need at least 2 players to start the draft. Share the invite code above!
-                </p>
+        {!draftHasStarted && participants.length < 2 && <div style={{width: '100%', height: '100%', padding: '24px', borderRadius: '8px', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
+            <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '16px', display: 'flex'}}>
+              <div style={{width: '24px', height: '24px', padding: '2px', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '10px', display: 'flex', color: '#FCFFFF'}}>
+                <PersonIcon className="w-6 h-6" />
               </div>
-            </CardContent>
-          </Card>}
+              <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex'}}>
+                <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', display: 'flex'}}>
+                  <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px', fontFamily: 'Brockmann', fontWeight: '500', lineHeight: '28px', wordWrap: 'break-word'}}>Waiting For Players</div>
+                </div>
+                <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', display: 'flex'}}>
+                  <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Light-grey, #BDC3C2)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>Need at least 2 players to start the draft. Share the invite code above!</div>
+                </div>
+              </div>
+            </div>
+          </div>}
 
         {/* Draft Content */}
         <div className="space-y-6">
@@ -523,13 +924,34 @@ export const MultiplayerDraftInterface = ({
               poster_path: pick.poster_path
             },
             category: pick.category
-          }))} players={participants.map((p, index) => ({
-            id: index + 1,
-            name: p.participant_name
-          }))} categories={draft.categories} theme={draft.theme} draftOption={getCleanActorName(draft.option)} currentPlayer={currentTurnPlayer ? {
-            id: participants.findIndex(p => (p.user_id || p.guest_participant_id) === (currentTurnPlayer.user_id || currentTurnPlayer.guest_participant_id)) + 1,
-            name: currentTurnPlayer.participant_name
-          } : undefined} />
+          }))} players={(() => {
+            // Sort participants by created_at to match database player_id calculation (ORDER BY created_at ASC)
+            const sortedParticipants = [...participants].sort((a, b) => {
+              const aTime = a.created_at || a.joined_at || '';
+              const bTime = b.created_at || b.joined_at || '';
+              if (!aTime && !bTime) return 0;
+              if (!aTime) return 1;
+              if (!bTime) return -1;
+              return new Date(aTime).getTime() - new Date(bTime).getTime();
+            });
+            return sortedParticipants.map((p, index) => ({
+              id: index + 1,
+              name: p.participant_name
+            }));
+          })()} categories={draft.categories} theme={draft.theme} draftOption={getCleanActorName(draft.option)} currentPlayer={currentTurnPlayer ? (() => {
+            const sortedParticipants = [...participants].sort((a, b) => {
+              const aTime = a.created_at || a.joined_at || '';
+              const bTime = b.created_at || b.joined_at || '';
+              if (!aTime && !bTime) return 0;
+              if (!aTime) return 1;
+              if (!bTime) return -1;
+              return new Date(aTime).getTime() - new Date(bTime).getTime();
+            });
+            return {
+              id: sortedParticipants.findIndex(p => (p.user_id || p.guest_participant_id) === (currentTurnPlayer.user_id || currentTurnPlayer.guest_participant_id)) + 1,
+              name: currentTurnPlayer.participant_name
+            };
+          })() : undefined} />
           </div>
 
           {/* View Final Scores Button - Show when draft is complete */}

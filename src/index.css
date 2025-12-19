@@ -100,7 +100,21 @@ All colors MUST be HSL.
     --purple-600: 262 92% 41%; /* #5106c9 */
     --purple-700: 262 94% 30%; /* #3b0394 */
     --purple-800: 262 96% 19%; /* #25015e */
+    --purple-850: 262 100% 11%; /* #160038 */
     --purple-900: 262 100% 8%; /* #100029 */
+    
+    /* Greyscale (Purp) Scale */
+    --greyscale-purp-100: 270 100% 99%; /* #fdfcff */
+    --greyscale-purp-150: 270 7% 93%; /* #ecebf0 */
+    --greyscale-purp-200: 270 4% 85%; /* #dad9e0 */
+    --greyscale-purp-300: 270 2% 75%; /* #bebdc3 */
+    --greyscale-purp-400: 270 2% 63%; /* #9e9ca3 */
+    --greyscale-purp-500: 270 2% 52%; /* #848287 */
+    --greyscale-purp-600: 270 2% 40%; /* #666469 */
+    --greyscale-purp-700: 270 2% 29%; /* #49474b */
+    --greyscale-purp-800: 270 2% 17%; /* #2c2b2d */
+    --greyscale-purp-850: 270 3% 12%; /* #1d1d1f */
+    --greyscale-purp-900: 270 3% 5%; /* #0e0e0f */
     
     /* Greyscale Blue Scale */
     --greyscale-blue-100: 195 100% 99%; /* #fcffff */
@@ -198,8 +212,11 @@ All colors MUST be HSL.
     --ui-highlight: 48 100% 74%; /* Yellow 300 */
     --text-primary: 195 6% 18%; /* Greyscale Blue 800 */
 
+    /* Hover state */
+    --Hover: 244 100% 74%; /* Purple.300 #907aff */
+
     /* Component tokens */
-    --primary: 255 100% 65%; /* Purple 400 #794DFF */
+    --primary: 262 100% 52%; /* Purple 500 #680AFF */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96.1%;
@@ -232,47 +249,65 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 240 8% 6%;
-    --foreground: 210 40% 98%;
+    /* Background - Section Container */
+    --background: 270 3% 5%; /* Greyscale (Purp).900 #0e0e0f */
+    --foreground: 180 100% 99%; /* Greyscale (Blue).100 #fcffff */
 
-    --card: 240 8% 6%;
-    --card-foreground: 210 40% 98%;
+    /* Card and container backgrounds */
+    --card: 270 3% 12%; /* UI Primary - Greyscale (Purp).850 #1d1d1f */
+    --card-foreground: 180 100% 99%;
 
-    --popover: 240 8% 6%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 270 3% 12%;
+    --popover-foreground: 180 100% 99%;
 
     /* Brand Colors for Dark Mode */
-    --brand-primary: 262 100% 52%;
+    --brand-primary: 258 100% 63%; /* Purple.400 #7142ff */
     --brand-primary-foreground: 0 0% 100%;
-    --purple-200: 252 100% 85%;
-    --greyscale-blue-900: 240 8% 6%;
+    --Hover: 244 100% 74%; /* Purple.300 #907aff */
 
-    --primary: 255 100% 65%; /* Purple 400 #794DFF */
+    /* Purple Scale Overrides for Dark Mode */
+    --purple-400: 258 100% 63%; /* Purple.400 #7142ff */
+
+    /* UI Tokens */
+    --ui-primary: 270 3% 12%; /* Greyscale (Purp).850 #1d1d1f */
+    --ui-primary-hover: 270 2% 17%; /* Greyscale (Purp).800 #2c2b2d */
+    --ui-primary-pressed: 262 96% 19%; /* Purple.800 #25015e */
+    --ui-bg: 270 3% 5%; /* Greyscale (Purp).900 #0e0e0f */
+    --ui-highlight: 48 100% 74%; /* Yellow.300 #ffe97a */
+    --text-primary: 180 100% 99%; /* Greyscale (Blue).100 #fcffff */
+
+    /* Component tokens */
+    --primary: 258 100% 63%; /* Purple.400 #7142ff */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 270 2% 17%; /* Greyscale (Purp).800 #2c2b2d */
+    --secondary-foreground: 180 100% 99%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 270 2% 29%; /* Greyscale (Purp).700 #49474b */
+    --muted-foreground: 150 6% 75%; /* Greyscale (Blue).300 #bdc3c2 */
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 270 2% 17%; /* Greyscale (Purp).800 #2c2b2d */
+    --accent-foreground: 180 100% 99%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 100% 52%; /* Error-Red.500 #ff4242 */
+    --destructive-foreground: 180 100% 99%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --border: 270 2% 29%; /* Item Stroke - Greyscale (Purp).700 #49474b */
+    --input: 270 2% 40%; /* Button Stroke - Greyscale (Purp).600 #666469 */
+    --ring: 258 100% 63%; /* Purple.400 #7142ff */
+    
+    /* Ensure all purple references use purple-400 in dark mode */
+    --purple-500: 258 100% 63%; /* Override to purple-400 for dark mode */
+
+    /* Sidebar tokens */
+    --sidebar-background: 270 3% 5%; /* Greyscale (Purp).900 */
+    --sidebar-foreground: 180 100% 99%; /* Greyscale (Blue).100 */
+    --sidebar-primary: 258 100% 63%; /* Purple.400 */
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 270 2% 17%; /* Greyscale (Purp).800 */
+    --sidebar-accent-foreground: 180 100% 99%;
+    --sidebar-border: 270 2% 29%; /* Greyscale (Purp).700 */
+    --sidebar-ring: 258 100% 63%; /* Purple.400 */
   }
 }
 
@@ -282,7 +317,9 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    background: linear-gradient(140deg, hsl(var(--purple-900)) 16%, hsl(var(--purple-850)) 50%, hsl(var(--purple-900)) 83%);
+    background-attachment: fixed;
   }
 }
 
@@ -293,4 +330,13 @@ All colors MUST be HSL.
 
 .logo-hover:hover {
   color: hsl(var(--purple-400)) !important;
+}
+
+/* Custom hover for join draft button */
+.join-draft-button-hover {
+  transition: background-color 0.3s ease;
+}
+
+.join-draft-button-hover:hover:not(:disabled) {
+  background-color: hsl(var(--purple-300)) !important;
 }

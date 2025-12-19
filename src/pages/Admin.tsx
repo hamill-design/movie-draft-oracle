@@ -1,14 +1,8 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import {
   SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
   SidebarInset,
 } from '@/components/ui/sidebar';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
@@ -20,7 +14,7 @@ import { SpecDraftForm } from '@/components/admin/SpecDraftForm';
 import { SpecDraftList } from '@/components/admin/SpecDraftList';
 import { SpecDraftMovieManager } from '@/components/admin/SpecDraftMovieManager';
 import { SpecDraftCategoriesManager } from '@/components/admin/SpecDraftCategoriesManager';
-import { ArrowLeft, Plus, Loader2, Users, Film } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const Admin = () => {
@@ -138,11 +132,16 @@ const Admin = () => {
       
       // If there's a photo file, upload it after creation
       if (data.photoFile && newDraft) {
+        const draftId = typeof newDraft === 'object' && newDraft !== null && 'id' in newDraft 
+          ? (newDraft as SpecDraft).id 
+          : null;
+        
+        if (draftId) {
         const { uploadSpecDraftPhoto } = await import('@/utils/specDraftPhotoUpload');
         try {
-          const photoUrl = await uploadSpecDraftPhoto(newDraft.id, data.photoFile);
+            const photoUrl = await uploadSpecDraftPhoto(draftId, data.photoFile);
           // Update the draft with the photo URL
-          await updateSpecDraft(newDraft.id, {
+            await updateSpecDraft(draftId, {
             photo_url: photoUrl,
           });
         } catch (error) {
@@ -152,9 +151,12 @@ const Admin = () => {
             description: 'Draft created but photo upload failed. You can add a photo later.',
             variant: 'destructive',
           });
+          }
         }
       }
       
+      // Refresh the spec drafts list to ensure it has the latest data
+      await fetchSpecDrafts();
       setSpecDraftSection('list');
       setEditingSpecDraft(null);
     } catch (error) {
@@ -165,21 +167,46 @@ const Admin = () => {
   const handleSpecDraftUpdate = async (data: { name: string; description?: string; photoUrl?: string }) => {
     if (!editingSpecDraft) return;
 
+    console.log('💾 Updating spec draft:', {
+      id: editingSpecDraft.id,
+      photoUrl: data.photoUrl,
+    });
+
     try {
-      await updateSpecDraft(editingSpecDraft.id, {
+      const result = await updateSpecDraft(editingSpecDraft.id, {
         name: data.name,
         description: data.description,
         photo_url: data.photoUrl || null,
       });
+      console.log('✅ Update result:', result);
+      
+      // Refresh the spec drafts list to ensure it has the latest data
+      await fetchSpecDrafts();
       setSpecDraftSection('list');
       setEditingSpecDraft(null);
     } catch (error) {
+      console.error('❌ Error updating spec draft:', error);
       // Error already handled in hook
     }
   };
 
-  const handleSpecDraftEdit = (specDraft: SpecDraft) => {
+  const handleSpecDraftEdit = async (specDraft: SpecDraft) => {
+    // Refetch the spec draft to ensure we have the latest data, including photo_url
+    try {
+      const freshDraft = await fetchSpecDraftWithMovies(specDraft.id);
+      if (freshDraft) {
+        // Extract just the spec draft part (without movies)
+        const { movies, ...draftData } = freshDraft;
+        setEditingSpecDraft(draftData);
+      } else {
+        // Fallback to the draft from the list if refetch fails
+        setEditingSpecDraft(specDraft);
+      }
+    } catch (error) {
+      console.error('Error fetching spec draft for edit:', error);
+      // Fallback to the draft from the list if refetch fails
     setEditingSpecDraft(specDraft);
+    }
     setSpecDraftSection('form');
   };
 
@@ -230,102 +257,107 @@ const Admin = () => {
 
   return (
     <SidebarProvider 
-      className="min-h-screen"
-      style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}
+      className="flex flex-col min-h-full"
+      style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}
     >
-      <Sidebar 
-        collapsible="icon" 
-        className="border-r border-greyscale-blue-200 bg-ui-primary [&_[data-sidebar=sidebar]]:bg-ui-primary [&_[data-sidebar=sidebar]]:text-text-primary"
-      >
-        <SidebarHeader className="p-4 border-b border-greyscale-blue-200">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/profile')}
-              className="bg-ui-primary border-greyscale-blue-200 text-text-primary hover:bg-greyscale-blue-150 h-9 px-3 py-2 rounded-[2px] font-brockmann-medium text-sm leading-5"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Profile
-            </Button>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => setActiveSection('actor-categories')}
-                isActive={activeSection === 'actor-categories'}
-                className="font-brockmann-semibold text-base leading-6 tracking-[0.32px] data-[active=true]:bg-transparent data-[active=true]:border-l-2 data-[active=true]:border-brand-primary data-[active=true]:text-brand-primary hover:bg-greyscale-blue-150"
-              >
-                <Users className="w-4 h-4" />
-                <span>Actor Spec Categories</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => setActiveSection('spec-drafts')}
-                isActive={activeSection === 'spec-drafts'}
-                className="font-brockmann-semibold text-base leading-6 tracking-[0.32px] data-[active=true]:bg-transparent data-[active=true]:border-l-2 data-[active=true]:border-brand-primary data-[active=true]:text-brand-primary hover:bg-greyscale-blue-150"
-              >
-                <Film className="w-4 h-4" />
-                <span>Spec Draft Builder</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarContent>
-      </Sidebar>
-      <SidebarInset className="flex flex-col">
-        <div className="flex-1 overflow-auto">
+      <SidebarInset className="flex flex-col bg-transparent flex-1">
+        <div className="flex-1">
           <div className="container mx-auto px-6 py-6 max-w-7xl">
-            <div className="space-y-6">
+            <div className="flex gap-6">
+              {/* Sidebar Navigation - Inside Container - Matching Figma */}
+              <div className="flex flex-col justify-start items-start gap-6">
+                {/* Menu Items Container - width 206px, gap 4px */}
+                <div className="w-[206px] flex flex-col justify-start items-start gap-1">
+                  {/* Actor Spec Categories */}
+                  <button
+                    onClick={() => setActiveSection('actor-categories')}
+                    className={`self-stretch px-3 py-1.5 flex justify-start items-center border-l-2 ${
+                      activeSection === 'actor-categories'
+                        ? 'border-purple-300'
+                        : 'border-transparent'
+                    }`}
+                    style={{
+                      fontFamily: 'Brockmann',
+                      fontWeight: 600
+                    }}
+                  >
+                    <span className={`text-left whitespace-nowrap ${
+                      activeSection === 'actor-categories'
+                        ? 'text-purple-300'
+                        : 'text-greyscale-blue-100'
+                    } text-base leading-6 tracking-[0.32px]`}
+                    >
+                      Actor Spec Categories
+                    </span>
+                  </button>
 
-              {/* Actor Spec Categories Section */}
-              {activeSection === 'actor-categories' && (
-                <div className="space-y-6">
-                  {actorCategorySection === 'form' ? (
-                    <ActorSpecCategoryForm
-                      category={editingCategory}
-                      onSubmit={editingCategory ? handleUpdate : handleCreate}
-                      onCancel={handleCancel}
-                      loading={categoriesLoading}
-                    />
-                  ) : (
-                    <ActorSpecCategoryList
-                      categories={categories}
-                      onEdit={handleEdit}
-                      onDelete={deleteCategory}
-                      onCreateNew={() => {
-                        setEditingCategory(null);
-                        setActorCategorySection('form');
-                      }}
-                      loading={categoriesLoading}
-                    />
-                  )}
-                </div>
-              )}
-
-              {/* Spec Draft Builder Section */}
-              {activeSection === 'spec-drafts' && (
-                <>
-                  {specDraftSection === 'list' && (
-            <div className="space-y-4">
-              <div className="flex justify-end">
-                <Button onClick={() => {
-                  setEditingSpecDraft(null);
-                  setSpecDraftSection('form');
-                }}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create New Spec Draft
-                </Button>
+                  {/* Spec Draft Builder */}
+                  <button
+                    onClick={() => setActiveSection('spec-drafts')}
+                    className={`self-stretch px-3 py-1.5 flex justify-start items-center border-l-2 ${
+                      activeSection === 'spec-drafts'
+                        ? 'border-purple-300'
+                        : 'border-transparent'
+                    }`}
+                    style={{
+                      fontFamily: 'Brockmann',
+                      fontWeight: 600
+                    }}
+                  >
+                    <span className={`text-left whitespace-nowrap ${
+                      activeSection === 'spec-drafts'
+                        ? 'text-purple-300'
+                        : 'text-greyscale-blue-100'
+                    } text-base leading-6 tracking-[0.32px]`}
+                    >
+                      Spec Draft Builder
+                    </span>
+                  </button>
+      </div>
               </div>
+
+              {/* Main Content - Inside Container */}
+              <div className="flex-1 space-y-6">
+                {/* Actor Spec Categories Section */}
+                {activeSection === 'actor-categories' && (
+                  <div className="space-y-6">
+                    {actorCategorySection === 'form' ? (
+              <ActorSpecCategoryForm
+                category={editingCategory}
+                onSubmit={editingCategory ? handleUpdate : handleCreate}
+                onCancel={handleCancel}
+                loading={categoriesLoading}
+              />
+                    ) : (
+                      <ActorSpecCategoryList
+                        categories={categories}
+                        onEdit={handleEdit}
+                        onDelete={deleteCategory}
+                        onCreateNew={() => {
+                          setEditingCategory(null);
+                          setActorCategorySection('form');
+                        }}
+                        loading={categoriesLoading}
+                      />
+                    )}
+                  </div>
+                )}
+
+                          {/* Spec Draft Builder Section */}
+                          {activeSection === 'spec-drafts' && (
+                            <>
+          {specDraftSection === 'list' && (
               <SpecDraftList
                 specDrafts={specDrafts}
                 onEdit={handleSpecDraftEdit}
                 onDelete={handleSpecDraftDelete}
                 onManageMovies={handleManageMovies}
+                                  onCreateNew={() => {
+                                    setEditingSpecDraft(null);
+                                    setSpecDraftSection('form');
+                                  }}
                 loading={specDraftsLoading}
               />
-            </div>
           )}
 
           {specDraftSection === 'form' && (
@@ -339,22 +371,43 @@ const Admin = () => {
 
           {specDraftSection === 'movies' && managingMoviesForDraft && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold">{managingMoviesForDraft.name}</h2>
-                  {managingMoviesForDraft.description && (
-                    <p className="text-gray-600 mt-1">{managingMoviesForDraft.description}</p>
-                  )}
-                </div>
-                <Button
-                  variant="outline"
+                                  {/* Admin Draft Header */}
+                                  <div className="flex gap-6 items-start">
+                                    <button
                   onClick={() => {
                     setManagingMoviesForDraft(null);
                     setSpecDraftSection('list');
                   }}
-                >
-                  Back to List
-                </Button>
+                                      className="p-3 rounded-[2px] hover:bg-greyscale-blue-200 transition-colors shrink-0"
+                                      title="Back to List"
+                                    >
+                                      <ArrowLeft className="w-6 h-6 text-text-primary" />
+                                    </button>
+                                    <div className="flex flex-col gap-1 flex-1 min-w-0">
+                                      <h2
+                                        className="text-[48px] text-greyscale-blue-100 uppercase"
+                                        style={{ 
+                                          fontFamily: 'CHANEY', 
+                                          fontWeight: 400, 
+                                          lineHeight: '50px',
+                                          letterSpacing: '0.64px'
+                                        }}
+                                      >
+                                        {managingMoviesForDraft.name.toUpperCase()}
+                                      </h2>
+                                      {managingMoviesForDraft.description && (
+                                        <p
+                                          className="text-xl text-gray-600"
+                                          style={{ 
+                                            fontFamily: 'Brockmann', 
+                                            fontWeight: 500, 
+                                            lineHeight: '28px'
+                                          }}
+                                        >
+                                          {managingMoviesForDraft.description}
+                                        </p>
+                                      )}
+                                    </div>
               </div>
 
               {/* Custom Categories Section */}
@@ -364,7 +417,6 @@ const Admin = () => {
                 onCreate={async (categoryName, description) => {
                   try {
                     await createCustomCategory(managingMoviesForDraft.id, categoryName, description);
-                    // Wait a bit for the database to update, then refresh
                     await new Promise(resolve => setTimeout(resolve, 300));
                     await handleMovieManagerRefresh();
                   } catch (error) {
@@ -402,11 +454,12 @@ const Admin = () => {
               />
             </div>
           )}
-                </>
-              )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+    </div>
       </SidebarInset>
     </SidebarProvider>
   );

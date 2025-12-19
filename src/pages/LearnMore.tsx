@@ -3,134 +3,466 @@ import React from 'react';
 
 const LearnMore = () => {
   return (
-    <div className="w-full min-h-screen pb-16 bg-ui-primary flex flex-col items-center gap-16">
+    <div style={{
+      width: '100%',
+      paddingBottom: '64px',
+      background: 'var(--Section-Container, #0E0E0F)',
+      flexDirection: 'column',
+      justifyContent: 'flex-start',
+      alignItems: 'center',
+      gap: '64px',
+      display: 'flex'
+    }}>
         {/* Hero Section */}
-        <section className="self-stretch px-6 py-20 bg-gradient-to-br from-ui-primary via-purple-50 to-ui-primary flex flex-col items-center">
-          <div className="w-full max-w-7xl px-6 flex flex-col items-center gap-6">
-            <div className="self-stretch flex flex-col items-center px-4">
-              <h1 
-                className="self-stretch text-center text-text-primary font-chaney font-normal break-words"
-                style={{
-                  fontSize: 'clamp(32px, 10vw, 72px)',
-                  lineHeight: '1.1',
-                  maxWidth: '100%'
-                }}
-              >
-                This isn't TRivia.
-              </h1>
+        <section style={{
+          width: '100%',
+          paddingLeft: '24px',
+          paddingRight: '24px',
+          paddingTop: '80px',
+          paddingBottom: '80px',
+          background: 'linear-gradient(140deg, var(--Purple-900, #100029) 16%, var(--Purple-850, #160038) 50%, var(--Purple-900, #100029) 83%)',
+          flexDirection: 'column',
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+          display: 'flex'
+        }}>
+          <div style={{
+            width: '100%',
+            maxWidth: '1400px',
+            paddingLeft: '24px',
+            paddingRight: '24px',
+            flexDirection: 'column',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            gap: '24px',
+            display: 'flex'
+          }}>
+            <div style={{
+              alignSelf: 'stretch',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+              display: 'flex'
+            }}>
+              <div style={{
+                alignSelf: 'stretch',
+                textAlign: 'center',
+                justifyContent: 'center',
+                display: 'flex',
+                flexDirection: 'column'
+              }}>
+                <span style={{
+                  color: 'var(--Text-Primary, #FCFFFF)',
+                  fontSize: '64px',
+                  fontFamily: 'CHANEY',
+                  fontWeight: '400',
+                  lineHeight: '76px',
+                  wordWrap: 'break-word'
+                }}>This isn't TRivia.      </span>
+                <span style={{
+                  color: 'var(--Yellow-500, #FFD60A)',
+                  fontSize: '64px',
+                  fontFamily: 'CHANEY',
+                  fontWeight: '400',
+                  lineHeight: '76px',
+                  wordWrap: 'break-word'
+                }}>It's Taste.</span>
+              </div>
             </div>
-            <div className="self-stretch flex flex-col items-center px-4">
-              <h2 
-                className="self-stretch text-center text-brand-primary font-chaney font-normal break-words"
-                style={{
-                  fontSize: 'clamp(32px, 10vw, 72px)',
-                  lineHeight: '1.1',
-                  maxWidth: '100%'
-                }}
-              >
-                It's Taste.
-              </h2>
-            </div>
-            <div className="w-full max-w-3xl pt-2 flex flex-col items-center">
-              <p className="max-w-2xl text-center text-text-primary text-lg font-brockmann font-medium leading-6 tracking-normal">
+            <div style={{
+              width: '768px',
+              maxWidth: '768px',
+              paddingTop: '8px',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              alignItems: 'center',
+              display: 'flex'
+            }}>
+              <div style={{
+                width: '724px',
+                textAlign: 'center',
+                justifyContent: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                color: 'var(--Text-Primary, #FCFFFF)',
+                fontSize: '18px',
+                fontFamily: 'Brockmann',
+                fontWeight: '500',
+                lineHeight: '26px',
+                wordWrap: 'break-word'
+              }}>
                 Movie Draft challenges you to curate the perfect collection of films. Strategy meets cinema in this competitive drafting experience.
-              </p>
+              </div>
             </div>
           </div>
         </section>
 
         {/* How to Play Section */}
-        <section className="w-full max-w-4xl px-6 flex flex-col items-start gap-12">
-          <div className="self-stretch flex flex-col items-center">
-            <h2 className="text-center text-brand-primary text-3xl font-brockmann font-bold leading-9 tracking-normal">
+        <section style={{
+          width: '100%',
+          maxWidth: '880px',
+          paddingLeft: '24px',
+          paddingRight: '24px',
+          flexDirection: 'column',
+          justifyContent: 'flex-start',
+          alignItems: 'flex-start',
+          gap: '48px',
+          display: 'flex'
+        }}>
+          <div style={{
+            alignSelf: 'stretch',
+            flexDirection: 'column',
+            justifyContent: 'flex-start',
+            alignItems: 'center',
+            display: 'flex'
+          }}>
+            <div style={{
+              textAlign: 'center',
+              justifyContent: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              color: 'var(--Brand-Primary, #7142FF)',
+              fontSize: '29.53px',
+              fontFamily: 'Brockmann',
+              fontWeight: '700',
+              lineHeight: '36px',
+              wordWrap: 'break-word'
+            }}>
               How to Play
-            </h2>
+            </div>
           </div>
           
-          <div className="self-stretch flex flex-col items-start gap-8">
+          <div style={{
+            alignSelf: 'stretch',
+            flexDirection: 'column',
+            justifyContent: 'flex-start',
+            alignItems: 'flex-start',
+            gap: '32px',
+            display: 'flex'
+          }}>
             {/* What is Movie Draft */}
-            <div className="self-stretch flex flex-col items-start">
-              <div className="self-stretch flex flex-col items-start gap-4">
-                <div className="self-stretch flex flex-col items-start">
-                  <h3 className="self-stretch text-brand-primary text-lg font-brockmann font-normal leading-7 tracking-normal">
+            <div style={{
+              alignSelf: 'stretch',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              alignItems: 'flex-start',
+              display: 'flex'
+            }}>
+              <div style={{
+                alignSelf: 'stretch',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                alignItems: 'flex-start',
+                gap: '16px',
+                display: 'flex'
+              }}>
+                <div style={{
+                  alignSelf: 'stretch',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  alignItems: 'flex-start',
+                  display: 'flex'
+                }}>
+                  <div style={{
+                    alignSelf: 'stretch',
+                    justifyContent: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    color: 'var(--Brand-Primary, #7142FF)',
+                    fontSize: '18.59px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '400',
+                    lineHeight: '28px',
+                    wordWrap: 'break-word'
+                  }}>
                     What is a Movie Draft?
-                  </h3>
+                  </div>
                 </div>
-                <div className="self-stretch flex flex-col items-start">
-                  <p className="self-stretch text-text-primary text-sm font-brockmann font-normal leading-5 tracking-normal">
+                <div style={{
+                  alignSelf: 'stretch',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  alignItems: 'flex-start',
+                  display: 'flex'
+                }}>
+                  <div style={{
+                    alignSelf: 'stretch',
+                    justifyContent: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '400',
+                    lineHeight: '20px',
+                    wordWrap: 'break-word'
+                  }}>
                     Movie Draft is a competitive game where players take turns selecting movies based on a chosen theme. The goal is to build the highest-scoring collection of films!
-                  </p>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* How to Set Up */}
-            <div className="self-stretch flex flex-col items-start">
-              <div className="self-stretch flex flex-col items-start gap-4">
-                <div className="self-stretch flex flex-col items-start">
-                  <h3 className="self-stretch text-brand-primary text-lg font-brockmann font-normal leading-7 tracking-normal">
+            <div style={{
+              alignSelf: 'stretch',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              alignItems: 'flex-start',
+              display: 'flex'
+            }}>
+              <div style={{
+                alignSelf: 'stretch',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                alignItems: 'flex-start',
+                gap: '16px',
+                display: 'flex'
+              }}>
+                <div style={{
+                  alignSelf: 'stretch',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  alignItems: 'flex-start',
+                  display: 'flex'
+                }}>
+                  <div style={{
+                    alignSelf: 'stretch',
+                    justifyContent: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    color: 'var(--Brand-Primary, #7142FF)',
+                    fontSize: '18.44px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '400',
+                    lineHeight: '28px',
+                    wordWrap: 'break-word'
+                  }}>
                     How to Set Up
-                  </h3>
+                  </div>
                 </div>
-                <div className="self-stretch flex flex-col items-start gap-2">
-                  <ol className="self-stretch text-text-primary text-sm font-brockmann font-normal leading-5 tracking-normal space-y-2 list-decimal list-inside">
-                    <li>Choose a draft theme (by Person or by Year)</li>
-                    <li>Select your specific option (actor/director or year)</li>
-                    <li>Add all players who will participate</li>
-                    <li>Choose your scoring categories and draft style</li>
-                  </ol>
+                <div style={{
+                  alignSelf: 'stretch',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  alignItems: 'flex-start',
+                  gap: '8px',
+                  display: 'flex'
+                }}>
+                  <div style={{
+                    alignSelf: 'stretch',
+                    justifyContent: 'flex-start',
+                    alignItems: 'flex-start',
+                    display: 'inline-flex'
+                  }}>
+                    <div style={{
+                      flex: '1 1 0',
+                      justifyContent: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      color: 'var(--Text-Primary, #FCFFFF)',
+                      fontSize: '14px',
+                      fontFamily: 'Brockmann',
+                      fontWeight: '400',
+                      lineHeight: '20px',
+                      wordWrap: 'break-word',
+                      whiteSpace: 'pre-line'
+                    }}>
+                      Choose a draft theme (by Person or by Year){'\n'}Select your specific option (actor/director or year){'\n'}Add all players who will participate{'\n'}Choose your scoring categories and draft style
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* How to Draft */}
-            <div className="self-stretch flex flex-col items-start">
-              <div className="self-stretch flex flex-col items-start gap-4">
-                <div className="self-stretch flex flex-col items-start">
-                  <h3 className="self-stretch text-brand-primary text-lg font-brockmann font-normal leading-7 tracking-normal">
+            <div style={{
+              alignSelf: 'stretch',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              alignItems: 'flex-start',
+              display: 'flex'
+            }}>
+              <div style={{
+                alignSelf: 'stretch',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                alignItems: 'flex-start',
+                gap: '16px',
+                display: 'flex'
+              }}>
+                <div style={{
+                  alignSelf: 'stretch',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  alignItems: 'flex-start',
+                  display: 'flex'
+                }}>
+                  <div style={{
+                    alignSelf: 'stretch',
+                    justifyContent: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    color: 'var(--Brand-Primary, #7142FF)',
+                    fontSize: '17.97px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '400',
+                    lineHeight: '28px',
+                    wordWrap: 'break-word'
+                  }}>
                     How to Draft
-                  </h3>
+                  </div>
                 </div>
-                <div className="self-stretch flex flex-col items-start gap-2">
-                  <ol className="self-stretch text-text-primary text-sm font-brockmann font-normal leading-5 tracking-normal space-y-2 list-decimal list-inside">
-                    <li>Players take turns in order selecting movies</li>
-                    <li>Search and pick movies that match your theme</li>
-                    <li>Each player builds their roster of films</li>
-                    <li>Continue until everyone has selected their movies</li>
-                  </ol>
+                <div style={{
+                  alignSelf: 'stretch',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  alignItems: 'flex-start',
+                  gap: '8px',
+                  display: 'flex'
+                }}>
+                  <div style={{
+                    alignSelf: 'stretch',
+                    justifyContent: 'flex-start',
+                    alignItems: 'flex-start',
+                    display: 'inline-flex'
+                  }}>
+                    <div style={{
+                      flex: '1 1 0',
+                      justifyContent: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      color: 'var(--Text-Primary, #FCFFFF)',
+                      fontSize: '14px',
+                      fontFamily: 'Brockmann',
+                      fontWeight: '400',
+                      lineHeight: '20px',
+                      wordWrap: 'break-word',
+                      whiteSpace: 'pre-line'
+                    }}>
+                      Players take turns in order selecting movies{'\n'}Search and pick movies that match your theme{'\n'}Each player builds their roster of films{'\n'}Continue until everyone has selected their movies
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Scoring */}
-            <div className="self-stretch flex flex-col items-start">
-              <div className="self-stretch flex flex-col items-start gap-4">
-                <div className="self-stretch flex flex-col items-start">
-                  <h3 className="self-stretch text-brand-primary text-lg font-brockmann font-normal leading-7 tracking-normal">
+            <div style={{
+              alignSelf: 'stretch',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              alignItems: 'flex-start',
+              display: 'flex'
+            }}>
+              <div style={{
+                alignSelf: 'stretch',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                alignItems: 'flex-start',
+                gap: '16px',
+                display: 'flex'
+              }}>
+                <div style={{
+                  alignSelf: 'stretch',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  alignItems: 'flex-start',
+                  display: 'flex'
+                }}>
+                  <div style={{
+                    alignSelf: 'stretch',
+                    justifyContent: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    color: 'var(--Brand-Primary, #7142FF)',
+                    fontSize: '18.13px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '400',
+                    lineHeight: '28px',
+                    wordWrap: 'break-word'
+                  }}>
                     Scoring
-                  </h3>
+                  </div>
                 </div>
-                <div className="self-stretch flex flex-col items-start">
-                  <p className="self-stretch text-text-primary text-sm font-brockmann font-normal leading-5 tracking-normal">
+                <div style={{
+                  alignSelf: 'stretch',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  alignItems: 'flex-start',
+                  display: 'flex'
+                }}>
+                  <div style={{
+                    alignSelf: 'stretch',
+                    justifyContent: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '400',
+                    lineHeight: '20px',
+                    wordWrap: 'break-word'
+                  }}>
                     Movies are scored based on the categories you selected (IMDb rating, box office, critics scores, etc.). The player with the highest total score wins!
-                  </p>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Pro Tips */}
-            <div className="self-stretch flex flex-col items-start gap-4">
-              <div className="self-stretch flex flex-col items-start">
-                <h3 className="self-stretch text-brand-primary text-lg font-brockmann font-normal leading-7 tracking-normal">
+            <div style={{
+              alignSelf: 'stretch',
+              flexDirection: 'column',
+              justifyContent: 'flex-start',
+              alignItems: 'flex-start',
+              gap: '16px',
+              display: 'flex'
+            }}>
+              <div style={{
+                alignSelf: 'stretch',
+                flexDirection: 'column',
+                justifyContent: 'flex-start',
+                alignItems: 'flex-start',
+                display: 'flex'
+              }}>
+                <div style={{
+                  alignSelf: 'stretch',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  color: 'var(--Brand-Primary, #7142FF)',
+                  fontSize: '18.75px',
+                  fontFamily: 'Brockmann',
+                  fontWeight: '400',
+                  lineHeight: '28px',
+                  wordWrap: 'break-word'
+                }}>
                   Pro Tips
-                </h3>
+                </div>
               </div>
-              <div className="self-stretch flex items-start gap-4">
-                <ul className="flex-1 text-text-primary text-sm font-brockmann font-normal leading-5 tracking-normal space-y-2 list-disc list-inside">
-                  <li>Balance popular hits with hidden gems</li>
-                  <li>Pay attention to what others are selecting</li>
-                  <li>Have fun and discover new movies!</li>
-                </ul>
+              <div style={{
+                alignSelf: 'stretch',
+                justifyContent: 'flex-start',
+                alignItems: 'flex-start',
+                gap: '15px',
+                display: 'inline-flex'
+              }}>
+                <div style={{
+                  flex: '1 1 0',
+                  justifyContent: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  color: 'var(--Text-Primary, #FCFFFF)',
+                  fontSize: '14px',
+                  fontFamily: 'Brockmann',
+                  fontWeight: '400',
+                  lineHeight: '20px',
+                  wordWrap: 'break-word',
+                  whiteSpace: 'pre-line'
+                }}>
+                  Balance popular hits with hidden gems{'\n'}Pay attention to what others are selecting{'\n'}Have fun and discover new movies!
+                </div>
               </div>
             </div>
           </div>

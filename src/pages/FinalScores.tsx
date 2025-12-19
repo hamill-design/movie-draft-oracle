@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +13,7 @@ import TeamRoster from '@/components/TeamRoster';
 import ShareResultsButton from '@/components/ShareResultsButton';
 import SaveDraftButton from '@/components/SaveDraftButton';
 import { getScoreColor, getScoreGrade } from '@/utils/scoreCalculator';
+import RankBadge from '@/components/RankBadge';
 
 interface TeamScore {
   playerName: string;
@@ -25,6 +26,7 @@ interface TeamScore {
 const FinalScores = () => {
   const { draftId } = useParams<{ draftId: string; }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading, isGuest } = useAuth();
   const { getDraftWithPicks } = useDraftOperations();
   const { toast } = useToast();
@@ -33,7 +35,6 @@ const FinalScores = () => {
   const [picks, setPicks] = useState<DraftPick[]>([]);
   const [teamScores, setTeamScores] = useState<TeamScore[]>([]);
   const [loadingData, setLoadingData] = useState(true);
-  const [enrichingData, setEnrichingData] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [hoveredTeam, setHoveredTeam] = useState<string>('');
@@ -84,21 +85,126 @@ const FinalScores = () => {
       let draftData: any;
       let picksData: any[] = [];
       
-      // For public views, try to load draft without authentication checks
+      // Check location state first - if draft data was passed via navigation, use it
+      const stateData = location.state as any;
+      if (stateData?.draftData && stateData?.picks) {
+        // Use data from navigation state - no database query needed
+        console.log('Using draft data from navigation state', {
+          draftData: stateData.draftData,
+          picksCount: stateData.picks?.length,
+          firstPick: stateData.picks?.[0],
+          picksSample: stateData.picks?.slice(0, 3)
+        });
+        setDraft(stateData.draftData);
+        setPicks(stateData.picks);
+        
+        // Process initial team scores (may have 0 scores if no scoring data yet)
+        const teams = processTeamScores(stateData.picks || []);
+        console.log('Processed team scores:', teams);
+        setTeamScores(teams);
+        if (teams.length > 0) {
+          setSelectedTeam(teams[0].playerName);
+        }
+        setLoadingData(false);
+        
+        // Check if picks need enrichment (don't have scoring data)
+        const needsEnrichment = stateData.picks?.some((pick: any) => 
+          !pick.calculated_score && (!pick.rt_critics_score && !pick.imdb_rating && !pick.metacritic_score)
+        );
+        
+        if (needsEnrichment) {
+          // Enrich in background and update state
+          autoEnrichMovieData(stateData.picks).catch(err => {
+            console.error('Background enrichment failed:', err);
+          });
+        }
+        
+        return;
+      }
+      
+      // Check localStorage for local drafts (fallback when database save failed)
+      if (draftId) {
+        try {
+          const localDraftKey = `local_draft_${draftId}`;
+          const localDraftJson = localStorage.getItem(localDraftKey);
+          if (localDraftJson) {
+            const localDraft = JSON.parse(localDraftJson);
+            if (localDraft.isLocal && localDraft.picks) {
+              console.log('Using local draft data from localStorage');
+              setDraft({
+                id: localDraft.id,
+                title: localDraft.option || localDraft.title,
+                theme: localDraft.theme,
+                option: localDraft.option,
+                participants: localDraft.participants,
+                categories: localDraft.categories,
+                is_complete: localDraft.isComplete || localDraft.is_complete,
+                isLocal: true
+              });
+              // Convert picks to DraftPick format
+              const formattedPicks = localDraft.picks.map((pick: any, index: number) => ({
+                id: pick.movie?.id || `local_${index}`,
+                draft_id: localDraft.id,
+                player_id: pick.playerId,
+                player_name: pick.playerName,
+                movie_id: pick.movie?.id || '',
+                movie_title: pick.movie?.title || '',
+                movie_year: pick.movie?.year || null,
+                movie_genre: pick.movie?.genre || 'Unknown',
+                category: pick.category,
+                pick_order: pick.pick_order || index + 1,
+                poster_path: pick.movie?.posterPath || pick.movie?.poster_path || null
+              }));
+              setPicks(formattedPicks);
+              const teams = processTeamScores(formattedPicks);
+              setTeamScores(teams);
+              if (teams.length > 0) {
+                setSelectedTeam(teams[0].playerName);
+              }
+              setLoadingData(false);
+              return;
+            }
+          }
+        } catch (localError) {
+          console.error('Error loading local draft:', localError);
+          // Continue to try database fetch
+        }
+      }
+      
+      // Otherwise, fetch from database
+      // For public views, use the "Anyone can view completed drafts" RLS policy
+      // Query for completed drafts - this should work without authentication
       if (isPublicView) {
         const { data: publicDraft, error: draftError } = await supabase
           .from('drafts')
           .select('*')
           .eq('id', draftId!)
+          .eq('is_complete', true)  // Filter by is_complete to match the RLS policy
           .single();
           
+        if (draftError) {
+          console.error('Failed to load completed draft:', {
+            error: draftError,
+            draftId,
+            code: draftError.code,
+            message: draftError.message
+          });
+          throw new Error('Failed to load public draft data');
+        }
+        
         const { data: publicPicks, error: picksError } = await supabase
           .from('draft_picks')
           .select('*')
           .eq('draft_id', draftId!)
           .order('pick_order');
           
-        if (draftError || picksError) {
+        if (picksError) {
+          console.error('Failed to load picks:', {
+            error: picksError,
+            draftId,
+            code: picksError.code,
+            message: picksError.message
+          });
           throw new Error('Failed to load public draft data');
         }
         
@@ -188,6 +294,7 @@ const FinalScores = () => {
     }
   };
 
+
   const autoEnrichMovieData = async (picksData: DraftPick[]) => {
     // First, fix any incorrect movie years
     await fixMovieYears();
@@ -208,16 +315,16 @@ const FinalScores = () => {
       return;
     }
 
-    setEnrichingData(true);
-    toast({
-      title: "Loading movie data",
-      description: `Processing ${moviesToEnrich.length} movies automatically...`
-    });
-
+    // Silently enrich in background
     try {
+      // Create a copy of picks to update
+      const enrichedPicks = [...picksData];
+      
       // Process movies one by one to avoid rate limiting
-      for (const pick of moviesToEnrich) {
+      for (let i = 0; i < moviesToEnrich.length; i++) {
+        const pick = moviesToEnrich[i];
         console.log(`Auto-processing movie: ${pick.movie_title} (${pick.movie_year})`);
+        
         const { data, error } = await supabase.functions.invoke('enrich-movie-data', {
           body: {
             movieId: pick.movie_id,
@@ -228,35 +335,97 @@ const FinalScores = () => {
 
         if (error) {
           console.error(`Error enriching ${pick.movie_title}:`, error);
-        } else {
+        } else if (data?.enrichmentData || data?.success) {
           console.log(`Successfully enriched ${pick.movie_title}:`, data);
+          
+          // Find the pick in our array and update it
+          const pickIndex = enrichedPicks.findIndex(p => p.id === pick.id);
+          if (pickIndex !== -1) {
+            const enrichmentData = data.enrichmentData || data;
+            const enrichedPick = enrichedPicks[pickIndex] as any;
+            
+            enrichedPick.rt_critics_score = enrichmentData.rtCriticsScore || enrichmentData.rt_critics_score || enrichedPick.rt_critics_score || null;
+            enrichedPick.metacritic_score = enrichmentData.metacriticScore || enrichmentData.metacritic_score || enrichedPick.metacritic_score || null;
+            enrichedPick.imdb_rating = enrichmentData.imdbRating || enrichmentData.imdb_rating || enrichedPick.imdb_rating || null;
+            enrichedPick.movie_budget = enrichmentData.budget || enrichmentData.movie_budget || enrichedPick.movie_budget || null;
+            enrichedPick.movie_revenue = enrichmentData.revenue || enrichmentData.movie_revenue || enrichedPick.movie_revenue || null;
+            enrichedPick.oscar_status = enrichmentData.oscarStatus || enrichmentData.oscar_status || enrichedPick.oscar_status || null;
+            enrichedPick.poster_path = enrichmentData.posterPath || enrichmentData.poster_path || enrichedPick.poster_path || null;
+            
+            // Use calculatedScore from response, or calculate it ourselves if missing
+            let calculatedScore = enrichmentData.calculatedScore || enrichmentData.calculated_score;
+            
+            if (!calculatedScore && (enrichedPick.rt_critics_score || enrichedPick.imdb_rating || enrichedPick.metacritic_score)) {
+              // Calculate score manually if not provided
+              const componentScores: number[] = [];
+              
+              // Box Office
+              if (enrichedPick.movie_budget && enrichedPick.movie_revenue && enrichedPick.movie_budget > 0) {
+                const profit = enrichedPick.movie_revenue - enrichedPick.movie_budget;
+                const profitPercentage = (profit / enrichedPick.movie_revenue) * 100;
+                componentScores.push(Math.min(Math.max(profitPercentage, 0), 100));
+              }
+              
+              // RT Critics
+              if (enrichedPick.rt_critics_score) {
+                componentScores.push(enrichedPick.rt_critics_score);
+              }
+              
+              // Metacritic
+              if (enrichedPick.metacritic_score) {
+                componentScores.push(enrichedPick.metacritic_score);
+              }
+              
+              // IMDB
+              if (enrichedPick.imdb_rating) {
+                componentScores.push((enrichedPick.imdb_rating / 10) * 100);
+              }
+              
+              // Calculate average
+              const averageScore = componentScores.length > 0 
+                ? componentScores.reduce((sum, score) => sum + score, 0) / componentScores.length
+                : 0;
+              
+              // Add Oscar bonus
+              let oscarBonus = 0;
+              if (enrichedPick.oscar_status === 'winner') {
+                oscarBonus = 10;
+              } else if (enrichedPick.oscar_status === 'nominee') {
+                oscarBonus = 5;
+              }
+              
+              calculatedScore = Math.round((averageScore + oscarBonus) * 100) / 100;
+            }
+            
+            enrichedPick.calculated_score = calculatedScore || null;
+            enrichedPick.scoring_data_complete = enrichmentData.scoringComplete !== undefined 
+              ? enrichmentData.scoringComplete 
+              : (enrichmentData.scoring_data_complete !== undefined ? enrichmentData.scoring_data_complete : false);
+            
+            console.log(`Updated ${pick.movie_title} - calculated_score:`, enrichedPick.calculated_score);
+          }
         }
 
         // Small delay to avoid overwhelming the APIs
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (i < moviesToEnrich.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
 
-      // Refresh data after all movies are processed
-      const { draft: refreshedDraft, picks: refreshedPicks } = await getDraftWithPicks(draftId!);
-      setPicks(refreshedPicks || []);
+      // Update state with enriched picks (don't try to fetch from database for local drafts)
+      setPicks(enrichedPicks);
 
-      // Recalculate team scores
-      const refreshedTeams = processTeamScores(refreshedPicks || []);
+      // Recalculate team scores with enriched data
+      const refreshedTeams = processTeamScores(enrichedPicks);
       setTeamScores(refreshedTeams);
+      
+      console.log('Updated picks with scores:', enrichedPicks.map((p: any) => ({
+        title: p.movie_title,
+        calculated_score: p.calculated_score
+      })));
 
-      toast({
-        title: "Movie data loaded",
-        description: "All movie scoring data has been updated automatically"
-      });
     } catch (error) {
       console.error('Error auto-enriching movie data:', error);
-      toast({
-        title: "Data loading failed",
-        description: "Some movies could not be processed automatically",
-        variant: "destructive"
-      });
-    } finally {
-      setEnrichingData(false);
     }
   };
 
@@ -278,9 +447,31 @@ const FinalScores = () => {
         .filter(pick => (pick as any).calculated_score !== null && (pick as any).calculated_score !== undefined)
         .map(pick => (pick as any).calculated_score!);
       
+      // DEBUG: Log detailed calculation for each player
+      console.log(`\n=== Score Calculation Debug: ${playerName} ===`);
+      console.log(`Total picks: ${playerPicks.length}`);
+      console.log(`All picks with scores:`, playerPicks.map(p => ({
+        title: p.movie_title,
+        pick_order: p.pick_order,
+        category: p.category,
+        score: (p as any).calculated_score,
+        score_type: (p as any).calculated_score === null ? 'null' : 
+                    (p as any).calculated_score === undefined ? 'undefined' : 
+                    (p as any).calculated_score === 0 ? 'zero' : 'valid'
+      })));
+      console.log(`Valid scores included in average:`, validScores);
+      console.log(`Number of valid scores: ${validScores.length}`);
+      
+      const sum = validScores.reduce((sum: number, score: number) => sum + score, 0);
+      console.log(`Sum of valid scores: ${sum.toFixed(2)}`);
+      
       const averageScore = validScores.length > 0 
         ? validScores.reduce((sum: number, score: number) => sum + score, 0) / validScores.length
         : 0;
+      
+      console.log(`Calculated average: ${averageScore.toFixed(2)}`);
+      console.log(`Calculation: (${validScores.join(' + ')}) / ${validScores.length} = ${averageScore.toFixed(2)}`);
+      console.log(`=== End Debug: ${playerName} ===\n`);
 
       teams.push({
         playerName,
@@ -363,16 +554,9 @@ const FinalScores = () => {
 
   if (loading || loadingData) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
-        <div className="text-text-primary text-xl">
-          {enrichingData ? (
-            <div className="flex items-center gap-3">
-              <RefreshCw size={24} className="animate-spin" />
-              Loading movie data...
-            </div>
-          ) : (
-            'Loading...'
-          )}
+      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+        <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>
+          Loading...
         </div>
       </div>
     );
@@ -392,75 +576,54 @@ const FinalScores = () => {
   }).length;
 
   return (
-    <div className="min-h-screen" style={{background: 'linear-gradient(118deg, #FCFFFF -8.18%, #F0F1FF 53.14%, #FCFFFF 113.29%)'}}>
+    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div style={{
-          width: '100%', 
-          height: '100%', 
-          padding: '24px', 
-          borderRadius: '8px', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          display: 'flex', 
-          flexDirection: 'column'
-        }}>
-          <div style={{
-            flex: '1 1 0', 
-            flexDirection: 'column', 
-            justifyContent: 'flex-start', 
-            alignItems: 'flex-start', 
-            gap: '24px', 
-            display: 'flex'
-          }}>
-            <div style={{
-              alignSelf: 'stretch', 
-              minWidth: '310px', 
-              textAlign: 'center', 
-              justifyContent: 'center', 
-              display: 'flex', 
-              flexDirection: 'column'
-            }}>
+        <div className="w-full p-6 rounded-[8px] flex flex-wrap items-start content-start">
+          <div className="flex-1 flex flex-col gap-6">
+            <div className="self-stretch min-w-[310px] text-center flex flex-col justify-center">
               <div 
                 className="break-words"
                 style={{
-                  color: 'var(--Greyscale-(Blue)-800, #2B2D2D)', 
-                  fontSize: 'clamp(28px, 8vw, 64px)', 
+                  fontSize: '64px', 
                   fontFamily: 'CHANEY', 
                   fontWeight: '400', 
-                  lineHeight: '1.1',
+                  lineHeight: '64px',
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
                   flexWrap: 'wrap',
-                  gap: '0.25ch',
-                  maxWidth: '100%',
-                  padding: '0 1rem'
+                  gap: '0px',
+                  gridGap: '0px',
+                  maxWidth: '100%'
                 }}
               >
-                <span>THE</span>
-                <span style={{ color: 'var(--Brand-Primary, #680AFF)', margin: '0 0.5ch' }}>
+                <span className="text-greyscale-blue-100">THE</span>
+                <span className="text-brand-primary" style={{ margin: '0 0.5ch' }}>
                   {draft.title}
                 </span>
-                <span>DRAFT</span>
+                <span className="text-greyscale-blue-100">DRAFT</span>
               </div>
-              {enrichingData && (
-                <p className="text-yellow-400 text-sm mt-1 flex items-center gap-2 justify-center">
-                  <RefreshCw size={14} className="animate-spin" />
-                  Processing movie data automatically...
-                </p>
-              )}
             </div>
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 justify-center mb-8">
+        <div className="flex flex-col md:flex-row items-center md:items-stretch justify-center gap-3 mb-8">
           {/* Save Draft Button for Guest Users and Anonymous Viewers */}
           {(isGuest || isPublicView) && !user && (
             <Button
               onClick={handleAuthRedirect}
-              className="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold"
+              className="bg-yellow-400 hover:bg-yellow-500 text-black w-full md:w-auto !h-auto"
+              style={{
+                fontSize: '16px',
+                fontFamily: 'Brockmann',
+                fontWeight: '600',
+                lineHeight: '24px',
+                letterSpacing: '0.32px',
+                alignSelf: 'stretch',
+                height: 'auto'
+              }}
             >
               Save Draft
             </Button>
@@ -472,7 +635,7 @@ const FinalScores = () => {
           )}
           
           {/* Share Results Button */}
-          {teamScores.length > 0 && !enrichingData && (
+          {teamScores.length > 0 && (
             <ShareResultsButton
               draftTitle={draft.title}
               teamScores={teamScores}
@@ -484,223 +647,63 @@ const FinalScores = () => {
         </div>
 
 
-        {/* Show loading state while enriching */}
-        {enrichingData && (
-          <Card className="bg-gray-800 border-gray-600 mb-6">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <RefreshCw size={32} className="animate-spin text-yellow-400 mx-auto mb-3" />
-                <p className="text-white text-lg">Processing movie scoring data...</p>
-                <p className="text-gray-400 text-sm">Please wait while we gather data from movie databases</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         <div className="space-y-6">
           {/* Leaderboard */}
-          <div style={{
-            width: '100%',
-            height: '100%',
-            padding: '24px',
-            background: 'hsl(var(--greyscale-blue-100))',
-            boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)',
-            borderRadius: '4px',
-            flexDirection: 'column',
-            justifyContent: 'flex-start',
-            alignItems: 'flex-start',
-            gap: '24px',
-            display: 'inline-flex'
-          }}>
-            <div style={{
-              alignSelf: 'stretch',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: '8px',
-              display: 'flex'
-            }}>
-              <div style={{
-                justifyContent: 'center',
-                display: 'flex',
-                flexDirection: 'column',
-                color: 'var(--Text-Primary, #2B2D2D)',
-                fontSize: '24px',
-                fontFamily: 'Brockmann',
-                fontWeight: '700',
-                lineHeight: '32px',
-                letterSpacing: '0.96px',
-                wordWrap: 'break-word'
-              }}>
+          <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+            <div className="self-stretch flex flex-col justify-center items-center gap-2">
+              <div className="text-center flex flex-col text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
                 FINAL SCORES
               </div>
             </div>
-            <div style={{
-              alignSelf: 'stretch',
-              flexDirection: 'column',
-              justifyContent: 'flex-start',
-              alignItems: 'flex-start',
-              gap: '16px',
-              display: 'flex'
-            }}>
+            <div className="self-stretch flex flex-col gap-4">
               {teamScores.map((team, index) => {
-                const badgeStyle = getRankingBadgeStyle(index);
+                const isSelected = selectedTeam === team.playerName;
+                const isHovered = hoveredTeam === team.playerName;
+                const isFirstPlace = index === 0;
+                
                 return (
                   <div
                     key={team.playerName}
                     onClick={() => setSelectedTeam(team.playerName)}
                     onMouseEnter={() => setHoveredTeam(team.playerName)}
                     onMouseLeave={() => setHoveredTeam('')}
+                    className={`self-stretch py-4 pl-4 pr-6 rounded-[8px] flex items-center gap-4 cursor-pointer transition-colors ${
+                      isSelected 
+                        ? 'bg-brand-primary' 
+                        : isHovered 
+                          ? 'bg-greyscale-purp-800' 
+                          : 'bg-greyscale-purp-850'
+                    }`}
                     style={{
-                      alignSelf: 'stretch',
-                      paddingTop: '16px',
-                      paddingBottom: '16px',
-                      paddingLeft: '16px',
-                      paddingRight: '24px',
-                      background: selectedTeam === team.playerName 
-                        ? 'var(--Purple-100, #EDEBFF)' 
-                        : hoveredTeam === team.playerName 
-                          ? 'var(--Purple-50, #F8F7FF)' 
-                          : 'var(--UI-Primary, white)',
-                      borderRadius: '8px',
-                      outline: selectedTeam === team.playerName 
-                        ? '1px var(--Purple-200, #BCB2FF) solid' 
-                        : '1px var(--Purple-100, #EDEBFF) solid',
-                      outlineOffset: '-1px',
-                      justifyContent: 'flex-start',
-                      alignItems: 'center',
-                      gap: '16px',
-                      display: 'inline-flex',
-                      cursor: 'pointer'
+                      outline: isSelected 
+                        ? 'none' 
+                        : '1px solid #49474B',
+                      outlineOffset: '-1px'
                     }}
                   >
-                     <div style={{
-                       width: '32px',
-                       height: '32px',
-                       ...badgeStyle,
-                       borderRadius: '9999px',
-                       overflow: 'hidden',
-                       justifyContent: 'center',
-                       alignItems: 'center',
-                       display: 'flex'
-                     }}>
-                       {index <= 2 ? (
-                         // Top 3 places with inner circle for proper gradient border
-                         <div style={{
-                           width: '28px',
-                           height: '28px',
-                           background: index === 0 ? 'var(--Yellow-500, #FFD60A)' : 
-                                      index === 1 ? 'var(--Greyscale-300, #CCCCCC)' : 
-                                      '#DE7E3E',
-                           borderRadius: '9999px',
-                           justifyContent: 'center',
-                           alignItems: 'center',
-                           display: 'flex'
-                         }}>
-                           <div style={{
-                             textAlign: 'center',
-                             justifyContent: 'center',
-                             display: 'flex',
-                             flexDirection: 'column',
-                             color: badgeStyle.color,
-                             fontSize: '16px',
-                             fontFamily: 'Brockmann',
-                             fontWeight: '700',
-                             lineHeight: '24px',
-                             wordWrap: 'break-word'
-                           }}>
-                             {index + 1}
-                           </div>
-                         </div>
-                       ) : (
-                         <div style={{
-                           textAlign: 'center',
-                           justifyContent: 'center',
-                           display: 'flex',
-                           flexDirection: 'column',
-                           color: badgeStyle.color,
-                           fontSize: '16px',
-                           fontFamily: 'Brockmann',
-                           fontWeight: '700',
-                           lineHeight: '24px',
-                           wordWrap: 'break-word'
-                         }}>
-                           {index + 1}
-                          </div>
-                        )}
-                      </div>
-                    <div style={{
-                      flex: '1 1 0',
-                      paddingBottom: '2px',
-                      flexDirection: 'column',
-                      justifyContent: 'flex-start',
-                      alignItems: 'flex-start',
-                      gap: '2px',
-                      display: 'inline-flex'
-                    }}>
-                      <div style={{
-                        alignSelf: 'stretch',
-                        justifyContent: 'center',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        color: selectedTeam === team.playerName ? 'var(--Greyscale-(Blue)-800, #2B2D2D)' : 'var(--Text-Primary, #2B2D2D)',
-                        fontSize: '16px',
-                        fontFamily: 'Brockmann',
-                        fontWeight: '600',
-                        lineHeight: '24px',
-                        letterSpacing: '0.32px',
-                        wordWrap: 'break-word'
-                      }}>
+                    {/* Badge */}
+                    <RankBadge rank={index + 1} size={32} />
+                    <div className="flex-1 pb-0.5 flex flex-col gap-0.5">
+                      <div className="self-stretch flex flex-col text-greyscale-blue-100 text-base font-brockmann font-semibold leading-6 tracking-[0.32px]">
                         {team.playerName}
                       </div>
-                      <div style={{
-                        alignSelf: 'stretch',
-                        justifyContent: 'center',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        color: selectedTeam === team.playerName ? 'var(--Greyscale-(Blue)-800, #2B2D2D)' : 'var(--Text-Primary, #2B2D2D)',
-                        fontSize: '14px',
-                        fontFamily: 'Brockmann',
-                        fontWeight: '400',
-                        lineHeight: '20px',
-                        wordWrap: 'break-word'
-                      }}>
-                         {(() => {
-                           const topMovie = team.picks
-                             .filter(pick => (pick as any).calculated_score > 0)
-                             .sort((a, b) => (b as any).calculated_score - (a as any).calculated_score)[0];
-                           return topMovie ? `Top Movie: ${topMovie.movie_title}` : `${team.completedPicks}/${team.totalPicks} movies scored`;
-                         })()}
+                      <div className={`self-stretch flex flex-col text-sm font-brockmann font-normal leading-5 ${
+                        isSelected ? 'text-greyscale-blue-100' : 'text-greyscale-blue-300'
+                      }`}>
+                        {(() => {
+                          const topMovie = team.picks
+                            .filter(pick => (pick as any).calculated_score > 0)
+                            .sort((a, b) => (b as any).calculated_score - (a as any).calculated_score)[0];
+                          return topMovie ? `Top Movie: ${topMovie.movie_title}` : `${team.completedPicks}/${team.totalPicks} movies scored`;
+                        })()}
                       </div>
                     </div>
-                    <div style={{
-                      flexDirection: 'column',
-                      justifyContent: 'flex-start',
-                      alignItems: 'flex-start',
-                      display: 'inline-flex'
-                    }}>
-                      <div style={{
-                        alignSelf: 'stretch',
-                        flexDirection: 'column',
-                        justifyContent: 'flex-start',
-                        alignItems: 'flex-end',
-                        display: 'flex'
-                      }}>
-                        <div style={{
-                          textAlign: 'right',
-                          justifyContent: 'center',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          color: 'var(--Brand-Primary, #680AFF)',
-                          fontSize: '32px',
-                          fontFamily: 'Brockmann',
-                          fontWeight: '500',
-                          lineHeight: '36px',
-                          letterSpacing: '1.28px',
-                          wordWrap: 'break-word'
-                        }}>
-                          {team.averageScore.toFixed(1)}
-                        </div>
+                    <div className="flex flex-col items-end">
+                      <div className={`text-right flex flex-col text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px] ${
+                        isSelected ? 'text-greyscale-blue-100' : 'text-purple-300'
+                      }`}>
+                        {team.averageScore.toFixed(2)}
                       </div>
                     </div>
                   </div>

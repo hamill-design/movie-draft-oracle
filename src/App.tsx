@@ -20,6 +20,7 @@ import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 import { JoinDraft } from "./pages/JoinDraft";
 import LearnMore from "./pages/LearnMore";
+import SpecDraftSetup from "./pages/SpecDraftSetup";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,7 +40,9 @@ const App = () => (
         <Sonner />
         <AuthProvider>
           <BrowserRouter>
+            <div className="flex flex-col min-h-screen">
             <AppHeader />
+              <main className="flex-1">
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/auth" element={<Auth />} />
@@ -54,10 +57,13 @@ const App = () => (
               <Route path="/learn-more" element={<LearnMore />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
+              <Route path="/spec-draft/:specDraftId/setup" element={<SpecDraftSetup />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+              </main>
             <Footer />
+            </div>
           </BrowserRouter>
         </AuthProvider>
       </TooltipProvider>

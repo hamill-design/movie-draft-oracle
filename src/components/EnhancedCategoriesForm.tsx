@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { CheckboxIcon } from '@/components/icons';
 import { categoryValidationService } from '@/services/categoryValidationService';
@@ -231,7 +231,7 @@ const CustomCheckbox = ({
     if (isChecked) {
       return {
         ...baseStyle,
-        background: 'var(--Brand-Primary, #680AFF)',
+        background: 'var(--Brand-Primary, #7142FF)',
       };
     } else {
       return baseStyle;
@@ -262,15 +262,15 @@ const CustomCheckbox = ({
   const getCountBadgeStyle = () => {
     if (!availability) return { display: 'none' };
     
-    let backgroundColor = 'var(--Utility-Colors-Positive-Green-200, #ADF2CC)';
-    let borderColor = 'var(--Utility-Colors-Positive-Green-500, #13CE66)';
+    let backgroundColor = 'var(--Utility-Colors-Positive-Green-400, #41DA86)';
+    let borderColor = 'var(--Utility-Colors-Positive-Green-200, #ADF2CC)';
     
     if (availability.status === 'limited') {
-      backgroundColor = 'var(--Utility-Colors-Warning-Yellow-200, #FFF2CC)';
-      borderColor = 'var(--Utility-Colors-Warning-Yellow-500, #FFB800)';
+      backgroundColor = 'var(--Yellow-400, #FFDF42)';
+      borderColor = 'var(--Yellow-200, #FFF2B2)';
     } else if (availability.status === 'insufficient') {
-      backgroundColor = 'var(--Utility-Colors-Negative-Red-200, #FFCCCC)';
-      borderColor = 'var(--Utility-Colors-Negative-Red-500, #FF4444)';
+      backgroundColor = 'var(--Utility-Colors-Error-Red-400, #FF6C6C)';
+      borderColor = 'var(--Utility-Colors-Error-Red-200, #FFC0C0)';
     }
     
     return {
@@ -286,6 +286,18 @@ const CustomCheckbox = ({
       alignItems: 'center',
       display: 'flex'
     };
+  };
+
+  const getCountBadgeTextColor = () => {
+    if (!availability) return 'var(--Text-Primary, #FCFFFF)';
+    
+    if (availability.status === 'limited') {
+      return 'var(--Yellow-900, #292200)';
+    } else if (availability.status === 'insufficient') {
+      return 'var(--UI-Primary, #1D1D1F)';
+    } else {
+      return 'var(--Utility-Colors-Positive-Green-900, #002912)';
+    }
   };
 
   const getTooltipText = () => {
@@ -336,7 +348,7 @@ const CustomCheckbox = ({
           justifyContent: 'center',
           display: 'flex',
           flexDirection: 'column',
-          color: 'var(--Text-Primary, #2B2D2D)',
+          color: 'var(--Text-Primary, #FCFFFF)',
           fontSize: '14px',
           fontFamily: 'Brockmann',
           fontWeight: '500',
@@ -356,7 +368,7 @@ const CustomCheckbox = ({
             justifyContent: 'center',
             display: 'flex',
             flexDirection: 'column',
-            color: 'var(--Text-Primary, #2B2D2D)',
+            color: getCountBadgeTextColor(),
             fontSize: '12px',
             fontFamily: 'Brockmann',
             fontWeight: '400',
@@ -378,6 +390,10 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   const [specCategories, setSpecCategories] = useState<string[]>([]);
   const [specCategoryCounts, setSpecCategoryCounts] = useState<Map<string, number>>(new Map());
   const [allCategories, setAllCategories] = useState<string[]>(() => sortCategoriesForDisplay([], categories));
+  const isHandlingErrorRefresh = useRef(false);
+  const lastAnalysisKey = useRef<string>('');
+  const isAnalyzingRef = useRef(false);
+  const analysisResultRef = useRef<CategoryAnalysisResponse | null>(null);
 
   // Fetch spec categories for people themes
   useEffect(() => {
@@ -388,18 +404,18 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           
           // Fetch spec categories directly to get movie counts
           const { supabase } = await import('@/integrations/supabase/client');
-          let { data, error } = await supabase
+          // Use 'from' in a way that bypasses type inference errors since this is a dynamic relation
+          let { data, error } = await (supabase as any)
             .from('actor_spec_categories')
             .select('category_name, movie_tmdb_ids')
             .eq('actor_name', actorName);
-          
+
           if (error || !data || data.length === 0) {
-            ({ data, error } = await supabase
+            ({ data, error } = await (supabase as any)
               .from('actor_spec_categories')
               .select('category_name, movie_tmdb_ids')
-              .ilike('actor_name', actorName));
+              .ilike('actor_name', `%${actorName}%`));
           }
-          
           if (error || !data || data.length === 0) {
             setSpecCategories([]);
             setSpecCategoryCounts(new Map());
@@ -471,35 +487,139 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
     return theme && selectedOption && allCategories.length > 0;
   };
 
-  // Effect for pre-analysis - triggers as soon as theme and option are selected
+  // Keep refs in sync with state
   useEffect(() => {
-    if (theme && selectedOption && allCategories.length > 0) {
-      preAnalyzeAllCategories();
-    }
-  }, [theme, selectedOption, playerCount, allCategories]);
+    isAnalyzingRef.current = isAnalyzing;
+  }, [isAnalyzing]);
 
-  const preAnalyzeAllCategories = async () => {
+  useEffect(() => {
+    analysisResultRef.current = analysisResult;
+  }, [analysisResult]);
+
+  const preAnalyzeAllCategories = useCallback(async () => {
+    // Prevent concurrent analysis calls
+    if (isAnalyzingRef.current) {
+      console.warn('⚠️ Analysis already in progress, skipping');
+      return;
+    }
+
+    // Create a unique key for this analysis to prevent duplicate calls
+    const analysisKey = `${theme}-${selectedOption}-${allCategories.join(',')}-${playerCount}-${draftMode}`;
+    if (lastAnalysisKey.current === analysisKey && analysisResultRef.current) {
+      console.warn('⚠️ Analysis already completed for this configuration, skipping');
+      return;
+    }
+
     try {
       setIsAnalyzing(true);
+      lastAnalysisKey.current = analysisKey;
       
       // Use allCategories which includes spec categories for people themes
       if (allCategories.length > 0) {
+        // Added defensive checks for required values and normalized draftMode fallback
+        if (!theme || theme.trim() === '' || !selectedOption || selectedOption.trim() === '') {
+          console.warn('⚠️ Skipping pre-analysis: theme or selectedOption is empty', { theme, selectedOption });
+          throw new Error('Theme and selectedOption are required for category analysis.');
+        }
+        console.log('🔍 Pre-analyzing categories:', { theme, option: selectedOption, categories: allCategories, playerCount, draftMode });
         const result = await categoryValidationService.analyzeCategoryAvailability({
           theme,
           option: selectedOption,
           categories: allCategories,
           playerCount,
-          draftMode: draftMode || 'single'
+          draftMode: draftMode ?? 'single'
         });
         
+        console.log('✅ Pre-analysis result:', JSON.stringify(result, null, 2));
+        console.log('✅ Pre-analysis results array:', JSON.stringify(result?.results, null, 2));
+        console.log('✅ Pre-analysis results count:', result?.results?.length);
+        if (result?.results && result.results.length > 0) {
+          console.log('✅ First result:', JSON.stringify(result.results[0], null, 2));
+          console.log('✅ All results:', result.results.map(r => ({ category: r.categoryId, count: r.movieCount, status: r.status, reason: r.reason })));
+          console.log('✅ Sample of results (first 3):', JSON.stringify(result.results.slice(0, 3), null, 2));
+        } else {
+          console.warn('⚠️ No results in analysis response!');
+        }
         setAnalysisResult(result);
       }
     } catch (err) {
-      console.error('Failed to pre-analyze categories:', err);
+      console.error('❌ Failed to pre-analyze categories:', err);
+      lastAnalysisKey.current = ''; // Reset on error to allow retry
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, [theme, selectedOption, allCategories, playerCount, draftMode]);
+
+  // Effect to detect and handle error results
+  useEffect(() => {
+    if (!analysisResult || !analysisResult.results) return;
+    
+    // Prevent infinite loops - don't handle errors if we're already handling them or analyzing
+    if (isHandlingErrorRefresh.current || isAnalyzingRef.current) {
+      return;
+    }
+    
+    // Check if results contain errors
+    const hasErrors = analysisResult.results.some(result => 
+      result.reason?.includes('Analysis failed') || 
+      (result.movieCount === 0 && result.status === 'insufficient' && result.reason)
+    );
+    
+    // If we have error results and it's from cache, clear cache and force refresh
+    if (hasErrors && analysisResult.cacheHit) {
+      console.warn('⚠️ Detected error results from cache, clearing and forcing refresh');
+      isHandlingErrorRefresh.current = true;
+      categoryValidationService.clearErrorCaches();
+      
+      // Force a fresh analysis
+      if (theme && selectedOption && allCategories.length > 0) {
+        console.log('🔄 Forcing fresh analysis after clearing error cache');
+        preAnalyzeAllCategories().finally(() => {
+          // Reset the flag after a delay to allow the new result to come in
+          setTimeout(() => {
+            isHandlingErrorRefresh.current = false;
+          }, 1000);
+        });
+      } else {
+        isHandlingErrorRefresh.current = false;
+      }
+    } else if (hasErrors && !analysisResult.cacheHit) {
+      // Fresh error results - don't cache them (already handled in service)
+      console.warn('⚠️ Received error results from edge function - these will not be cached');
+    }
+  }, [analysisResult, theme, selectedOption, allCategories]);
+
+  // Effect for pre-analysis - triggers as soon as theme and option are selected
+  useEffect(() => {
+    // Don't trigger if we're already analyzing or handling an error refresh
+    if (isAnalyzingRef.current || isHandlingErrorRefresh.current) {
+      return;
+    }
+
+    console.log('🔔 Pre-analysis effect triggered:', JSON.stringify({ 
+      theme, 
+      selectedOption, 
+      themeType: typeof theme,
+      selectedOptionType: typeof selectedOption,
+      themeTruthy: !!theme,
+      selectedOptionTruthy: !!selectedOption,
+      allCategoriesLength: allCategories.length, 
+      playerCount, 
+      draftMode 
+    }, null, 2));
+    if (theme && selectedOption && allCategories.length > 0) {
+      console.log('✅ Conditions met, calling preAnalyzeAllCategories');
+      preAnalyzeAllCategories();
+    } else {
+      console.warn('⚠️ Pre-analysis conditions not met:', JSON.stringify({
+        hasTheme: !!theme,
+        themeValue: theme,
+        hasSelectedOption: !!selectedOption,
+        selectedOptionValue: selectedOption,
+        hasCategories: allCategories.length > 0
+      }, null, 2));
+    }
+  }, [theme, selectedOption, playerCount, allCategories, draftMode]);
 
   // Effect for UI state management - clears results when conditions aren't met
   useEffect(() => {
@@ -561,9 +681,17 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
     
     // Check progressive results first, fallback to analysis result
     const progressiveResult = progressiveResults.get(category);
-    if (progressiveResult) return progressiveResult;
+    if (progressiveResult) {
+      console.log(`📊 Progressive result for "${category}":`, progressiveResult);
+      return progressiveResult;
+    }
     
-    return analysisResult?.results.find(r => r.categoryId === category);
+    const analysisResultForCategory = analysisResult?.results?.find(r => r.categoryId === category);
+    if (!analysisResultForCategory && analysisResult) {
+      console.log(`⚠️ No result found for "${category}" in analysisResult. Available categories:`, analysisResult.results.map(r => r.categoryId));
+    }
+    
+    return analysisResultForCategory;
   };
 
   const handleCategoryToggle = (category: string, checked: boolean) => {
@@ -606,15 +734,15 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
 
   return (
     <div 
-      className="w-full bg-greyscale-blue-100 rounded-lg flex flex-col"
-      style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)', padding: '24px', gap: '24px'}}
+      className="w-full bg-greyscale-purp-900 rounded-[8px] flex flex-col"
+      style={{boxShadow: '0px 0px 6px #3B0394', padding: '24px', gap: '24px'}}
     >
       {/* Header */}
       <div className="flex items-center gap-2">
         <div className="flex justify-center items-center" style={{ width: '24px', height: '24px', padding: '2px' }}>
-          <CheckboxIcon className="text-primary" />
+          <CheckboxIcon className="text-purple-300" />
         </div>
-        <span className="text-foreground text-xl font-brockmann font-medium leading-7">
+        <span className="text-greyscale-blue-100 text-xl font-brockmann font-medium leading-7">
           Choose Categories
         </span>
       </div>
@@ -640,6 +768,32 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           const categoryConfig = getCategoryConfig(category);
           const isSpecCategory = specCategories.includes(category);
           const availability = getAvailabilityForCategory(category);
+          
+          // Debug logging for all categories
+          if (index < 3) { // Log first 3 categories for debugging
+            const analysisResultForCat = analysisResult?.results?.find(r => r.categoryId === category);
+            console.log(`🔍 Category "${category}":`, JSON.stringify({
+              availability: availability ? {
+                categoryId: availability.categoryId,
+                movieCount: availability.movieCount,
+                status: availability.status,
+                reason: availability.reason
+              } : null,
+              movieCount: availability?.movieCount,
+              status: availability?.status,
+              isSpecCategory,
+              specCount: isSpecCategory ? specCategoryCounts.get(category) : null,
+              progressiveResult: progressiveResults.get(category) ? {
+                categoryId: progressiveResults.get(category)?.categoryId,
+                movieCount: progressiveResults.get(category)?.movieCount,
+                status: progressiveResults.get(category)?.status
+              } : null,
+              analysisResult: analysisResultForCat ? JSON.stringify(analysisResultForCat, null, 2) : null,
+              analysisResultExists: !!analysisResult,
+              analysisResultsLength: analysisResult?.results?.length,
+              analysisResultCategoryIds: analysisResult?.results?.map(r => r.categoryId)
+            }, null, 2));
+          }
           
           // Debug logging for spec categories
           if (isSpecCategory) {

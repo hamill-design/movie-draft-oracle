@@ -1,11 +1,7 @@
-
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
 import { Movie } from '@/data/movies';
 import { getCleanActorName } from '@/lib/utils';
-import { sanitizeHtml, INPUT_LIMITS } from '@/utils/inputValidation';
+import { INPUT_LIMITS } from '@/utils/inputValidation';
+import { SearchIcon } from '@/components/icons/SearchIcon';
 
 interface MovieSearchProps {
   theme: string;
@@ -40,7 +36,9 @@ const MovieSearch = ({
   });
 
   const getPlaceholderText = () => {
-    if (theme === 'year') {
+    if (theme === 'spec-draft') {
+      return `Search movies...`;
+    } else if (theme === 'year') {
       return `Search within ${option} movies...`;
     } else if (theme === 'people') {
       return `Search within ${getCleanActorName(option)} movies...`;
@@ -50,6 +48,7 @@ const MovieSearch = ({
   };
 
   // Apply frontend filtering as a safety net for year-based drafts
+  // Note: spec-draft movies are already filtered by the useMovies hook, so no additional filtering needed
   let filteredMoviesByTheme = movies;
   if (theme === 'year') {
     const requestedYear = parseInt(option);
@@ -66,6 +65,7 @@ const MovieSearch = ({
       console.log(`Frontend safety filter: ${movies.length} → ${filteredMoviesByTheme.length} movies after year filtering`);
     }
   }
+  // For spec-draft, movies are already filtered by spec_draft_id in useMovies, so no additional filtering needed
 
   // Filter by search query within the theme-constrained results
   const filteredMovies = searchQuery.trim() 
@@ -76,86 +76,294 @@ const MovieSearch = ({
 
   console.log('MovieSearch - Final filtered movies:', filteredMovies.length, 'from theme-filtered:', filteredMoviesByTheme.length, 'from total:', movies.length);
 
-  // Only show results if user has started typing
+  // Only show results when user has started typing (same behavior for all themes)
   const shouldShowResults = searchQuery.trim().length > 0;
 
+  const getTitleText = () => {
+    if (theme === 'spec-draft') {
+      return 'Search Movies';
+    } else if (theme === 'year') {
+      return `Search Movies from ${option}`;
+    } else if (theme === 'people') {
+      return `Search Movies featuring ${getCleanActorName(option)}`;
+    } else {
+      return 'Search Movies';
+    }
+  };
+
+  const getGenreText = (movie: Movie) => {
+    if (movie.genre) {
+      return `${movie.year} • ${movie.genre}`;
+    }
+    return `${movie.year}`;
+  };
+
   return (
-    <div className="w-full h-full p-6 bg-greyscale-blue-100 shadow-sm rounded border flex flex-col gap-6">
-      <div className="flex items-center gap-2">
-        <div className="w-6 h-6 flex justify-center items-center">
-          <Search size={24} className="text-brand-primary" />
+    <div 
+      className="w-full h-full rounded-lg flex flex-col"
+      style={{
+        padding: '24px',
+        background: '#0E0E0F',
+        boxShadow: '0px 0px 6px #3B0394',
+        borderRadius: '8px',
+        gap: '24px'
+      }}
+    >
+      <div 
+        style={{
+          width: '100%',
+          height: '100%',
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+          gap: '8px',
+          display: 'inline-flex'
+        }}
+      >
+        <div 
+          style={{
+            width: '24px',
+            height: '24px',
+            padding: '2px',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '10px',
+            display: 'inline-flex',
+            flexShrink: 0,
+            alignSelf: 'center'
+          }}
+        >
+          <div 
+            style={{ 
+              width: '20px', 
+              height: '20px', 
+              color: '#907AFF',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              lineHeight: 0
+            }}
+          >
+            <SearchIcon className="w-full h-full" />
+          </div>
         </div>
-        <span className="text-text-primary text-xl font-brockmann font-medium leading-7">
-          Search Movies
-          {theme === 'year' ? ` from ${option}` : theme === 'people' ? ` featuring ${getCleanActorName(option)}` : ''}
-        </span>
+        <div 
+          style={{
+            flex: '1 1 0',
+            justifyContent: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            color: '#FCFFFF',
+            fontSize: '20px',
+            fontFamily: 'Brockmann',
+            fontWeight: 500,
+            lineHeight: '28px',
+            alignSelf: 'center'
+          }}
+        >
+          {getTitleText()}
+        </div>
       </div>
       
-      <div className="flex flex-col gap-4">
+      <div 
+        className="flex flex-col"
+        style={{
+          alignSelf: 'stretch',
+          gap: '16px'
+        }}
+      >
         <div className="flex flex-col">
-          <div className="flex items-center gap-3 px-4 py-3 bg-ui-primary rounded-sm border border-text-primary">
+          <div 
+            className="flex items-center"
+            style={{
+              alignSelf: 'stretch',
+              paddingLeft: '16px',
+              paddingRight: '16px',
+              paddingTop: '12px',
+              paddingBottom: '12px',
+              background: '#1D1D1F',
+              borderRadius: '2px',
+              outline: '1px #FCFFFF solid',
+              outlineOffset: '-1px',
+              gap: '12px',
+              overflow: 'hidden'
+            }}
+          >
             <div className="flex-1 overflow-hidden flex flex-col justify-start items-start">
               <input
                 placeholder={getPlaceholderText()}
                 value={searchQuery}
                 onChange={(e) => {
-                  const sanitizedValue = sanitizeHtml(e.target.value);
-                  if (sanitizedValue.length <= INPUT_LIMITS.MAX_SEARCH_QUERY_LENGTH) {
-                    onSearchChange(sanitizedValue);
+                  const value = e.target.value;
+                  if (value.length <= INPUT_LIMITS.MAX_SEARCH_QUERY_LENGTH) {
+                    onSearchChange(value);
                   }
                 }}
                 maxLength={INPUT_LIMITS.MAX_SEARCH_QUERY_LENGTH}
-                className="w-full bg-transparent text-text-primary text-sm font-brockmann font-medium leading-5 outline-none placeholder:text-text-primary placeholder:opacity-60"
+                style={{
+                  width: '100%',
+                  background: 'transparent',
+                  color: '#FCFFFF',
+                  fontSize: '14px',
+                  fontFamily: 'Brockmann',
+                  fontWeight: 500,
+                  lineHeight: '20px',
+                  outline: 'none',
+                  border: 'none'
+                }}
+                className="placeholder:opacity-60"
               />
             </div>
           </div>
         </div>
         
         {shouldShowResults && (
-          <div className="max-h-60 overflow-y-auto flex flex-col justify-start items-center gap-2">
+          <div 
+            className="flex flex-col justify-start items-center"
+            style={{
+              alignSelf: 'stretch',
+              maxHeight: '240px',
+              overflowY: 'auto',
+              overflowX: 'hidden',
+              gap: '8px'
+            }}
+          >
             {loading ? (
-              <div className="text-text-primary font-brockmann font-medium text-sm leading-5">Loading movies...</div>
+              <div 
+                style={{
+                  color: '#FCFFFF',
+                  fontFamily: 'Brockmann',
+                  fontWeight: 400,
+                  fontSize: '14px',
+                  lineHeight: '20px'
+                }}
+              >
+                Loading movies...
+              </div>
             ) : filteredMoviesByTheme.length === 0 ? (
-              <div className="text-text-primary font-brockmann font-medium text-sm leading-5">
-                No movies available for {theme === 'year' ? `${option}` : theme === 'people' ? `${getCleanActorName(option)}` : 'this search'}
+              <div 
+                style={{
+                  color: '#FCFFFF',
+                  fontFamily: 'Brockmann',
+                  fontWeight: 400,
+                  fontSize: '14px',
+                  lineHeight: '20px'
+                }}
+              >
+                No movies available {theme === 'spec-draft' ? 'for this draft' : theme === 'year' ? `for ${option}` : theme === 'people' ? `for ${getCleanActorName(option)}` : 'for this search'}
               </div>
             ) : filteredMovies.length === 0 ? (
-              <div className="text-text-primary font-brockmann font-medium text-sm leading-5">
-                No movies found matching "{searchQuery}" {theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${getCleanActorName(option)}` : ''}
+              <div 
+                style={{
+                  color: '#FCFFFF',
+                  fontFamily: 'Brockmann',
+                  fontWeight: 400,
+                  fontSize: '14px',
+                  lineHeight: '20px'
+                }}
+              >
+                No movies found matching "{searchQuery}" {theme === 'spec-draft' ? '' : theme === 'year' ? `from ${option}` : theme === 'people' ? `featuring ${getCleanActorName(option)}` : ''}
               </div>
             ) : (
-              filteredMovies.slice(0, 50).map((movie) => (
-                <div
-                  key={movie.id}
-                  onClick={() => onMovieSelect(movie)}
-                  className={`w-full py-2.5 px-4 rounded cursor-pointer transition-colors flex flex-col justify-start items-start gap-0.5 border ${
-                    selectedMovie?.id === movie.id
-                      ? 'bg-brand-primary border-brand-primary'
-                      : 'bg-ui-primary border-greyscale-blue-200 hover:bg-[#EDEBFF] hover:border-[#BCB2FF]'
-                  }`}
-                >
-                  <div className="w-full flex flex-col justify-start items-start">
-                    <span className={`text-base font-brockmann font-semibold leading-6 tracking-[0.32px] ${
-                      selectedMovie?.id === movie.id ? 'text-ui-primary' : 'text-text-primary'
-                    }`}>
-                      {movie.title}
-                    </span>
+              filteredMovies.slice(0, 50).map((movie) => {
+                const isSelected = selectedMovie?.id === movie.id;
+                return (
+                  <div
+                    key={movie.id}
+                    onClick={() => onMovieSelect(movie)}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      paddingTop: '10px',
+                      paddingBottom: '12px',
+                      paddingLeft: '16px',
+                      paddingRight: '16px',
+                      background: isSelected ? '#7142FF' : '#1D1D1F',
+                      borderRadius: '4px',
+                      outline: isSelected ? 'none' : '1px #666469 solid',
+                      outlineOffset: '-1px',
+                      flexDirection: 'column',
+                      justifyContent: 'flex-start',
+                      alignItems: 'flex-start',
+                      gap: '2px',
+                      display: 'inline-flex',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <div 
+                      style={{ 
+                        alignSelf: 'stretch',
+                        flexDirection: 'column',
+                        justifyContent: 'flex-start',
+                        alignItems: 'flex-start',
+                        display: 'flex'
+                      }}
+                    >
+                      <div 
+                        style={{
+                          alignSelf: 'stretch',
+                          justifyContent: 'flex-start',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          color: '#FCFFFF',
+                          fontSize: '16px',
+                          fontFamily: 'Brockmann',
+                          fontWeight: 600,
+                          lineHeight: '24px',
+                          letterSpacing: '0.32px',
+                          textAlign: 'left'
+                        }}
+                      >
+                        {movie.title}
+                      </div>
+                    </div>
+                    <div 
+                      style={{ 
+                        alignSelf: 'stretch',
+                        opacity: 0.75,
+                        flexDirection: 'column',
+                        justifyContent: 'flex-start',
+                        alignItems: 'flex-start',
+                        display: 'flex'
+                      }}
+                    >
+                      <div 
+                        style={{
+                          alignSelf: 'stretch',
+                          justifyContent: 'flex-start',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          color: '#FCFFFF',
+                          fontSize: '14px',
+                          fontFamily: 'Brockmann',
+                          fontWeight: 400,
+                          lineHeight: '20px',
+                          textAlign: 'left'
+                        }}
+                      >
+                        {getGenreText(movie)}
+                        {theme === 'year' && movie.year !== parseInt(option) && (
+                          <span style={{ color: '#ef4444', marginLeft: '8px' }}>[YEAR MISMATCH: {movie.year}]</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="w-full opacity-75 flex flex-col justify-start items-start">
-                    <span className={`text-sm font-brockmann font-normal leading-5 ${
-                      selectedMovie?.id === movie.id ? 'text-ui-primary' : 'text-text-primary'
-                    }`}>
-                      {movie.year} • {movie.genre}
-                      {theme === 'year' && movie.year !== parseInt(option) && (
-                        <span className="text-error-red-500 ml-2">[YEAR MISMATCH: {movie.year}]</span>
-                      )}
-                    </span>
-                  </div>
-                </div>
-              ))
+                );
+              })
             )}
             {filteredMovies.length > 50 && (
-              <div className="text-text-primary text-sm text-center py-2 font-brockmann font-medium leading-5">
+              <div 
+                className="text-center"
+                style={{
+                  color: '#FCFFFF',
+                  fontSize: '14px',
+                  fontFamily: 'Brockmann',
+                  fontWeight: 400,
+                  lineHeight: '20px',
+                  paddingTop: '8px',
+                  paddingBottom: '8px'
+                }}
+              >
                 Showing first 50 results of {filteredMovies.length} movies. Use search to narrow down.
               </div>
             )}

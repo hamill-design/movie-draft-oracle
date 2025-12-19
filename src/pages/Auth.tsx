@@ -13,6 +13,9 @@ const Auth = () => {
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
+  const [isTextButtonHovered, setIsTextButtonHovered] = useState(false);
+  const [isForgotPasswordHovered, setIsForgotPasswordHovered] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -123,24 +126,27 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(140deg, #FCFFFF 0%, #F0F1FF 50%, #FCFFFF 100%)'}}>
+    <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+      <style>{`
+        input::placeholder {
+          color: var(--Text-Light-grey, #BDC3C2) !important;
+        }
+      `}</style>
       <div className="w-full max-w-md" style={{
-        background: 'hsl(var(--greyscale-blue-100))',
-        boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)',
+        background: 'var(--Section-Container, #0E0E0F)',
+        boxShadow: '0px 0px 6px #3B0394',
         borderRadius: '4px',
         overflow: 'hidden'
       }}>
-        <div style={{ padding: '24px', background: 'hsl(var(--greyscale-blue-100))' }}>
-          <div style={{ paddingTop: '6px', marginBottom: '24px' }}>
+        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ paddingTop: '6px' }}>
             <div style={{ 
               textAlign: 'center',
-              color: 'hsl(var(--greyscale-blue-800))',
+              color: 'var(--Text-Primary, #FCFFFF)',
               fontSize: '20px',
               fontFamily: 'Brockmann',
               fontWeight: '500',
-              lineHeight: '28px',
-              background: 'hsl(var(--greyscale-blue-100))',
-              padding: '8px'
+              lineHeight: '28px'
             }}>
               User Login
             </div>
@@ -168,7 +174,7 @@ const Auth = () => {
                 
                  <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
                    <div style={{ 
-                     color: 'hsl(var(--greyscale-blue-800))',
+                     color: 'var(--Text-Primary, #FCFFFF)',
                      fontSize: '14px',
                      fontFamily: 'Brockmann',
                      fontWeight: '500',
@@ -176,9 +182,10 @@ const Auth = () => {
                    }}>Email</div>
                    <div style={{
                      padding: '12px 16px',
-                     background: 'hsl(var(--ui-primary))',
+                     background: 'var(--UI-Primary, #1D1D1F)',
                      borderRadius: '2px',
-                     border: '1px solid hsl(var(--greyscale-blue-400))'
+                     outline: '1px var(--Button-Stroke, #666469) solid',
+                     outlineOffset: '-1px'
                    }}>
                      <input
                        type="email"
@@ -190,7 +197,7 @@ const Auth = () => {
                          border: 'none',
                          outline: 'none',
                          background: 'transparent',
-                         color: 'hsl(var(--greyscale-blue-800))',
+                         color: 'var(--Text-Primary, #FCFFFF)',
                          fontSize: '14px',
                          fontFamily: 'Brockmann',
                          fontWeight: '500',
@@ -206,17 +213,18 @@ const Auth = () => {
                    disabled={loading}
                    style={{
                      padding: '12px 24px',
-                     background: 'hsl(var(--brand-primary))',
+                     background: 'var(--Brand-Primary, #7142FF)',
                      borderRadius: '2px',
                      border: 'none',
-                     color: 'hsl(var(--ui-bg))',
+                     color: 'var(--Text-Primary, #FCFFFF)',
                      fontSize: '16px',
                      fontFamily: 'Brockmann',
                      fontWeight: '600',
                      lineHeight: '24px',
                      letterSpacing: '0.32px',
                      cursor: loading ? 'not-allowed' : 'pointer',
-                     opacity: loading ? 0.7 : 1
+                     opacity: loading ? 0.7 : 1,
+                     width: '100%'
                    }}
                  >
                    {loading ? 'Sending...' : 'Send Reset Email'}
@@ -229,7 +237,8 @@ const Auth = () => {
                      padding: '6px 16px',
                      background: 'transparent',
                      border: 'none',
-                     color: 'hsl(var(--brand-primary))',
+                     borderRadius: '6px',
+                     color: 'var(--Brand-Primary, #7142FF)',
                      fontSize: '16px',
                      fontFamily: 'Brockmann',
                      fontWeight: '600',
@@ -262,7 +271,7 @@ const Auth = () => {
                 
                  <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
                    <div style={{ 
-                     color: 'hsl(var(--greyscale-blue-800))',
+                     color: 'var(--Text-Primary, #FCFFFF)',
                      fontSize: '14px',
                      fontFamily: 'Brockmann',
                      fontWeight: '500',
@@ -270,9 +279,10 @@ const Auth = () => {
                    }}>Email</div>
                    <div style={{
                      padding: '12px 16px',
-                     background: 'hsl(var(--ui-primary))',
+                     background: 'var(--UI-Primary, #1D1D1F)',
                      borderRadius: '2px',
-                     border: '1px solid hsl(var(--greyscale-blue-400))'
+                     outline: '1px var(--Button-Stroke, #666469) solid',
+                     outlineOffset: '-1px'
                    }}>
                      <input
                        type="email"
@@ -284,7 +294,7 @@ const Auth = () => {
                          border: 'none',
                          outline: 'none',
                          background: 'transparent',
-                         color: 'hsl(var(--greyscale-blue-800))',
+                         color: 'var(--Text-Primary, #FCFFFF)',
                          fontSize: '14px',
                          fontFamily: 'Brockmann',
                          fontWeight: '500',
@@ -298,7 +308,7 @@ const Auth = () => {
                 {!isLogin && (
                    <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
                      <div style={{ 
-                       color: 'hsl(var(--greyscale-blue-800))',
+                       color: 'var(--Text-Primary, #FCFFFF)',
                        fontSize: '14px',
                        fontFamily: 'Brockmann',
                        fontWeight: '500',
@@ -306,9 +316,10 @@ const Auth = () => {
                      }}>Name</div>
                      <div style={{
                        padding: '12px 16px',
-                       background: 'hsl(var(--ui-primary))',
+                       background: 'var(--UI-Primary, #1D1D1F)',
                        borderRadius: '2px',
-                       border: '1px solid hsl(var(--greyscale-blue-400))'
+                       outline: '1px var(--Button-Stroke, #666469) solid',
+                       outlineOffset: '-1px'
                      }}>
                        <input
                          type="text"
@@ -320,7 +331,7 @@ const Auth = () => {
                            border: 'none',
                            outline: 'none',
                            background: 'transparent',
-                           color: 'hsl(var(--greyscale-blue-800))',
+                           color: 'var(--Text-Primary, #FCFFFF)',
                            fontSize: '14px',
                            fontFamily: 'Brockmann',
                            fontWeight: '500',
@@ -334,7 +345,7 @@ const Auth = () => {
 
                  <div style={{ paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '9px' }}>
                    <div style={{ 
-                     color: 'hsl(var(--greyscale-blue-800))',
+                     color: 'var(--Text-Primary, #FCFFFF)',
                      fontSize: '14px',
                      fontFamily: 'Brockmann',
                      fontWeight: '500',
@@ -342,9 +353,10 @@ const Auth = () => {
                    }}>Password</div>
                    <div style={{
                      padding: '12px 16px',
-                     background: 'hsl(var(--ui-primary))',
+                     background: 'var(--UI-Primary, #1D1D1F)',
                      borderRadius: '2px',
-                     border: '1px solid hsl(var(--greyscale-blue-400))'
+                     outline: '1px var(--Button-Stroke, #666469) solid',
+                     outlineOffset: '-1px'
                    }}>
                      <input
                        type="password"
@@ -356,7 +368,7 @@ const Auth = () => {
                          border: 'none',
                          outline: 'none',
                          background: 'transparent',
-                         color: 'hsl(var(--greyscale-blue-800))',
+                         color: 'var(--Text-Primary, #FCFFFF)',
                          fontSize: '14px',
                          fontFamily: 'Brockmann',
                          fontWeight: '500',
@@ -373,16 +385,20 @@ const Auth = () => {
                      <button
                        type="button"
                        onClick={() => setIsResetMode(true)}
+                       onMouseEnter={() => setIsForgotPasswordHovered(true)}
+                       onMouseLeave={() => setIsForgotPasswordHovered(false)}
                        style={{
                          background: 'transparent',
                          border: 'none',
-                         color: 'hsl(var(--greyscale-blue-500))',
-                         fontSize: '16px',
+                         borderRadius: '6px',
+                         color: isForgotPasswordHovered ? 'hsl(var(--Hover))' : 'var(--Text-Light-grey, #BDC3C2)',
+                         fontSize: '14px',
                          fontFamily: 'Brockmann',
                          fontWeight: '400',
                          lineHeight: '24px',
                          cursor: 'pointer',
-                         padding: '0'
+                         padding: '0',
+                         transition: 'color 0.2s ease'
                        }}
                      >
                        Forgot your password?
@@ -393,19 +409,23 @@ const Auth = () => {
                  <button
                    type="submit"
                    disabled={loading}
+                   onMouseEnter={() => !loading && setIsButtonHovered(true)}
+                   onMouseLeave={() => setIsButtonHovered(false)}
                    style={{
                      padding: '12px 24px',
-                     background: 'hsl(var(--brand-primary))',
+                     background: isButtonHovered && !loading ? 'hsl(var(--Hover))' : 'var(--Brand-Primary, #7142FF)',
                      borderRadius: '2px',
                      border: 'none',
-                     color: 'hsl(var(--ui-bg))',
+                     color: 'var(--Text-Primary, #FCFFFF)',
                      fontSize: '16px',
                      fontFamily: 'Brockmann',
                      fontWeight: '600',
                      lineHeight: '24px',
                      letterSpacing: '0.32px',
                      cursor: loading ? 'not-allowed' : 'pointer',
-                     opacity: loading ? 0.7 : 1
+                     opacity: loading ? 0.7 : 1,
+                     width: '100%',
+                     transition: 'background-color 0.2s ease'
                    }}
                  >
                    {loading ? 'Please wait...' : (isLogin ? 'Login' : 'Sign Up')}
@@ -417,11 +437,12 @@ const Auth = () => {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                  <div style={{ 
                    textAlign: 'center',
-                   color: 'hsl(var(--greyscale-blue-500))',
+                   color: 'var(--Text-Light-grey, #BDC3C2)',
                    fontSize: '14px',
                    fontFamily: 'Brockmann',
                    fontWeight: '400',
-                   lineHeight: '20px'
+                   lineHeight: '20px',
+                   marginBottom: '6px'
                  }}>
                    {isLogin ? "Don't have an account?" : "Already have an account?"}
                  </div>
@@ -434,18 +455,22 @@ const Auth = () => {
                      setPassword('');
                      setName('');
                    }}
+                   onMouseEnter={() => setIsTextButtonHovered(true)}
+                   onMouseLeave={() => setIsTextButtonHovered(false)}
                    style={{
                      height: '40px',
                      padding: '6px 16px 8px 16px',
                      background: 'transparent',
                      border: 'none',
-                     color: 'hsl(var(--brand-primary))',
+                     borderRadius: '6px',
+                     color: isTextButtonHovered ? 'hsl(var(--Hover))' : 'var(--Brand-Primary, #7142FF)',
                      fontSize: '16px',
                      fontFamily: 'Brockmann',
                      fontWeight: '600',
                      lineHeight: '24px',
                      letterSpacing: '0.32px',
-                     cursor: 'pointer'
+                     cursor: 'pointer',
+                     transition: 'color 0.2s ease'
                    }}
                  >
                    {isLogin ? 'Create account' : 'Sign in instead'}

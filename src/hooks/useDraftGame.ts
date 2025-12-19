@@ -1,5 +1,5 @@
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 
 interface Player {
   id: number;
@@ -18,6 +18,16 @@ export const useDraftGame = (participants: string[], categories: string[]) => {
   const [currentPickIndex, setCurrentPickIndex] = useState(0);
   const [initialPlayerOrder, setInitialPlayerOrder] = useState<Player[]>([]);
 
+  // Initialize player order once when participants change and we don't have an order yet
+  useEffect(() => {
+    if (initialPlayerOrder.length === 0 && participants && participants.length > 0) {
+      // Create new randomized order
+      const shuffled = [...participants].sort(() => Math.random() - 0.5);
+      const newOrder = shuffled.map((name, index) => ({ id: index, name }));
+      setInitialPlayerOrder(newOrder);
+    }
+  }, [participants, initialPlayerOrder.length]);
+
   // Create stable randomized players - only randomize once or use existing order
   const randomizedPlayers = useMemo(() => {
     if (initialPlayerOrder.length > 0) {
@@ -27,11 +37,8 @@ export const useDraftGame = (participants: string[], categories: string[]) => {
     
     if (!participants) return [];
     
-    // Create new randomized order
-    const shuffled = [...participants].sort(() => Math.random() - 0.5);
-    const newOrder = shuffled.map((name, index) => ({ id: index, name }));
-    setInitialPlayerOrder(newOrder);
-    return newOrder;
+    // Return empty array if not initialized yet (will be set by useEffect)
+    return [];
   }, [participants, initialPlayerOrder]);
 
   // Create snake draft order (1,2,3,4,4,3,2,1,1,2,3,4...)

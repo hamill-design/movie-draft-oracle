@@ -108,12 +108,12 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
           <div className="flex-1 min-w-0 sm:min-w-[294px]">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-greyscale-blue-400 pointer-events-none" />
-              <Input
+                <Input
                 placeholder="Search for actors, directors..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 h-12 border-greyscale-blue-400 text-sm font-brockmann-medium leading-5 placeholder:text-greyscale-blue-400"
-              />
+                />
             </div>
           </div>
           {onCreateNew && (
@@ -127,98 +127,130 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
         </div>
 
         {/* Categories List */}
-        {groupedArray.length === 0 ? (
+          {groupedArray.length === 0 ? (
           <div className="text-center py-8 text-greyscale-blue-600 font-brockmann-regular text-sm leading-5">
-            {searchQuery ? 'No categories match your search' : 'No categories found'}
-          </div>
-        ) : (
-          <div className="space-y-6">
+              {searchQuery ? 'No categories match your search' : 'No categories found'}
+            </div>
+          ) : (
+            <div className="space-y-6">
             {groupedArray.map((group, groupIndex) => (
               <div key={`${group.actor_name}_${group.actor_tmdb_id || 'no-id'}`} className="space-y-0">
                 {/* Actor Header with Purple Background */}
                 <div className="bg-purple-100 px-3 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-base font-brockmann-semibold text-text-primary leading-6 tracking-[0.32px]">
+                    <h3 
+                      className="text-base text-text-primary leading-6 tracking-[0.32px]"
+                      style={{ fontFamily: 'Brockmann', fontWeight: 600 }}
+                    >
                       {group.actor_name}
                     </h3>
                     {group.actor_tmdb_id && (
-                      <span className="text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
+                      <span 
+                        className="text-sm text-greyscale-blue-600 leading-5"
+                        style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
+                      >
                         (ID: {group.actor_tmdb_id})
                       </span>
                     )}
                   </div>
-                  <div className="text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
-                    {group.categories.length} {group.categories.length === 1 ? 'category' : 'categories'}
+                  <div 
+                    className="text-sm text-greyscale-blue-600 leading-5"
+                    style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
+                  >
+                      {group.categories.length} {group.categories.length === 1 ? 'category' : 'categories'}
                   </div>
-                </div>
+                  </div>
 
-                {/* Categories Table */}
-                <div className="overflow-x-auto">
-                  <Table className="w-full">
-                    <TableHeader>
+                  {/* Categories Table */}
+                  <div className="overflow-x-auto">
+                    <Table className="w-full">
+                      <TableHeader>
                       <TableRow className="border-b border-greyscale-blue-300 hover:bg-transparent">
-                        <TableHead className="px-4 py-3 text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
+                        <TableHead 
+                          className="px-4 py-3 text-sm text-greyscale-blue-600 leading-5"
+                          style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
+                        >
                           Category Name
                         </TableHead>
-                        <TableHead className="px-4 py-3 text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
+                        <TableHead 
+                          className="px-4 py-3 text-sm text-greyscale-blue-600 leading-5"
+                          style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
+                        >
                           Movie Count
                         </TableHead>
-                        <TableHead className="px-4 py-3 text-sm font-brockmann-regular text-greyscale-blue-600 leading-5">
+                        <TableHead 
+                          className="px-4 py-3 text-sm text-greyscale-blue-600 leading-5"
+                          style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
+                        >
                           Description
                         </TableHead>
-                        <TableHead className="px-4 py-3 text-sm font-brockmann-regular text-greyscale-blue-600 leading-5 text-right">
+                        <TableHead 
+                          className="px-4 py-3 text-sm text-greyscale-blue-600 leading-5 text-right"
+                          style={{ fontFamily: 'Brockmann', fontWeight: 400 }}
+                        >
                           Actions
                         </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                       {group.categories.map((category, index) => (
                         <TableRow
                           key={category.id}
                           className={`${
-                            index % 2 === 0 ? 'bg-greyscale-blue-150' : 'bg-transparent'
-                          } border-0 hover:bg-greyscale-blue-200`}
+                            index % 2 === 0 
+                              ? 'bg-greyscale-blue-150 hover:bg-greyscale-blue-150' 
+                              : 'bg-transparent hover:bg-transparent'
+                          } border-0`}
                         >
-                          <TableCell className="px-4 py-3 text-sm font-brockmann-medium text-text-primary leading-5">
-                            {category.category_name}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-sm font-brockmann-medium text-text-primary leading-5">
+                          <TableCell 
+                            className="px-4 py-3 text-sm text-text-primary leading-5"
+                            style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
+                          >
+                              {category.category_name}
+                            </TableCell>
+                          <TableCell 
+                            className="px-4 py-3 text-sm text-text-primary leading-5"
+                            style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
+                          >
                             {category.movie_tmdb_ids?.length || 0}
-                          </TableCell>
-                          <TableCell className="px-4 py-3 text-sm font-brockmann-medium text-text-primary leading-5">
-                            {category.description || '-'}
-                          </TableCell>
+                            </TableCell>
+                          <TableCell 
+                            className="px-4 py-3 text-sm text-text-primary leading-5"
+                            style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
+                          >
+                                {category.description || '-'}
+                            </TableCell>
                           <TableCell className="px-4 py-3 text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
+                              <div className="flex justify-end gap-2">
+                                <Button
                                 variant="ghost"
-                                size="icon"
-                                onClick={() => onEdit(category)}
-                                disabled={loading}
+                                  size="icon"
+                                  onClick={() => onEdit(category)}
+                                  disabled={loading}
                                 className="h-8 w-8 p-2 hover:bg-greyscale-blue-200"
-                              >
+                                >
                                 <Edit2 className="w-4 h-4 text-text-primary" />
-                              </Button>
-                              <Button
+                                </Button>
+                                <Button
                                 variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteClick(category)}
-                                disabled={loading}
+                                  size="icon"
+                                  onClick={() => handleDeleteClick(category)}
+                                  disabled={loading}
                                 className="h-8 w-8 p-2 hover:bg-greyscale-blue-200"
-                              >
+                                >
                                 <Trash2 className="w-4 h-4 text-text-primary" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

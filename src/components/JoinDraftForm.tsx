@@ -92,13 +92,25 @@ export const JoinDraftForm = () => {
 
   const isFormValid = !!(inviteCode.trim() && participantName.trim());
   const isButtonDisabled = loading || !isFormValid || isJoining;
+  const hasInviteCode = inviteCode.trim().length > 0;
 
   return (
-    <div className="w-full h-full p-6 bg-greyscale-blue-100 rounded flex flex-col items-start gap-6" style={{boxShadow: '0px 0px 3px rgba(0, 0, 0, 0.25)'}}>
+    <div className="w-full h-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col items-start gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
       <div className="self-stretch flex flex-col items-start gap-1">
-        <HeaderIcon3 title="Join A Draft" icon={<FilmReelIcon className="w-6 h-6 text-primary" />} />
+        <HeaderIcon3 
+          title="Join A Draft" 
+          icon={
+            <FilmReelIcon 
+              className={`w-6 h-6 ${
+                hasInviteCode 
+                  ? 'text-purple-300' 
+                  : 'text-greyscale-blue-500'
+              }`} 
+            />
+          } 
+        />
         <div className="self-stretch flex flex-col items-start">
-          <div className="self-stretch flex flex-col justify-center text-muted-foreground text-sm font-normal leading-5 font-brockmann">
+          <div className="self-stretch flex flex-col justify-center text-greyscale-blue-500 text-sm font-normal leading-5 font-brockmann">
             Have an invite code? Join a multiplayer draft session
           </div>
         </div>
@@ -106,7 +118,7 @@ export const JoinDraftForm = () => {
       <form onSubmit={handleJoin} className="self-stretch flex flex-col items-start gap-6">
         <div className="self-stretch flex flex-col items-start gap-5">
           <div className="self-stretch flex flex-col items-center">
-            <div className="self-stretch px-4 py-3 bg-ui-primary overflow-hidden rounded-[2px] border border-muted-foreground focus-within:border-foreground flex items-center gap-3">
+            <div className="self-stretch px-4 py-3 bg-greyscale-purp-850 overflow-hidden rounded-[2px] flex items-center gap-3" style={{outline: '1px solid #666469', outlineOffset: '-1px'}}>
               <div className="flex-1 overflow-hidden flex flex-col items-center">
                 <input
                   id="invite-code"
@@ -114,24 +126,24 @@ export const JoinDraftForm = () => {
                   onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                   placeholder="Enter 8-digit Invite Code"
                   maxLength={8}
-                  className="self-stretch text-center flex flex-col justify-center text-foreground placeholder:text-muted-foreground text-lg font-medium leading-7 tracking-wide font-mono bg-transparent border-0 outline-none"
+                  className="self-stretch text-center flex flex-col justify-center text-greyscale-blue-100 placeholder:text-greyscale-blue-500 text-lg font-normal leading-7 tracking-[1.08px] font-mono bg-transparent border-0 outline-none"
                 />
               </div>
             </div>
           </div>
-          <div className="self-stretch flex flex-col items-start gap-3">
-            <div className="flex flex-col justify-center text-foreground text-sm font-medium leading-5 font-brockmann">
+          <div className="self-stretch flex flex-col items-start gap-[9px] pt-[3px]">
+            <div className="flex flex-col justify-center text-greyscale-blue-300 text-sm font-medium leading-5 font-brockmann">
               Your Display Name
             </div>
             <div className="self-stretch flex flex-col items-start">
-              <div className="self-stretch px-4 py-3 bg-ui-primary overflow-hidden rounded-[2px] border border-muted-foreground focus-within:border-foreground flex items-center gap-3">
+              <div className="self-stretch px-4 py-3 bg-greyscale-purp-850 overflow-hidden rounded-[2px] flex items-center gap-3" style={{outline: '1px solid #666469', outlineOffset: '-1px'}}>
                 <div className="flex-1 overflow-hidden flex flex-col items-start">
                   <input
                     id="participant-name"
                     value={participantName}
                     onChange={(e) => setParticipantName(e.target.value)}
                     placeholder="Enter Display Name"
-                    className="flex flex-col justify-center text-foreground placeholder:text-muted-foreground text-sm font-medium leading-5 font-brockmann bg-transparent border-0 outline-none w-full"
+                    className="flex flex-col justify-center text-greyscale-blue-300 placeholder:text-greyscale-blue-300 text-sm font-medium leading-5 font-brockmann bg-transparent border-0 outline-none w-full"
                   />
                 </div>
               </div>
@@ -141,9 +153,9 @@ export const JoinDraftForm = () => {
         <button
           type="submit"
           disabled={isButtonDisabled}
-          className="self-stretch px-6 py-3 bg-brand-primary hover:bg-purple-400 disabled:bg-greyscale-blue-200 disabled:text-greyscale-blue-300 rounded flex justify-center items-center"
+          className="self-stretch px-6 py-3 bg-brand-primary join-draft-button-hover disabled:bg-greyscale-purp-800 disabled:text-greyscale-blue-500 rounded-[2px] flex justify-center items-center"
         >
-          <div className="text-center flex flex-col justify-center text-primary-foreground text-base font-semibold leading-6 tracking-wide font-brockmann">
+          <div className="text-center flex flex-col justify-center text-base font-semibold leading-6 tracking-[0.32px] font-brockmann" style={{color: 'var(--Text-Primary, #FCFFFF)'}}>
             {(loading || isJoining) ? 'Joining...' : 'Join Draft'}
           </div>
         </button>
