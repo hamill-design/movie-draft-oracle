@@ -45,6 +45,40 @@ const PrivacyPolicy = () => {
               without your consent, except as described in this policy.
             </p>
 
+            <h2>Third-Party Advertising</h2>
+            <p>
+              We use Google AdSense to serve advertisements on our website. Google AdSense uses cookies 
+              and other tracking technologies to serve personalized ads based on your interests and browsing behavior.
+            </p>
+            <p>
+              Google, as a third-party vendor, uses cookies to serve ads on our site. Google's use of the 
+              DART cookie enables it to serve ads to our users based on their visit to our site and other 
+              sites on the Internet. Users may opt out of the use of the DART cookie by visiting the 
+              Google Ad and Content Network privacy policy.
+            </p>
+            <p>
+              For more information about how Google uses data when you use our site, please visit:{" "}
+              <a 
+                href="https://policies.google.com/technologies/partner-sites" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:text-blue-700 underline"
+              >
+                Google's Privacy & Terms
+              </a>
+            </p>
+
+            <h2>Cookies and Tracking Technologies</h2>
+            <p>
+              We use cookies and similar tracking technologies to track activity on our service and hold 
+              certain information. Cookies are files with a small amount of data which may include an 
+              anonymous unique identifier. We use cookies for advertising purposes, including Google AdSense.
+            </p>
+            <p>
+              You can instruct your browser to refuse all cookies or to indicate when a cookie is being sent. 
+              However, if you do not accept cookies, you may not be able to use some portions of our service.
+            </p>
+
             <h2>Data Security</h2>
             <p>
               We implement appropriate security measures to protect your personal information against 

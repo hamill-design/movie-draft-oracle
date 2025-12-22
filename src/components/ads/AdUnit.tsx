@@ -1,5 +1,6 @@
 
 import React, { useEffect } from 'react';
+import { ADSENSE_CONFIG } from '@/config/ads';
 
 interface AdUnitProps {
   adSlot: string;
@@ -32,7 +33,7 @@ const AdUnit: React.FC<AdUnitProps> = ({
       <ins
         className="adsbygoogle"
         style={{ display: 'block', ...style }}
-        data-ad-client="ca-pub-XXXXXXXXXX" // Replace with your AdSense ID
+        data-ad-client={ADSENSE_CONFIG.publisherId}
         data-ad-slot={adSlot}
         data-ad-format={adFormat}
         data-full-width-responsive={responsive.toString()}

@@ -4,7 +4,7 @@
 
 export const ADSENSE_CONFIG = {
   // Your Google AdSense Publisher ID (starts with ca-pub-)
-  publisherId: 'ca-pub-XXXXXXXXXX', // Replace with your actual publisher ID
+  publisherId: 'ca-pub-9345315552399786', // Google AdSense Publisher ID
   
   // Ad slot IDs for different ad units
   adSlots: {
