@@ -9,11 +9,12 @@ interface InlineAdProps {
 
 const InlineAd: React.FC<InlineAdProps> = ({ className = '' }) => {
   return (
-    <div className={`w-full flex justify-center my-6 ${className}`}>
+    <div className={`w-full flex justify-center ${className}`}>
       <AdUnit
         adSlot={ADSENSE_CONFIG.adSlots.inline}
-        adFormat="fluid"
-        style={{ width: '100%', maxWidth: '468px', height: '60px' }}
+        adFormat="auto"
+        responsive={true}
+        style={{ width: '100%', maxWidth: '100%' }}
       />
     </div>
   );
