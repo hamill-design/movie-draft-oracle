@@ -11,7 +11,7 @@ export const ADSENSE_CONFIG = {
     banner: '1234567890',        // 728x90 banner ad
     bannerMobile: '1234567891',  // 320x50 mobile banner
     sidebar: '1234567892',       // 300x250 sidebar ad
-    inline: '1234567893',        // Fluid inline ad
+    inline: '2762276508',        // MD Ad 1 - Auto/fluid inline ad
     footer: '1234567894',        // Footer ad
   },
   
