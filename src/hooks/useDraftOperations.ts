@@ -60,18 +60,31 @@ export const useDraftOperations = () => {
         .eq('draft_id', existingDraftId);
 
       if (draftData.picks.length > 0) {
-        const picks = draftData.picks.map((pick, index) => ({
-          draft_id: existingDraftId,
-          player_id: pick.playerId,
-          player_name: pick.playerName,
-          movie_id: pick.movie.id,
-          movie_title: pick.movie.title,
-          movie_year: pick.movie.year,
-          movie_genre: pick.movie.genre || 'Unknown',
-          category: pick.category,
-          pick_order: index + 1,
-          poster_path: pick.movie.posterPath || pick.movie.poster_path || null
-        }));
+        const picks = draftData.picks.map((pick, index) => {
+          const pickWithScoring = pick as any;
+          return {
+            draft_id: existingDraftId,
+            player_id: pick.playerId,
+            player_name: pick.playerName,
+            movie_id: pick.movie.id,
+            movie_title: pick.movie.title,
+            movie_year: pick.movie.year,
+            movie_genre: pick.movie.genre || 'Unknown',
+            category: pick.category,
+            pick_order: index + 1,
+            poster_path: pick.movie.posterPath || pick.movie.poster_path || null,
+            // Include scoring data if available
+            calculated_score: pickWithScoring.calculated_score ?? null,
+            rt_critics_score: pickWithScoring.rt_critics_score ?? null,
+            rt_audience_score: pickWithScoring.rt_audience_score ?? null,
+            imdb_rating: pickWithScoring.imdb_rating ?? null,
+            metacritic_score: pickWithScoring.metacritic_score ?? null,
+            movie_budget: pickWithScoring.movie_budget ?? null,
+            movie_revenue: pickWithScoring.movie_revenue ?? null,
+            oscar_status: pickWithScoring.oscar_status ?? null,
+            scoring_data_complete: pickWithScoring.scoring_data_complete ?? false
+          };
+        });
 
         const { error: picksError } = await supabase
           .from('draft_picks')
@@ -116,18 +129,31 @@ export const useDraftOperations = () => {
 
       // Save picks if any exist
       if (draftData.picks.length > 0) {
-      const picks = draftData.picks.map((pick, index) => ({
-        draft_id: draft.id,
-        player_id: pick.playerId,
-        player_name: pick.playerName,
-        movie_id: pick.movie.id,
-        movie_title: pick.movie.title,
-        movie_year: pick.movie.year,
-        movie_genre: pick.movie.genre || 'Unknown',
-        category: pick.category,
-        pick_order: index + 1,
-        poster_path: pick.movie.posterPath || pick.movie.poster_path || null
-      }));
+      const picks = draftData.picks.map((pick, index) => {
+        const pickWithScoring = pick as any;
+        return {
+          draft_id: draft.id,
+          player_id: pick.playerId,
+          player_name: pick.playerName,
+          movie_id: pick.movie.id,
+          movie_title: pick.movie.title,
+          movie_year: pick.movie.year,
+          movie_genre: pick.movie.genre || 'Unknown',
+          category: pick.category,
+          pick_order: index + 1,
+          poster_path: pick.movie.posterPath || pick.movie.poster_path || null,
+          // Include scoring data if available
+          calculated_score: pickWithScoring.calculated_score ?? null,
+          rt_critics_score: pickWithScoring.rt_critics_score ?? null,
+          rt_audience_score: pickWithScoring.rt_audience_score ?? null,
+          imdb_rating: pickWithScoring.imdb_rating ?? null,
+          metacritic_score: pickWithScoring.metacritic_score ?? null,
+          movie_budget: pickWithScoring.movie_budget ?? null,
+          movie_revenue: pickWithScoring.movie_revenue ?? null,
+          oscar_status: pickWithScoring.oscar_status ?? null,
+          scoring_data_complete: pickWithScoring.scoring_data_complete ?? false
+        };
+      });
 
         const { error: picksError } = await supabase
           .from('draft_picks')
@@ -151,6 +177,11 @@ export const useDraftOperations = () => {
   }) => {
     if (!user) throw new Error('User not authenticated for permanent save');
 
+    // Validate draft data structure
+    if (!draftData.theme || !draftData.option || !Array.isArray(draftData.participants) || !Array.isArray(draftData.categories)) {
+      throw new Error('Invalid draft data structure');
+    }
+
     const { data: draft, error: draftError } = await supabase
       .from('drafts')
       .insert({
@@ -169,18 +200,31 @@ export const useDraftOperations = () => {
 
     // Save picks if any exist
     if (draftData.picks.length > 0) {
-      const picks = draftData.picks.map((pick, index) => ({
-        draft_id: draft.id,
-        player_id: pick.playerId,
-        player_name: pick.playerName,
-        movie_id: pick.movie.id,
-        movie_title: pick.movie.title,
-        movie_year: pick.movie.year,
-        movie_genre: pick.movie.genre || 'Unknown',
-        category: pick.category,
-        pick_order: index + 1,
-        poster_path: pick.movie.posterPath || pick.movie.poster_path || null
-      }));
+      const picks = draftData.picks.map((pick, index) => {
+        const pickWithScoring = pick as any;
+        return {
+          draft_id: draft.id,
+          player_id: pick.playerId,
+          player_name: pick.playerName,
+          movie_id: pick.movie.id,
+          movie_title: pick.movie.title,
+          movie_year: pick.movie.year,
+          movie_genre: pick.movie.genre || 'Unknown',
+          category: pick.category,
+          pick_order: index + 1,
+          poster_path: pick.movie.posterPath || pick.movie.poster_path || null,
+          // Include scoring data if available
+          calculated_score: pickWithScoring.calculated_score ?? null,
+          rt_critics_score: pickWithScoring.rt_critics_score ?? null,
+          rt_audience_score: pickWithScoring.rt_audience_score ?? null,
+          imdb_rating: pickWithScoring.imdb_rating ?? null,
+          metacritic_score: pickWithScoring.metacritic_score ?? null,
+          movie_budget: pickWithScoring.movie_budget ?? null,
+          movie_revenue: pickWithScoring.movie_revenue ?? null,
+          oscar_status: pickWithScoring.oscar_status ?? null,
+          scoring_data_complete: pickWithScoring.scoring_data_complete ?? false
+        };
+      });
 
       const { error: picksError } = await supabase
         .from('draft_picks')

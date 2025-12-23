@@ -101,11 +101,7 @@ export const JoinDraftForm = () => {
           title="Join A Draft" 
           icon={
             <FilmReelIcon 
-              className={`w-6 h-6 ${
-                hasInviteCode 
-                  ? 'text-purple-300' 
-                  : 'text-greyscale-blue-500'
-              }`} 
+              className="w-6 h-6 text-purple-300" 
             />
           } 
         />

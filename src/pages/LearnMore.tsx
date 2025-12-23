@@ -241,37 +241,58 @@ const LearnMore = () => {
                     How to Set Up
                   </div>
                 </div>
-                <div style={{
+                <ol style={{
                   alignSelf: 'stretch',
                   flexDirection: 'column',
                   justifyContent: 'flex-start',
                   alignItems: 'flex-start',
                   gap: '8px',
-                  display: 'flex'
+                  display: 'flex',
+                  margin: 0,
+                  paddingLeft: '20px',
+                  listStyleType: 'decimal'
                 }}>
-                  <div style={{
-                    alignSelf: 'stretch',
-                    justifyContent: 'flex-start',
-                    alignItems: 'flex-start',
-                    display: 'inline-flex'
+                  <li style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '400',
+                    lineHeight: '20px',
+                    wordWrap: 'break-word'
                   }}>
-                    <div style={{
-                      flex: '1 1 0',
-                      justifyContent: 'center',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      color: 'var(--Text-Primary, #FCFFFF)',
-                      fontSize: '14px',
-                      fontFamily: 'Brockmann',
-                      fontWeight: '400',
-                      lineHeight: '20px',
-                      wordWrap: 'break-word',
-                      whiteSpace: 'pre-line'
-                    }}>
-                      Choose a draft theme (by Person or by Year){'\n'}Select your specific option (actor/director or year){'\n'}Add all players who will participate{'\n'}Choose your scoring categories and draft style
-                    </div>
-                  </div>
-                </div>
+                    Choose a draft theme (by Person or by Year)
+                  </li>
+                  <li style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '400',
+                    lineHeight: '20px',
+                    wordWrap: 'break-word'
+                  }}>
+                    Select your specific option (actor/director or year)
+                  </li>
+                  <li style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '400',
+                    lineHeight: '20px',
+                    wordWrap: 'break-word'
+                  }}>
+                    Add all players who will participate
+                  </li>
+                  <li style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '400',
+                    lineHeight: '20px',
+                    wordWrap: 'break-word'
+                  }}>
+                    Choose your scoring categories and draft style
+                  </li>
+                </ol>
               </div>
             </div>
 
@@ -313,37 +334,58 @@ const LearnMore = () => {
                     How to Draft
                   </div>
                 </div>
-                <div style={{
+                <ol style={{
                   alignSelf: 'stretch',
                   flexDirection: 'column',
                   justifyContent: 'flex-start',
                   alignItems: 'flex-start',
                   gap: '8px',
-                  display: 'flex'
+                  display: 'flex',
+                  margin: 0,
+                  paddingLeft: '20px',
+                  listStyleType: 'decimal'
                 }}>
-                  <div style={{
-                    alignSelf: 'stretch',
-                    justifyContent: 'flex-start',
-                    alignItems: 'flex-start',
-                    display: 'inline-flex'
+                  <li style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '400',
+                    lineHeight: '20px',
+                    wordWrap: 'break-word'
                   }}>
-                    <div style={{
-                      flex: '1 1 0',
-                      justifyContent: 'center',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      color: 'var(--Text-Primary, #FCFFFF)',
-                      fontSize: '14px',
-                      fontFamily: 'Brockmann',
-                      fontWeight: '400',
-                      lineHeight: '20px',
-                      wordWrap: 'break-word',
-                      whiteSpace: 'pre-line'
-                    }}>
-                      Players take turns in order selecting movies{'\n'}Search and pick movies that match your theme{'\n'}Each player builds their roster of films{'\n'}Continue until everyone has selected their movies
-                    </div>
-                  </div>
-                </div>
+                    Players take turns in order selecting movies
+                  </li>
+                  <li style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '400',
+                    lineHeight: '20px',
+                    wordWrap: 'break-word'
+                  }}>
+                    Search and pick movies that match your theme
+                  </li>
+                  <li style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '400',
+                    lineHeight: '20px',
+                    wordWrap: 'break-word'
+                  }}>
+                    Each player builds their roster of films
+                  </li>
+                  <li style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '400',
+                    lineHeight: '20px',
+                    wordWrap: 'break-word'
+                  }}>
+                    Continue until everyone has selected their movies
+                  </li>
+                </ol>
               </div>
             </div>
 
@@ -441,29 +483,48 @@ const LearnMore = () => {
                   Pro Tips
                 </div>
               </div>
-              <div style={{
+              <ul style={{
                 alignSelf: 'stretch',
+                flexDirection: 'column',
                 justifyContent: 'flex-start',
                 alignItems: 'flex-start',
-                gap: '15px',
-                display: 'inline-flex'
+                gap: '8px',
+                display: 'flex',
+                margin: 0,
+                paddingLeft: '20px',
+                listStyleType: 'disc'
               }}>
-                <div style={{
-                  flex: '1 1 0',
-                  justifyContent: 'center',
-                  display: 'flex',
-                  flexDirection: 'column',
+                <li style={{
                   color: 'var(--Text-Primary, #FCFFFF)',
                   fontSize: '14px',
                   fontFamily: 'Brockmann',
                   fontWeight: '400',
                   lineHeight: '20px',
-                  wordWrap: 'break-word',
-                  whiteSpace: 'pre-line'
+                  wordWrap: 'break-word'
                 }}>
-                  Balance popular hits with hidden gems{'\n'}Pay attention to what others are selecting{'\n'}Have fun and discover new movies!
-                </div>
-              </div>
+                  Balance popular hits with hidden gems
+                </li>
+                <li style={{
+                  color: 'var(--Text-Primary, #FCFFFF)',
+                  fontSize: '14px',
+                  fontFamily: 'Brockmann',
+                  fontWeight: '400',
+                  lineHeight: '20px',
+                  wordWrap: 'break-word'
+                }}>
+                  Pay attention to what others are selecting
+                </li>
+                <li style={{
+                  color: 'var(--Text-Primary, #FCFFFF)',
+                  fontSize: '14px',
+                  fontFamily: 'Brockmann',
+                  fontWeight: '400',
+                  lineHeight: '20px',
+                  wordWrap: 'break-word'
+                }}>
+                  Have fun and discover new movies!
+                </li>
+              </ul>
             </div>
           </div>
         </section>

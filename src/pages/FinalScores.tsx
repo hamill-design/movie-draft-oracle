@@ -14,6 +14,7 @@ import ShareResultsButton from '@/components/ShareResultsButton';
 import SaveDraftButton from '@/components/SaveDraftButton';
 import { getScoreColor, getScoreGrade } from '@/utils/scoreCalculator';
 import RankBadge from '@/components/RankBadge';
+import { storePendingDraft } from '@/utils/draftStorage';
 
 interface TeamScore {
   playerName: string;
@@ -28,13 +29,14 @@ const FinalScores = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading, isGuest } = useAuth();
-  const { getDraftWithPicks } = useDraftOperations();
+  const { getDraftWithPicks, autoSaveDraft } = useDraftOperations();
   const { toast } = useToast();
   
   const [draft, setDraft] = useState<any>(null);
   const [picks, setPicks] = useState<DraftPick[]>([]);
   const [teamScores, setTeamScores] = useState<TeamScore[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+  const [enrichingScores, setEnrichingScores] = useState(false);
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [hoveredTeam, setHoveredTeam] = useState<string>('');
@@ -141,20 +143,33 @@ const FinalScores = () => {
                 is_complete: localDraft.isComplete || localDraft.is_complete,
                 isLocal: true
               });
-              // Convert picks to DraftPick format
-              const formattedPicks = localDraft.picks.map((pick: any, index: number) => ({
-                id: pick.movie?.id || `local_${index}`,
-                draft_id: localDraft.id,
-                player_id: pick.playerId,
-                player_name: pick.playerName,
-                movie_id: pick.movie?.id || '',
-                movie_title: pick.movie?.title || '',
-                movie_year: pick.movie?.year || null,
-                movie_genre: pick.movie?.genre || 'Unknown',
-                category: pick.category,
-                pick_order: pick.pick_order || index + 1,
-                poster_path: pick.movie?.posterPath || pick.movie?.poster_path || null
-              }));
+              // Convert picks to DraftPick format, preserving scoring data
+              const formattedPicks = localDraft.picks.map((pick: any, index: number) => {
+                const pickWithScoring = pick as any;
+                return {
+                  id: pick.movie?.id || `local_${index}`,
+                  draft_id: localDraft.id,
+                  player_id: pick.playerId,
+                  player_name: pick.playerName,
+                  movie_id: pick.movie?.id || '',
+                  movie_title: pick.movie?.title || '',
+                  movie_year: pick.movie?.year || null,
+                  movie_genre: pick.movie?.genre || 'Unknown',
+                  category: pick.category,
+                  pick_order: pick.pick_order || index + 1,
+                  poster_path: pick.movie?.posterPath || pick.movie?.poster_path || null,
+                  // Preserve scoring data if available
+                  calculated_score: pickWithScoring.calculated_score ?? null,
+                  rt_critics_score: pickWithScoring.rt_critics_score ?? null,
+                  rt_audience_score: pickWithScoring.rt_audience_score ?? null,
+                  imdb_rating: pickWithScoring.imdb_rating ?? null,
+                  metacritic_score: pickWithScoring.metacritic_score ?? null,
+                  movie_budget: pickWithScoring.movie_budget ?? null,
+                  movie_revenue: pickWithScoring.movie_revenue ?? null,
+                  oscar_status: pickWithScoring.oscar_status ?? null,
+                  scoring_data_complete: pickWithScoring.scoring_data_complete ?? false
+                };
+              });
               setPicks(formattedPicks);
               const teams = processTeamScores(formattedPicks);
               setTeamScores(teams);
@@ -162,6 +177,12 @@ const FinalScores = () => {
                 setSelectedTeam(teams[0].playerName);
               }
               setLoadingData(false);
+              
+              // Always enrich movies when loading from localStorage (they may be missing scores)
+              autoEnrichMovieData(formattedPicks).catch(err => {
+                console.error('Background enrichment failed:', err);
+              });
+              
               return;
             }
           }
@@ -302,9 +323,17 @@ const FinalScores = () => {
     // Then, backfill any missing genres
     await backfillMovieGenres();
 
-    // Check for movies that need RT/IMDB/Metacritic data or poster data
+    // Check for movies that need enrichment:
+    // - Missing calculated_score (most important)
+    // - Missing RT/IMDB/Metacritic data
+    // - Missing poster_path
     const moviesToEnrich = picksData.filter(pick => {
       const pickWithScoring = pick as any;
+      // Always enrich if calculated_score is missing or 0
+      if (!pickWithScoring.calculated_score || pickWithScoring.calculated_score === 0) {
+        return true;
+      }
+      // Also enrich if missing key scoring data or poster
       return !pickWithScoring.rt_critics_score || !pickWithScoring.imdb_rating || !pickWithScoring.metacritic_score || !pickWithScoring.poster_path;
     });
     
@@ -314,6 +343,9 @@ const FinalScores = () => {
       console.log('All movies already have scoring data');
       return;
     }
+
+    // Set loading state for enrichment
+    setEnrichingScores(true);
 
     // Silently enrich in background
     try {
@@ -426,6 +458,9 @@ const FinalScores = () => {
 
     } catch (error) {
       console.error('Error auto-enriching movie data:', error);
+    } finally {
+      // Clear loading state when enrichment completes
+      setEnrichingScores(false);
     }
   };
 
@@ -519,12 +554,72 @@ const FinalScores = () => {
     }
   };
 
-  const handleAuthRedirect = () => {
+  const handleAuthRedirect = async () => {
     toast({
       title: "Create Account",
       description: "Sign up to save drafts permanently and access them from any device."
     });
-    navigate('/auth');
+
+    const draftData = getDraftDataForSave();
+    if (!draftData) {
+      console.error('No draft data available to save');
+      navigate('/auth');
+      return;
+    }
+
+    const returnPath = `/final-scores/${draftId}`;
+    let savedDraftId = draftId || null;
+
+    // Try to save draft to database if not already saved
+    // Check if draft exists in database by trying to fetch it
+    if (draftId) {
+      try {
+        const { data: existingDraft } = await supabase
+          .from('drafts')
+          .select('id')
+          .eq('id', draftId)
+          .maybeSingle();
+
+        if (!existingDraft) {
+          // Draft doesn't exist in DB, try to save it
+          try {
+            savedDraftId = await autoSaveDraft(draftData, undefined);
+            console.log('Saved draft to database before redirect:', savedDraftId);
+          } catch (saveError) {
+            console.warn('Failed to save draft to database before redirect:', saveError);
+            // Continue anyway - will rely on localStorage backup
+          }
+        } else {
+          // Draft exists, might need to update it
+          try {
+            await autoSaveDraft(draftData, draftId);
+            console.log('Updated draft in database before redirect:', draftId);
+          } catch (updateError) {
+            console.warn('Failed to update draft in database before redirect:', updateError);
+            // Continue anyway - will rely on localStorage backup
+          }
+        }
+      } catch (checkError) {
+        console.warn('Failed to check if draft exists in database:', checkError);
+        // Continue anyway - will rely on localStorage backup
+      }
+    } else {
+      // No draftId, try to create new draft
+      try {
+        savedDraftId = await autoSaveDraft(draftData, undefined);
+        console.log('Created draft in database before redirect:', savedDraftId);
+      } catch (createError) {
+        console.warn('Failed to create draft in database before redirect:', createError);
+        // Continue anyway - will rely on localStorage backup
+      }
+    }
+
+    // Store draft in localStorage as backup
+    storePendingDraft(draftData, savedDraftId, returnPath);
+
+    // Navigate to auth page with return path and save flag
+    const authUrl = `/auth?returnTo=${encodeURIComponent(returnPath)}&saveDraft=true`;
+    navigate(authUrl);
   };
 
   const getDraftDataForSave = () => {
@@ -536,18 +631,31 @@ const FinalScores = () => {
       option: draft.option,
       participants: draft.participants,
       categories: draft.categories,
-      picks: picks.map(pick => ({
-        playerId: pick.player_id,
-        playerName: pick.player_name,
-        movie: {
-          id: pick.movie_id,
-          title: pick.movie_title,
-          year: pick.movie_year,
-          genre: pick.movie_genre,
-          posterPath: pick.poster_path
-        },
-        category: pick.category
-      })),
+      picks: picks.map(pick => {
+        const pickWithScoring = pick as any;
+        return {
+          playerId: pick.player_id,
+          playerName: pick.player_name,
+          movie: {
+            id: pick.movie_id,
+            title: pick.movie_title,
+            year: pick.movie_year,
+            genre: pick.movie_genre,
+            posterPath: pick.poster_path
+          },
+          category: pick.category,
+          // Include scoring data if available
+          calculated_score: pickWithScoring.calculated_score ?? null,
+          rt_critics_score: pickWithScoring.rt_critics_score ?? null,
+          rt_audience_score: pickWithScoring.rt_audience_score ?? null,
+          imdb_rating: pickWithScoring.imdb_rating ?? null,
+          metacritic_score: pickWithScoring.metacritic_score ?? null,
+          movie_budget: pickWithScoring.movie_budget ?? null,
+          movie_revenue: pickWithScoring.movie_revenue ?? null,
+          oscar_status: pickWithScoring.oscar_status ?? null,
+          scoring_data_complete: pickWithScoring.scoring_data_complete ?? false
+        };
+      }),
       isComplete: draft.is_complete
     };
   };
@@ -629,8 +737,8 @@ const FinalScores = () => {
             </Button>
           )}
           
-          {/* Save Draft Button for Authenticated Users */}
-          {user && !isPublicView && getDraftDataForSave() && (
+          {/* Save Draft Button - only show for guests (not logged in) */}
+          {!user && !isPublicView && getDraftDataForSave() && (
             <SaveDraftButton draftData={getDraftDataForSave()!} />
           )}
           
@@ -700,10 +808,14 @@ const FinalScores = () => {
                       </div>
                     </div>
                     <div className="flex flex-col items-end">
-                      <div className={`text-right flex flex-col text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px] ${
+                      <div className={`text-right flex flex-col items-end text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px] ${
                         isSelected ? 'text-greyscale-blue-100' : 'text-purple-300'
                       }`}>
-                        {team.averageScore.toFixed(2)}
+                        {enrichingScores && team.averageScore === 0 ? (
+                          <RefreshCw className="animate-spin" size={28} />
+                        ) : (
+                          team.averageScore.toFixed(2)
+                        )}
                       </div>
                     </div>
                   </div>

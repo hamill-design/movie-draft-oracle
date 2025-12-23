@@ -3,6 +3,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestSession, GuestSession } from '@/hooks/useGuestSession';
+import { useDraftOperations } from '@/hooks/useDraftOperations';
+import { getPendingDraft, clearPendingDraft } from '@/utils/draftStorage';
 
 interface AuthContextType {
   user: User | null;
@@ -46,6 +48,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Only include guest loading if user is not authenticated
   const loading = authLoading || (!user && guestLoading);
   const isGuest = !user && !!guestSession;
+
+  // Component to handle pending draft processing after login
+  const PendingDraftProcessor: React.FC = () => {
+    const { saveDraft } = useDraftOperations();
+    const [hasProcessed, setHasProcessed] = useState(false);
+
+    useEffect(() => {
+      // Only process if user is authenticated and we haven't processed yet
+      if (!user || hasProcessed) return;
+
+      const processPendingDraft = async () => {
+        const pendingDraft = getPendingDraft();
+        if (!pendingDraft) {
+          setHasProcessed(true);
+          return;
+        }
+
+        try {
+          console.log('Processing pending draft in AuthContext fallback:', pendingDraft);
+          
+          // Generate a default title with timestamp if not provided
+          const now = new Date();
+          const defaultTitle = pendingDraft.draftData.title || 
+            `Copy of ${pendingDraft.draftData.option || 'Draft'} - ${now.toLocaleDateString()}`;
+          
+          // Save the draft
+          await saveDraft({
+            title: defaultTitle,
+            ...pendingDraft.draftData,
+          });
+
+          // Clear the pending draft
+          clearPendingDraft();
+          setHasProcessed(true);
+          
+          console.log('Successfully processed pending draft in AuthContext');
+        } catch (error) {
+          console.error('Failed to process pending draft in AuthContext:', error);
+          // Don't set hasProcessed to true on error - might want to retry
+        }
+      };
+
+      // Wait a bit for migration to complete, then check for pending drafts
+      const timer = setTimeout(() => {
+        processPendingDraft();
+      }, 1000); // 1 second delay to allow migration to complete
+
+      return () => clearTimeout(timer);
+    }, [user, hasProcessed, saveDraft]);
+
+    return null; // This component doesn't render anything
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -92,6 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={value}>
+      <PendingDraftProcessor />
       {children}
     </AuthContext.Provider>
   );

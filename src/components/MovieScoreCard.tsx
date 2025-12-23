@@ -6,6 +6,7 @@ import { RibbonIcon } from '@/components/icons/RibbonIcon';
 import { StarIcon } from '@/components/icons/StarIcon';
 import { FilmReelIcon } from '@/components/icons/FilmReelIcon';
 import { TrophyIcon } from '@/components/icons/TrophyIcon';
+import { OscarStatusChip } from '@/components/OscarStatusChip';
 
 interface MovieScoreCardProps {
   movieTitle: string;
@@ -231,7 +232,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
             </div>
 
             {/* Score Metrics */}
-            <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '7px', display: 'flex' }}>
+            <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '12px', display: 'flex' }}>
               
               {/* Box Office Profit */}
               {scoreBreakdown.availableComponents.includes('Box Office') && (
@@ -365,33 +366,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                       +{scoreBreakdown.oscarBonus} pts
                     </div>
                   </div>
-                  {scoringData.oscarStatus === 'nominee' && (
-                    <div style={{ 
-                      paddingLeft: '12px', 
-                      paddingRight: '12px', 
-                      paddingTop: '4px', 
-                      paddingBottom: '4px', 
-                      background: 'var(--Yellow-200, #FFF2B2)',
-                      borderRadius: '9999px', 
-                      justifyContent: 'flex-start', 
-                      alignItems: 'center', 
-                      display: 'flex' 
-                    }}>
-                      <div style={{ 
-                        justifyContent: 'center', 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        color: 'var(--UI-Primary, #1D1D1F)', 
-                        fontSize: '12px', 
-                        fontFamily: 'Brockmann', 
-                        fontWeight: 600, 
-                        lineHeight: '16px', 
-                        wordWrap: 'break-word' 
-                      }}>
-                        Nominee
-                      </div>
-                    </div>
-                  )}
+                  <OscarStatusChip status={scoringData.oscarStatus} />
                 </div>
               </div>
             </div>
