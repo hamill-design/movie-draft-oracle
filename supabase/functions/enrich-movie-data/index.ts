@@ -295,48 +295,47 @@ Deno.serve(async (req) => {
 })
 
 function calculateScore(data: any): number {
-  let totalScore = 0
-  let totalWeight = 0
+  const componentScores: number[] = []
 
-  // Box Office (20%)
+  // Box Office Score - Profit percentage (0-100 scale)
   if (data.budget && data.revenue && data.budget > 0) {
     const profit = data.revenue - data.budget
     const profitPercentage = (profit / data.revenue) * 100
     const boxOfficeScore = Math.min(Math.max(profitPercentage, 0), 100)
-    totalScore += boxOfficeScore * 0.2
-    totalWeight += 0.2
+    componentScores.push(boxOfficeScore)
   }
 
-  // RT Critics (23.33%)
+  // RT Critics Score - Direct percentage (0-100 scale)
   if (data.rtCriticsScore) {
-    totalScore += data.rtCriticsScore * 0.2333
-    totalWeight += 0.2333
+    componentScores.push(data.rtCriticsScore)
   }
 
-  // Metacritic (23.33%)
+  // Metacritic Score - Direct score (0-100 scale)
   if (data.metacriticScore) {
-    totalScore += data.metacriticScore * 0.2333
-    totalWeight += 0.2333
+    componentScores.push(data.metacriticScore)
   }
 
-  // IMDB (23.33%)
+  // IMDB Score - Convert to 0-100 scale
   if (data.imdbRating) {
     const imdbScore = (data.imdbRating / 10) * 100
-    totalScore += imdbScore * 0.2333
-    totalWeight += 0.2333
+    componentScores.push(imdbScore)
   }
 
-  // Oscar Bonus (10%)
+  // Calculate average of available components
+  const averageScore = componentScores.length > 0
+    ? componentScores.reduce((sum, score) => sum + score, 0) / componentScores.length
+    : 0
+
+  // Oscar Bonus - Added after averaging (+5 for nomination, +10 for winner)
   let oscarBonus = 0
   if (data.oscarStatus === 'winner') {
-    oscarBonus = 100
+    oscarBonus = 10
   } else if (data.oscarStatus === 'nominee') {
-    oscarBonus = 50
+    oscarBonus = 5
   }
-  totalScore += oscarBonus * 0.1
-  totalWeight += 0.1
 
-  const finalScore = totalWeight > 0 ? (totalScore / totalWeight) : 0
+  // Final score is the average plus Oscar bonus
+  const finalScore = averageScore + oscarBonus
   return Math.round(finalScore * 100) / 100
 }
 
