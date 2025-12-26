@@ -63,24 +63,29 @@ const DraftHeader = ({
               NOW DRAFTING
             </span>
             <div 
-              className="font-chaney font-normal text-center break-words"
+              className="font-chaney font-normal text-center"
               style={{
-                fontSize: '64px',
-                lineHeight: '64px',
-                maxWidth: '100%'
+                fontSize: 'clamp(32px, 4vw, 64px)',
+                lineHeight: 'clamp(32px, 4vw, 64px)',
+                maxWidth: '100%',
+                wordBreak: 'normal',
+                overflowWrap: 'break-word'
               }}
             >
               <span className="text-greyscale-blue-100">
                 {theme === 'spec-draft' 
                   ? (specDraftName || draftOption).toUpperCase()
                   : theme === 'people' 
-                    ? getCleanActorName(draftOption).toUpperCase() + ' '
-                    : draftOption.toString() + ' '}
+                    ? getCleanActorName(draftOption).toUpperCase()
+                    : draftOption.toString()}
               </span>
               {theme !== 'spec-draft' && (
-                <span className="text-purple-300">
-                  MOVIES
-                </span>
+                <>
+                  {' '}
+                  <span className="text-purple-300">
+                    MOVIES
+                  </span>
+                </>
               )}
             </div>
             {!isComplete && currentPlayer && (

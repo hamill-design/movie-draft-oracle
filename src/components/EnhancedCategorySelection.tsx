@@ -283,8 +283,14 @@ const EnhancedCategorySelection = ({
     const config = getCategoryConfig(category);
     let tooltip = `${category}\n${config?.description || ''}`;
     
-    if (category === 'Academy Award Nominee or Winner' && selectedMovie.hasOscar) {
-      tooltip += '\nThis movie has Academy Award nominations or wins';
+    // Check both hasOscar flag and oscar_status for Academy Award
+    if (category === 'Academy Award Nominee or Winner') {
+      const hasOscar = selectedMovie.hasOscar === true || 
+                       selectedMovie.oscar_status === 'winner' || 
+                       selectedMovie.oscar_status === 'nominee';
+      if (hasOscar) {
+        tooltip += '\nThis movie has Academy Award nominations or wins';
+      }
     }
     if (category === 'Blockbuster (minimum of $50 Mil)' && selectedMovie.isBlockbuster) {
       const budget = selectedMovie.budget ? `$${(selectedMovie.budget / 1000000).toFixed(0)}M budget` : '';
@@ -361,48 +367,44 @@ const EnhancedCategorySelection = ({
         }}
       >
         <div 
-          style={{
-            width: '100%',
-            justifyContent: 'flex-start',
-            alignItems: 'center',
-            gap: '8px',
-            display: 'inline-flex'
-          }}
+          className="w-full flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-2"
         >
-          <div 
-            style={{
-              width: '24px',
-              height: '24px',
-              padding: '2px',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: '10px',
-              display: 'inline-flex'
-            }}
-          >
-            <div style={{ width: '20px', height: '20px', color: '#907AFF' }}>
-              <CheckboxIcon className="w-full h-full" />
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <div 
+              style={{
+                width: '24px',
+                height: '24px',
+                padding: '2px',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '10px',
+                display: 'inline-flex'
+              }}
+            >
+              <div style={{ width: '20px', height: '20px', color: '#907AFF' }}>
+                <CheckboxIcon className="w-full h-full" />
+              </div>
             </div>
-          </div>
-          <div 
-            style={{
-              flex: '1 1 0',
-              justifyContent: 'center',
-              display: 'flex',
-              flexDirection: 'column',
-              color: '#FCFFFF',
-              fontSize: '20px',
-              fontFamily: 'Brockmann',
-              fontWeight: 500,
-              lineHeight: '28px'
-            }}
-          >
-            Select Category for {selectedMovie.title}
+            <div 
+              style={{
+                flex: '1 1 0',
+                justifyContent: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                color: '#FCFFFF',
+                fontSize: '20px',
+                fontFamily: 'Brockmann',
+                fontWeight: 500,
+                lineHeight: '28px'
+              }}
+            >
+              Select Category for {selectedMovie.title}
+            </div>
           </div>
           
           {/* House Override Toggle */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
             <span 
               style={{
                 color: '#BDC3C2',
@@ -466,33 +468,41 @@ const EnhancedCategorySelection = ({
                 Based on this movie's properties, you can select from {eligibleCategories.length} eligible categories.
               </div>
             </div>
-            {selectedMovie.hasOscar && (
-              <div 
-                style={{
-                  alignSelf: 'stretch',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-start',
-                  alignItems: 'flex-start',
-                  display: 'flex'
-                }}
-              >
+            {(() => {
+              // Check both hasOscar flag and oscar_status for Academy Award
+              const hasOscar = selectedMovie?.hasOscar === true || 
+                               selectedMovie?.oscar_status === 'winner' || 
+                               selectedMovie?.oscar_status === 'nominee';
+              if (!hasOscar) return null;
+              
+              return (
                 <div 
                   style={{
                     alignSelf: 'stretch',
-                    justifyContent: 'center',
-                    display: 'flex',
                     flexDirection: 'column',
-                    color: '#FFE97A',
-                    fontSize: '14px',
-                    fontFamily: 'Brockmann',
-                    fontWeight: 400,
-                    lineHeight: '20px'
+                    justifyContent: 'flex-start',
+                    alignItems: 'flex-start',
+                    display: 'flex'
                   }}
                 >
-                  Eligible for Academy Award category (Has Oscar nominations/wins)
+                  <div 
+                    style={{
+                      alignSelf: 'stretch',
+                      justifyContent: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      color: '#FFE97A',
+                      fontSize: '14px',
+                      fontFamily: 'Brockmann',
+                      fontWeight: 400,
+                      lineHeight: '20px'
+                    }}
+                  >
+                    Eligible for Academy Award category (Has Oscar nominations/wins)
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
             {selectedMovie.isBlockbuster && (
               <div 
                 style={{

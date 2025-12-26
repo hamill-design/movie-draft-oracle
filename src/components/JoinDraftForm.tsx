@@ -120,7 +120,7 @@ export const JoinDraftForm = () => {
                   id="invite-code"
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                  placeholder="Enter 8-digit Invite Code"
+                  placeholder="Enter Invite Code"
                   maxLength={8}
                   className="self-stretch text-center flex flex-col justify-center text-greyscale-blue-100 placeholder:text-greyscale-blue-500 text-lg font-normal leading-7 tracking-[1.08px] font-mono bg-transparent border-0 outline-none"
                 />

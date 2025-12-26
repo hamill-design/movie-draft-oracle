@@ -12,6 +12,7 @@ export interface CategoryConfig {
   themes: string[]; // Which themes this category applies to
   popularity: 'high' | 'medium' | 'low';
   icon?: string;
+  alwaysAvailable?: boolean; // If true, category is always available regardless of validation
 }
 
 export interface CategoryAvailabilityResult {

@@ -7,6 +7,7 @@ interface Movie {
   voteAverage?: number;
   releaseDate?: string;
   hasOscar?: boolean;
+  oscar_status?: string; // Oscar status: 'winner', 'nominee', 'none', or 'unknown'
   isBlockbuster?: boolean;
   budget?: number;
   revenue?: number;
@@ -91,8 +92,14 @@ export const getEligibleCategories = (
   }
 
   // Academy Award category - using actual Oscar data
-  if (movie.hasOscar && allCategories.includes('Academy Award Nominee or Winner')) {
-    eligibleCategories.push('Academy Award Nominee or Winner');
+  // Check both hasOscar flag and oscar_status directly for better reliability
+  if (allCategories.includes('Academy Award Nominee or Winner')) {
+    const hasOscarFlag = movie.hasOscar === true;
+    const hasOscarStatus = movie.oscar_status === 'winner' || movie.oscar_status === 'nominee';
+    
+    if (hasOscarFlag || hasOscarStatus) {
+      eligibleCategories.push('Academy Award Nominee or Winner');
+    }
   }
   
   // Blockbuster category - using actual budget/revenue data

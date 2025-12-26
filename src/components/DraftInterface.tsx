@@ -78,6 +78,8 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(draftState?.existingDraftId || null);
   // Use ref to track draftId immediately (before state update)
   const draftIdRef = useRef<string | null>(draftState?.existingDraftId || null);
+  // Track if initialization has been attempted to prevent duplicate runs
+  const hasInitialized = useRef(false);
   
   // Update currentDraftId when existingDraftId changes (e.g., when restored from database)
   useEffect(() => {
@@ -112,20 +114,23 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   // Works for both authenticated users and guest sessions
   useEffect(() => {
     const initializeDraft = async () => {
-      // Skip if we already have a draftId, or if draft is complete, or if we're loading existing picks
-      if (currentDraftId || isComplete || existingPicks?.length) return;
+      // Skip if we already have a draftId, if we're loading existing picks, or if we've already initialized
+      if (currentDraftId || existingPicks?.length || hasInitialized.current) return;
+      
+      hasInitialized.current = true;
       
       try {
         // Create draft with empty picks to get a draftId
         // This works for all themes: spec-draft, year, people, etc.
         // Guest sessions are handled automatically by useDraftOperations via guestSession
+        // Always start with isComplete: false - the completion save effect will update it
         const draftId = await autoSaveDraft({
           theme: draftState.theme, // Can be 'spec-draft', 'year', 'people', etc.
           option: draftState.option,
           participants: draftState.participants,
           categories: draftState.categories,
           picks: [], // Empty picks initially
-          isComplete: false
+          isComplete: false // Always start as incomplete - completion will be saved separately
         }, undefined); // No existing draftId
         
         if (draftId) {
@@ -140,14 +145,14 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
         setCurrentDraftId(localDraftId);
         draftIdRef.current = localDraftId;
         console.log('Generated local draftId as fallback:', localDraftId);
-        // Don't block user - they can still make picks
+        // Don't block user - they can still make picks or view completion
         // The draft will be created on first pick attempt
         // For guest sessions, RLS errors are expected but draft should still be created
       }
     };
     
     initializeDraft();
-  }, [currentDraftId, isComplete, existingPicks, draftState, autoSaveDraft]);
+  }, [currentDraftId, existingPicks, draftState, autoSaveDraft]); // Removed isComplete from dependencies
 
   // Load existing picks when component mounts
   useEffect(() => {
@@ -156,6 +161,44 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     }
   }, [existingPicks, draftState.participants, loadExistingPicks]);
   
+  // Save draft when it completes (even with 0 picks) to ensure we have a draftId
+  useEffect(() => {
+    const saveCompletion = async () => {
+      if (!isComplete) return;
+      
+      // If we don't have a draftId yet, wait a bit for initialization to complete
+      let draftId = currentDraftId || draftIdRef.current;
+      if (!draftId) {
+        // Wait up to 2 seconds for initialization
+        for (let i = 0; i < 20; i++) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          draftId = currentDraftId || draftIdRef.current;
+          if (draftId) break;
+        }
+      }
+      
+      if (draftId) {
+        try {
+          await autoSaveDraft({
+            theme: draftState.theme,
+            option: draftState.option,
+            participants: draftState.participants,
+            categories: draftState.categories,
+            picks: picks,
+            isComplete: true
+          }, draftId);
+          console.log('Draft completion saved with ID:', draftId);
+        } catch (error) {
+          console.error('Failed to save draft completion:', error);
+        }
+      } else {
+        console.warn('Draft completed but no draftId available after waiting');
+      }
+    };
+    
+    saveCompletion();
+  }, [isComplete, currentDraftId, picks, draftState, autoSaveDraft]);
+
   // Enrich picks when draft completes
   useEffect(() => {
     if (isComplete && picks.length > 0 && !enrichedPicks && !enriching) {
@@ -296,16 +339,15 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     setSelectedMovie(movie);
     setSelectedCategory('');
     
-    // Fetch Oscar status on-demand for year queries
-    if (draftState.theme === 'year' && movie.id) {
+    // Simple Oscar status check - just check cache, no synchronous enrichment
+    if (movie.id) {
       try {
-        // Quick cache check first
+        // Try cache lookup by tmdb_id (with or without year)
         const { data: cached } = await supabase
           .from('oscar_cache')
           .select('oscar_status')
           .eq('tmdb_id', movie.id)
-          .eq('movie_year', movie.year || null)
-          .single();
+          .maybeSingle();
         
         if (cached) {
           const updatedMovie = {
@@ -315,10 +357,21 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
           };
           setSelectedMovie(updatedMovie);
         } else {
-          // If not in cache, optionally call enrich-movie-data (async, non-blocking)
-          // This will update the cache for future use
+          // If not in cache, enrich in background (async, non-blocking)
           supabase.functions.invoke('enrich-movie-data', {
             body: { movieId: movie.id, movieTitle: movie.title, movieYear: movie.year }
+          }).then(({ data: enrichmentData }) => {
+            if (enrichmentData?.enrichmentData) {
+              const updatedMovie = {
+                ...movie,
+                oscar_status: enrichmentData.enrichmentData.oscarStatus || enrichmentData.enrichmentData.oscar_status || 'unknown',
+                hasOscar: enrichmentData.enrichmentData.oscarStatus === 'winner' || 
+                         enrichmentData.enrichmentData.oscarStatus === 'nominee' ||
+                         enrichmentData.enrichmentData.oscar_status === 'winner' ||
+                         enrichmentData.enrichmentData.oscar_status === 'nominee'
+              };
+              setSelectedMovie(updatedMovie);
+            }
           }).catch(err => console.log('Background Oscar fetch failed:', err));
         }
       } catch (error) {
@@ -552,6 +605,20 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
         (() => {
           // Use ref first (most up-to-date), then state, then draftState
           let finalDraftId = draftIdRef.current || currentDraftId || draftState?.existingDraftId;
+          
+          // If still no draftId and we have 0 picks (draft completed immediately), show loading state
+          // The initialization is likely still in progress
+          if (!finalDraftId && picks.length === 0) {
+            // This is a render, so we can't await, but we can show a loading state
+            // The completion save effect will handle creating/updating the draft
+            return (
+              <div className="p-6 rounded-lg">
+                <div style={{ color: 'var(--Text-Primary, #FCFFFF)' }}>
+                  <p>Initializing draft...</p>
+                </div>
+              </div>
+            );
+          }
           
           // If still no draftId, try to find it in localStorage from recent saves
           if (!finalDraftId && picks.length > 0) {

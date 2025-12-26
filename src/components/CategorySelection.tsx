@@ -37,8 +37,14 @@ const CategorySelection = ({
   const eligibleCategories = getEligibleCategories(selectedMovie, categories);
 
   const getCategoryTooltip = (category: string) => {
-    if (category === 'Academy Award Nominee or Winner' && selectedMovie.hasOscar) {
-      return `This movie has Academy Award nominations or wins`;
+    // Check both hasOscar flag and oscar_status for Academy Award
+    if (category === 'Academy Award Nominee or Winner') {
+      const hasOscar = selectedMovie.hasOscar === true || 
+                       selectedMovie.oscar_status === 'winner' || 
+                       selectedMovie.oscar_status === 'nominee';
+      if (hasOscar) {
+        return `This movie has Academy Award nominations or wins`;
+      }
     }
     if (category === 'Blockbuster (minimum of $50 Mil)' && selectedMovie.isBlockbuster) {
       const budget = selectedMovie.budget ? `$${(selectedMovie.budget / 1000000).toFixed(0)}M budget` : '';
@@ -77,13 +83,19 @@ const CategorySelection = ({
                 Based on this movie's properties, you can select from {eligibleCategories.length} eligible categories.
               </div>
             </div>
-            {selectedMovie.hasOscar && (
-              <div className="w-full flex flex-col">
-                <div className="w-full text-[#680AFF] text-sm font-brockmann font-normal leading-5">
-                  Eligible for Academy Award category (Has Oscar nominations/wins)
+            {(() => {
+              // Check both hasOscar flag and oscar_status for Academy Award
+              const hasOscar = selectedMovie.hasOscar === true || 
+                               selectedMovie.oscar_status === 'winner' || 
+                               selectedMovie.oscar_status === 'nominee';
+              return hasOscar && (
+                <div className="w-full flex flex-col">
+                  <div className="w-full text-[#680AFF] text-sm font-brockmann font-normal leading-5">
+                    Eligible for Academy Award category (Has Oscar nominations/wins)
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
             {selectedMovie.isBlockbuster && (
               <div className="w-full flex flex-col">
                 <div className="w-full text-[#06C995] text-sm font-brockmann font-normal leading-5">

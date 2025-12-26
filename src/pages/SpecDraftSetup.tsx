@@ -7,6 +7,7 @@ import { CheckboxIcon, MultiPersonIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useProfile } from '@/hooks/useProfile';
+import { getCategoryConfig } from '@/config/categoryConfigs';
 // Simple checkbox component for category selection with live counter
 const CategoryCheckbox = ({ 
   category, 
@@ -405,6 +406,17 @@ const SpecDraftSetup = () => {
   };
 
   const handleCategoryToggle = (category: string, checked: boolean) => {
+    // Check if category is always available (Oscar/Blockbuster)
+    const categoryConfig = getCategoryConfig(category);
+    if (categoryConfig?.alwaysAvailable) {
+      // Always allow these categories - no validation needed
+      setSelectedCategories(prev => ({
+        ...prev,
+        [category]: checked,
+      }));
+      return;
+    }
+    
     // Prevent selecting ineligible categories
     if (checked) {
       const movieCount = categoryCounts[category] || 0;
@@ -664,365 +676,112 @@ const SpecDraftSetup = () => {
           </div>
 
           {/* Add Players */}
-          <div style={{
-            width: '100%',
-            background: 'var(--Section-Container, #0E0E0F)',
-            boxShadow: '0px 0px 6px #3B0394',
-            borderRadius: '8px',
-            flexDirection: 'column',
-            justifyContent: 'flex-start',
-            alignItems: 'flex-start',
-            display: 'inline-flex'
-          }}>
-            <div style={{
-              width: '896px',
-              padding: '24px',
-              flexDirection: 'column',
-              justifyContent: 'flex-start',
-              alignItems: 'flex-start',
-              gap: '24px',
-              display: 'flex'
-            }}>
-              <div style={{
-                alignSelf: 'stretch',
-                flexDirection: 'column',
-                justifyContent: 'flex-start',
-                alignItems: 'flex-start',
-                gap: '16px',
-                display: 'flex'
-              }}>
-                <div style={{
-                  alignSelf: 'stretch',
-                  justifyContent: 'flex-start',
-                  alignItems: 'center',
-                  gap: '8px',
-                  display: 'inline-flex'
-                }}>
-                  <div style={{
-                    width: '24px',
-                    height: '24px',
-                    padding: '2px',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    gap: '10px',
-                    display: 'inline-flex',
-                    color: 'var(--Text-Purple, #907AFF)'
-                  }}>
-                    <MultiPersonIcon />
-                  </div>
-                  <div style={{
-                    flex: '1 1 0',
-                    justifyContent: 'center',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    color: 'var(--Text-Primary, #FCFFFF)',
-                    fontSize: '20px',
-                    fontFamily: 'Brockmann',
-                    fontWeight: '500',
-                    lineHeight: '28px',
-                    wordWrap: 'break-word'
-                  }}>
-                    Add Players
-                  </div>
+          <div className="p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 flex justify-center items-center">
+                <MultiPersonIcon className="w-6 h-6 text-purple-300" />
+              </div>
+              <span className="text-greyscale-blue-100 text-xl font-brockmann font-medium leading-7">
+                Add Players
+              </span>
+            </div>
+            
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder={draftMode === 'multiplayer' ? 'Enter email address to invite' : 'Enter player name'}
+                value={newParticipant}
+                onChange={(e) => setNewParticipant(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddParticipant();
+                  }
+                }}
+                className="flex-1 rounded-[2px] bg-greyscale-purp-850 text-greyscale-blue-100 placeholder:text-greyscale-blue-500 border-0 focus:border-0 px-4 py-3 text-sm font-brockmann font-medium"
+                style={{outline: '1px solid #666469', outlineOffset: '-1px'}}
+              />
+              <button
+                onClick={handleAddParticipant}
+                onMouseEnter={() => setIsAddButtonHovered(true)}
+                onMouseLeave={() => setIsAddButtonHovered(false)}
+                className="px-4 py-2 bg-brand-primary hover:bg-purple-300 text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5 rounded-[2px] flex justify-center items-center transition-colors"
+                style={{
+                  background: isAddButtonHovered ? 'var(--Purple-300, #907AFF)' : 'var(--Brand-Primary, #7142FF)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s ease'
+                }}
+              >
+                Add
+              </button>
+            </div>
+
+            {draftMode === 'multiplayer' && (
+              <div className="p-4 bg-teal-900 rounded flex items-center gap-2" style={{outline: '1px solid #B2FFEA', outlineOffset: '-1px'}}>
+                <div className="w-6 h-6 flex justify-center items-center">
+                  <Mail className="w-6 h-6 text-teal-200" />
                 </div>
-                <div style={{
-                  alignSelf: 'stretch',
-                  justifyContent: 'flex-start',
-                  alignItems: 'flex-start',
-                  gap: '8px',
-                  display: 'inline-flex'
-                }}>
-                  <div style={{
-                    flex: '1 1 0',
-                    flexDirection: 'column',
-                    justifyContent: 'flex-start',
-                    alignItems: 'flex-start',
-                    display: 'inline-flex'
-                  }}>
-                    <div style={{
-                      alignSelf: 'stretch',
-                      paddingLeft: '16px',
-                      paddingRight: '16px',
-                      paddingTop: '12px',
-                      paddingBottom: '12px',
-                      background: 'var(--UI-Primary, #1D1D1F)',
-                      overflow: 'hidden',
-                      borderRadius: '2px',
-                      outline: '1px var(--Text-Light-grey, #BDC3C2) solid',
-                      outlineOffset: '-1px',
-                      justifyContent: 'flex-start',
-                      alignItems: 'center',
-                      gap: '12px',
-                      display: 'inline-flex'
-                    }}>
-                      <div style={{
-                        flex: '1 1 0',
-                        overflow: 'hidden',
-                        flexDirection: 'column',
-                        justifyContent: 'flex-start',
-                        alignItems: 'flex-start',
-                        display: 'inline-flex'
-                      }}>
-                        <input
-                          type="text"
-                          placeholder={draftMode === 'multiplayer' ? 'Enter email address to invite' : 'Enter player name'}
-                          value={newParticipant}
-                          onChange={(e) => setNewParticipant(e.target.value)}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleAddParticipant();
-                            }
-                          }}
-                          style={{
-                            width: '100%',
-                            border: 'none',
-                            outline: 'none',
-                            background: 'transparent',
-                            color: 'var(--Text-Primary, #FCFFFF)',
-                            fontSize: '14px',
-                            fontFamily: 'Brockmann',
-                            fontWeight: '500',
-                            lineHeight: '20px'
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleAddParticipant}
-                    onMouseEnter={() => setIsAddButtonHovered(true)}
-                    onMouseLeave={() => setIsAddButtonHovered(false)}
-                    style={{
-                      alignSelf: 'stretch',
-                      paddingLeft: '16px',
-                      paddingRight: '16px',
-                      paddingTop: '8px',
-                      paddingBottom: '8px',
-                      background: isAddButtonHovered ? 'var(--Purple-300, #907AFF)' : 'var(--Brand-Primary, #7142FF)',
-                      borderRadius: '2px',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      display: 'flex',
-                      border: 'none',
-                      cursor: 'pointer',
-                      transition: 'background 0.2s ease'
-                    }}
-                  >
-                    <div style={{
-                      textAlign: 'center',
-                      justifyContent: 'center',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      color: 'var(--Text-Primary, #FCFFFF)',
-                      fontSize: '14px',
-                      fontFamily: 'Brockmann',
-                      fontWeight: '500',
-                      lineHeight: '20px',
-                      wordWrap: 'break-word'
-                    }}>
-                      Add
-                    </div>
-                  </button>
+                <div className="flex-1">
+                  <span className="text-teal-200 text-sm font-brockmann font-medium leading-5">
+                    <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They'll receive an email invitation to join.
+                  </span>
                 </div>
               </div>
+            )}
 
-              {draftMode === 'multiplayer' && (
-                <div style={{
-                  alignSelf: 'stretch',
-                  padding: '16px',
-                  background: 'var(--Teal-900, #00291E)',
-                  borderRadius: '4px',
-                  outline: '1px var(--Teal-200, #B2FFEA) solid',
-                  outlineOffset: '-1px',
-                  justifyContent: 'flex-start',
-                  alignItems: 'center',
-                  gap: '8px',
-                  display: 'inline-flex'
-                }}>
-                  <div style={{
-                    width: '24px',
-                    paddingLeft: '2px',
-                    paddingRight: '2px',
-                    paddingTop: '4px',
-                    paddingBottom: '4px',
-                    flexDirection: 'column',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    gap: '10px',
-                    display: 'inline-flex',
-                    color: 'var(--Teal-200, #B2FFEA)'
-                  }}>
-                    <Mail size={16} />
-                  </div>
-                  <div style={{
-                    flex: '1 1 0',
-                    justifyContent: 'flex-start',
-                    alignItems: 'flex-start',
-                    display: 'flex'
-                  }}>
-                    <div style={{
-                      flex: '1 1 0',
-                      justifyContent: 'center',
-                      display: 'flex',
-                      flexDirection: 'column'
-                    }}>
-                      <span style={{
-                        color: 'var(--Teal-200, #B2FFEA)',
-                        fontSize: '14px',
-                        fontFamily: 'Brockmann',
-                        fontWeight: '700',
-                        lineHeight: '20px',
-                        wordWrap: 'break-word'
-                      }}>Multiplayer Mode: </span>
-                      <span style={{
-                        color: 'var(--Teal-200, #B2FFEA)',
-                        fontSize: '14px',
-                        fontFamily: 'Brockmann',
-                        fontWeight: '500',
-                        lineHeight: '20px',
-                        wordWrap: 'break-word'
-                      }}> Enter email addresses of friends you want to invite. They'll receive an email invitation to join.</span>
-                    </div>
-                  </div>
+            {(participants.length > 0 || (draftMode === 'multiplayer' && hostName)) && (
+              <div className="flex flex-col gap-3">
+                <div>
+                  <span className="text-greyscale-blue-300 text-base font-normal leading-6 font-brockmann">
+                    Participants ({(() => {
+                      if (draftMode === 'multiplayer') {
+                        const displayedParticipants = participants.filter(p => p !== hostName);
+                        return hostName ? displayedParticipants.length + 1 : displayedParticipants.length;
+                      }
+                      return participants.length;
+                    })()}):
+                  </span>
                 </div>
-              )}
-
-              {(participants.length > 0 || (draftMode === 'multiplayer' && hostName)) && (
-                <div style={{
-                  alignSelf: 'stretch',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-start',
-                  alignItems: 'flex-start',
-                  gap: '12px',
-                  display: 'flex'
-                }}>
-                  <div style={{
-                    alignSelf: 'stretch',
-                    flexDirection: 'column',
-                    justifyContent: 'flex-start',
-                    alignItems: 'flex-start',
-                    display: 'flex'
-                  }}>
-                    <div style={{
-                      alignSelf: 'stretch',
-                      justifyContent: 'center',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      color: 'var(--Text-Primary, #FCFFFF)',
-                      fontSize: '16px',
-                      fontFamily: 'Brockmann',
-                      fontWeight: '400',
-                      lineHeight: '24px',
-                      wordWrap: 'break-word'
-                    }}>
-                      Participants ({(() => {
-                        if (draftMode === 'multiplayer') {
-                          const displayedParticipants = participants.filter(p => p !== hostName);
-                          return hostName ? displayedParticipants.length + 1 : displayedParticipants.length;
-                        }
-                        return participants.length;
-                      })()}):
+                <div className="flex flex-wrap gap-2">
+                  {draftMode === 'multiplayer' && hostName && (
+                    <div
+                      className="py-2 pl-4 pr-4 bg-brand-primary rounded flex items-center gap-2"
+                      title="Host (cannot be removed)"
+                    >
+                      {draftMode === 'multiplayer' && <Mail size={16} className="text-greyscale-blue-100" />}
+                      <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
+                        {hostName} (Host)
+                      </span>
                     </div>
-                  </div>
-                  <div style={{
-                    alignSelf: 'stretch',
-                    justifyContent: 'flex-start',
-                    alignItems: 'flex-start',
-                    gap: '8px',
-                    display: 'inline-flex',
-                    flexWrap: 'wrap',
-                    alignContent: 'flex-start'
-                  }}>
-                    {draftMode === 'multiplayer' && hostName && (
-                      <div
+                  )}
+                  {participants.filter(p => draftMode !== 'multiplayer' || p !== hostName).map((participant) => (
+                    <div
+                      key={participant}
+                      className="py-2 pl-4 pr-[10px] bg-brand-primary rounded flex items-center gap-2"
+                    >
+                      {draftMode === 'multiplayer' && <Mail size={16} className="text-greyscale-blue-100" />}
+                      <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
+                        {participant}
+                      </span>
+                      <button
+                        onClick={() => handleRemoveParticipant(participant)}
+                        onMouseEnter={() => setHoveredRemoveButton(participant)}
+                        onMouseLeave={() => setHoveredRemoveButton(null)}
+                        className="p-1 rounded-xl flex justify-center items-center hover:bg-purple-300 transition-colors"
                         style={{
-                          paddingTop: '8px',
-                          paddingBottom: '8px',
-                          paddingLeft: '16px',
-                          paddingRight: '16px',
-                          background: 'var(--Brand-Primary, #7142FF)',
-                          borderRadius: '4px',
-                          justifyContent: 'flex-start',
-                          alignItems: 'center',
-                          gap: '8px',
-                          display: 'flex',
-                          height: '36px'
-                        }}
-                        title="Host (cannot be removed)"
-                      >
-                        <div style={{
-                          justifyContent: 'center',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          color: 'var(--Text-Primary, #FCFFFF)',
-                          fontSize: '14px',
-                          fontFamily: 'Brockmann',
-                          fontWeight: '500',
-                          lineHeight: '20px',
-                          wordWrap: 'break-word'
-                        }}>
-                          {hostName} (Host)
-                        </div>
-                      </div>
-                    )}
-                    {participants.filter(p => draftMode !== 'multiplayer' || p !== hostName).map((participant) => (
-                      <div
-                        key={participant}
-                        style={{
-                          paddingTop: '8px',
-                          paddingBottom: '8px',
-                          paddingLeft: '16px',
-                          paddingRight: '10px',
-                          background: 'var(--Brand-Primary, #7142FF)',
-                          borderRadius: '4px',
-                          justifyContent: 'flex-start',
-                          alignItems: 'center',
-                          gap: '8px',
-                          display: 'flex',
-                          height: '36px'
+                          background: hoveredRemoveButton === participant ? 'var(--Purple-300, #907AFF)' : 'transparent'
                         }}
                       >
-                        <div style={{
-                          justifyContent: 'center',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          color: 'var(--Text-Primary, #FCFFFF)',
-                          fontSize: '14px',
-                          fontFamily: 'Brockmann',
-                          fontWeight: '500',
-                          lineHeight: '20px',
-                          wordWrap: 'break-word'
-                        }}>
-                          {participant}
+                        <div className="w-4 h-4 flex justify-center items-center">
+                          <Trash2 size={16} className="text-greyscale-blue-100" />
                         </div>
-                        <button
-                          onClick={() => handleRemoveParticipant(participant)}
-                          onMouseEnter={() => setHoveredRemoveButton(participant)}
-                          onMouseLeave={() => setHoveredRemoveButton(null)}
-                          style={{
-                            padding: '4px',
-                            borderRadius: '50%',
-                            width: '24px',
-                            height: '24px',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            display: 'flex',
-                            border: 'none',
-                            background: hoveredRemoveButton === participant ? 'var(--Purple-300, #907AFF)' : 'transparent',
-                            cursor: 'pointer',
-                            transition: 'background 0.2s ease'
-                          }}
-                        >
-                          <Trash2 size={16} style={{ color: 'var(--Text-Primary, #FCFFFF)' }} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Select Categories */}
@@ -1117,4 +876,8 @@ const SpecDraftSetup = () => {
 };
 
 export default SpecDraftSetup;
+
+
+
+
 

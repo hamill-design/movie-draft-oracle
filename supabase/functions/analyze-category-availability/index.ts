@@ -319,6 +319,21 @@ async function analyzeCategoryMovies(
   preferFreshOscarStatus?: boolean
 ): Promise<CategoryAvailabilityResult> {
   
+  // ALWAYS allow Oscar and Blockbuster categories - no validation needed
+  // These categories should always be available regardless of year or theme
+  if (category === 'Academy Award Nominee or Winner' || category === 'Blockbuster (minimum of $50 Mil)') {
+    const requiredCount = calculateRequiredMovies(category, playerCount);
+    console.log(`✅ Always allowing "${category}" - no validation needed (required: ${requiredCount})`);
+    
+    return {
+      categoryId: category,
+      available: true,
+      movieCount: Math.max(requiredCount * 2, 50), // Always return a reasonable count
+      sampleMovies: [],
+      status: 'sufficient'
+    };
+  }
+  
   // Get spec categories if this is a person-based theme
   let specCategoriesMap = new Map<string, number[]>();
   if (theme === 'people' && option) {
@@ -637,8 +652,10 @@ function isMovieEligibleForCategory(
       return year >= 2020 && year <= 2029;
     
     case 'Academy Award Nominee or Winner':
-      // Rely solely on normalized oscar_status attached by fetch-movies
-      return movie.oscar_status === 'winner' || movie.oscar_status === 'nominee';
+      // Check both hasOscar flag and oscar_status for better reliability
+      const hasOscarFlag = movie.hasOscar === true;
+      const hasOscarStatus = movie.oscar_status === 'winner' || movie.oscar_status === 'nominee';
+      return hasOscarFlag || hasOscarStatus;
     
     case 'Blockbuster (minimum of $50 Mil)':
       return movie.isBlockbuster === true || (movie.revenue && movie.revenue >= 50000000);

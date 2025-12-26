@@ -72,6 +72,8 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
       }
       
       // For year category, pass year as searchQuery and user search as movieSearchQuery
+      // For person category, pass person name as searchQuery and user search as movieSearchQuery
+      // When user has a search query, fetch all movies so we can filter client-side
       const requestBody = category === 'year' 
         ? {
             category,
@@ -79,10 +81,17 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
             movieSearchQuery: userSearchQuery, // User's search term (e.g., 'Reds')
             fetchAll: false // Never fetch all for year searches
           }
+        : category === 'person'
+        ? {
+            category,
+            searchQuery: cleanedThemeOption, // Person name (e.g., 'Brad Pitt')
+            movieSearchQuery: userSearchQuery, // User's search term (e.g., "Ocean's")
+            fetchAll: userSearchQuery && userSearchQuery.trim().length >= 2 ? true : false // Fetch all when user is searching so we have more movies to filter
+          }
         : {
             category,
-            searchQuery: cleanedThemeOption, // Person name or other
-            fetchAll: category === 'person' ? false : true // Don't fetch all for person either
+            searchQuery: cleanedThemeOption, // Other categories
+            fetchAll: true
           };
       
       console.log('useMovies - Request body:', requestBody);

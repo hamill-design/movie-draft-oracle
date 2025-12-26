@@ -107,6 +107,11 @@ export const MultiplayerDraftInterface = ({
     loading: moviesLoading
   } = useMovies(getBaseCategory(), themeConstraint, searchQuery);
 
+  // Scroll to top when component mounts or draft loads
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [draftId]);
+
   // Create draft if this is a new multiplayer draft
   useEffect(() => {
     if (initialData && !draftId && participantId) {
@@ -140,16 +145,15 @@ export const MultiplayerDraftInterface = ({
   const handleMovieSelect = async (movie: any) => {
     setSelectedMovie(movie);
     
-    // Fetch Oscar status on-demand for year queries
-    if (draft?.theme === 'year' && movie.id) {
+    // Simple Oscar status check - just check cache, no synchronous enrichment
+    if (movie.id) {
       try {
-        // Quick cache check first
+        // Try cache lookup by tmdb_id (with or without year)
         const { data: cached } = await supabase
           .from('oscar_cache')
           .select('oscar_status')
           .eq('tmdb_id', movie.id)
-          .eq('movie_year', movie.year || null)
-          .single();
+          .maybeSingle();
         
         if (cached) {
           const updatedMovie = {
@@ -159,10 +163,21 @@ export const MultiplayerDraftInterface = ({
           };
           setSelectedMovie(updatedMovie);
         } else {
-          // If not in cache, optionally call enrich-movie-data (async, non-blocking)
-          // This will update the cache for future use
+          // If not in cache, enrich in background (async, non-blocking)
           supabase.functions.invoke('enrich-movie-data', {
             body: { movieId: movie.id, movieTitle: movie.title, movieYear: movie.year }
+          }).then(({ data: enrichmentData }) => {
+            if (enrichmentData?.enrichmentData) {
+              const updatedMovie = {
+                ...movie,
+                oscar_status: enrichmentData.enrichmentData.oscarStatus || enrichmentData.enrichmentData.oscar_status || 'unknown',
+                hasOscar: enrichmentData.enrichmentData.oscarStatus === 'winner' || 
+                         enrichmentData.enrichmentData.oscarStatus === 'nominee' ||
+                         enrichmentData.enrichmentData.oscar_status === 'winner' ||
+                         enrichmentData.enrichmentData.oscar_status === 'nominee'
+              };
+              setSelectedMovie(updatedMovie);
+            }
           }).catch(err => console.log('Background Oscar fetch failed:', err));
         }
       } catch (error) {

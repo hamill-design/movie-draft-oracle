@@ -8,6 +8,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AppHeader from "./components/AppHeader";
 import Footer from "./components/Footer";
+import ScrollToTop from "./components/ScrollToTop";
 import Home from "./pages/Home";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -40,6 +41,7 @@ const App = () => (
         <Sonner />
         <AuthProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <div className="flex flex-col min-h-screen">
             <AppHeader />
               <main className="flex-1">

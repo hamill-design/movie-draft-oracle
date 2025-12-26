@@ -1249,8 +1249,7 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify(await processMovieResults(data, tmdbApiKey, { 
-      preferFreshOscarStatus,
-      skipDetailedInfo: category === 'year' && fetchAll
+      preferFreshOscarStatus
     })), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -1272,7 +1271,7 @@ serve(async (req) => {
 });
 
 // Process movie results function to handle common transformations
-async function processMovieResults(data: any, tmdbApiKey: string, opts: { preferFreshOscarStatus?: boolean, skipDetailedInfo?: boolean } = {}) {
+async function processMovieResults(data: any, tmdbApiKey: string, opts: { preferFreshOscarStatus?: boolean } = {}) {
   console.log(`📊 Processing ${(data.results || []).length} movies...`);
   
   // Apply TV content filtering to all results
@@ -1314,14 +1313,34 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
   }
   
   // Enhanced movie data transformation with proper Oscar and blockbuster detection
-  const transformedMovies = await Promise.all(data.results.map(async (movie: any) => {
-    let detailedMovie = movie;
-    let hasOscar = false;
-    let oscarStatusNormalized = 'unknown';
-    let isBlockbuster = false;
-    
-    // Skip expensive API calls if skipDetailedInfo is true (for year queries with many movies)
-    if (!opts.skipDetailedInfo) {
+  // Process in batches to avoid timeouts (only for large result sets)
+  const BATCH_SIZE = 50;
+  const transformedMovies: any[] = [];
+  const shouldBatch = data.results.length > 100; // Only batch if we have many movies
+  
+  const processMovie = async (movie: any) => {
+      let detailedMovie = movie;
+      let hasOscar = false;
+      let oscarStatusNormalized = 'unknown';
+      let isBlockbuster = false;
+      
+      // SIMPLIFIED: Check Oscar cache FIRST before any API calls
+      const movieYear = extractMovieYear(movie);
+      try {
+        const { data: oscarCached } = await supabase
+          .from('oscar_cache')
+          .select('oscar_status')
+          .eq('tmdb_id', movie.id)
+          .maybeSingle();
+        
+        if (oscarCached) {
+          oscarStatusNormalized = oscarCached.oscar_status || 'unknown';
+          hasOscar = oscarStatusNormalized === 'winner' || oscarStatusNormalized === 'nominee';
+        }
+      } catch (err) {
+        // Cache check failed, continue with API calls
+      }
+      
       try {
         // Get detailed movie information including budget and revenue
         const detailResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${tmdbApiKey}`);
@@ -1332,54 +1351,34 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
           const budget = detailedMovie.budget || 0;
           const revenue = detailedMovie.revenue || 0;
           isBlockbuster = budget >= 50000000 || revenue >= 100000000;
-          
-          // Only log occasionally to avoid spam
-          if (Math.random() < 0.05) {
-            console.log(`Movie: ${movie.title}, Budget: $${budget}, Revenue: $${revenue}, Blockbuster: ${isBlockbuster}`);
-          }
         }
 
-        // Get accurate Oscar status from OMDb API with caching
-        // Use the enhanced movie year extraction
-        const movieYear = extractMovieYear(detailedMovie);
-        
-        // Enhanced logging with more context
-        if (Math.random() < 0.05) {
-          console.log(`Movie: ${movie.title} - Release Date: ${detailedMovie.release_date}, Primary: ${detailedMovie.primary_release_date}, Extracted Year: ${movieYear}`);
+        // Only fetch Oscar status from API if not already in cache
+        if (oscarStatusNormalized === 'unknown') {
+          const correctYear = extractMovieYear(detailedMovie);
+          const oscarStatus = await resolveOscarStatus(movie.id, movie.title, correctYear, tmdbApiKey, { 
+            preferFreshOscarStatus: !!opts.preferFreshOscarStatus 
+          });
+          oscarStatusNormalized = oscarStatus || 'unknown';
+          hasOscar = oscarStatusNormalized !== 'none' && oscarStatusNormalized !== 'unknown';
         }
-        
-        const oscarStatus = await resolveOscarStatus(movie.id, movie.title, movieYear, tmdbApiKey, { preferFreshOscarStatus: !!opts.preferFreshOscarStatus });
-        oscarStatusNormalized = oscarStatus || 'unknown';
-        hasOscar = oscarStatusNormalized !== 'none' && oscarStatusNormalized !== 'unknown';
         
       } catch (error) {
         console.log(`Could not fetch detailed info for movie ${movie.id}:`, error);
       }
-    } else {
-      // Skip all Oscar checks for year queries to prevent timeout
-      // Oscar status will be fetched on-demand when movie is selected
-      oscarStatusNormalized = 'unknown';
-      hasOscar = false;
-    }
 
-    // Use enhanced year extraction for consistency
-    const correctYear = extractMovieYear(detailedMovie);
-    
+      // Use enhanced year extraction for consistency
+      const correctYear = extractMovieYear(detailedMovie);
+      
     return {
       id: movie.id,
       title: movie.title,
       year: correctYear,
-      // Enhanced debugging info (remove in production)
-      year_debug: Math.random() < 0.1 ? {
-        release_date: detailedMovie.release_date,
-        primary_release_date: detailedMovie.primary_release_date,
-        extracted_year: correctYear
-      } : undefined,
       genre: movie.genre_ids && movie.genre_ids.length > 0 
         ? movie.genre_ids.map((id: number) => getGenreName(id)).join(' ')
         : 'Unknown',
       director: 'Unknown',
-      runtime: opts.skipDetailedInfo ? (movie.runtime || 120) : (detailedMovie.runtime || 120),
+      runtime: detailedMovie.runtime || 120,
       poster: getMovieEmoji(movie.genre_ids?.[0]),
       description: movie.overview || 'No description available',
       isDrafted: false,
@@ -1388,24 +1387,49 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
       backdropPath: movie.backdrop_path,
       voteAverage: movie.vote_average,
       releaseDate: movie.release_date,
-      budget: opts.skipDetailedInfo ? 0 : (detailedMovie.budget || 0),
-      revenue: opts.skipDetailedInfo ? 0 : (detailedMovie.revenue || 0),
+      budget: detailedMovie.budget || 0,
+      revenue: detailedMovie.revenue || 0,
       hasOscar,
       oscar_status: oscarStatusNormalized,
       isBlockbuster
     };
-  }));
+  };
+  
+  if (shouldBatch) {
+    // Process in batches for large result sets
+    for (let i = 0; i < data.results.length; i += BATCH_SIZE) {
+      const batch = data.results.slice(i, i + BATCH_SIZE);
+      const batchResults = await Promise.all(batch.map(processMovie));
+      transformedMovies.push(...batchResults);
+    }
+  } else {
+    // Process all at once for smaller result sets
+    const results = await Promise.all(data.results.map(processMovie));
+    transformedMovies.push(...results);
+  }
 
   console.log(`✅ Processed ${transformedMovies.length} movies successfully`);
 
-  // Coverage logging for oscar status
+  // Coverage logging for oscar status and blockbuster
   try {
-    const counts = transformedMovies.reduce((acc: any, m: any) => {
+    const oscarCounts = transformedMovies.reduce((acc: any, m: any) => {
       const key = m.oscar_status || 'unknown';
       acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    console.log('🏆 Oscar status distribution:', counts);
+    console.log('🏆 Oscar status distribution:', oscarCounts);
+    
+    const blockbusterCount = transformedMovies.filter((m: any) => m.isBlockbuster === true).length;
+    const hasRevenueCount = transformedMovies.filter((m: any) => m.revenue && m.revenue > 0).length;
+    console.log(`💰 Blockbuster stats: ${blockbusterCount} blockbusters, ${hasRevenueCount} movies with revenue data`);
+    
+    // Log sample of movies with Oscar status for debugging
+    const oscarMovies = transformedMovies.filter((m: any) => m.oscar_status === 'winner' || m.oscar_status === 'nominee');
+    if (oscarMovies.length > 0) {
+      console.log(`🏆 Found ${oscarMovies.length} Oscar movies. Sample:`, oscarMovies.slice(0, 5).map((m: any) => ({ title: m.title, oscar_status: m.oscar_status })));
+    } else {
+      console.log('⚠️ No Oscar movies found - this might indicate a problem with Oscar status fetching');
+    }
   } catch {}
 
   // Decade distribution logging for person-based fetches

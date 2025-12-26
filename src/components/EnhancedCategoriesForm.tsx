@@ -206,7 +206,8 @@ const CustomCheckbox = ({
   const [isHovered, setIsHovered] = useState(false);
   const config = getCategoryConfig(category);
   
-  const isDisabled = availability?.status === 'insufficient';
+  // Always allow categories marked as alwaysAvailable (Oscar/Blockbuster)
+  const isDisabled = config?.alwaysAvailable ? false : (availability?.status === 'insufficient');
 
   const getCheckboxStyle = () => {
     let baseStyle = {
@@ -668,6 +669,19 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   };
 
   const getAvailabilityForCategory = (category: string) => {
+    // Always allow Oscar and Blockbuster - no validation needed
+    if (category === 'Academy Award Nominee or Winner' || category === 'Blockbuster (minimum of $50 Mil)') {
+      const requiredCount = Math.max(playerCount * 1.5, 10);
+      return {
+        categoryId: category,
+        available: true,
+        movieCount: Math.max(requiredCount * 2, 50),
+        sampleMovies: [],
+        status: 'sufficient' as const,
+        isEstimate: false
+      };
+    }
+    
     // For spec categories, use the direct count from database
     if (specCategories.includes(category)) {
       const movieCount = specCategoryCounts.get(category) || 0;
@@ -703,6 +717,23 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   const handleCategoryToggle = (category: string, checked: boolean) => {
     console.log(`🔄 handleCategoryToggle called for "${category}":`, checked);
     const currentCategories = form.getValues('categories');
+    
+    // Check if category is always available (Oscar/Blockbuster)
+    const categoryConfig = getCategoryConfig(category);
+    if (categoryConfig?.alwaysAvailable) {
+      // Always allow these categories - no validation needed
+      if (checked) {
+        const newCategories = [...currentCategories, category];
+        console.log(`✅ Adding "${category}" to categories (always available):`, newCategories);
+        form.setValue('categories', newCategories);
+      } else {
+        const newCategories = currentCategories.filter(c => c !== category);
+        console.log(`✅ Removing "${category}" from categories:`, newCategories);
+        form.setValue('categories', newCategories);
+      }
+      return;
+    }
+    
     // Use getAvailabilityForCategory to get the correct availability for both spec and regular categories
     const availability = getAvailabilityForCategory(category);
     console.log(`📊 Availability for "${category}":`, availability);

@@ -35,6 +35,20 @@ const MovieSearch = ({
     themeParameter
   });
 
+  // Normalize string for search comparison - handles different apostrophe types and special characters
+  const normalizeForSearch = (str: string): string => {
+    return str
+      .toLowerCase()
+      .trim()
+      // Normalize different apostrophe types to regular apostrophe
+      .replace(/[''']/g, "'")
+      // Normalize different dash types
+      .replace(/[–—]/g, '-')
+      // Remove other special characters that might interfere
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  };
+
   const getPlaceholderText = () => {
     if (theme === 'spec-draft') {
       return `Search movies...`;
@@ -51,17 +65,48 @@ const MovieSearch = ({
   let filteredMoviesByTheme = movies;
   // For spec-draft, movies are already filtered by spec_draft_id in useMovies, so no additional filtering needed
 
-  // For year/person, backend already filtered by search query and year - use results directly
+  // For year theme, ensure exact year match (backend may use tolerance, so filter client-side as safety)
+  if (theme === 'year' && option) {
+    const requestedYear = parseInt(option);
+    if (!isNaN(requestedYear)) {
+      filteredMoviesByTheme = filteredMoviesByTheme.filter(movie => movie.year === requestedYear);
+    }
+  }
+
+  // For year theme, backend already filtered by search query and year - use results directly
+  // For people theme, backend doesn't filter by user search query, so we need client-side filtering
   // For other themes, apply client-side filtering
-  const filteredMovies = (theme === 'year' || theme === 'people')
-    ? filteredMoviesByTheme // Use backend results directly - no additional filtering needed
+  const filteredMovies = theme === 'year'
+    ? filteredMoviesByTheme // Use backend results directly - backend handles movieSearchQuery for year
     : searchQuery.trim() 
-      ? filteredMoviesByTheme.filter(movie => 
-          movie.title.toLowerCase().includes(searchQuery.toLowerCase().trim())
-        )
+      ? filteredMoviesByTheme.filter(movie => {
+          const normalizedTitle = normalizeForSearch(movie.title);
+          const normalizedQuery = normalizeForSearch(searchQuery);
+          const matches = normalizedTitle.includes(normalizedQuery);
+          // Debug logging for Ocean's movies
+          if (normalizedTitle.includes('ocean') && theme === 'people') {
+            console.log('MovieSearch - Ocean movie check:', {
+              title: movie.title,
+              normalizedTitle,
+              query: searchQuery,
+              normalizedQuery,
+              matches
+            });
+          }
+          return matches;
+        })
       : filteredMoviesByTheme;
 
   console.log('MovieSearch - Final filtered movies:', filteredMovies.length, 'from theme-filtered:', filteredMoviesByTheme.length, 'from total:', movies.length);
+  
+  // Debug: Log all movie titles when searching for Ocean's
+  if (searchQuery.toLowerCase().includes('ocean') && theme === 'people') {
+    console.log('MovieSearch - All movies with "ocean" in title:', 
+      filteredMoviesByTheme
+        .filter(m => normalizeForSearch(m.title).includes('ocean'))
+        .map(m => ({ title: m.title, normalized: normalizeForSearch(m.title) }))
+    );
+  }
 
   // Show results when user has typed at least 2 characters (for year/person) or any characters (for others)
   const shouldShowResults = theme === 'year' || theme === 'people' 
