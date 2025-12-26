@@ -137,7 +137,7 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+    <div className="min-h-screen overflow-x-hidden" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <div className="container mx-auto px-4 py-8">
 
         <div className="max-w-4xl mx-auto space-y-8">
@@ -154,19 +154,22 @@ const Home = () => {
                 Choose Your Draft Theme
               </div>
             </div>
-            <div className="self-stretch flex items-start gap-4 flex-wrap">
+            <div className="self-stretch flex flex-col sm:flex-row items-stretch sm:items-start gap-4">
               <button
                 onClick={() => {
                   setTheme('people');
                   setSelectedOption('');
                   setSearchQuery('');
                 }}
-                className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                className={`flex-1 h-20 min-h-[80px] w-full sm:min-w-[294px] px-4 sm:px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                   theme === 'people'
                     ? 'bg-brand-primary text-greyscale-blue-100'
                     : 'bg-greyscale-purp-850 hover:bg-greyscale-purp-800 active:bg-purple-800 text-greyscale-blue-100'
                 }`}
-                style={theme !== 'people' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : undefined}
+                style={{
+                  height: '80px',
+                  ...(theme !== 'people' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : {})
+                }}
               >
                 <div className="w-6 h-6 flex justify-center items-center">
                   <PersonIcon className="w-6 h-6" />
@@ -179,12 +182,15 @@ const Home = () => {
                   setSelectedOption('');
                   setSearchQuery('');
                 }}
-                className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                className={`flex-1 h-20 min-h-[80px] w-full sm:min-w-[294px] px-4 sm:px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                   theme === 'year'
                     ? 'bg-brand-primary text-greyscale-blue-100'
                     : 'bg-greyscale-purp-850 hover:bg-greyscale-purp-800 active:bg-purple-800 text-greyscale-blue-100'
                 }`}
-                style={theme !== 'year' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : undefined}
+                style={{
+                  height: '80px',
+                  ...(theme !== 'year' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : {})
+                }}
               >
                 <div className="w-6 h-6 flex justify-center items-center">
                   <CalendarIcon className="w-6 h-6" />
@@ -284,7 +290,7 @@ const Home = () => {
                           <button
                             key={year}
                             onClick={() => handleYearSelect(year)}
-                            className={`h-12 w-full px-6 py-2 text-sm font-brockmann-medium transition-colors text-greyscale-blue-100 border-0 box-border ${
+                            className={`h-12 w-full px-2 sm:px-4 md:px-6 py-2 text-sm font-brockmann-medium transition-colors text-greyscale-blue-100 border-0 box-border ${
                               selectedOption === year
                                 ? 'bg-brand-primary hover:bg-brand-primary'
                                 : 'bg-greyscale-purp-850 hover:bg-greyscale-purp-800'
@@ -326,16 +332,19 @@ const Home = () => {
                   Select A Mode
                 </div>
               </div>
-              <div className="self-stretch flex items-start gap-4 flex-wrap">
+              <div className="self-stretch flex flex-col sm:flex-row items-stretch sm:items-start gap-4">
                 <button
                   type="button"
                   onClick={() => setDraftMode('single')}
-                  className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                  className={`flex-1 h-20 min-h-[80px] w-full sm:min-w-[294px] px-4 sm:px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                     draftMode === 'single'
                       ? 'bg-brand-primary text-greyscale-blue-100'
                       : 'bg-greyscale-purp-850 text-greyscale-blue-100 hover:bg-greyscale-purp-800 active:bg-purple-800'
                   }`}
-                  style={draftMode !== 'single' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : undefined}
+                  style={{
+                    height: '80px',
+                    ...(draftMode !== 'single' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : {})
+                  }}
                 >
                   <div className="w-6 h-6 flex justify-center items-center">
                     <User className="w-6 h-6" />
@@ -345,12 +354,15 @@ const Home = () => {
                 <button
                   type="button"
                   onClick={() => setDraftMode('multiplayer')}
-                  className={`flex-1 h-20 min-w-[294px] px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                  className={`flex-1 h-20 min-h-[80px] w-full sm:min-w-[294px] px-4 sm:px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
                     draftMode === 'multiplayer'
                       ? 'bg-brand-primary text-greyscale-blue-100'
                       : 'bg-greyscale-purp-850 text-greyscale-blue-100 hover:bg-greyscale-purp-800 active:bg-purple-800'
                   }`}
-                  style={draftMode !== 'multiplayer' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : undefined}
+                  style={{
+                    height: '80px',
+                    ...(draftMode !== 'multiplayer' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : {})
+                  }}
                 >
                   <div className="w-6 h-6 flex justify-center items-center">
                     <Users className="w-6 h-6" />

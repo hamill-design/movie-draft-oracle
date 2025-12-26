@@ -47,37 +47,26 @@ const MovieSearch = ({
     }
   };
 
-  // Apply frontend filtering as a safety net for year-based drafts
-  // Note: spec-draft movies are already filtered by the useMovies hook, so no additional filtering needed
+  // Backend handles all filtering for year/person themes - use results directly
   let filteredMoviesByTheme = movies;
-  if (theme === 'year') {
-    const requestedYear = parseInt(option);
-    filteredMoviesByTheme = movies.filter(movie => {
-      const movieYear = movie.year;
-      const matches = movieYear === requestedYear;
-      if (!matches) {
-        console.log(`Frontend safety filter: Removing "${movie.title}" (${movieYear}) - doesn't match requested year ${requestedYear}`);
-      }
-      return matches;
-    });
-    
-    if (filteredMoviesByTheme.length !== movies.length) {
-      console.log(`Frontend safety filter: ${movies.length} → ${filteredMoviesByTheme.length} movies after year filtering`);
-    }
-  }
   // For spec-draft, movies are already filtered by spec_draft_id in useMovies, so no additional filtering needed
 
-  // Filter by search query within the theme-constrained results
-  const filteredMovies = searchQuery.trim() 
-    ? filteredMoviesByTheme.filter(movie => 
-        movie.title.toLowerCase().includes(searchQuery.toLowerCase().trim())
-      )
-    : [];
+  // For year/person, backend already filtered by search query and year - use results directly
+  // For other themes, apply client-side filtering
+  const filteredMovies = (theme === 'year' || theme === 'people')
+    ? filteredMoviesByTheme // Use backend results directly - no additional filtering needed
+    : searchQuery.trim() 
+      ? filteredMoviesByTheme.filter(movie => 
+          movie.title.toLowerCase().includes(searchQuery.toLowerCase().trim())
+        )
+      : filteredMoviesByTheme;
 
   console.log('MovieSearch - Final filtered movies:', filteredMovies.length, 'from theme-filtered:', filteredMoviesByTheme.length, 'from total:', movies.length);
 
-  // Only show results when user has started typing (same behavior for all themes)
-  const shouldShowResults = searchQuery.trim().length > 0;
+  // Show results when user has typed at least 2 characters (for year/person) or any characters (for others)
+  const shouldShowResults = theme === 'year' || theme === 'people' 
+    ? searchQuery.trim().length >= 2 
+    : searchQuery.trim().length > 0;
 
   const getTitleText = () => {
     if (theme === 'spec-draft') {
@@ -239,6 +228,18 @@ const MovieSearch = ({
                 }}
               >
                 Loading movies...
+              </div>
+            ) : !shouldShowResults && (theme === 'year' || theme === 'people') ? (
+              <div 
+                style={{
+                  color: '#FCFFFF',
+                  fontFamily: 'Brockmann',
+                  fontWeight: 400,
+                  fontSize: '14px',
+                  lineHeight: '20px'
+                }}
+              >
+                Type at least 2 characters to search for movies {theme === 'year' ? `from ${option}` : `featuring ${getCleanActorName(option)}`}
               </div>
             ) : filteredMoviesByTheme.length === 0 ? (
               <div 

@@ -16,6 +16,7 @@ import DraftBoard from '@/components/DraftBoard';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { getCleanActorName } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 interface MultiplayerDraftInterfaceProps {
   draftId?: string;
@@ -104,7 +105,7 @@ export const MultiplayerDraftInterface = ({
   const {
     movies,
     loading: moviesLoading
-  } = useMovies(getBaseCategory(), themeConstraint);
+  } = useMovies(getBaseCategory(), themeConstraint, searchQuery);
 
   // Create draft if this is a new multiplayer draft
   useEffect(() => {
@@ -136,8 +137,38 @@ export const MultiplayerDraftInterface = ({
     }
   }, [initialData, draftId, participantId, createMultiplayerDraft, navigate, toast]);
 
-  const handleMovieSelect = (movie: any) => {
+  const handleMovieSelect = async (movie: any) => {
     setSelectedMovie(movie);
+    
+    // Fetch Oscar status on-demand for year queries
+    if (draft?.theme === 'year' && movie.id) {
+      try {
+        // Quick cache check first
+        const { data: cached } = await supabase
+          .from('oscar_cache')
+          .select('oscar_status')
+          .eq('tmdb_id', movie.id)
+          .eq('movie_year', movie.year || null)
+          .single();
+        
+        if (cached) {
+          const updatedMovie = {
+            ...movie,
+            oscar_status: cached.oscar_status || 'unknown',
+            hasOscar: cached.oscar_status === 'winner' || cached.oscar_status === 'nominee'
+          };
+          setSelectedMovie(updatedMovie);
+        } else {
+          // If not in cache, optionally call enrich-movie-data (async, non-blocking)
+          // This will update the cache for future use
+          supabase.functions.invoke('enrich-movie-data', {
+            body: { movieId: movie.id, movieTitle: movie.title, movieYear: movie.year }
+          }).catch(err => console.log('Background Oscar fetch failed:', err));
+        }
+      } catch (error) {
+        console.log('Oscar status check failed:', error);
+      }
+    }
   };
 
   const handleCategorySelect = (category: string) => {

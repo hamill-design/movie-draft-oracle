@@ -1,4 +1,13 @@
+// Deno global types
+declare const Deno: {
+  env: {
+    get(key: string): string | undefined;
+  };
+};
+
+// @ts-ignore - Deno HTTP imports are resolved at runtime
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+// @ts-ignore - Deno ESM imports are resolved at runtime
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
@@ -258,8 +267,9 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in analyze-category-availability:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500 
@@ -317,7 +327,7 @@ async function analyzeCategoryMovies(
   
   // Map theme and option to proper fetch-movies parameters
   let fetchParams: any = {
-    fetchAll: theme !== 'year', // Don't use fetchAll for year themes to avoid timeout
+    fetchAll: true, // Enable fetchAll to get complete movie counts for all themes including year
     limit: 1000
   };
 

@@ -320,6 +320,11 @@ All colors MUST be HSL.
     @apply text-foreground;
     background: linear-gradient(140deg, hsl(var(--purple-900)) 16%, hsl(var(--purple-850)) 50%, hsl(var(--purple-900)) 83%);
     background-attachment: fixed;
+    overflow-x: hidden;
+  }
+
+  html {
+    overflow-x: hidden;
   }
 }
 

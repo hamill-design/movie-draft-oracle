@@ -184,8 +184,9 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     ? draftState.option 
     : '';
   
-  // Use movies hook - pass the theme constraint to get all movies for that theme
-  const { movies, loading: moviesLoading } = useMovies(baseCategory, themeConstraint);
+  // Use movies hook - pass the theme constraint and user's search query
+  // For year/person, only fetch when user types (searchQuery state)
+  const { movies, loading: moviesLoading } = useMovies(baseCategory, themeConstraint, searchQuery);
 
   // Save draft to localStorage as fallback
   const saveLocalDraft = (draftId: string, draftData: any, picks: any[]) => {
@@ -291,9 +292,39 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     }
   };
 
-  const handleMovieSelect = (movie: any) => {
+  const handleMovieSelect = async (movie: any) => {
     setSelectedMovie(movie);
     setSelectedCategory('');
+    
+    // Fetch Oscar status on-demand for year queries
+    if (draftState.theme === 'year' && movie.id) {
+      try {
+        // Quick cache check first
+        const { data: cached } = await supabase
+          .from('oscar_cache')
+          .select('oscar_status')
+          .eq('tmdb_id', movie.id)
+          .eq('movie_year', movie.year || null)
+          .single();
+        
+        if (cached) {
+          const updatedMovie = {
+            ...movie,
+            oscar_status: cached.oscar_status || 'unknown',
+            hasOscar: cached.oscar_status === 'winner' || cached.oscar_status === 'nominee'
+          };
+          setSelectedMovie(updatedMovie);
+        } else {
+          // If not in cache, optionally call enrich-movie-data (async, non-blocking)
+          // This will update the cache for future use
+          supabase.functions.invoke('enrich-movie-data', {
+            body: { movieId: movie.id, movieTitle: movie.title, movieYear: movie.year }
+          }).catch(err => console.log('Background Oscar fetch failed:', err));
+        }
+      } catch (error) {
+        console.log('Oscar status check failed:', error);
+      }
+    }
   };
 
   const handleCategorySelect = (category: string) => {
@@ -538,8 +569,8 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
                       localDraft.option === draftState.option &&
                       localDraft.participants?.length === draftState.participants.length) {
                     finalDraftId = localDraft.id;
-                    setCurrentDraftId(finalDraftId);
-                    draftIdRef.current = finalDraftId;
+                    setCurrentDraftId(finalDraftId || null);
+                    draftIdRef.current = finalDraftId || null;
                     console.log('Found matching local draft:', finalDraftId);
                     break;
                   }

@@ -1,6 +1,14 @@
+// Deno global types
+declare const Deno: {
+  env: {
+    get(key: string): string | undefined;
+  };
+};
 
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+// @ts-ignore - Deno HTTP imports are resolved at runtime
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// @ts-ignore - Deno ESM imports are resolved at runtime
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
@@ -650,7 +658,22 @@ serve(async (req) => {
   }
 
   try {
-    const { searchQuery, category, page = 1, fetchAll = false, preferFreshOscarStatus = false } = await req.json();
+    // Log raw request body for debugging
+    const rawBody = await req.text();
+    console.log('🔍 RAW REQUEST BODY (first 500 chars):', rawBody.substring(0, 500));
+    
+    // Parse the body
+    let requestData;
+    try {
+      requestData = JSON.parse(rawBody);
+    } catch (parseError) {
+      console.error('❌ Failed to parse JSON, trying req.json():', parseError);
+      // Reset the request body stream by creating new request
+      const clonedReq = req.clone();
+      requestData = await clonedReq.json();
+    }
+    
+    const { searchQuery, category, page = 1, fetchAll = false, preferFreshOscarStatus = false, movieSearchQuery } = requestData;
     const tmdbApiKey = Deno.env.get('TMDB');
 
     if (!tmdbApiKey) {
@@ -658,14 +681,19 @@ serve(async (req) => {
     }
 
     console.log('='.repeat(80));
-    console.log('🎬 FETCH MOVIES REQUEST:', { category, searchQuery, page, fetchAll });
+    console.log('🎬 FETCH MOVIES REQUEST:', { category, searchQuery, movieSearchQuery, page, fetchAll });
     console.log('🔍 DEBUG - Raw values:');
     console.log('  category type:', typeof category, 'value:', category);
     console.log('  searchQuery type:', typeof searchQuery, 'value:', searchQuery);
+    console.log('  movieSearchQuery type:', typeof movieSearchQuery, 'value:', movieSearchQuery);
+    console.log('  movieSearchQuery truthy:', !!movieSearchQuery);
+    console.log('  movieSearchQuery length:', movieSearchQuery?.length || 0);
+    console.log('  Full requestData:', JSON.stringify(requestData, null, 2));
     console.log('='.repeat(80));
 
     let url = '';
     let baseUrl = '';
+    let data: any;
     
     // Build different API endpoints based on category
     switch (category) {
@@ -678,9 +706,9 @@ serve(async (req) => {
         url = `${baseUrl}&page=${page}`;
         break;
       case 'year':
-        // Use searchQuery as the year parameter and ensure it's a valid year
+        // For year category, searchQuery is the year, movieSearchQuery is the user's search term
         const year = searchQuery || new Date().getFullYear();
-        console.log('Searching for movies from year:', year);
+        console.log('Searching for movies from year:', year, 'with search term:', movieSearchQuery);
         
         // Validate year is a reasonable number
         const yearNum = parseInt(year.toString());
@@ -697,13 +725,28 @@ serve(async (req) => {
           });
         }
         
-        // Use multiple TMDB parameters for more precise filtering
-        const startDate = `${yearNum}-01-01`;
-        const endDate = `${yearNum}-12-31`;
-        baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${yearNum}&year=${yearNum}&release_date.gte=${startDate}&release_date.lte=${endDate}&sort_by=popularity.desc`;
-        url = `${baseUrl}&page=${page}`;
-        console.log('Enhanced year search URL:', url);
-        console.log('Using multiple year filters: primary_release_year, year, and release_date range for:', yearNum);
+        // If movieSearchQuery is provided, use search API with year filter
+        if (movieSearchQuery && movieSearchQuery.trim().length >= 2) {
+          const searchTerm = movieSearchQuery.trim();
+          baseUrl = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchTerm)}&year=${yearNum}`;
+          url = `${baseUrl}&page=${page}`;
+          console.log('🔍 Using SEARCH API with year filter:', {
+            searchTerm,
+            year: yearNum,
+            page,
+            url: url.replace(tmdbApiKey, 'API_KEY_HIDDEN')
+          });
+        } else {
+          // No search query - return first page only (popular movies from that year)
+          const startDate = `${yearNum}-01-01`;
+          const endDate = `${yearNum}-12-31`;
+          baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${yearNum}&year=${yearNum}&release_date.gte=${startDate}&release_date.lte=${endDate}&sort_by=popularity.desc`;
+          url = `${baseUrl}&page=1`; // Only first page when no search
+          console.log('📋 Using DISCOVER API (no search query):', {
+            year: yearNum,
+            url: url.replace(tmdbApiKey, 'API_KEY_HIDDEN')
+          });
+        }
         break;
       case 'person':
         // Enhanced person search with comprehensive filmography retrieval
@@ -757,7 +800,7 @@ serve(async (req) => {
                   personLifespan = await getPersonLifespanByName(selectedPerson.name);
                 }
                 
-                let allMovies = [];
+                let allMovies: any[] = [];
                 if (personLifespan && personLifespan.death_date) {
                   console.log(`${selectedPerson.name} is deceased (died: ${personLifespan.death_date}), filtering credits`);
                   // For deceased actors, only include cast credits (actual performances)
@@ -798,8 +841,8 @@ serve(async (req) => {
                 }
                 
                 // Remove duplicates based on movie ID and apply additional filtering
-                let uniqueMovies = allMovies.filter((movie, index, self) => 
-                  index === self.findIndex(m => m.id === movie.id)
+                let uniqueMovies: any[] = allMovies.filter((movie, index, self) => 
+                  index === self.findIndex((m: any) => m.id === movie.id)
                 );
                 
                 console.log(`After TV filtering and deduplication: ${uniqueMovies.length} unique movies`);
@@ -877,12 +920,13 @@ serve(async (req) => {
           }
         } catch (personError) {
           console.error('Error searching for person:', personError);
+          const errorMessage = personError instanceof Error ? personError.message : String(personError);
           return new Response(JSON.stringify({
             results: [],
             total_pages: 0,
             total_results: 0,
             page: 1,
-            error: `Person search failed: ${personError.message}`
+            error: `Person search failed: ${errorMessage}`
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 500
@@ -900,12 +944,13 @@ serve(async (req) => {
     }
 
     console.log('Making request to:', url);
-
-    let data;
     
-    if (fetchAll) {
+    // For year category with search, never fetch all pages
+    const shouldFetchAll = category === 'year' && movieSearchQuery ? false : fetchAll;
+    
+    if (shouldFetchAll) {
       // Fetch ALL pages for comprehensive results
-      const allResults = [];
+      const allResults: any[] = [];
       const seenMovieIds = new Set(); // Track movie IDs to prevent duplicates
       let currentPage = 1;
       let totalPages = 1;
@@ -975,7 +1020,10 @@ serve(async (req) => {
           console.log(`Total pages available: ${totalPages}`);
           
           // Fetch all pages (with reasonable limit to prevent timeout)
-          const maxPagesToFetch = Math.min(totalPages, 100); // Reduced from 500 to 100 for faster response
+          // For year queries, increase limit to get more comprehensive results
+          const maxPagesToFetch = category === 'year' 
+            ? Math.min(totalPages, 100) // Allow up to 100 pages for year queries (2,000 movies)
+            : Math.min(totalPages, 100); // Keep 100 pages for other categories
           
           while (currentPage <= maxPagesToFetch) {
             const pageUrl = `${baseUrl}&page=${currentPage}`;
@@ -1038,12 +1086,13 @@ serve(async (req) => {
           }
         } catch (initialError) {
           console.error('Error in initial fetch:', initialError);
+          const errorMessage = initialError instanceof Error ? initialError.message : String(initialError);
           return new Response(JSON.stringify({
             results: [],
             total_pages: 0,
             total_results: 0,
             page: 1,
-            error: `Failed to fetch movies: ${initialError.message}`
+            error: `Failed to fetch movies: ${errorMessage}`
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
             status: 500
@@ -1068,12 +1117,13 @@ serve(async (req) => {
         data = await response.json();
       } catch (fetchError) {
         console.error('Error fetching from TMDB:', fetchError);
+        const errorMessage = fetchError instanceof Error ? fetchError.message : String(fetchError);
         return new Response(JSON.stringify({
           results: [],
           total_pages: 0,
           total_results: 0,
           page: 1,
-          error: `TMDB fetch failed: ${fetchError.message}`
+          error: `TMDB fetch failed: ${errorMessage}`
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 500
@@ -1083,10 +1133,47 @@ serve(async (req) => {
 
     console.log('TMDB API response received with', (data.results || []).length, 'movies');
     
+    // Log all movie titles from TMDB before any filtering
+    if (category === 'year' && movieSearchQuery) {
+      console.log('🔍 RAW TMDB RESULTS (before any filtering):');
+      console.log('  Total movies:', (data.results || []).length);
+      console.log('  First 20 titles:', (data.results || []).slice(0, 20).map((m: any) => m.title));
+      
+      // Check specifically for "Reds"
+      const redsInRawResults = (data.results || []).find((m: any) => 
+        m.title && (m.title.toLowerCase().includes('reds') || m.title.toLowerCase() === 'reds')
+      );
+      if (redsInRawResults) {
+        console.log('✅ FOUND REDS in raw TMDB results:', {
+          title: redsInRawResults.title,
+          id: redsInRawResults.id,
+          release_date: redsInRawResults.release_date,
+          year: extractMovieYear(redsInRawResults)
+        });
+      } else {
+        console.log('❌ REDS NOT FOUND in raw TMDB results');
+        console.log('  Searching for similar titles...');
+        const similarTitles = (data.results || []).filter((m: any) => 
+          m.title && m.title.toLowerCase().includes('red')
+        );
+        if (similarTitles.length > 0) {
+          console.log('  Found similar titles with "red":', similarTitles.map((m: any) => ({
+            title: m.title,
+            year: extractMovieYear(m)
+          })));
+        }
+      }
+    }
+    
     // Apply robust year filtering for year category
     if (category === 'year') {
       const requestedYear = parseInt(searchQuery);
       const originalCount = (data.results || []).length;
+      
+      // If this was a search query (movieSearchQuery exists), be more lenient with year matching
+      // TMDB search with year filter might return movies from adjacent years
+      const isSearchResult = !!movieSearchQuery;
+      const yearTolerance = isSearchResult ? 1 : 0; // Allow ±1 year for search results
       
       // Enhanced year analysis for debugging
       const allYears = (data.results || []).map((movie: any) => ({
@@ -1102,25 +1189,77 @@ serve(async (req) => {
       const invalidYearCount = allYears.length - validYearCount;
       console.log(`Year extraction stats: ${validYearCount} valid, ${invalidYearCount} invalid years out of ${allYears.length} total movies`);
       
-      // Apply enhanced year filtering
-      data.results = (data.results || []).filter((movie: any) => movieMatchesYear(movie, requestedYear));
+      // Apply enhanced year filtering with tolerance for search results
+      data.results = (data.results || []).filter((movie: any) => {
+        const movieYear = extractMovieYear(movie);
+        let passes: boolean;
+        if (isSearchResult) {
+          // For search results, allow year within tolerance
+          passes = movieYear >= (requestedYear - yearTolerance) && movieYear <= (requestedYear + yearTolerance);
+        } else {
+          // For non-search, exact match
+          passes = movieYear === requestedYear;
+        }
+        
+        // Special logging for "Reds" to see if it's being filtered
+        if (movie.title && (movie.title.toLowerCase().includes('reds') || movie.title.toLowerCase() === 'reds')) {
+          console.log('🔍 REDS year filter check:', {
+            title: movie.title,
+            extractedYear: movieYear,
+            requestedYear,
+            yearTolerance,
+            isSearchResult,
+            passes,
+            release_date: movie.release_date,
+            primary_release_date: movie.primary_release_date
+          });
+        }
+        
+        return passes;
+      });
       
       const filteredCount = data.results.length;
-      console.log(`Year filtering complete: ${originalCount} → ${filteredCount} movies (removed ${originalCount - filteredCount} movies that didn't match year ${requestedYear})`);
+      console.log(`Year filtering complete: ${originalCount} → ${filteredCount} movies (removed ${originalCount - filteredCount} movies that didn't match year ${requestedYear}${isSearchResult ? ' (±1 tolerance)' : ''})`);
+      
+      // Debug logging to see what movies are returned
+      console.log('Movies after year filtering:', data.results.slice(0, 10).map((m: any) => ({
+        title: m.title,
+        year: extractMovieYear(m),
+        release_date: m.release_date
+      })));
+      
+      // Check if "Reds" is still in results after year filtering
+      if (isSearchResult) {
+        const redsAfterYearFilter = data.results.find((m: any) => 
+          m.title && (m.title.toLowerCase().includes('reds') || m.title.toLowerCase() === 'reds')
+        );
+        if (redsAfterYearFilter) {
+          console.log('✅ REDS still present after year filtering:', {
+            title: redsAfterYearFilter.title,
+            year: extractMovieYear(redsAfterYearFilter)
+          });
+        } else {
+          console.log('❌ REDS removed by year filtering');
+        }
+      }
       
       // Update pagination info after filtering
       data.total_results = filteredCount;
       data.total_pages = Math.ceil(filteredCount / 20);
     }
 
-    return new Response(JSON.stringify(await processMovieResults(data, tmdbApiKey, { preferFreshOscarStatus })), {
+    return new Response(JSON.stringify(await processMovieResults(data, tmdbApiKey, { 
+      preferFreshOscarStatus,
+      skipDetailedInfo: category === 'year' && fetchAll
+    })), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error fetching movies from TMDB:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: errorMessage,
       results: [],
       total_pages: 0,
       total_results: 0,
@@ -1133,16 +1272,45 @@ serve(async (req) => {
 });
 
 // Process movie results function to handle common transformations
-async function processMovieResults(data: any, tmdbApiKey: string, opts: { preferFreshOscarStatus?: boolean } = {}) {
+async function processMovieResults(data: any, tmdbApiKey: string, opts: { preferFreshOscarStatus?: boolean, skipDetailedInfo?: boolean } = {}) {
   console.log(`📊 Processing ${(data.results || []).length} movies...`);
   
   // Apply TV content filtering to all results
   const originalCount = (data.results || []).length;
-  data.results = (data.results || []).filter(isValidMovieContent);
+  
+  // Check for "Reds" before TV filter
+  const redsBeforeTVFilter = (data.results || []).find((m: any) => 
+    m.title && (m.title.toLowerCase().includes('reds') || m.title.toLowerCase() === 'reds')
+  );
+  
+  data.results = (data.results || []).filter((movie: any) => {
+    const isValid = isValidMovieContent(movie);
+    if (movie.title && (movie.title.toLowerCase().includes('reds') || movie.title.toLowerCase() === 'reds') && !isValid) {
+      console.log('❌ REDS filtered out by TV content filter:', {
+        title: movie.title,
+        media_type: movie.media_type,
+        genre_ids: movie.genre_ids
+      });
+    }
+    return isValid;
+  });
+  
   const filteredCount = originalCount - data.results.length;
   
   if (filteredCount > 0) {
     console.log(`🚫 TV Content Filter: Removed ${filteredCount} TV shows/episodes from ${originalCount} total results`);
+  }
+  
+  // Check if "Reds" is still present after TV filter
+  if (redsBeforeTVFilter) {
+    const redsAfterTVFilter = data.results.find((m: any) => 
+      m.title && (m.title.toLowerCase().includes('reds') || m.title.toLowerCase() === 'reds')
+    );
+    if (redsAfterTVFilter) {
+      console.log('✅ REDS still present after TV content filter');
+    } else {
+      console.log('❌ REDS removed by TV content filter');
+    }
   }
   
   // Enhanced movie data transformation with proper Oscar and blockbuster detection
@@ -1152,38 +1320,46 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
     let oscarStatusNormalized = 'unknown';
     let isBlockbuster = false;
     
-    try {
-      // Get detailed movie information including budget and revenue
-      const detailResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${tmdbApiKey}`);
-      if (detailResponse.ok) {
-        detailedMovie = await detailResponse.json();
-        
-        // Proper blockbuster detection using actual budget/revenue data
-        const budget = detailedMovie.budget || 0;
-        const revenue = detailedMovie.revenue || 0;
-        isBlockbuster = budget >= 50000000 || revenue >= 100000000;
-        
-        // Only log occasionally to avoid spam
-        if (Math.random() < 0.05) {
-          console.log(`Movie: ${movie.title}, Budget: $${budget}, Revenue: $${revenue}, Blockbuster: ${isBlockbuster}`);
+    // Skip expensive API calls if skipDetailedInfo is true (for year queries with many movies)
+    if (!opts.skipDetailedInfo) {
+      try {
+        // Get detailed movie information including budget and revenue
+        const detailResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${tmdbApiKey}`);
+        if (detailResponse.ok) {
+          detailedMovie = await detailResponse.json();
+          
+          // Proper blockbuster detection using actual budget/revenue data
+          const budget = detailedMovie.budget || 0;
+          const revenue = detailedMovie.revenue || 0;
+          isBlockbuster = budget >= 50000000 || revenue >= 100000000;
+          
+          // Only log occasionally to avoid spam
+          if (Math.random() < 0.05) {
+            console.log(`Movie: ${movie.title}, Budget: $${budget}, Revenue: $${revenue}, Blockbuster: ${isBlockbuster}`);
+          }
         }
-      }
 
-      // Get accurate Oscar status from OMDb API with caching
-      // Use the enhanced movie year extraction
-      const movieYear = extractMovieYear(detailedMovie);
-      
-      // Enhanced logging with more context
-      if (Math.random() < 0.05) {
-        console.log(`Movie: ${movie.title} - Release Date: ${detailedMovie.release_date}, Primary: ${detailedMovie.primary_release_date}, Extracted Year: ${movieYear}`);
+        // Get accurate Oscar status from OMDb API with caching
+        // Use the enhanced movie year extraction
+        const movieYear = extractMovieYear(detailedMovie);
+        
+        // Enhanced logging with more context
+        if (Math.random() < 0.05) {
+          console.log(`Movie: ${movie.title} - Release Date: ${detailedMovie.release_date}, Primary: ${detailedMovie.primary_release_date}, Extracted Year: ${movieYear}`);
+        }
+        
+        const oscarStatus = await resolveOscarStatus(movie.id, movie.title, movieYear, tmdbApiKey, { preferFreshOscarStatus: !!opts.preferFreshOscarStatus });
+        oscarStatusNormalized = oscarStatus || 'unknown';
+        hasOscar = oscarStatusNormalized !== 'none' && oscarStatusNormalized !== 'unknown';
+        
+      } catch (error) {
+        console.log(`Could not fetch detailed info for movie ${movie.id}:`, error);
       }
-      
-      const oscarStatus = await resolveOscarStatus(movie.id, movie.title, movieYear, tmdbApiKey, { preferFreshOscarStatus: !!opts.preferFreshOscarStatus });
-      oscarStatusNormalized = oscarStatus || 'unknown';
-      hasOscar = oscarStatusNormalized !== 'none' && oscarStatusNormalized !== 'unknown';
-      
-    } catch (error) {
-      console.log(`Could not fetch detailed info for movie ${movie.id}:`, error);
+    } else {
+      // Skip all Oscar checks for year queries to prevent timeout
+      // Oscar status will be fetched on-demand when movie is selected
+      oscarStatusNormalized = 'unknown';
+      hasOscar = false;
     }
 
     // Use enhanced year extraction for consistency
@@ -1203,7 +1379,7 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
         ? movie.genre_ids.map((id: number) => getGenreName(id)).join(' ')
         : 'Unknown',
       director: 'Unknown',
-      runtime: detailedMovie.runtime || 120,
+      runtime: opts.skipDetailedInfo ? (movie.runtime || 120) : (detailedMovie.runtime || 120),
       poster: getMovieEmoji(movie.genre_ids?.[0]),
       description: movie.overview || 'No description available',
       isDrafted: false,
@@ -1212,8 +1388,8 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
       backdropPath: movie.backdrop_path,
       voteAverage: movie.vote_average,
       releaseDate: movie.release_date,
-      budget: detailedMovie.budget || 0,
-      revenue: detailedMovie.revenue || 0,
+      budget: opts.skipDetailedInfo ? 0 : (detailedMovie.budget || 0),
+      revenue: opts.skipDetailedInfo ? 0 : (detailedMovie.revenue || 0),
       hasOscar,
       oscar_status: oscarStatusNormalized,
       isBlockbuster

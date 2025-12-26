@@ -191,7 +191,8 @@ const CustomCheckbox = ({
   onToggle,
   availability,
   isAnalyzing,
-  index
+  index,
+  theme
 }: { 
   id: string; 
   category: string; 
@@ -200,6 +201,7 @@ const CustomCheckbox = ({
   availability?: CategoryAvailabilityResult;
   isAnalyzing: boolean;
   index: number;
+  theme?: string;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const config = getCategoryConfig(category);
@@ -359,25 +361,29 @@ const CustomCheckbox = ({
         </div>
       </div>
       
-      {isAnalyzing ? (
-        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-brand-primary ml-2"></div>
-      ) : (
-        <div style={getCountBadgeStyle()}>
-          <div style={{
-            textAlign: 'center',
-            justifyContent: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            color: getCountBadgeTextColor(),
-            fontSize: '12px',
-            fontFamily: 'Brockmann',
-            fontWeight: '400',
-            lineHeight: '16px',
-            wordWrap: 'break-word'
-          }}>
-            {availability?.isEstimate ? `~${availability.movieCount}` : availability?.movieCount || '00'}
-          </div>
-        </div>
+      {theme !== 'year' && (
+        <>
+          {isAnalyzing ? (
+            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-brand-primary ml-2"></div>
+          ) : (
+            <div style={getCountBadgeStyle()}>
+              <div style={{
+                textAlign: 'center',
+                justifyContent: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                color: getCountBadgeTextColor(),
+                fontSize: '12px',
+                fontFamily: 'Brockmann',
+                fontWeight: '400',
+                lineHeight: '16px',
+                wordWrap: 'break-word'
+              }}>
+                {availability?.isEstimate ? `~${availability.movieCount}` : availability?.movieCount || '00'}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -749,13 +755,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
 
       {/* Categories Grid */}
       <div 
-        style={{
-          width: '100%',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: '20px',
-          alignItems: 'start'
-        }}
+        className="w-full grid grid-cols-1 sm:grid-cols-2 gap-5 items-start"
       >
         {useMemo(() => {
           // Create a fresh copy to ensure correct order
@@ -818,6 +818,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
               availability={availability}
               isAnalyzing={isAnalyzing}
               index={index}
+              theme={theme}
             />
           );
         })}

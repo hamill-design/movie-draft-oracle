@@ -5,7 +5,7 @@ import { Movie } from '@/data/movies';
 import { getCleanActorName } from '@/lib/utils';
 import { getGenreName } from '@/utils/specDraftGenreMapper';
 
-export const useMovies = (category?: string, searchQuery?: string) => {
+export const useMovies = (category?: string, themeOption?: string, userSearchQuery?: string) => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,14 +17,14 @@ export const useMovies = (category?: string, searchQuery?: string) => {
     setError(null);
     
     try {
-      console.log('useMovies - Fetching movies for category:', category, 'searchQuery:', searchQuery);
+      console.log('useMovies - Fetching movies for category:', category, 'themeOption:', themeOption, 'userSearchQuery:', userSearchQuery);
       
       // Handle spec-draft theme - fetch movies directly from spec_draft_movies table
-      if (category === 'spec-draft' && searchQuery) {
+      if (category === 'spec-draft' && themeOption) {
         const { data: moviesData, error: moviesError } = await (supabase as any)
           .from('spec_draft_movies')
           .select('movie_tmdb_id, movie_title, movie_year, movie_poster_path, movie_genres')
-          .eq('spec_draft_id', searchQuery)
+          .eq('spec_draft_id', themeOption)
           .order('movie_title', { ascending: true });
 
         if (moviesError) {
@@ -63,20 +63,27 @@ export const useMovies = (category?: string, searchQuery?: string) => {
         return;
       }
       
-      // For theme-based categories (year, person), we need to pass the theme parameter 
-      // as the searchQuery to the backend to constrain the initial dataset
-      // Clean the actor name if it's a person search to remove corrupted data
-      let cleanedSearchQuery = searchQuery || '';
-      if (category === 'person' && searchQuery) {
-        cleanedSearchQuery = getCleanActorName(searchQuery);
-        console.log('useMovies - Cleaned actor name from:', searchQuery, 'to:', cleanedSearchQuery);
+      // For theme-based categories (year, person), themeOption is the year/person name
+      // userSearchQuery is what the user types in the search box
+      let cleanedThemeOption = themeOption || '';
+      if (category === 'person' && themeOption) {
+        cleanedThemeOption = getCleanActorName(themeOption);
+        console.log('useMovies - Cleaned actor name from:', themeOption, 'to:', cleanedThemeOption);
       }
       
-      const requestBody = {
-        category,
-        searchQuery: cleanedSearchQuery,
-        fetchAll: true // Always fetch all within the theme constraint
-      };
+      // For year category, pass year as searchQuery and user search as movieSearchQuery
+      const requestBody = category === 'year' 
+        ? {
+            category,
+            searchQuery: cleanedThemeOption, // Year value (e.g., '1981')
+            movieSearchQuery: userSearchQuery, // User's search term (e.g., 'Reds')
+            fetchAll: false // Never fetch all for year searches
+          }
+        : {
+            category,
+            searchQuery: cleanedThemeOption, // Person name or other
+            fetchAll: category === 'person' ? false : true // Don't fetch all for person either
+          };
       
       console.log('useMovies - Request body:', requestBody);
       
@@ -103,11 +110,38 @@ export const useMovies = (category?: string, searchQuery?: string) => {
   };
 
   useEffect(() => {
-    if (category) {
-      console.log('useMovies - Effect triggered, category:', category, 'searchQuery:', searchQuery);
+    if (!category) {
+      setMovies([]);
+      return;
+    }
+    
+    // For year/person themes, only fetch when user searches (at least 2 characters)
+    if ((category === 'year' || category === 'person') && (!userSearchQuery || userSearchQuery.trim().length < 2)) {
+      setMovies([]);
+      setLoading(false);
+      return;
+    }
+    
+    // For spec-draft, fetch immediately if themeOption (spec draft ID) is provided
+    if (category === 'spec-draft' && themeOption) {
+      fetchMovies();
+      return;
+    }
+    
+    // For year/person with search query, debounce the search
+    if ((category === 'year' || category === 'person') && userSearchQuery && userSearchQuery.trim().length >= 2) {
+      const timeoutId = setTimeout(() => {
+        fetchMovies();
+      }, 300); // 300ms debounce
+      
+      return () => clearTimeout(timeoutId);
+    }
+    
+    // For other categories, fetch immediately
+    if (category && category !== 'year' && category !== 'person' && category !== 'spec-draft') {
       fetchMovies();
     }
-  }, [category, searchQuery]);
+  }, [category, themeOption, userSearchQuery]);
 
   return {
     movies,
