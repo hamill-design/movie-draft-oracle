@@ -94,6 +94,9 @@ export const MultiplayerDraftInterface = ({
     if (draft.theme === 'people') {
       return 'person';
     }
+    if (draft.theme === 'year') {
+      return 'year';  // Critical for debouncing
+    }
     return 'popular';
   };
 
@@ -254,12 +257,88 @@ export const MultiplayerDraftInterface = ({
     });
   }, [participants, participantId]);
 
+  // Helper: Get participants sorted by created_at (matching database player_id calculation)
+  // Database uses: row_number() OVER (ORDER BY created_at ASC)
+  // MUST be before early returns to maintain consistent hook order
+  const getParticipantsSortedByCreatedAt = useMemo(() => {
+    return [...participants].sort((a, b) => {
+      const aTime = a.created_at || a.joined_at || '';
+      const bTime = b.created_at || b.joined_at || '';
+      if (!aTime && !bTime) return 0;
+      if (!aTime) return 1;
+      if (!bTime) return -1;
+      return new Date(aTime).getTime() - new Date(bTime).getTime();
+    });
+  }, [participants]);
+
   // Check if draft has been started (has turn order)
   const draftHasStarted = draft?.turn_order && draft.turn_order.length > 0;
 
+  // Helper: Get players in turn order (for display)
+  // Use turn_order first round if available, otherwise fallback to created_at
+  const getPlayersInTurnOrder = useMemo(() => {
+    if (draftHasStarted && draft.turn_order && Array.isArray(draft.turn_order) && draft.turn_order.length > 0) {
+      // Extract first round from turn_order
+      const firstRound = draft.turn_order.filter((item: any) => item.round === 1);
+      
+      // Get unique participants in turn order (first appearance)
+      const seenIds = new Set<string>();
+      const turnOrderParticipants: any[] = [];
+      
+      firstRound.forEach((item: any) => {
+        const participantId = item.participant_id || item.user_id || item.guest_participant_id;
+        if (participantId && !seenIds.has(String(participantId))) {
+          seenIds.add(String(participantId));
+          const participant = participants.find(p => {
+            const pId = p.participant_id || p.user_id || p.guest_participant_id;
+            return pId && String(pId) === String(participantId);
+          });
+          if (participant) {
+            turnOrderParticipants.push(participant);
+          }
+        }
+      });
+      
+      // Fill in any missing participants (safety fallback)
+      participants.forEach(p => {
+        const pId = p.participant_id || p.user_id || p.guest_participant_id;
+        if (pId && !seenIds.has(String(pId))) {
+          turnOrderParticipants.push(p);
+        }
+      });
+      
+      return turnOrderParticipants;
+    }
+    
+    // Fallback: use created_at order if draft hasn't started
+    return getParticipantsSortedByCreatedAt;
+  }, [participants, draft?.turn_order, draftHasStarted, getParticipantsSortedByCreatedAt]);
+
+  // Create mapping: database player_id -> display position
+  // Database player_id is based on created_at order (1, 2, 3...)
+  // Display position is based on turn order (may be 2, 1, 3...)
+  const playerIdToDisplayIndex = useMemo(() => {
+    const map = new Map<number, number>();
+    getPlayersInTurnOrder.forEach((p, displayIndex) => {
+      // Find this participant's database player_id (created_at based)
+      const dbPlayerId = getParticipantsSortedByCreatedAt.findIndex(
+        dbP => {
+          const dbPId = dbP.participant_id || dbP.user_id || dbP.guest_participant_id;
+          const pId = p.participant_id || p.user_id || p.guest_participant_id;
+          return dbPId && pId && String(dbPId) === String(pId);
+        }
+      ) + 1; // player_id is 1-based
+      
+      if (dbPlayerId > 0) {
+        map.set(dbPlayerId, displayIndex);
+      }
+    });
+    return map;
+  }, [getPlayersInTurnOrder, getParticipantsSortedByCreatedAt]);
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-4">
+      <div className="min-h-screen p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <div className="max-w-6xl mx-auto space-y-6">
           <Skeleton className="h-8 w-64" />
           <div className="grid md:grid-cols-3 gap-6">
@@ -289,7 +368,7 @@ export const MultiplayerDraftInterface = ({
 
   if (!draft) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <Card>
           <CardContent className="p-6 text-center">
             <h2 className="text-xl font-semibold mb-2">Draft Not Found</h2>
@@ -960,44 +1039,34 @@ export const MultiplayerDraftInterface = ({
         <div className="space-y-6">
           {/* Draft Board */}
           <div>
-            <DraftBoard picks={picks.map(pick => ({
-            playerId: pick.player_id,
-            playerName: pick.player_name,
-            movie: {
-              id: pick.movie_id,
-              title: pick.movie_title,
-              year: pick.movie_year,
-              poster_path: pick.poster_path
-            },
-            category: pick.category
-          }))} players={(() => {
-            // Sort participants by created_at to match database player_id calculation (ORDER BY created_at ASC)
-            const sortedParticipants = [...participants].sort((a, b) => {
-              const aTime = a.created_at || a.joined_at || '';
-              const bTime = b.created_at || b.joined_at || '';
-              if (!aTime && !bTime) return 0;
-              if (!aTime) return 1;
-              if (!bTime) return -1;
-              return new Date(aTime).getTime() - new Date(bTime).getTime();
-            });
-            return sortedParticipants.map((p, index) => ({
-              id: index + 1,
+            <DraftBoard picks={picks.map(pick => {
+              // Map database player_id to display position
+              const displayIndex = playerIdToDisplayIndex.get(pick.player_id) ?? 0;
+              return {
+                playerId: displayIndex + 1,  // Display position (1-based)
+                playerName: pick.player_name,
+                movie: {
+                  id: pick.movie_id,
+                  title: pick.movie_title,
+                  year: pick.movie_year,
+                  poster_path: pick.poster_path
+                },
+                category: pick.category
+              };
+            })} players={getPlayersInTurnOrder.map((p, index) => ({
+              id: index + 1,  // Display position (1-based)
               name: p.participant_name
-            }));
-          })()} categories={draft.categories} theme={draft.theme} draftOption={getCleanActorName(draft.option)} currentPlayer={currentTurnPlayer ? (() => {
-            const sortedParticipants = [...participants].sort((a, b) => {
-              const aTime = a.created_at || a.joined_at || '';
-              const bTime = b.created_at || b.joined_at || '';
-              if (!aTime && !bTime) return 0;
-              if (!aTime) return 1;
-              if (!bTime) return -1;
-              return new Date(aTime).getTime() - new Date(bTime).getTime();
-            });
-            return {
-              id: sortedParticipants.findIndex(p => (p.user_id || p.guest_participant_id) === (currentTurnPlayer.user_id || currentTurnPlayer.guest_participant_id)) + 1,
-              name: currentTurnPlayer.participant_name
-            };
-          })() : undefined} />
+            }))} categories={draft.categories} theme={draft.theme} draftOption={getCleanActorName(draft.option)} currentPlayer={currentTurnPlayer ? (() => {
+              const displayIndex = getPlayersInTurnOrder.findIndex(p => {
+                const pId = p.participant_id || p.user_id || p.guest_participant_id;
+                const currentPlayerId = currentTurnPlayer.participant_id || currentTurnPlayer.user_id || currentTurnPlayer.guest_participant_id;
+                return pId && currentPlayerId && String(pId) === String(currentPlayerId);
+              });
+              return {
+                id: displayIndex >= 0 ? displayIndex + 1 : 1,
+                name: currentTurnPlayer.participant_name
+              };
+            })() : undefined} />
           </div>
 
           {/* View Final Scores Button - Show when draft is complete */}
@@ -1052,18 +1121,27 @@ export const MultiplayerDraftInterface = ({
                 categories={draft.categories} 
                 selectedCategory={selectedCategory} 
                 onCategorySelect={handleCategorySelect} 
-                picks={picks.map(pick => ({
-                  playerId: participants.findIndex(p => p.participant_name === pick.player_name) + 1,
-                  playerName: pick.player_name,
-                  movie: {
-                    id: pick.movie_id,
-                    title: pick.movie_title,
-                    year: pick.movie_year,
-                    poster_path: pick.poster_path
-                  },
-                  category: pick.category
-                }))} 
-                currentPlayerId={participants.findIndex(p => (p.user_id || p.guest_participant_id) === participantId) + 1}
+                picks={picks.map(pick => {
+                  // Map database player_id to display position
+                  const displayIndex = playerIdToDisplayIndex.get(pick.player_id) ?? 0;
+                  return {
+                    playerId: displayIndex + 1,  // Display position (1-based)
+                    playerName: pick.player_name,
+                    movie: {
+                      id: pick.movie_id,
+                      title: pick.movie_title,
+                      year: pick.movie_year,
+                      poster_path: pick.poster_path
+                    },
+                    category: pick.category
+                  };
+                })} 
+                currentPlayerId={(() => {
+                  const displayIndex = getPlayersInTurnOrder.findIndex(p => 
+                    (p.user_id || p.guest_participant_id) === participantId
+                  );
+                  return displayIndex >= 0 ? displayIndex + 1 : 1;
+                })()}
                 theme={draft.theme}
                 option={draft.option}
               />

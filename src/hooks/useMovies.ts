@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Movie } from '@/data/movies';
 import { getCleanActorName } from '@/lib/utils';
@@ -9,15 +9,30 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchMovies = async () => {
     if (!category) return;
+    
+    // Cancel any pending requests
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    const signal = abortControllerRef.current.signal;
     
     setLoading(true);
     setError(null);
     
     try {
       console.log('useMovies - Fetching movies for category:', category, 'themeOption:', themeOption, 'userSearchQuery:', userSearchQuery);
+      
+      // Validation: Warn if year category is used without search query (should use debouncing)
+      if (category === 'year' && themeOption && !userSearchQuery) {
+        console.warn('useMovies: Year category requires userSearchQuery for proper debouncing');
+      }
       
       // Handle spec-draft theme - fetch movies directly from spec_draft_movies table
       if (category === 'spec-draft' && themeOption) {
@@ -73,20 +88,24 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
       
       // For year category, pass year as searchQuery and user search as movieSearchQuery
       // For person category, pass person name as searchQuery and user search as movieSearchQuery
-      // When user has a search query, fetch all movies so we can filter client-side
+      // Only fetch search results, not all movies
       const requestBody = category === 'year' 
         ? {
             category,
-            searchQuery: cleanedThemeOption, // Year value (e.g., '1981')
-            movieSearchQuery: userSearchQuery, // User's search term (e.g., 'Reds')
-            fetchAll: false // Never fetch all for year searches
+            searchQuery: cleanedThemeOption, // Year value (e.g., '1995')
+            movieSearchQuery: userSearchQuery || '', // User's search term (e.g., 'GoldenEye')
+            fetchAll: false, // Never fetch all for year searches
+            page: 1,
+            pageLimit: 20 // Limit results to 20 for faster response
           }
         : category === 'person'
         ? {
             category,
             searchQuery: cleanedThemeOption, // Person name (e.g., 'Brad Pitt')
-            movieSearchQuery: userSearchQuery, // User's search term (e.g., "Ocean's")
-            fetchAll: userSearchQuery && userSearchQuery.trim().length >= 2 ? true : false // Fetch all when user is searching so we have more movies to filter
+            movieSearchQuery: userSearchQuery || '', // User's search term (e.g., "Ocean's")
+            fetchAll: false, // Don't fetch all - only search results
+            page: 1,
+            pageLimit: 20 // Limit results to 20 for faster response
           }
         : {
             category,
@@ -100,9 +119,19 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
         body: requestBody
       });
 
+      // Check if request was aborted
+      if (signal.aborted) {
+        return;
+      }
+
       if (error) {
         console.error('useMovies - Supabase function error:', error);
         throw error;
+      }
+
+      // Check again if request was aborted before updating state
+      if (signal.aborted) {
+        return;
       }
 
       const fetchedMovies = data?.results || [];
@@ -111,10 +140,20 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
       setMovies(fetchedMovies);
       
     } catch (err) {
+      // Don't set error if request was aborted
+      if (err instanceof Error && err.name === 'AbortError') {
+        return;
+      }
+      // Check if signal was aborted
+      if (signal.aborted) {
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Failed to fetch movies');
       console.error('useMovies - Error fetching movies:', err);
     } finally {
-      setLoading(false);
+      if (!signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 
@@ -141,9 +180,15 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
     if ((category === 'year' || category === 'person') && userSearchQuery && userSearchQuery.trim().length >= 2) {
       const timeoutId = setTimeout(() => {
         fetchMovies();
-      }, 300); // 300ms debounce
+      }, 500); // 500ms debounce to reduce rapid requests
       
-      return () => clearTimeout(timeoutId);
+      return () => {
+        clearTimeout(timeoutId);
+        // Cancel any pending request when search query changes
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+      };
     }
     
     // For other categories, fetch immediately
@@ -151,6 +196,15 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
       fetchMovies();
     }
   }, [category, themeOption, userSearchQuery]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   return {
     movies,

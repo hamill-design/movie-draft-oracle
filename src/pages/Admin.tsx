@@ -243,9 +243,9 @@ const Admin = () => {
 
   if (authLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+        <div className="flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin" style={{color: 'var(--Text-Primary, #FCFFFF)'}} />
         </div>
       </div>
     );

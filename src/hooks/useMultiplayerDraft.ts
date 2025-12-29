@@ -694,6 +694,15 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     }
   }, [normalizedDraftId, participantId, draft, loadDraft]);
 
+  // Create a stable identifier for participants (sorted IDs joined as string)
+  // This only changes when participant IDs actually change, not when array reference changes
+  const participantsKey = useMemo(() => {
+    return [...participants]
+      .map(p => p.participant_id || p.user_id || p.guest_participant_id)
+      .filter(Boolean)
+      .sort()
+      .join(',');
+  }, [participants]);
 
   // Set up real-time database subscriptions with enhanced reliability
   useEffect(() => {
@@ -994,7 +1003,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         participantsChannelRef.current = null;
       }
     };
-  }, [normalizedDraftId, participantId, isGuest, guestSession, toast, participants, updateLastActivity, stopPolling, startPolling, reconnectSubscriptions, debouncedReload]);
+  }, [normalizedDraftId, participantId, isGuest, participantsKey]);
 
   // Mobile-specific optimizations: Handle visibility changes (tab switching, app backgrounding)
   useEffect(() => {

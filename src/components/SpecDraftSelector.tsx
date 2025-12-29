@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Film } from 'lucide-react';
+import { Film, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface SpecDraft {
   id: string;
@@ -17,6 +17,7 @@ export const SpecDraftSelector = () => {
   const navigate = useNavigate();
   const [specDrafts, setSpecDrafts] = useState<SpecDraft[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     const fetchSpecDrafts = async () => {
@@ -92,6 +93,13 @@ export const SpecDraftSelector = () => {
     return null; // Don't show the section if there are no spec drafts
   }
 
+  // Determine how many items to show initially (2 per row = 2 items)
+  const INITIAL_ITEMS_TO_SHOW = 2;
+  const displayedDrafts = isExpanded 
+    ? specDrafts 
+    : specDrafts.slice(0, INITIAL_ITEMS_TO_SHOW);
+  const hasMoreItems = specDrafts.length > INITIAL_ITEMS_TO_SHOW;
+
   return (
     <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
       {/* Header */}
@@ -112,13 +120,13 @@ export const SpecDraftSelector = () => {
 
       {/* Spec Drafts Grid */}
       <div className="flex flex-wrap gap-4 items-start">
-        {specDrafts.map((draft) => {
+        {displayedDrafts.map((draft) => {
           const posterUrl = getPosterUrl(draft.photo_url);
           
           return (
             <div
               key={draft.id}
-              className="bg-greyscale-purp-850 rounded-[6px] p-[18px] flex flex-col md:flex-row gap-4 items-center min-h-[218px] w-full md:flex-1 md:min-w-0"
+              className="bg-greyscale-purp-850 rounded-[6px] p-[18px] flex flex-col md:flex-row gap-4 items-center min-h-[218px] w-full md:basis-[calc(50%-0.5rem)] md:max-w-[calc(50%-0.5rem)]"
               style={{outline: '1px solid #49474B', outlineOffset: '-1px'}}
             >
               {/* Poster/Image */}
@@ -188,6 +196,35 @@ export const SpecDraftSelector = () => {
           );
         })}
       </div>
+
+      {/* See More / See Less Button */}
+      {hasMoreItems && (
+        <div className="flex justify-center w-full">
+          <Button
+            onClick={() => setIsExpanded(!isExpanded)}
+            variant="outline"
+            className="bg-greyscale-purp-850 border-greyscale-purp-700 text-greyscale-blue-100 hover:bg-greyscale-purp-800 hover:text-greyscale-blue-50 h-10 px-6 rounded-[2px] transition-colors"
+            style={{ 
+              fontFamily: 'Brockmann', 
+              fontWeight: 500, 
+              fontSize: '14px', 
+              lineHeight: '20px' 
+            }}
+          >
+            {isExpanded ? (
+              <>
+                <ChevronUp className="w-4 h-4 mr-2" />
+                See Less
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-4 h-4 mr-2" />
+                See More
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

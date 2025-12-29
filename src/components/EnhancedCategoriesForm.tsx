@@ -504,6 +504,12 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   }, [analysisResult]);
 
   const preAnalyzeAllCategories = useCallback(async () => {
+    // Skip category counting for year themes
+    if (theme === 'year') {
+      console.log('⏭️ Skipping pre-analysis for year theme');
+      return;
+    }
+
     // Prevent concurrent analysis calls
     if (isAnalyzingRef.current) {
       console.warn('⚠️ Analysis already in progress, skipping');
@@ -598,6 +604,12 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
 
   // Effect for pre-analysis - triggers as soon as theme and option are selected
   useEffect(() => {
+    // Skip category counting for year themes
+    if (theme === 'year') {
+      console.log('⏭️ Skipping category analysis for year theme');
+      return;
+    }
+
     // Don't trigger if we're already analyzing or handling an error refresh
     if (isAnalyzingRef.current || isHandlingErrorRefresh.current) {
       return;
@@ -637,6 +649,12 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   }, [allCategories, theme, selectedOption]);
 
   const analyzeCategories = async () => {
+    // Skip category counting for year themes
+    if (theme === 'year') {
+      console.log('⏭️ Skipping category analysis for year theme');
+      return;
+    }
+
     if (!canAnalyze()) return;
     
     setIsAnalyzing(true);
