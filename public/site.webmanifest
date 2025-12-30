@@ -1,0 +1,22 @@
+{
+  "name": "Movie Drafter",
+  "short_name": "Movie Drafter",
+  "description": "Draft your favorite movies and compete with friends",
+  "icons": [
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#680AFF",
+  "background_color": "#100029",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}

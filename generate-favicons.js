@@ -49,6 +49,31 @@ async function generateFavicons() {
     
     console.log('✓ Generated apple-touch-icon.png');
     
+    // Generate favicon.ico (16x16 - Google's preferred format)
+    // Note: Sharp can't create true ICO format, but PNG with .ico extension works for modern browsers
+    await sharp(Buffer.from(svgContent))
+      .resize(16, 16)
+      .png()
+      .toFile(path.join(publicDir, 'favicon.ico'));
+    
+    console.log('✓ Generated favicon.ico');
+    
+    // Generate 192x192 for web manifest
+    await sharp(Buffer.from(svgContent))
+      .resize(192, 192)
+      .png()
+      .toFile(path.join(publicDir, 'favicon-192x192.png'));
+    
+    console.log('✓ Generated favicon-192x192.png');
+    
+    // Generate 512x512 for web manifest
+    await sharp(Buffer.from(svgContent))
+      .resize(512, 512)
+      .png()
+      .toFile(path.join(publicDir, 'favicon-512x512.png'));
+    
+    console.log('✓ Generated favicon-512x512.png');
+    
     // Generate 1200x630 Open Graph image
     const ogSvg = `<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
       <defs>
