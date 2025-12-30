@@ -172,7 +172,8 @@ const handler = async (req: Request): Promise<Response> => {
           const forwardResponse = await resend.emails.send({
             from: "Movie Drafter Support <noreply@moviedrafter.com>",
             to: [forwardToEmail],
-            subject: `[Support] ${subject}`,
+            reply_to: from,
+            subject: `[Support] ${emailSubject} - From: ${from}`,
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
@@ -180,7 +181,7 @@ const handler = async (req: Request): Promise<Response> => {
                 </h2>
                 
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                  <p><strong>From:</strong> ${from}</p>
+                  <p style="font-size: 16px; margin-bottom: 10px;"><strong>From:</strong> <a href="mailto:${from}" style="color: #007bff; text-decoration: none;">${from}</a></p>
                   <p><strong>To:</strong> ${to.join(', ')}</p>
                   <p><strong>Subject:</strong> ${emailSubject}</p>
                   <p><strong>Received:</strong> ${new Date(createdAt || processedAt).toLocaleString()}</p>
@@ -194,7 +195,8 @@ const handler = async (req: Request): Promise<Response> => {
                 <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
                 
                 <p style="color: #999; font-size: 12px;">
-                  This is an automated forward from the Movie Drafter support email system.
+                  This is an automated forward from the Movie Drafter support email system.<br/>
+                  <strong>Reply to this email to respond directly to ${from}</strong>
                 </p>
               </div>
             `,
@@ -208,6 +210,10 @@ Received: ${new Date(createdAt || processedAt).toLocaleString()}
 
 Message:
 ${emailText || 'No text content available'}
+
+---
+This is an automated forward from the Movie Drafter support email system.
+Reply to this email to respond directly to ${from}
             `,
           });
 
