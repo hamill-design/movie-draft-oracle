@@ -32,7 +32,7 @@ const Footer = () => {
               </Link>
               <Separator orientation="vertical" className="h-4 bg-greyscale-blue-200" />
               <a 
-                href="mailto:support@moviedraftoracle.com" 
+                href="mailto:support@moviedrafter.com" 
                 className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
               >
                 Support
