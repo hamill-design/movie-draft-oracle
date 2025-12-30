@@ -1,8 +1,12 @@
 import { Link } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
 import InlineAd from "@/components/ads/InlineAd";
+import ContactModal from "@/components/ContactModal";
+import { useState } from "react";
 
 const Footer = () => {
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+
   return (
     <>
       <InlineAd className="py-4" />
@@ -31,17 +35,18 @@ const Footer = () => {
                 Terms of Service
               </Link>
               <Separator orientation="vertical" className="h-4 bg-greyscale-blue-200" />
-              <a 
-                href="mailto:support@moviedrafter.com" 
-                className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
+              <button
+                onClick={() => setIsContactModalOpen(true)}
+                className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5 cursor-pointer"
               >
                 Support
-              </a>
+              </button>
             </div>
           </div>
         </div>
       </div>
     </footer>
+    <ContactModal open={isContactModalOpen} onOpenChange={setIsContactModalOpen} />
     </>
   );
 };

@@ -36,10 +36,10 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    // Parse the webhook payload from Resend
-    let webhookEvent: ResendWebhookEvent;
+    // Parse the request body - can be from Resend webhook or direct POST
+    let requestBody: any;
     try {
-      webhookEvent = await req.json();
+      requestBody = await req.json();
     } catch (parseError) {
       console.error('📧 SUPPORT EMAIL WEBHOOK - Failed to parse request body:', parseError);
       return new Response(
@@ -48,27 +48,69 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
     
-    console.log('📧 SUPPORT EMAIL WEBHOOK - Event type:', webhookEvent.type);
-    console.log('📧 SUPPORT EMAIL WEBHOOK - Email data:', {
-      from: webhookEvent.data?.from,
-      to: webhookEvent.data?.to,
-      subject: webhookEvent.data?.subject,
-    });
-
-    // Only process email.received events
-    if (webhookEvent.type !== 'email.received') {
-      console.log('📧 SUPPORT EMAIL WEBHOOK - Ignoring event type:', webhookEvent.type);
+    // Check if this is a Resend webhook event or a direct POST
+    let fromEmail: string;
+    let toEmails: string[];
+    let subject: string;
+    let text: string | undefined;
+    let html: string | undefined;
+    let createdAt: string;
+    
+    if (requestBody.type === 'email.received' && requestBody.data) {
+      // Resend webhook format
+      console.log('📧 SUPPORT EMAIL WEBHOOK - Resend webhook event received');
+      const webhookEvent: ResendWebhookEvent = requestBody;
+      
+      if (webhookEvent.type !== 'email.received') {
+        console.log('📧 SUPPORT EMAIL WEBHOOK - Ignoring event type:', webhookEvent.type);
+        return new Response(
+          JSON.stringify({ message: 'Event type not processed' }),
+          { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      
+      fromEmail = webhookEvent.data.from;
+      toEmails = webhookEvent.data.to;
+      subject = webhookEvent.data.subject;
+      text = webhookEvent.data.text;
+      html = webhookEvent.data.html;
+      createdAt = webhookEvent.created_at;
+    } else if (requestBody.from && requestBody.to) {
+      // Direct POST format (from Google Apps Script or other services)
+      console.log('📧 SUPPORT EMAIL WEBHOOK - Direct POST request received');
+      fromEmail = requestBody.from;
+      toEmails = Array.isArray(requestBody.to) ? requestBody.to : [requestBody.to];
+      subject = requestBody.subject || '(No Subject)';
+      text = requestBody.text || requestBody.body;
+      html = requestBody.html || requestBody.bodyHtml;
+      createdAt = requestBody.created_at || requestBody.date || new Date().toISOString();
+    } else {
+      console.error('📧 SUPPORT EMAIL WEBHOOK - Invalid request format:', requestBody);
       return new Response(
-        JSON.stringify({ message: 'Event type not processed' }),
-        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        JSON.stringify({ success: false, error: 'Invalid request format' }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    const { from, to, subject, text, html } = webhookEvent.data;
+    console.log('📧 SUPPORT EMAIL WEBHOOK - Email data:', {
+      from: fromEmail,
+      to: toEmails,
+      subject: subject,
+    });
 
-    // Verify this is a support email
-    const supportEmail = 'support@moviedrafter.com';
-    if (!to || !to.includes(supportEmail)) {
+    const { from, to, subject: emailSubject, text: emailText, html: emailHtml } = {
+      from: fromEmail,
+      to: toEmails,
+      subject: subject,
+      text: text,
+      html: html
+    };
+
+    // Verify this is a support email (accept both root domain and subdomain)
+    const supportEmails = ['support@moviedrafter.com', 'support@support.moviedrafter.com'];
+    const isSupportEmail = to && supportEmails.some(email => to.includes(email));
+    
+    if (!isSupportEmail) {
       console.log('📧 SUPPORT EMAIL WEBHOOK - Email not addressed to support:', to);
       return new Response(
         JSON.stringify({ message: 'Not a support email' }),
@@ -97,9 +139,9 @@ const handler = async (req: Request): Promise<Response> => {
           from_email: from,
           to_email: to,
           subject: subject,
-          body_text: text || null,
-          body_html: html || null,
-          received_at: webhookEvent.created_at || processedAt,
+          body_text: emailText || null,
+          body_html: emailHtml || null,
+          received_at: createdAt || processedAt,
           processed_at: processedAt,
         })
         .select('id')
@@ -140,13 +182,13 @@ const handler = async (req: Request): Promise<Response> => {
                 <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 20px 0;">
                   <p><strong>From:</strong> ${from}</p>
                   <p><strong>To:</strong> ${to.join(', ')}</p>
-                  <p><strong>Subject:</strong> ${subject}</p>
-                  <p><strong>Received:</strong> ${new Date(webhookEvent.created_at || processedAt).toLocaleString()}</p>
+                  <p><strong>Subject:</strong> ${emailSubject}</p>
+                  <p><strong>Received:</strong> ${new Date(createdAt || processedAt).toLocaleString()}</p>
                 </div>
                 
                 <div style="margin: 20px 0;">
                   <h3>Message:</h3>
-                  ${html || `<pre style="white-space: pre-wrap; background: #f8f9fa; padding: 15px; border-radius: 8px;">${text || 'No content'}</pre>`}
+                  ${emailHtml || `<pre style="white-space: pre-wrap; background: #f8f9fa; padding: 15px; border-radius: 8px;">${emailText || 'No content'}</pre>`}
                 </div>
                 
                 <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
@@ -161,11 +203,11 @@ New Support Email Received
 
 From: ${from}
 To: ${to.join(', ')}
-Subject: ${subject}
-Received: ${new Date(webhookEvent.created_at || processedAt).toLocaleString()}
+Subject: ${emailSubject}
+Received: ${new Date(createdAt || processedAt).toLocaleString()}
 
 Message:
-${text || 'No text content available'}
+${emailText || 'No text content available'}
             `,
           });
 
@@ -192,7 +234,7 @@ ${text || 'No text content available'}
         const autoReplyResponse = await resend.emails.send({
           from: "Movie Drafter Support <support@moviedrafter.com>",
           to: [from],
-          subject: `Re: ${subject}`,
+          subject: `Re: ${emailSubject}`,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
               <p>Thank you for contacting Movie Drafter support!</p>
