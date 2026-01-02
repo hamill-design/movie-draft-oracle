@@ -19,3 +19,4 @@ export { StarIcon } from './StarIcon';
 export { TrashIcon } from './TrashIcon';
 export { TrophyIcon } from './TrophyIcon';
 export { UnderscoreIcon } from './UnderscoreIcon';
+export { InstagramIcon } from './InstagramIcon';

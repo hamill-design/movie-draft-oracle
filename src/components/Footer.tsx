@@ -3,6 +3,7 @@ import { Separator } from "@/components/ui/separator";
 import InlineAd from "@/components/ads/InlineAd";
 import ContactModal from "@/components/ContactModal";
 import { useState } from "react";
+import { InstagramIcon } from "@/components/icons";
 
 const Footer = () => {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -17,6 +18,18 @@ const Footer = () => {
             <p className="text-sm font-brockmann font-normal text-greyscale-blue-200 leading-5">
               © 2024 Movie Drafter. All rights reserved.
             </p>
+          </div>
+          
+          <div className="flex-1 min-w-80 flex items-center justify-center">
+            <a
+              href="https://www.instagram.com/moviedrafter/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors"
+              aria-label="Follow us on Instagram"
+            >
+              <InstagramIcon className="w-6 h-6" />
+            </a>
           </div>
           
           <div className="flex-1 min-w-80 flex items-center justify-center gap-4">
