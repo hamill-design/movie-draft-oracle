@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
@@ -174,8 +175,20 @@ export const JoinDraft = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-      <Card className="w-full max-w-md">
+    <>
+      <Helmet>
+        <title>Movie Drafter - Join Draft</title>
+        <meta name="description" content="Join an existing movie draft by entering an invite code or following an invitation link. Compete with friends and see who picks the best movies." />
+        <meta property="og:title" content="Movie Drafter - Join Draft" />
+        <meta property="og:description" content="Join an existing movie draft by entering an invite code or following an invitation link. Compete with friends and see who picks the best movies." />
+        <meta property="og:url" content={`https://moviedrafter.com/join-draft${draftId ? `/${draftId}` : ''}`} />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:title" content="Movie Drafter - Join Draft" />
+        <meta name="twitter:description" content="Join an existing movie draft by entering an invite code or following an invitation link. Compete with friends and see who picks the best movies." />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+      </Helmet>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+        <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="flex items-center justify-center gap-2">
             <Users className="h-6 w-6" />
@@ -277,5 +290,6 @@ export const JoinDraft = () => {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 };

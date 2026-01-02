@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -519,7 +520,19 @@ const SpecDraftSetup = () => {
     .map(([category]) => category);
 
   return (
-    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+    <>
+      <Helmet>
+        <title>Movie Drafter - Setup Special Draft</title>
+        <meta name="description" content="Set up a special movie draft with custom categories and participants. Create unique draft experiences for specific themes or events." />
+        <meta property="og:title" content="Movie Drafter - Setup Special Draft" />
+        <meta property="og:description" content="Set up a special movie draft with custom categories and participants. Create unique draft experiences for specific themes or events." />
+        <meta property="og:url" content={`https://moviedrafter.com/spec-draft/${specDraftId}/setup`} />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:title" content="Movie Drafter - Setup Special Draft" />
+        <meta name="twitter:description" content="Set up a special movie draft with custom categories and participants. Create unique draft experiences for specific themes or events." />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+      </Helmet>
+      <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <style>{`
         input::placeholder {
           color: var(--Text-Light-grey, #BDC3C2) !important;
@@ -872,6 +885,7 @@ const SpecDraftSetup = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -407,8 +408,20 @@ const Profile = () => {
   }, [drafts, handleViewDraft, openDeleteDialog, specDraftData]);
 
   return (
-    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-      <div className="container mx-auto px-4 py-8">
+    <>
+      <Helmet>
+        <title>Movie Drafter - Your Profile</title>
+        <meta name="description" content="View and manage your Movie Drafter profile. See all your drafts, track your progress, and manage your account settings." />
+        <meta property="og:title" content="Movie Drafter - Your Profile" />
+        <meta property="og:description" content="View and manage your Movie Drafter profile. See all your drafts, track your progress, and manage your account settings." />
+        <meta property="og:url" content="https://moviedrafter.com/profile" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:title" content="Movie Drafter - Your Profile" />
+        <meta name="twitter:description" content="View and manage your Movie Drafter profile. See all your drafts, track your progress, and manage your account settings." />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+      </Helmet>
+      <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+        <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="w-full h-full justify-between items-center inline-flex mb-8">
           <div className="justify-start items-center gap-4 flex">
@@ -580,6 +593,7 @@ const Profile = () => {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </>
   );
 };
 

@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -101,7 +102,19 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+    <>
+      <Helmet>
+        <title>Movie Drafter - Reset Password</title>
+        <meta name="description" content="Reset your Movie Drafter password to regain access to your account and continue creating movie drafts." />
+        <meta property="og:title" content="Movie Drafter - Reset Password" />
+        <meta property="og:description" content="Reset your Movie Drafter password to regain access to your account and continue creating movie drafts." />
+        <meta property="og:url" content="https://moviedrafter.com/reset-password" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:title" content="Movie Drafter - Reset Password" />
+        <meta name="twitter:description" content="Reset your Movie Drafter password to regain access to your account and continue creating movie drafts." />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+      </Helmet>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <Card className="w-full max-w-md bg-gray-800 border-gray-600">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
@@ -172,6 +185,7 @@ const ResetPassword = () => {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 };
 

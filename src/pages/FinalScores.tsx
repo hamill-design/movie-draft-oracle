@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -683,9 +684,26 @@ const FinalScores = () => {
            pickWithScoring.calculated_score === 0;
   }).length;
 
+  const pageTitle = draft?.title ? `Movie Drafter - ${draft.title} Final Scores` : 'Movie Drafter - Final Scores';
+  const pageDescription = draft?.title 
+    ? `View the final scores for ${draft.title} movie draft. See who picked the best movies and compare your results.`
+    : 'View the final scores for your movie draft. See who picked the best movies and compare your results.';
+
   return (
-    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-      <div className="container mx-auto px-4 py-8">
+    <>
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:url" content={`https://moviedrafter.com/final-scores/${draftId}`} />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+      </Helmet>
+      <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+        <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="w-full p-6 rounded-[8px] flex flex-wrap items-start content-start">
           <div className="flex-1 flex flex-col gap-6">
@@ -835,6 +853,7 @@ const FinalScores = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

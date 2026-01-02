@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -249,7 +250,19 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+    <>
+      <Helmet>
+        <title>Movie Drafter - Sign In</title>
+        <meta name="description" content="Sign in to Movie Drafter to create and manage your movie drafts. Join the competition and see who has the best taste in cinema." />
+        <meta property="og:title" content="Movie Drafter - Sign In" />
+        <meta property="og:description" content="Sign in to Movie Drafter to create and manage your movie drafts. Join the competition and see who has the best taste in cinema." />
+        <meta property="og:url" content="https://moviedrafter.com/auth" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:title" content="Movie Drafter - Sign In" />
+        <meta name="twitter:description" content="Sign in to Movie Drafter to create and manage your movie drafts. Join the competition and see who has the best taste in cinema." />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+      </Helmet>
+      <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <style>{`
         input::placeholder {
           color: var(--Text-Light-grey, #BDC3C2) !important;
@@ -604,6 +617,7 @@ const Auth = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

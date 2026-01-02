@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import {
   SidebarProvider,
@@ -256,10 +257,22 @@ const Admin = () => {
   }
 
   return (
-    <SidebarProvider 
-      className="flex flex-col min-h-full"
-      style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}
-    >
+    <>
+      <Helmet>
+        <title>Movie Drafter - Admin</title>
+        <meta name="description" content="Admin panel for Movie Drafter. Manage special drafts, categories, and platform settings." />
+        <meta property="og:title" content="Movie Drafter - Admin" />
+        <meta property="og:description" content="Admin panel for Movie Drafter. Manage special drafts, categories, and platform settings." />
+        <meta property="og:url" content="https://moviedrafter.com/admin" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:title" content="Movie Drafter - Admin" />
+        <meta name="twitter:description" content="Admin panel for Movie Drafter. Manage special drafts, categories, and platform settings." />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+      </Helmet>
+      <SidebarProvider 
+        className="flex flex-col min-h-full"
+        style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}
+      >
       <SidebarInset className="flex flex-col bg-transparent flex-1">
         <div className="flex-1">
           <div className="container mx-auto px-6 py-6 max-w-7xl">
@@ -462,6 +475,7 @@ const Admin = () => {
     </div>
       </SidebarInset>
     </SidebarProvider>
+    </>
   );
 };
 

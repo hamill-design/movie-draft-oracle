@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import DraftHeader from '@/components/DraftHeader';
 import DraftInterface from '@/components/DraftInterface';
 import { MultiplayerDraftInterface } from '@/components/MultiplayerDraftInterface';
@@ -102,21 +103,34 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-      <div className="container mx-auto px-4 py-8">
-        <DraftHeader
-          draftOption={draftState.option}
-          theme={draftState.theme}
-          currentPlayer={undefined} // Will be handled by DraftInterface
-          isComplete={false} // Will be handled by DraftInterface
-        />
+    <>
+      <Helmet>
+        <title>Movie Drafter - Create Your Draft</title>
+        <meta name="description" content="Create and manage your movie draft. Pick your favorite films across different categories and compete with friends." />
+        <meta property="og:title" content="Movie Drafter - Create Your Draft" />
+        <meta property="og:description" content="Create and manage your movie draft. Pick your favorite films across different categories and compete with friends." />
+        <meta property="og:url" content="https://moviedrafter.com/draft" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:title" content="Movie Drafter - Create Your Draft" />
+        <meta name="twitter:description" content="Create and manage your movie draft. Pick your favorite films across different categories and compete with friends." />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+      </Helmet>
+      <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+        <div className="container mx-auto px-4 py-8">
+          <DraftHeader
+            draftOption={draftState.option}
+            theme={draftState.theme}
+            currentPlayer={undefined} // Will be handled by DraftInterface
+            isComplete={false} // Will be handled by DraftInterface
+          />
 
-        <DraftInterface 
-          draftState={draftState}
-          existingPicks={existingPicks}
-        />
+          <DraftInterface 
+            draftState={draftState}
+            existingPicks={existingPicks}
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

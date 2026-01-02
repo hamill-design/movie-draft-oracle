@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Users, User, Mail } from 'lucide-react';
@@ -137,8 +138,20 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen overflow-x-hidden" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-      <div className="container mx-auto px-4 py-8">
+    <>
+      <Helmet>
+        <title>Movie Drafter - Draft Your Favorite Movies</title>
+        <meta name="description" content="Draft your favorite movies and compete with friends. Create fantasy movie drafts, pick your favorite films, and see who has the best taste in cinema." />
+        <meta property="og:title" content="Movie Drafter - Draft Your Favorite Movies" />
+        <meta property="og:description" content="Draft your favorite movies and compete with friends. Create fantasy movie drafts, pick your favorite films, and see who has the best taste in cinema." />
+        <meta property="og:url" content="https://moviedrafter.com/" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:title" content="Movie Drafter - Draft Your Favorite Movies" />
+        <meta name="twitter:description" content="Draft your favorite movies and compete with friends. Create fantasy movie drafts, pick your favorite films, and see who has the best taste in cinema." />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+      </Helmet>
+      <div className="min-h-screen overflow-x-hidden" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+        <div className="container mx-auto px-4 py-8">
 
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Join Existing Draft */}
@@ -494,6 +507,7 @@ const Home = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

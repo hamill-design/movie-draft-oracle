@@ -1,13 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
 
 const TermsOfService = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+    <>
+      <Helmet>
+        <title>Movie Drafter - Terms of Service</title>
+        <meta name="description" content="Read Movie Drafter's Terms of Service to understand the rules and guidelines for using our movie draft platform." />
+        <meta property="og:title" content="Movie Drafter - Terms of Service" />
+        <meta property="og:description" content="Read Movie Drafter's Terms of Service to understand the rules and guidelines for using our movie draft platform." />
+        <meta property="og:url" content="https://moviedrafter.com/terms-of-service" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:title" content="Movie Drafter - Terms of Service" />
+        <meta name="twitter:description" content="Read Movie Drafter's Terms of Service to understand the rules and guidelines for using our movie draft platform." />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+      </Helmet>
+      <div className="min-h-screen p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <div className="max-w-4xl mx-auto">
         <Button
           variant="ghost"
@@ -91,10 +104,37 @@ const TermsOfService = () => {
             <p>
               If you have any questions about these Terms of Service, please contact us through our support channels.
             </p>
+
+            <h2>Third-Party Services and Attribution</h2>
+            <p>
+              This application uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.
+            </p>
+            <p>
+              Movie data, images, and related content are provided by{' '}
+              <a 
+                href="https://www.themoviedb.org/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:text-blue-600 underline"
+              >
+                The Movie Database (TMDB)
+              </a>
+              {' '}and are used in accordance with their{' '}
+              <a 
+                href="https://www.themoviedb.org/api-terms-of-use" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:text-blue-600 underline"
+              >
+                API Terms of Use
+              </a>
+              .
+            </p>
           </CardContent>
         </Card>
       </div>
     </div>
+    </>
   );
 };
 

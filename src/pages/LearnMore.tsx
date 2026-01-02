@@ -1,8 +1,21 @@
 
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 
 const LearnMore = () => {
   return (
+    <>
+      <Helmet>
+        <title>Movie Drafter - Learn More</title>
+        <meta name="description" content="Learn how Movie Drafter works. Create fantasy movie drafts, compete with friends, and discover who has the best taste in cinema." />
+        <meta property="og:title" content="Movie Drafter - Learn More" />
+        <meta property="og:description" content="Learn how Movie Drafter works. Create fantasy movie drafts, compete with friends, and discover who has the best taste in cinema." />
+        <meta property="og:url" content="https://moviedrafter.com/learn-more" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:title" content="Movie Drafter - Learn More" />
+        <meta name="twitter:description" content="Learn how Movie Drafter works. Create fantasy movie drafts, compete with friends, and discover who has the best taste in cinema." />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+      </Helmet>
     <div style={{
       width: '100%',
       paddingBottom: '64px',
@@ -528,8 +541,9 @@ const LearnMore = () => {
             </div>
           </div>
         </section>
-      </div>
-    );
+    </div>
+    </>
+  );
 };
 
 export default LearnMore;
