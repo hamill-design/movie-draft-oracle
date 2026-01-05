@@ -150,8 +150,55 @@ const Home = () => {
         <meta name="twitter:description" content="Draft your favorite movies and compete with friends. Create fantasy movie drafts, pick your favorite films, and see who has the best taste in cinema." />
         <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
       </Helmet>
-      <div className="min-h-screen overflow-x-hidden" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-        <div className="container mx-auto px-4 py-8">
+      <div className="relative min-h-screen overflow-x-hidden">
+        {/* Background Image - Absolutely Positioned to sit behind content */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '-33px',
+            left: '0px',
+            width: '100%',
+            height: '488px',
+            backgroundImage: 'url(/bg-2014.png)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'top center',
+            backgroundRepeat: 'no-repeat',
+            zIndex: 0,
+            opacity: 0.8 
+          }}
+        />
+
+        {/* Hero Section */}
+        <section 
+          className="w-full px-6 py-16 md:py-20 relative z-10"
+        >
+          {/* Main Content */}
+          <div 
+            className="relative z-10 w-full max-w-[1400px] mx-auto px-6 flex flex-col items-center gap-6"
+          >
+            {/* Heading */}
+            <div className="w-full flex flex-col items-center">
+              <h1 
+                className="w-full text-center text-6xl md:text-7xl lg:text-[90px] leading-[70px] md:leading-normal lg:leading-[90px] font-chaney font-normal text-greyscale-blue-100"
+                style={{ wordWrap: 'break-word' }}
+              >
+                Your Picks.<br /> Your glory.
+              </h1>
+            </div>
+
+            {/* Description */}
+            <div className="w-full max-w-[768px] pt-2 flex flex-col items-center">
+              <p 
+                className="w-full max-w-[724px] text-center text-sm md:text-lg font-brockmann font-medium leading-[20px] md:leading-[26px] text-greyscale-blue-100"
+                style={{ wordWrap: 'break-word' }}
+              >
+                Turn your film obsession into friendly competition. Draft movies, rack up points, and settle once and for all who has the best taste in cinema.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <div className="container mx-auto px-4 pt-0 pb-8 relative z-10">
 
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Join Existing Draft */}
@@ -163,7 +210,7 @@ const Home = () => {
           {/* Theme Selection */}
           <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
             <div className="self-stretch flex flex-col justify-center items-center gap-2">
-              <div className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann">
+              <div className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann text-center">
                 Choose Your Draft Theme
               </div>
             </div>
@@ -506,7 +553,7 @@ const Home = () => {
           )}
         </div>
       </div>
-    </div>
+      </div>
     </>
   );
 };

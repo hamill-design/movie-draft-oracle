@@ -52,21 +52,21 @@ const Footer = () => {
           </div>
           
           <div className="flex-1 min-w-80 flex items-center justify-end gap-4">
-            <div className="w-80 min-w-80 flex items-center justify-end gap-4 flex-nowrap whitespace-nowrap">
+            <div className="w-full md:w-80 md:min-w-80 flex flex-col md:flex-row items-end md:items-center justify-end gap-2 md:gap-4 flex-nowrap whitespace-nowrap">
               <Link 
                 to="/privacy-policy" 
                 className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
               >
                 Privacy Policy
               </Link>
-              <Separator orientation="vertical" className="h-4 bg-greyscale-blue-200" />
+              <Separator orientation="vertical" className="hidden md:block h-4 bg-greyscale-blue-200" />
               <Link 
                 to="/terms-of-service" 
                 className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
               >
                 Terms of Service
               </Link>
-              <Separator orientation="vertical" className="h-4 bg-greyscale-blue-200" />
+              <Separator orientation="vertical" className="hidden md:block h-4 bg-greyscale-blue-200" />
               <button
                 onClick={() => setIsContactModalOpen(true)}
                 className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5 cursor-pointer"
