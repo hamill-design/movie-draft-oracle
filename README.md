@@ -1,22 +1,12 @@
-# Welcome to your Lovable project
+# Movie Draft Oracle
 
-## Project info
-
-**URL**: https://lovable.dev/projects/964f15f1-a644-4dc2-849a-48e1e55bfa91
+A web application for creating and participating in movie drafts with friends.
 
 ## How can I edit this code?
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/964f15f1-a644-4dc2-849a-48e1e55bfa91) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
 **Use your preferred IDE**
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+If you want to work locally using your own IDE, you can clone this repo and push changes.
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
@@ -60,10 +50,6 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/964f15f1-a644-4dc2-849a-48e1e55bfa91) and click on Share -> Publish.
-
 ## Deploying to Vercel (Production + Preview/Staging)
 
 This app is a Vite + React SPA. We've added `vercel.json` for SPA routing.
@@ -99,15 +85,43 @@ Tip: Ensure these keys match the Supabase project you want the deployment to use
 - Open the Preview or Production URL on two devices/browsers.
 - Create a draft and join via invite code.
 
-If auth redirect fails or Realtime doesn’t connect, double-check:
+If auth redirect fails or Realtime doesn't connect, double-check:
 - Env vars are present on Vercel (Preview and Production)
 - Supabase Auth Redirect URLs include the current domain
 - Using HTTPS URLs
 
-## Can I connect a custom domain to my Lovable project?
+### 7) Production Branch and Domain Configuration
 
-Yes, you can!
+**Production Branch:**
+- In Vercel dashboard → Project Settings → Git
+- Set the Production Branch (typically `main` or `master`)
+- This branch will trigger production deployments
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+**Custom Domain (Cloudflare):**
+- In Vercel dashboard → Project Settings → Domains
+- Add your custom domain (`moviedrafter.com` and `www.moviedrafter.com`)
+- Vercel will provide DNS records to configure
+- In Cloudflare dashboard:
+  1. Go to your domain → DNS → Records
+  2. For apex domain (`moviedrafter.com`):
+     - Find the existing record for `@` (or root domain)
+     - **CRITICAL:** Click the orange cloud icon to turn it GRAY (DNS only)
+     - Type: Should be `CNAME` or `A` record pointing to Vercel
+     - Target: Should match what Vercel provided
+     - Proxy status: **MUST be DNS only (gray cloud)** - Orange cloud causes SSL errors
+  3. For www subdomain (`www.moviedrafter.com`):
+     - Type: `CNAME`
+     - Name: `www`
+     - Target: The value Vercel provides
+     - Proxy status: **DNS only (gray cloud)** - Should already be working
+  4. Wait 5-10 minutes for DNS propagation
+  5. Verify in Vercel dashboard that both domains show "Valid Configuration"
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+**Troubleshooting SSL Errors:**
+- If you get `ERR_SSL_VERSION_OR_CIPHER_MISMATCH` on apex domain:
+  - The apex domain has Cloudflare proxy enabled (orange cloud)
+  - Go to Cloudflare DNS → Click the orange cloud icon next to `@` record → Turn it gray
+  - Wait 5-10 minutes for changes to propagate
+  - Clear browser cache and try again
+
+**Important:** Cloudflare proxy (orange cloud) conflicts with Vercel's SSL certificates. Always use DNS only (gray cloud) for Vercel domains.

@@ -110,7 +110,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const resend = resendApiKey ? new Resend(resendApiKey) : null;
-    const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://movie-draft-app.lovable.app';
+    const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://moviedrafter.com';
     console.log('📧 EDGE FUNCTION - Using origin:', origin);
 
     // Get draft invite code for fallback

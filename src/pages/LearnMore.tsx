@@ -64,26 +64,22 @@ const LearnMore = () => {
                 display: 'flex',
                 flexDirection: 'column'
               }}>
-                <span style={{
+                <span className="text-4xl md:text-6xl lg:text-[64px] leading-[50px] md:leading-[60px] lg:leading-[76px]" style={{
                   color: 'var(--Text-Primary, #FCFFFF)',
-                  fontSize: '64px',
                   fontFamily: 'CHANEY',
                   fontWeight: '400',
-                  lineHeight: '76px',
                   wordWrap: 'break-word'
                 }}>This isn't TRivia.      </span>
-                <span style={{
+                <span className="text-4xl md:text-6xl lg:text-[64px] leading-[50px] md:leading-[60px] lg:leading-[76px]" style={{
                   color: 'var(--Yellow-500, #FFD60A)',
-                  fontSize: '64px',
                   fontFamily: 'CHANEY',
                   fontWeight: '400',
-                  lineHeight: '76px',
                   wordWrap: 'break-word'
                 }}>It's Taste.</span>
               </div>
             </div>
             <div style={{
-              width: '768px',
+              width: '100%',
               maxWidth: '768px',
               paddingTop: '8px',
               flexDirection: 'column',
@@ -91,17 +87,16 @@ const LearnMore = () => {
               alignItems: 'center',
               display: 'flex'
             }}>
-              <div style={{
-                width: '724px',
+              <div className="text-sm md:text-lg leading-[20px] md:leading-[26px] px-4" style={{
+                width: '100%',
+                maxWidth: '724px',
                 textAlign: 'center',
                 justifyContent: 'center',
                 display: 'flex',
                 flexDirection: 'column',
                 color: 'var(--Text-Primary, #FCFFFF)',
-                fontSize: '18px',
                 fontFamily: 'Brockmann',
                 fontWeight: '500',
-                lineHeight: '26px',
                 wordWrap: 'break-word'
               }}>
                 Movie Draft challenges you to curate the perfect collection of films. Strategy meets cinema in this competitive drafting experience.
