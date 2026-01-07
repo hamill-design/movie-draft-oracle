@@ -37,16 +37,20 @@ const MovieSearch = ({
 
   // Normalize string for search comparison - handles different apostrophe types and special characters
   const normalizeForSearch = (str: string): string => {
+    if (!str) return '';
     return str
       .toLowerCase()
       .trim()
+      // Normalize multiple spaces to single space
+      .replace(/\s+/g, ' ')
       // Normalize different apostrophe types to regular apostrophe
       .replace(/[''']/g, "'")
       // Normalize different dash types
       .replace(/[–—]/g, '-')
       // Remove other special characters that might interfere
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim(); // Trim again after normalization
   };
 
   const getPlaceholderText = () => {
@@ -83,6 +87,18 @@ const MovieSearch = ({
           const normalizedTitle = normalizeForSearch(movie.title);
           const normalizedQuery = normalizeForSearch(searchQuery);
           const matches = normalizedTitle.includes(normalizedQuery);
+          
+          // Debug logging for people theme searches - log ALL movies when searching
+          if (theme === 'people' && searchQuery.trim().length >= 3) {
+            console.log('MovieSearch - Checking movie:', {
+              title: movie.title,
+              normalizedTitle,
+              query: searchQuery,
+              normalizedQuery,
+              matches
+            });
+          }
+          
           // Debug logging for Ocean's movies
           if (normalizedTitle.includes('ocean') && theme === 'people') {
             console.log('MovieSearch - Ocean movie check:', {
@@ -98,6 +114,20 @@ const MovieSearch = ({
       : filteredMoviesByTheme;
 
   console.log('MovieSearch - Final filtered movies:', filteredMovies.length, 'from theme-filtered:', filteredMoviesByTheme.length, 'from total:', movies.length);
+  
+  // Enhanced debug logging for people theme when no matches found
+  if (theme === 'people' && searchQuery.trim() && filteredMoviesByTheme.length > 0 && filteredMovies.length === 0) {
+    console.log('MovieSearch - ❌ No matches found!', {
+      searchQuery,
+      normalizedQuery: normalizeForSearch(searchQuery),
+      totalMovies: filteredMoviesByTheme.length,
+      allTitles: filteredMoviesByTheme.map(m => ({
+        original: m.title,
+        normalized: normalizeForSearch(m.title),
+        includes: normalizeForSearch(m.title).includes(normalizeForSearch(searchQuery))
+      }))
+    });
+  }
   
   // Debug: Log all movie titles when searching for Ocean's
   if (searchQuery.toLowerCase().includes('ocean') && theme === 'people') {

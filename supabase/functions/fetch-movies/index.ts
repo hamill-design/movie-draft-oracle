@@ -780,8 +780,9 @@ serve(async (req) => {
             console.log('Selected person:', selectedPerson.name, 'ID:', selectedPerson.id, 'Popularity:', selectedPerson.popularity);
             
             // Use person's movie credits instead of discover endpoint for complete filmography
-            if (fetchAll) {
-              console.log('Fetching complete filmography using person credits endpoint');
+            // Also fetch credits when movieSearchQuery is provided (to search through all movies)
+            if (fetchAll || movieSearchQuery) {
+              console.log('Fetching complete filmography using person credits endpoint', { fetchAll, movieSearchQuery });
               const creditsUrl = `https://api.themoviedb.org/3/person/${selectedPerson.id}/movie_credits?api_key=${tmdbApiKey}`;
               
               try {
@@ -869,6 +870,17 @@ serve(async (req) => {
                 }
                 
                 console.log(`Person credits: ${creditsData.cast?.length || 0} cast + ${creditsData.crew?.length || 0} crew = ${allMovies.length} total, ${uniqueMovies.length} unique movies`);
+                
+                // Filter by movieSearchQuery if provided
+                if (movieSearchQuery && movieSearchQuery.trim().length >= 2) {
+                  const searchTerm = movieSearchQuery.trim().toLowerCase();
+                  const originalCount = uniqueMovies.length;
+                  uniqueMovies = uniqueMovies.filter((movie: any) => {
+                    const title = (movie.title || '').toLowerCase();
+                    return title.includes(searchTerm);
+                  });
+                  console.log(`🔍 Filtered by movieSearchQuery "${movieSearchQuery}": ${originalCount} → ${uniqueMovies.length} movies`);
+                }
                 
                 // Enhanced debugging for specific person queries
                 if (selectedPerson.name.toLowerCase().includes('jane fonda')) {

@@ -1,30 +1,197 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SpecDraft } from '@/hooks/useSpecDraftsAdmin';
-import { Edit, Trash2, Loader2, Film, Search } from 'lucide-react';
+import { Edit, Trash2, Loader2, Film, Search, GripVertical, Eye, EyeOff } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface SpecDraftListProps {
   specDrafts: SpecDraft[];
   onEdit: (specDraft: SpecDraft) => void;
   onDelete: (id: string) => void;
   onManageMovies: (specDraft: SpecDraft) => void;
+  onReorder?: (reorderedDrafts: SpecDraft[]) => void;
+  onToggleVisibility?: (id: string, isHidden: boolean) => void;
   onCreateNew?: () => void;
   loading?: boolean;
 }
+
+interface SortableItemProps {
+  specDraft: SpecDraft;
+  onEdit: (specDraft: SpecDraft) => void;
+  onDelete: (id: string) => void;
+  onManageMovies: (specDraft: SpecDraft) => void;
+  onToggleVisibility?: (id: string, isHidden: boolean) => void;
+}
+
+const SortableItem: React.FC<SortableItemProps> = ({
+  specDraft,
+  onEdit,
+  onDelete,
+  onManageMovies,
+  onToggleVisibility,
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: specDraft.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`bg-ui-primary border border-greyscale-blue-200 rounded-[8px] p-[18px] flex flex-col sm:flex-row gap-4 items-center justify-between ${
+        isDragging ? 'shadow-lg' : ''
+      } ${(specDraft.is_hidden ?? false) ? 'opacity-60' : ''}`}
+    >
+      {/* Left side: Drag handle, Image, Title, Description */}
+      <div className="flex gap-4 items-center flex-1 min-w-0">
+        {/* Drag Handle */}
+        <button
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing p-2 hover:bg-greyscale-blue-200 rounded-[2px] transition-colors"
+          title="Drag to reorder"
+        >
+          <GripVertical className="w-5 h-5 text-greyscale-blue-400" />
+        </button>
+
+        {/* Thumbnail Image */}
+        {specDraft.photo_url ? (
+          <img
+            src={specDraft.photo_url}
+            alt={specDraft.name}
+            className="w-12 h-12 sm:w-[72px] sm:h-[72px] min-w-[48px] min-h-[48px] object-cover rounded-[3px]"
+          />
+        ) : (
+          <div className="w-12 h-12 sm:w-[72px] sm:h-[72px] min-w-[48px] min-h-[48px] bg-greyscale-blue-200 rounded-[3px] flex items-center justify-center">
+            <Film className="w-6 h-6 text-greyscale-blue-400" />
+          </div>
+        )}
+
+        {/* Title and Description */}
+        <div className="flex flex-col gap-[2px] min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3
+              className="text-lg text-[#2b2f31] truncate"
+              style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '18px', lineHeight: '26px' }}
+            >
+              {specDraft.name}
+            </h3>
+            {(specDraft.is_hidden ?? false) && (
+              <span
+                className="text-xs text-greyscale-blue-500 px-2 py-0.5 bg-greyscale-blue-100 rounded"
+                style={{ fontFamily: 'Brockmann', fontWeight: 400, fontSize: '12px' }}
+              >
+                Hidden
+              </span>
+            )}
+          </div>
+          {specDraft.description && (
+            <p
+              className="text-sm text-gray-500 truncate"
+              style={{ fontFamily: 'Brockmann', fontWeight: 400, fontSize: '14px', lineHeight: '20px' }}
+            >
+              {specDraft.description}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Right side: Toggle Visibility, Action Icons */}
+      <div className="flex gap-2 items-center shrink-0">
+        {/* Toggle Visibility Switch */}
+        {onToggleVisibility && (
+          <div className="flex items-center gap-2 px-2">
+            <button
+              onClick={() => onToggleVisibility(specDraft.id, !(specDraft.is_hidden ?? false))}
+              className="p-2 rounded-[2px] hover:bg-greyscale-blue-200 transition-colors"
+              title={(specDraft.is_hidden ?? false) ? 'Show' : 'Hide'}
+            >
+              {(specDraft.is_hidden ?? false) ? (
+                <EyeOff className="w-5 h-5 text-greyscale-blue-500" />
+              ) : (
+                <Eye className="w-5 h-5 text-text-primary" />
+              )}
+            </button>
+          </div>
+        )}
+        <button
+          onClick={() => onManageMovies(specDraft)}
+          className="p-3 rounded-[2px] hover:bg-greyscale-blue-200 transition-colors"
+          title="Manage Movies"
+        >
+          <Film className="w-6 h-6 text-text-primary" />
+        </button>
+        <button
+          onClick={() => onEdit(specDraft)}
+          className="p-3 rounded-[2px] hover:bg-greyscale-blue-200 transition-colors"
+          title="Edit"
+        >
+          <Edit className="w-6 h-6 text-text-primary" />
+        </button>
+        <button
+          onClick={() => {
+            if (confirm(`Are you sure you want to delete "${specDraft.name}"?`)) {
+              onDelete(specDraft.id);
+            }
+          }}
+          className="p-3 rounded-[2px] hover:bg-greyscale-blue-200 transition-colors"
+          title="Delete"
+        >
+          <Trash2 className="w-6 h-6 text-text-primary" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export const SpecDraftList: React.FC<SpecDraftListProps> = ({
   specDrafts,
   onEdit,
   onDelete,
   onManageMovies,
+  onReorder,
+  onToggleVisibility,
   onCreateNew,
   loading = false,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [localDrafts, setLocalDrafts] = useState<SpecDraft[]>(specDrafts);
+
+  // Update local state when prop changes
+  useEffect(() => {
+    setLocalDrafts(specDrafts);
+  }, [specDrafts]);
 
   // Filter drafts based on search query
-  const filteredDrafts = specDrafts.filter((draft) => {
+  const filteredDrafts = localDrafts.filter((draft) => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -33,11 +200,35 @@ export const SpecDraftList: React.FC<SpecDraftListProps> = ({
     );
   });
 
+  // Set up sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = filteredDrafts.findIndex((draft) => draft.id === active.id);
+      const newIndex = filteredDrafts.findIndex((draft) => draft.id === over.id);
+
+      const newDrafts = arrayMove(filteredDrafts, oldIndex, newIndex);
+      setLocalDrafts(newDrafts);
+      
+      if (onReorder) {
+        onReorder(newDrafts);
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="bg-greyscale-blue-100 rounded-[8px] shadow-[0px_0px_3px_0px_rgba(0,0,0,0.25)] p-6">
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
         </div>
       </div>
     );
@@ -81,79 +272,30 @@ export const SpecDraftList: React.FC<SpecDraftListProps> = ({
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {filteredDrafts.map((specDraft) => (
-            <div
-              key={specDraft.id}
-              className="bg-ui-primary border border-greyscale-blue-200 rounded-[8px] p-[18px] flex flex-col sm:flex-row gap-4 items-center justify-between"
-            >
-              {/* Left side: Image, Title, Description */}
-              <div className="flex gap-4 items-center flex-1 min-w-0">
-                {/* Thumbnail Image */}
-                {specDraft.photo_url ? (
-                  <img
-                    src={specDraft.photo_url}
-                    alt={specDraft.name}
-                    className="w-12 h-12 sm:w-[72px] sm:h-[72px] min-w-[48px] min-h-[48px] object-cover rounded-[3px]"
-                  />
-                ) : (
-                  <div className="w-12 h-12 sm:w-[72px] sm:h-[72px] min-w-[48px] min-h-[48px] bg-greyscale-blue-200 rounded-[3px] flex items-center justify-center">
-                    <Film className="w-6 h-6 text-greyscale-blue-400" />
-                  </div>
-                )}
-
-                {/* Title and Description */}
-                <div className="flex flex-col gap-[2px] min-w-0 flex-1">
-                  <h3
-                    className="text-lg text-[#2b2f31] truncate"
-                    style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '18px', lineHeight: '26px' }}
-                  >
-                    {specDraft.name}
-                  </h3>
-                  {specDraft.description && (
-                    <p
-                      className="text-sm text-gray-500 truncate"
-                      style={{ fontFamily: 'Brockmann', fontWeight: 400, fontSize: '14px', lineHeight: '20px' }}
-                    >
-                      {specDraft.description}
-                </p>
-                  )}
-                </div>
-              </div>
-
-              {/* Right side: Action Icons */}
-              <div className="flex gap-2 items-center shrink-0">
-                <button
-                  onClick={() => onManageMovies(specDraft)}
-                  className="p-3 rounded-[2px] hover:bg-greyscale-blue-200 transition-colors"
-                  title="Manage Movies"
-                >
-                  <Film className="w-6 h-6 text-text-primary" />
-                </button>
-                <button
-                  onClick={() => onEdit(specDraft)}
-                  className="p-3 rounded-[2px] hover:bg-greyscale-blue-200 transition-colors"
-                  title="Edit"
-                >
-                  <Edit className="w-6 h-6 text-text-primary" />
-                </button>
-                <button
-                  onClick={() => {
-                    if (confirm(`Are you sure you want to delete "${specDraft.name}"?`)) {
-                      onDelete(specDraft.id);
-                    }
-                  }}
-                  className="p-3 rounded-[2px] hover:bg-greyscale-blue-200 transition-colors"
-                  title="Delete"
-                >
-                  <Trash2 className="w-6 h-6 text-text-primary" />
-                </button>
-              </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={filteredDrafts.map((draft) => draft.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-6">
+              {filteredDrafts.map((specDraft) => (
+                <SortableItem
+                  key={specDraft.id}
+                  specDraft={specDraft}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onManageMovies={onManageMovies}
+                  onToggleVisibility={onToggleVisibility}
+                />
+              ))}
             </div>
-      ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
   );
 };
-

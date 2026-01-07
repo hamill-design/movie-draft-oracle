@@ -7,6 +7,8 @@ export interface SpecDraft {
   name: string;
   description: string | null;
   photo_url: string | null;
+  display_order: number | null;
+  is_hidden: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -59,34 +61,58 @@ export const useSpecDraftsAdmin = () => {
     setError(null);
 
     try {
-      // Explicitly select columns to handle cases where photo_url column might not exist yet
-      const { data, error: fetchError } = await supabase
-        .from('spec_drafts')
-        .select('id, name, description, photo_url, created_at, updated_at')
-        .order('created_at', { ascending: false });
+      // Try to fetch with all columns including display_order and is_hidden
+      // First try with display_order in the order clause
+      const { data, error: fetchError } = await (supabase
+        .from('spec_drafts' as any)
+        .select('id, name, description, photo_url, display_order, is_hidden, created_at, updated_at')
+        .order('display_order', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false }) as any);
 
       if (fetchError) {
-        // If photo_url doesn't exist or there's a 400 error, try without it
+        // Check if it's a column error
         const isColumnError = 
-          fetchError.message?.includes('photo_url') || 
           fetchError.message?.includes('column') ||
           fetchError.message?.includes('does not exist') ||
           fetchError.code === 'PGRST116' ||
-          fetchError.status === 400 ||
-          fetchError.statusCode === 400 ||
-          (fetchError.message && fetchError.message.toLowerCase().includes('photo'));
+          (fetchError as any).status === 400 ||
+          (fetchError as any).statusCode === 400;
         
         if (isColumnError) {
-          console.log('photo_url column not found, fetching without it');
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from('spec_drafts')
-            .select('id, name, description, created_at, updated_at')
-            .order('created_at', { ascending: false });
+          console.log('Some columns not found, trying fallback queries');
           
-          if (fallbackError) throw fallbackError;
+          // Try without display_order and is_hidden in both SELECT and ORDER BY
+          // First try with photo_url
+          const { data: fallbackData, error: fallbackError } = await (supabase
+            .from('spec_drafts' as any)
+            .select('id, name, description, photo_url, created_at, updated_at')
+            .order('created_at', { ascending: false }) as any);
           
-          // Map to include photo_url as null
-          setSpecDrafts((fallbackData || []).map(draft => ({ ...draft, photo_url: null })));
+          if (fallbackError) {
+            // If photo_url also doesn't exist, try without it
+            const { data: minimalData, error: minimalError } = await (supabase
+              .from('spec_drafts' as any)
+              .select('id, name, description, created_at, updated_at')
+              .order('created_at', { ascending: false }) as any);
+            
+            if (minimalError) throw minimalError;
+            
+            // Map to include missing columns as defaults
+            setSpecDrafts((minimalData || []).map((draft: any) => ({ 
+              ...draft, 
+              photo_url: null,
+              display_order: null,
+              is_hidden: false
+            })));
+            return;
+          }
+          
+          // Map to include missing columns as defaults
+          setSpecDrafts((fallbackData || []).map((draft: any) => ({ 
+            ...draft, 
+            display_order: null,
+            is_hidden: false
+          })));
           return;
         }
         throw fetchError;
@@ -113,36 +139,55 @@ export const useSpecDraftsAdmin = () => {
     try {
       // Fetch spec draft - explicitly select columns
       let draftData: any;
-      const { data: initialDraftData, error: draftError } = await supabase
-        .from('spec_drafts')
-        .select('id, name, description, photo_url, created_at, updated_at')
+      const { data: initialDraftData, error: draftError } = await (supabase
+        .from('spec_drafts' as any)
+        .select('id, name, description, photo_url, display_order, is_hidden, created_at, updated_at')
         .eq('id', specDraftId)
-        .single();
+        .single() as any);
       
-      // If photo_url column doesn't exist or there's a 400 error, try without it
+      // If column error, try fallback queries
       const isColumnError = draftError && (
-        draftError.message?.includes('photo_url') || 
         draftError.message?.includes('column') ||
         draftError.message?.includes('does not exist') ||
         draftError.code === 'PGRST116' ||
-        draftError.status === 400 ||
-        draftError.statusCode === 400 ||
-        (draftError.message && draftError.message.toLowerCase().includes('photo'))
+        (draftError as any).status === 400 ||
+        (draftError as any).statusCode === 400
       );
       
       if (isColumnError) {
-        console.log('photo_url column not found, fetching without it');
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('spec_drafts')
-          .select('id, name, description, created_at, updated_at')
+        console.log('Some columns not found, trying fallback query');
+        // Try with photo_url but without display_order and is_hidden
+        const { data: fallbackData, error: fallbackError } = await (supabase
+          .from('spec_drafts' as any)
+          .select('id, name, description, photo_url, created_at, updated_at')
           .eq('id', specDraftId)
-          .single();
+          .single() as any);
         
-        if (fallbackError) throw fallbackError;
-        if (!fallbackData) return null;
-        
-        // Add photo_url as null
-        draftData = { ...fallbackData, photo_url: null };
+        if (fallbackError) {
+          // If photo_url also doesn't exist, try without it
+          const { data: minimalData, error: minimalError } = await (supabase
+            .from('spec_drafts' as any)
+            .select('id, name, description, created_at, updated_at')
+            .eq('id', specDraftId)
+            .single() as any);
+          
+          if (minimalError) throw minimalError;
+          if (!minimalData) return null;
+          
+          draftData = { 
+            ...minimalData, 
+            photo_url: null,
+            display_order: null,
+            is_hidden: false
+          };
+        } else {
+          if (!fallbackData) return null;
+          draftData = { 
+            ...fallbackData, 
+            display_order: null,
+            is_hidden: false
+          };
+        }
       } else {
         if (draftError) throw draftError;
         if (!initialDraftData) return null;
@@ -150,40 +195,40 @@ export const useSpecDraftsAdmin = () => {
       }
 
       // Fetch movies
-      const { data: moviesData, error: moviesError } = await supabase
-        .from('spec_draft_movies')
+      const { data: moviesData, error: moviesError } = await (supabase
+        .from('spec_draft_movies' as any)
         .select('*')
         .eq('spec_draft_id', specDraftId)
-        .order('movie_title', { ascending: true });
+        .order('movie_title', { ascending: true }) as any);
 
       if (moviesError) throw moviesError;
 
       // Fetch custom categories for this spec draft
       // Explicitly set a high limit to ensure we get all categories (Supabase default is 1000, but being explicit)
-      const { data: customCategoriesData, error: customCategoriesError } = await supabase
-        .from('spec_draft_categories')
+      const { data: customCategoriesData, error: customCategoriesError } = await (supabase
+        .from('spec_draft_categories' as any)
         .select('*')
         .eq('spec_draft_id', specDraftId)
         .order('category_name', { ascending: true })
-        .limit(1000); // Explicit limit to ensure we get all categories
+        .limit(1000) as any); // Explicit limit to ensure we get all categories
 
       if (customCategoriesError) {
         console.error('Error fetching custom categories:', customCategoriesError);
       } else {
         console.log(`✅ Fetched ${customCategoriesData?.length || 0} custom categories for spec draft ${specDraftId}`);
         if (customCategoriesData && customCategoriesData.length > 0) {
-          console.log('Custom categories:', customCategoriesData.map(c => c.category_name));
+          console.log('Custom categories:', customCategoriesData.map((c: any) => c.category_name));
         }
       }
 
       // Fetch categories for each movie
       const moviesWithCategories = await Promise.all(
-        (moviesData || []).map(async (movie) => {
-          const { data: categoriesData, error: categoriesError } = await supabase
-            .from('spec_draft_movie_categories')
+        (moviesData || []).map(async (movie: any) => {
+          const { data: categoriesData, error: categoriesError } = await (supabase
+            .from('spec_draft_movie_categories' as any)
             .select('*')
             .eq('spec_draft_movie_id', movie.id)
-            .order('category_name', { ascending: true });
+            .order('category_name', { ascending: true }) as any);
 
           if (categoriesError) {
             console.error(`Error fetching categories for movie ${movie.id}:`, categoriesError);
@@ -232,19 +277,32 @@ export const useSpecDraftsAdmin = () => {
         throw new Error('You must be logged in to create spec drafts');
       }
 
-      const { data, error: createError } = await supabase
-        .from('spec_drafts')
+      const { data, error: createError } = await (supabase
+        .from('spec_drafts' as any)
         .insert({
           name: name.trim(),
           description: description?.trim() || null,
           photo_url: photoUrl || null,
-        })
-        .select('id, name, description, photo_url, created_at, updated_at')
-        .single();
+        } as any)
+        .select('id, name, description, photo_url, display_order, is_hidden, created_at, updated_at')
+        .single() as any);
 
       if (createError) throw createError;
 
-      setSpecDrafts(prev => [data, ...prev]);
+      // Set display_order for new draft (get max order + 1)
+      const maxOrder = specDrafts.length > 0 
+        ? Math.max(...specDrafts.map(d => d.display_order || 0))
+        : 0;
+      
+      const draftWithOrder = { ...(data as any), display_order: maxOrder + 1, is_hidden: false };
+      
+      // Update the draft with display_order
+      await (supabase
+        .from('spec_drafts' as any)
+        .update({ display_order: maxOrder + 1 } as any)
+        .eq('id', (data as any).id) as any);
+
+      setSpecDrafts(prev => [draftWithOrder, ...prev]);
 
       toast({
         title: 'Success',
@@ -302,12 +360,12 @@ export const useSpecDraftsAdmin = () => {
         photo_url: updates.photo_url,
       });
       
-      const { data: updateResult, error: updateErr } = await supabase
-        .from('spec_drafts')
-        .update(updateData)
+      const { data: updateResult, error: updateErr } = await (supabase
+        .from('spec_drafts' as any)
+        .update(updateData as any)
         .eq('id', id)
-        .select('id, name, description, photo_url, created_at, updated_at')
-        .single();
+        .select('id, name, description, photo_url, display_order, is_hidden, created_at, updated_at')
+        .single() as any);
       
       data = updateResult;
       updateError = updateErr;
@@ -318,29 +376,49 @@ export const useSpecDraftsAdmin = () => {
         photo_url_in_response: data?.photo_url,
       });
       
-      // If photo_url column doesn't exist, try without it
+      // If column error, try fallback
       if (updateError && (
-        updateError.message?.includes('photo_url') || 
         updateError.message?.includes('column') ||
         updateError.message?.includes('does not exist') ||
         updateError.code === 'PGRST116' ||
         updateError.status === 400 ||
         updateError.statusCode === 400
-      ) && updates.photo_url !== undefined) {
-        console.warn('⚠️ photo_url column may not exist, trying without it');
-        // Remove photo_url from update and try again
-        const { photo_url, ...updateWithoutPhoto } = updateData;
-        const { data: fallbackResult, error: fallbackError } = await supabase
-          .from('spec_drafts')
-          .update(updateWithoutPhoto)
+      )) {
+        console.warn('⚠️ Some columns may not exist, trying fallback');
+        // Try to update without display_order and is_hidden in select
+        const { data: fallbackResult, error: fallbackError } = await (supabase
+          .from('spec_drafts' as any)
+          .update(updateData as any)
           .eq('id', id)
-          .select('id, name, description, created_at, updated_at')
-          .single();
+          .select('id, name, description, photo_url, created_at, updated_at')
+          .single() as any);
         
-        if (fallbackError) throw fallbackError;
-        data = { ...fallbackResult, photo_url: null };
+        if (fallbackError) {
+          // If photo_url also doesn't exist, try without it
+          const { photo_url, ...updateWithoutPhoto } = updateData;
+          const { data: minimalResult, error: minimalError } = await (supabase
+            .from('spec_drafts' as any)
+            .update(updateWithoutPhoto as any)
+            .eq('id', id)
+            .select('id, name, description, created_at, updated_at')
+            .single() as any);
+          
+          if (minimalError) throw minimalError;
+          data = { 
+            ...(minimalResult as any), 
+            photo_url: null,
+            display_order: null,
+            is_hidden: false
+          };
+        } else {
+          data = { 
+            ...(fallbackResult as any), 
+            display_order: null,
+            is_hidden: false
+          };
+        }
         updateError = null;
-        console.warn('⚠️ Updated without photo_url - column may not exist in database');
+        console.warn('⚠️ Updated with fallback - some columns may not exist in database');
       }
       
       if (updateError) throw updateError;
@@ -382,10 +460,10 @@ export const useSpecDraftsAdmin = () => {
         throw new Error('You must be logged in to delete spec drafts');
       }
 
-      const { error: deleteError } = await supabase
-        .from('spec_drafts')
+      const { error: deleteError } = await (supabase
+        .from('spec_drafts' as any)
         .delete()
-        .eq('id', id);
+        .eq('id', id) as any);
 
       if (deleteError) throw deleteError;
 
@@ -431,14 +509,14 @@ export const useSpecDraftsAdmin = () => {
         throw new Error('You must be logged in to add movies');
       }
 
-      const { data, error: insertError } = await supabase
-        .from('spec_draft_movies')
+      const { data, error: insertError } = await (supabase
+        .from('spec_draft_movies' as any)
         .insert({
           spec_draft_id: specDraftId,
           ...movie,
-        })
+        } as any)
         .select()
-        .single();
+        .single() as any);
 
       if (insertError) throw insertError;
 
@@ -475,10 +553,10 @@ export const useSpecDraftsAdmin = () => {
         throw new Error('You must be logged in to remove movies');
       }
 
-      const { error: deleteError } = await supabase
-        .from('spec_draft_movies')
+      const { error: deleteError } = await (supabase
+        .from('spec_draft_movies' as any)
         .delete()
-        .eq('id', specDraftMovieId);
+        .eq('id', specDraftMovieId) as any);
 
       if (deleteError) throw deleteError;
 
@@ -518,10 +596,10 @@ export const useSpecDraftsAdmin = () => {
       }
 
       // Delete existing categories
-      const { error: deleteError } = await supabase
-        .from('spec_draft_movie_categories')
+      const { error: deleteError } = await (supabase
+        .from('spec_draft_movie_categories' as any)
         .delete()
-        .eq('spec_draft_movie_id', specDraftMovieId);
+        .eq('spec_draft_movie_id', specDraftMovieId) as any);
 
       if (deleteError) throw deleteError;
 
@@ -533,9 +611,9 @@ export const useSpecDraftsAdmin = () => {
           is_automated: isAutomated,
         }));
 
-        const { error: insertError } = await supabase
-          .from('spec_draft_movie_categories')
-          .insert(categoriesToInsert);
+        const { error: insertError } = await (supabase
+          .from('spec_draft_movie_categories' as any)
+          .insert(categoriesToInsert as any) as any);
 
         if (insertError) throw insertError;
       }
@@ -575,15 +653,15 @@ export const useSpecDraftsAdmin = () => {
         throw new Error('You must be logged in to create custom categories');
       }
 
-      const { data, error: createError } = await supabase
-        .from('spec_draft_categories')
+      const { data, error: createError } = await (supabase
+        .from('spec_draft_categories' as any)
         .insert({
           spec_draft_id: specDraftId,
           category_name: categoryName.trim(),
           description: description?.trim() || null,
-        })
+        } as any)
         .select()
-        .single();
+        .single() as any);
 
       if (createError) throw createError;
 
@@ -626,15 +704,15 @@ export const useSpecDraftsAdmin = () => {
         throw new Error('You must be logged in to update custom categories');
       }
 
-      const { data, error: updateError } = await supabase
-        .from('spec_draft_categories')
+      const { data, error: updateError } = await (supabase
+        .from('spec_draft_categories' as any)
         .update({
           ...updates,
           updated_at: new Date().toISOString(),
-        })
+        } as any)
         .eq('id', id)
         .select()
-        .single();
+        .single() as any);
 
       if (updateError) throw updateError;
 
@@ -671,10 +749,10 @@ export const useSpecDraftsAdmin = () => {
         throw new Error('You must be logged in to delete custom categories');
       }
 
-      const { error: deleteError } = await supabase
-        .from('spec_draft_categories')
+      const { error: deleteError } = await (supabase
+        .from('spec_draft_categories' as any)
         .delete()
-        .eq('id', id);
+        .eq('id', id) as any);
 
       if (deleteError) throw deleteError;
 
@@ -696,6 +774,157 @@ export const useSpecDraftsAdmin = () => {
     }
   }, [toast]);
 
+  // Add new function for reordering spec drafts
+  const reorderSpecDrafts = useCallback(async (reorderedDrafts: SpecDraft[]) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        throw new Error(`Authentication error: ${authError.message}`);
+      }
+      if (!user) {
+        throw new Error('You must be logged in to reorder spec drafts');
+      }
+
+      // Try to update display_order for the first draft to check if column exists
+      const testUpdate = await (supabase
+        .from('spec_drafts' as any)
+        .update({ display_order: 1, updated_at: new Date().toISOString() } as any)
+        .eq('id', reorderedDrafts[0]?.id || '')
+        .select('id')
+        .limit(1) as any);
+
+      // Check if display_order column exists
+      if (testUpdate.error && (
+        testUpdate.error.message?.includes('display_order') ||
+        testUpdate.error.message?.includes('column') ||
+        testUpdate.error.code === 'PGRST116' ||
+        testUpdate.error.status === 400
+      )) {
+        toast({
+          title: 'Migration Required',
+          description: 'Please run the migration to add display_order and is_hidden columns. The migration SQL is in supabase/migrations/20251116000000_add_order_and_hidden_to_spec_drafts.sql',
+          variant: 'destructive',
+        });
+        throw new Error('display_order column does not exist. Please run the migration first.');
+      }
+
+      // Update display_order for each draft
+      const updates = reorderedDrafts.map((draft, index) => ({
+        id: draft.id,
+        display_order: index + 1,
+      }));
+
+      // Batch update all drafts
+      const updatePromises = updates.map(({ id, display_order }) =>
+        (supabase
+          .from('spec_drafts' as any)
+          .update({ display_order, updated_at: new Date().toISOString() } as any)
+          .eq('id', id) as any)
+      );
+
+      const results = await Promise.all(updatePromises);
+      
+      // Check for errors
+      const errors = results.filter(r => r.error);
+      if (errors.length > 0) {
+        throw errors[0].error;
+      }
+
+      // Update local state
+      setSpecDrafts(reorderedDrafts.map((draft, index) => ({
+        ...draft,
+        display_order: index + 1,
+      })));
+
+      toast({
+        title: 'Success',
+        description: 'Spec drafts reordered successfully',
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to reorder spec drafts';
+      setError(errorMessage);
+      // Don't show duplicate toast if we already showed the migration required one
+      if (!errorMessage.includes('display_order column does not exist')) {
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      }
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  // Add new function for toggling visibility
+  const toggleSpecDraftVisibility = useCallback(async (id: string, isHidden: boolean) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError) {
+        throw new Error(`Authentication error: ${authError.message}`);
+      }
+      if (!user) {
+        throw new Error('You must be logged in to toggle spec draft visibility');
+      }
+
+      const { data, error: updateError } = await (supabase
+        .from('spec_drafts' as any)
+        .update({ 
+          is_hidden: isHidden,
+          updated_at: new Date().toISOString() 
+        } as any)
+        .eq('id', id)
+        .select('id, name, description, photo_url, display_order, is_hidden, created_at, updated_at')
+        .single() as any);
+
+      if (updateError) {
+        // If is_hidden column doesn't exist, show a helpful message
+        if (updateError.message?.includes('is_hidden') || 
+            updateError.message?.includes('column') ||
+            updateError.code === 'PGRST116' ||
+            updateError.status === 400) {
+          toast({
+            title: 'Migration Required',
+            description: 'Please run the migration to add display_order and is_hidden columns to spec_drafts table.',
+            variant: 'destructive',
+          });
+          throw new Error('is_hidden column does not exist. Please run the migration first.');
+        }
+        throw updateError;
+      }
+
+      // Update local state
+      setSpecDrafts(prev => prev.map(draft => 
+        draft.id === id ? data : draft
+      ));
+
+      toast({
+        title: 'Success',
+        description: `Spec draft ${isHidden ? 'hidden' : 'shown'} successfully`,
+      });
+
+      return data;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to toggle visibility';
+      setError(errorMessage);
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
   return {
     specDrafts,
     loading,
@@ -705,6 +934,8 @@ export const useSpecDraftsAdmin = () => {
     createSpecDraft,
     updateSpecDraft,
     deleteSpecDraft,
+    reorderSpecDrafts,
+    toggleSpecDraftVisibility,
     addMovieToSpecDraft,
     removeMovieFromSpecDraft,
     updateMovieCategories,

@@ -9,6 +9,8 @@ interface SpecDraft {
   name: string;
   description: string | null;
   photo_url: string | null;
+  display_order: number | null;
+  is_hidden: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -22,19 +24,23 @@ export const SpecDraftSelector = () => {
   useEffect(() => {
     const fetchSpecDrafts = async () => {
       try {
-        // Try to fetch with photo_url first
+        // Try to fetch with all columns first
         const queryResult = await supabase
           .from('spec_drafts' as any)
-          .select('id, name, description, photo_url, created_at, updated_at')
+          .select('id, name, description, photo_url, display_order, is_hidden, created_at, updated_at')
+          .eq('is_hidden', false)
+          .order('display_order', { ascending: true, nullsFirst: false })
           .order('created_at', { ascending: false });
         
         const result = queryResult as { data: SpecDraft[] | null; error: any };
         const { data, error } = result;
 
         if (error) {
-          // If photo_url column doesn't exist, fetch without it
+          // If some columns don't exist, try without them
           const isColumnError = 
             error.message?.includes('photo_url') || 
+            error.message?.includes('display_order') ||
+            error.message?.includes('is_hidden') ||
             error.message?.includes('column') ||
             error.message?.includes('does not exist') ||
             error.code === 'PGRST116' ||
@@ -46,16 +52,23 @@ export const SpecDraftSelector = () => {
               .select('id, name, description, created_at, updated_at')
               .order('created_at', { ascending: false });
             
-            const fallbackResult = fallbackQueryResult as { data: Omit<SpecDraft, 'photo_url'>[] | null; error: any };
+            const fallbackResult = fallbackQueryResult as { data: Omit<SpecDraft, 'photo_url' | 'display_order' | 'is_hidden'>[] | null; error: any };
             const { data: fallbackData, error: fallbackError } = fallbackResult;
             
             if (fallbackError) throw fallbackError;
-            setSpecDrafts((fallbackData || []).map(draft => ({ ...draft, photo_url: null } as SpecDraft)));
+            // Filter out any drafts that might be hidden (if is_hidden column doesn't exist, show all)
+            setSpecDrafts((fallbackData || []).map(draft => ({ 
+              ...draft, 
+              photo_url: null,
+              display_order: null,
+              is_hidden: false
+            } as SpecDraft)));
           } else {
             throw error;
           }
         } else {
-          setSpecDrafts(data || []);
+          // Filter out hidden drafts (in case the filter didn't work)
+          setSpecDrafts((data || []).filter(draft => !(draft.is_hidden ?? false)));
         }
       } catch (err) {
         console.error('Error fetching spec drafts:', err);

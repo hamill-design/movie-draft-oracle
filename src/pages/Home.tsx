@@ -156,8 +156,8 @@ const Home = () => {
           style={{
             position: 'absolute',
             top: '-33px',
-            left: '0px',
-            width: '100%',
+            left: '0',
+            width: '100vw',
             height: '488px',
             backgroundImage: 'url(/bg-2014.png)',
             backgroundSize: 'cover',

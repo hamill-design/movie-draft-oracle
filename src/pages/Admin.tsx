@@ -46,6 +46,8 @@ const Admin = () => {
     createSpecDraft,
     updateSpecDraft,
     deleteSpecDraft,
+    reorderSpecDrafts,
+    toggleSpecDraftVisibility,
     createCustomCategory,
     updateCustomCategory,
     deleteCustomCategory,
@@ -232,6 +234,22 @@ const Admin = () => {
     }
   };
 
+  const handleSpecDraftReorder = async (reorderedDrafts: SpecDraft[]) => {
+    try {
+      await reorderSpecDrafts(reorderedDrafts);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  };
+
+  const handleSpecDraftToggleVisibility = async (id: string, isHidden: boolean) => {
+    try {
+      await toggleSpecDraftVisibility(id, isHidden);
+    } catch (error) {
+      // Error handling is done in the hook
+    }
+  };
+
   const handleMovieManagerRefresh = async () => {
     if (managingMoviesForDraft) {
       const updated = await fetchSpecDraftWithMovies(managingMoviesForDraft.id);
@@ -365,10 +383,12 @@ const Admin = () => {
                 onEdit={handleSpecDraftEdit}
                 onDelete={handleSpecDraftDelete}
                 onManageMovies={handleManageMovies}
-                                  onCreateNew={() => {
-                                    setEditingSpecDraft(null);
-                                    setSpecDraftSection('form');
-                                  }}
+                onReorder={handleSpecDraftReorder}
+                onToggleVisibility={handleSpecDraftToggleVisibility}
+                onCreateNew={() => {
+                  setEditingSpecDraft(null);
+                  setSpecDraftSection('form');
+                }}
                 loading={specDraftsLoading}
               />
           )}
