@@ -54,11 +54,11 @@ BEGIN
     average_score := 0;
   END IF;
   
-  -- Oscar Bonus - Added after averaging (+5 for nomination, +10 for winner)
+  -- Oscar Bonus - Added after averaging (+3 for nomination, +6 for winner)
   IF p_oscar_status = 'winner' THEN
-    oscar_bonus := 10;
+    oscar_bonus := 6;
   ELSIF p_oscar_status = 'nominee' THEN
-    oscar_bonus := 5;
+    oscar_bonus := 3;
   ELSE
     oscar_bonus := 0;
   END IF;
@@ -102,6 +102,6 @@ BEGIN
   WHERE oscar_status = 'nominee';
   
   RAISE NOTICE 'Recalculated scores for % draft picks with reduced Oscar bonuses', updated_count;
-  RAISE NOTICE '% Oscar winners now get +10 bonus (reduced from +20)', winner_count;
-  RAISE NOTICE '% Oscar nominees now get +5 bonus (reduced from +10)', nominee_count;
+  RAISE NOTICE '% Oscar winners now get +6 bonus (reduced from +10)', winner_count;
+  RAISE NOTICE '% Oscar nominees now get +3 bonus (reduced from +5)', nominee_count;
 END $$;

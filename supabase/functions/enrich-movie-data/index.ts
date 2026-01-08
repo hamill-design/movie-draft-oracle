@@ -326,12 +326,12 @@ function calculateScore(data: any): number {
     ? componentScores.reduce((sum, score) => sum + score, 0) / componentScores.length
     : 0
 
-  // Oscar Bonus - Added after averaging (+5 for nomination, +10 for winner)
+  // Oscar Bonus - Added after averaging (+3 for nomination, +6 for winner)
   let oscarBonus = 0
   if (data.oscarStatus === 'winner') {
-    oscarBonus = 10
+    oscarBonus = 6
   } else if (data.oscarStatus === 'nominee') {
-    oscarBonus = 5
+    oscarBonus = 3
   }
 
   // Final score is the average plus Oscar bonus

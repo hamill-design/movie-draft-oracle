@@ -520,9 +520,9 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
               // Add Oscar bonus
               let oscarBonus = 0;
               if (enrichedPick.oscar_status === 'winner') {
-                oscarBonus = 10;
+                oscarBonus = 6;
               } else if (enrichedPick.oscar_status === 'nominee') {
-                oscarBonus = 5;
+                oscarBonus = 3;
               }
               
               calculatedScore = Math.round((averageScore + oscarBonus) * 100) / 100;
