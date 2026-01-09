@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { User, Trophy } from 'lucide-react';
 import { DraftPick } from '@/hooks/useDrafts';
 import MovieScoreCard from './MovieScoreCard';
-import { getScoreColor, getScoreGrade } from '@/utils/scoreCalculator';
+import { getScoreColor, getScoreGrade, calculateDetailedScore } from '@/utils/scoreCalculator';
 
 interface TeamRosterProps {
   playerName: string;
@@ -17,13 +17,34 @@ const TeamRoster: React.FC<TeamRosterProps> = ({
   picks, 
   teamRank 
 }) => {
-  // Calculate team total score - using any to access new columns
-  const validScores = picks
-    .filter(pick => (pick as any).calculated_score !== null)
-    .map(pick => (pick as any).calculated_score!);
+  // Calculate team total score by recalculating each pick's score
+  // This ensures we use the current calculation logic (fixed 20/80 weights)
+  const recalculatedScores = picks
+    .map(pick => {
+      const pickWithScoring = pick as any;
+      // Only recalculate if we have scoring data
+      if (pickWithScoring.movie_budget || pickWithScoring.rt_critics_score || 
+          pickWithScoring.imdb_rating || pickWithScoring.metacritic_score || 
+          pickWithScoring.letterboxd_rating) {
+        const scoringData = {
+          budget: pickWithScoring.movie_budget,
+          revenue: pickWithScoring.movie_revenue,
+          rtCriticsScore: pickWithScoring.rt_critics_score,
+          rtAudienceScore: pickWithScoring.rt_audience_score,
+          metacriticScore: pickWithScoring.metacritic_score,
+          imdbRating: pickWithScoring.imdb_rating,
+          letterboxdRating: pickWithScoring.letterboxd_rating,
+          oscarStatus: pickWithScoring.oscar_status
+        };
+        const scoreBreakdown = calculateDetailedScore(scoringData);
+        return scoreBreakdown.finalScore;
+      }
+      return null;
+    })
+    .filter((score): score is number => score !== null && score !== undefined);
   
-  const teamTotal = validScores.length > 0 
-    ? validScores.reduce((sum: number, score: number) => sum + score, 0)
+  const teamTotal = recalculatedScores.length > 0 
+    ? recalculatedScores.reduce((sum: number, score: number) => sum + score, 0)
     : 0;
 
   const sortedPicks = [...picks].sort((a, b) => a.pick_order - b.pick_order);
@@ -51,6 +72,7 @@ const TeamRoster: React.FC<TeamRosterProps> = ({
                   rtAudienceScore: pickWithScoring.rt_audience_score,
                   metacriticScore: pickWithScoring.metacritic_score,
                   imdbRating: pickWithScoring.imdb_rating,
+                  letterboxdRating: pickWithScoring.letterboxd_rating,
                   oscarStatus: pickWithScoring.oscar_status
                 }}
               />

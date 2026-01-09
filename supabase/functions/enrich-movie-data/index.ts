@@ -49,6 +49,7 @@ Deno.serve(async (req) => {
       rtCriticsScore: null,
       metacriticScore: null,
       imdbRating: null,
+      letterboxdRating: null,
       oscarStatus: 'none',
       posterPath: null,
       movieGenre: null
@@ -204,6 +205,75 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Fetch Letterboxd rating (optional - won't fail if unavailable)
+    console.log('=== STARTING LETTERBOXD FETCH ===')
+    try {
+      console.log('Fetching Letterboxd rating...')
+      console.log(`Movie title: ${movieTitle}, Year: ${movieYear}`)
+      
+      // Generate slug from title (Letterboxd format: lowercase, hyphens, no special chars)
+      const slug = movieTitle.toLowerCase()
+        .replace(/\s+/g, '-')           // Spaces to hyphens
+        .replace(/[':.,]/g, '')         // Remove common punctuation
+        .replace(/[^a-z0-9-]/g, '')     // Remove any other non-alphanumeric (except hyphens)
+        .replace(/-+/g, '-')            // Multiple hyphens to single
+        .replace(/^-|-$/g, '')          // Remove leading/trailing hyphens
+      
+      // Try to fetch Letterboxd page
+      const letterboxdUrl = `https://letterboxd.com/film/${slug}/`
+      console.log(`Letterboxd URL: ${letterboxdUrl}`)
+      
+      const response = await fetchWithTimeout(letterboxdUrl, 8000)
+      
+      if (response.ok) {
+        const html = await response.text()
+        
+        // Parse rating from HTML
+        // Letterboxd stores average rating in various places
+        let rating: number | null = null
+        
+        // Method 1: Try Twitter meta tag (most reliable: "4.18 out of 5")
+        const twitterMetaMatch = html.match(/<meta[^>]*name="twitter:data2"[^>]*content="([\d.]+)\s+out of 5"/i)
+        if (twitterMetaMatch) {
+          rating = parseFloat(twitterMetaMatch[1])
+          console.log(`Letterboxd: Found rating via Twitter meta tag: ${rating}`)
+        } else {
+          // Method 2: Try data-average-rating attribute
+          const dataRatingMatch = html.match(/data-average-rating="([\d.]+)"/)
+          if (dataRatingMatch) {
+            rating = parseFloat(dataRatingMatch[1])
+            console.log(`Letterboxd: Found rating via data attribute: ${rating}`)
+          } else {
+            // Method 3: Try JSON-LD structured data
+            const jsonLdMatch = html.match(/"ratingValue":\s*([\d.]+)/)
+            if (jsonLdMatch) {
+              rating = parseFloat(jsonLdMatch[1])
+              console.log(`Letterboxd: Found rating via JSON-LD: ${rating}`)
+            } else {
+              // Method 4: Try to find "X.XX out of 5" pattern anywhere
+              const outOfFiveMatch = html.match(/([\d.]+)\s+out of 5/i)
+              if (outOfFiveMatch) {
+                rating = parseFloat(outOfFiveMatch[1])
+                console.log(`Letterboxd: Found rating via "out of 5" pattern: ${rating}`)
+              }
+            }
+          }
+        }
+        
+        if (rating !== null && rating >= 0 && rating <= 5) {
+          enrichmentData.letterboxdRating = rating
+          console.log(`Letterboxd: ${rating}/5`)
+        } else {
+          console.log('Letterboxd: Rating not found or invalid in HTML')
+        }
+      } else {
+        console.log(`Letterboxd: HTTP ${response.status} - Page not found or inaccessible`)
+      }
+    } catch (error) {
+      console.log(`Letterboxd rating error: ${error.message}`)
+      // Don't fail the whole enrichment if Letterboxd fails
+    }
+
     // Calculate score
     const finalScore = calculateScore(enrichmentData)
     console.log(`Final score: ${finalScore}`)
@@ -238,6 +308,10 @@ Deno.serve(async (req) => {
       updateData.imdb_rating = enrichmentData.imdbRating
     }
     
+    if (enrichmentData.letterboxdRating !== null && typeof enrichmentData.letterboxdRating === 'number') {
+      updateData.letterboxd_rating = enrichmentData.letterboxdRating
+    }
+    
     if (enrichmentData.oscarStatus && typeof enrichmentData.oscarStatus === 'string') {
       updateData.oscar_status = enrichmentData.oscarStatus
     }
@@ -267,6 +341,12 @@ Deno.serve(async (req) => {
     }
 
     console.log('SUCCESS: Database updated')
+    console.log('=== ENRICHMENT DATA SUMMARY ===')
+    console.log(`Letterboxd Rating: ${enrichmentData.letterboxdRating || 'null'}`)
+    console.log(`IMDB: ${enrichmentData.imdbRating || 'null'}`)
+    console.log(`RT Critics: ${enrichmentData.rtCriticsScore || 'null'}`)
+    console.log(`Metacritic: ${enrichmentData.metacriticScore || 'null'}`)
+    console.log(`Final Score: ${finalScore}`)
 
     return new Response(
       JSON.stringify({
@@ -295,36 +375,106 @@ Deno.serve(async (req) => {
 })
 
 function calculateScore(data: any): number {
-  const componentScores: number[] = []
-
-  // Box Office Score - Profit percentage (0-100 scale)
+  // Box Office Score - Hybrid ROI-based formula
+  // Linear scaling for 0-100% ROI (0-60 points), logarithmic for >100% ROI (60-100 points)
+  let boxOfficeScore = 0
   if (data.budget && data.revenue && data.budget > 0) {
     const profit = data.revenue - data.budget
-    const profitPercentage = (profit / data.revenue) * 100
-    const boxOfficeScore = Math.min(Math.max(profitPercentage, 0), 100)
-    componentScores.push(boxOfficeScore)
+    if (profit <= 0) {
+      boxOfficeScore = 0 // Flops get 0
+    } else {
+      const roiPercent = (profit / data.budget) * 100
+      if (roiPercent <= 100) {
+        // Linear scaling: 0-100% ROI → 0-60 points (2x return = 60 points)
+        boxOfficeScore = 60 * (roiPercent / 100)
+      } else {
+        // Logarithmic scaling: >100% ROI → 60-100 points (diminishing returns)
+        boxOfficeScore = 60 + 40 * (1 - Math.exp(-(roiPercent - 100) / 200))
+      }
+    }
   }
 
-  // RT Critics Score - Direct percentage (0-100 scale)
-  if (data.rtCriticsScore) {
-    componentScores.push(data.rtCriticsScore)
+  // Convert scores to 0-100 scale
+  const rtCriticsScore = data.rtCriticsScore || 0
+  const metacriticScore = data.metacriticScore || 0
+  const imdbScore = data.imdbRating ? (data.imdbRating / 10) * 100 : 0
+  const letterboxdScore = data.letterboxdRating ? (data.letterboxdRating / 5) * 100 : 0
+
+  // Layer 1: Calculate Critics Score (Internal Consensus)
+  let criticsRawAvg = 0
+  let criticsScore = 0
+  if (rtCriticsScore && metacriticScore) {
+    criticsRawAvg = (rtCriticsScore + metacriticScore) / 2
+    const criticsInternalDiff = Math.abs(rtCriticsScore - metacriticScore)
+    const criticsInternalModifier = Math.max(0, 1 - (criticsInternalDiff / 200))
+    criticsScore = criticsRawAvg * criticsInternalModifier
+  } else if (rtCriticsScore) {
+    criticsRawAvg = rtCriticsScore
+    criticsScore = rtCriticsScore
+  } else if (metacriticScore) {
+    criticsRawAvg = metacriticScore
+    criticsScore = metacriticScore
   }
 
-  // Metacritic Score - Direct score (0-100 scale)
-  if (data.metacriticScore) {
-    componentScores.push(data.metacriticScore)
+  // Layer 2: Calculate Audience Score (Internal Consensus)
+  let audienceRawAvg = 0
+  let audienceScore = 0
+  if (imdbScore && letterboxdScore) {
+    audienceRawAvg = (imdbScore + letterboxdScore) / 2
+    const audienceInternalDiff = Math.abs(imdbScore - letterboxdScore)
+    const audienceInternalModifier = Math.max(0, 1 - (audienceInternalDiff / 200))
+    audienceScore = audienceRawAvg * audienceInternalModifier
+  } else if (imdbScore) {
+    audienceRawAvg = imdbScore
+    audienceScore = imdbScore
+  } else if (letterboxdScore) {
+    audienceRawAvg = letterboxdScore
+    audienceScore = letterboxdScore
   }
 
-  // IMDB Score - Convert to 0-100 scale
-  if (data.imdbRating) {
-    const imdbScore = (data.imdbRating / 10) * 100
-    componentScores.push(imdbScore)
+  // Layer 3: Calculate Final Critical Score (Cross-Category Consensus)
+  let criticalScore = 0
+  if (criticsRawAvg > 0 && audienceRawAvg > 0) {
+    // Use RAW averages for consensus calculation
+    const criticsAudienceDiff = Math.abs(criticsRawAvg - audienceRawAvg)
+    const consensusModifier = Math.max(0, 1 - (criticsAudienceDiff / 200))
+    
+    // Weighted average of penalized scores (50/50)
+    const weightedAvg = (criticsScore * 0.5) + (audienceScore * 0.5)
+    criticalScore = weightedAvg * consensusModifier
+  } else if (criticsScore > 0) {
+    criticalScore = criticsScore
+  } else if (audienceScore > 0) {
+    criticalScore = audienceScore
   }
 
-  // Calculate average of available components
-  const averageScore = componentScores.length > 0
-    ? componentScores.reduce((sum, score) => sum + score, 0) / componentScores.length
-    : 0
+  // Fixed weights: 20% Box Office, 80% Critical Score
+  let boxOfficeWeight = 0.20
+  let criticalWeight = 0.80
+  
+  if (boxOfficeScore > 0 && criticalScore > 0) {
+    // Both available: use fixed 20/80 split
+    boxOfficeWeight = 0.20
+    criticalWeight = 0.80
+  } else if (boxOfficeScore > 0) {
+    // Only Box Office available
+    boxOfficeWeight = 1.0
+    criticalWeight = 0
+  } else if (criticalScore > 0) {
+    // Only Critical Score available
+    boxOfficeWeight = 0
+    criticalWeight = 1.0
+  }
+
+  // Calculate final average with fixed weights
+  let averageScore = 0
+  if (boxOfficeScore > 0 && criticalScore > 0) {
+    averageScore = (boxOfficeScore * boxOfficeWeight) + (criticalScore * criticalWeight)
+  } else if (boxOfficeScore > 0) {
+    averageScore = boxOfficeScore
+  } else if (criticalScore > 0) {
+    averageScore = criticalScore
+  }
 
   // Oscar Bonus - Added after averaging (+3 for nomination, +6 for winner)
   let oscarBonus = 0

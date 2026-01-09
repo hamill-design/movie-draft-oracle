@@ -1,4 +1,7 @@
--- Update Oscar bonuses to new values (+5 for nominee, +10 for winner)
+-- Recalculate all scores with new hybrid Box Office formula
+-- This migration updates the calculate_new_movie_score function and recalculates existing scores
+
+-- Update the function with hybrid Box Office scoring
 CREATE OR REPLACE FUNCTION public.calculate_new_movie_score(
   p_budget BIGINT,
   p_revenue BIGINT,
@@ -83,7 +86,7 @@ BEGIN
 END;
 $$;
 
--- Recalculate all existing draft_picks with the new reduced Oscar bonuses
+-- Recalculate all existing draft_picks with the new hybrid Box Office formula
 UPDATE public.draft_picks 
 SET calculated_score = public.calculate_new_movie_score(
   movie_budget,
@@ -93,28 +96,41 @@ SET calculated_score = public.calculate_new_movie_score(
   imdb_rating,
   oscar_status
 )
-WHERE calculated_score IS NOT NULL;
+WHERE calculated_score IS NOT NULL
+  AND movie_budget IS NOT NULL 
+  AND movie_revenue IS NOT NULL
+  AND movie_budget > 0;
 
--- Show summary of the recalculation with new bonuses
+-- Show summary of the recalculation
 DO $$
 DECLARE
   updated_count INTEGER;
-  winner_count INTEGER;
-  nominee_count INTEGER;
+  high_roi_count INTEGER;
+  low_roi_count INTEGER;
 BEGIN
   SELECT COUNT(*) INTO updated_count 
   FROM public.draft_picks 
   WHERE calculated_score IS NOT NULL;
   
-  SELECT COUNT(*) INTO winner_count
-  FROM public.draft_picks 
-  WHERE oscar_status = 'winner';
+  -- Count movies with high ROI (>100%)
+  SELECT COUNT(*) INTO high_roi_count
+  FROM public.draft_picks
+  WHERE movie_budget IS NOT NULL 
+    AND movie_revenue IS NOT NULL
+    AND movie_budget > 0
+    AND ((movie_revenue - movie_budget)::NUMERIC / movie_budget::NUMERIC) * 100 > 100;
   
-  SELECT COUNT(*) INTO nominee_count
-  FROM public.draft_picks 
-  WHERE oscar_status = 'nominee';
+  -- Count movies with low ROI (0-100%)
+  SELECT COUNT(*) INTO low_roi_count
+  FROM public.draft_picks
+  WHERE movie_budget IS NOT NULL 
+    AND movie_revenue IS NOT NULL
+    AND movie_budget > 0
+    AND ((movie_revenue - movie_budget)::NUMERIC / movie_budget::NUMERIC) * 100 <= 100
+    AND ((movie_revenue - movie_budget)::NUMERIC / movie_budget::NUMERIC) * 100 >= 0;
   
-  RAISE NOTICE 'Recalculated scores for % draft picks with reduced Oscar bonuses', updated_count;
-  RAISE NOTICE '% Oscar winners now get +6 bonus (reduced from +10)', winner_count;
-  RAISE NOTICE '% Oscar nominees now get +3 bonus (reduced from +5)', nominee_count;
+  RAISE NOTICE 'Recalculated scores for % draft picks with hybrid Box Office formula', updated_count;
+  RAISE NOTICE '% movies with ROI >100%% (using logarithmic scaling)', high_roi_count;
+  RAISE NOTICE '% movies with ROI 0-100%% (using linear scaling)', low_roi_count;
 END $$;
+

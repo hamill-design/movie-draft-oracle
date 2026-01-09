@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { downloadImage } from '@/utils/imageGenerator';
 import { useSVGImageRenderer } from '@/hooks/useSVGImageRenderer';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
+import { calculateDetailedScore } from '@/utils/scoreCalculator';
 
 interface TeamScore {
   playerName: string;
@@ -44,19 +45,39 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
     try {
       setGenerating(true);
       
-      // Find the best scoring movie
+      // Recalculate scores for all picks using current calculation logic
       const moviesWithScores = picks
-        .filter(pick => (pick as any).calculated_score !== null && (pick as any).calculated_score !== undefined)
-        .map(pick => ({
-          title: pick.movie_title,
-          score: (pick as any).calculated_score!,
-          playerName: pick.player_name,
-          poster: (pick as any).poster_path ? `https://image.tmdb.org/t/p/w500${(pick as any).poster_path}` : undefined,
-          year: (pick as any).movie_year,
-          genre: (pick as any).movie_genre,
-          category: (pick as any).category,
-          pickNumber: (pick as any).pick_order
-        }));
+        .map(pick => {
+          const pickWithScoring = pick as any;
+          // Only recalculate if we have scoring data
+          if (pickWithScoring.movie_budget || pickWithScoring.rt_critics_score || 
+              pickWithScoring.imdb_rating || pickWithScoring.metacritic_score || 
+              pickWithScoring.letterboxd_rating) {
+            const scoringData = {
+              budget: pickWithScoring.movie_budget,
+              revenue: pickWithScoring.movie_revenue,
+              rtCriticsScore: pickWithScoring.rt_critics_score,
+              rtAudienceScore: pickWithScoring.rt_audience_score,
+              metacriticScore: pickWithScoring.metacritic_score,
+              imdbRating: pickWithScoring.imdb_rating,
+              letterboxdRating: pickWithScoring.letterboxd_rating,
+              oscarStatus: pickWithScoring.oscar_status
+            };
+            const scoreBreakdown = calculateDetailedScore(scoringData);
+            return {
+              title: pick.movie_title,
+              score: scoreBreakdown.finalScore,
+              playerName: pick.player_name,
+              poster: pickWithScoring.poster_path ? `https://image.tmdb.org/t/p/w500${pickWithScoring.poster_path}` : undefined,
+              year: pickWithScoring.movie_year,
+              genre: pickWithScoring.movie_genre,
+              category: pickWithScoring.category,
+              pickNumber: pickWithScoring.pick_order
+            };
+          }
+          return null;
+        })
+        .filter((movie): movie is NonNullable<typeof movie> => movie !== null);
       
       const bestMovie = moviesWithScores.length > 0 
         ? moviesWithScores.reduce((best, current) => 
@@ -64,18 +85,41 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
           )
         : undefined;
 
-      // Find the first pick (pick_order === 1)
+      // Find the first pick (pick_order === 1) and recalculate its score
       const firstPickData = picks.find(pick => (pick as any).pick_order === 1);
-      const firstPick = firstPickData ? {
-        title: firstPickData.movie_title,
-        score: (firstPickData as any).calculated_score || 0,
-        playerName: firstPickData.player_name,
-        poster: (firstPickData as any).poster_path ? `https://image.tmdb.org/t/p/w500${(firstPickData as any).poster_path}` : undefined,
-        year: (firstPickData as any).movie_year,
-        genre: (firstPickData as any).movie_genre,
-        category: (firstPickData as any).category,
-        pickNumber: (firstPickData as any).pick_order
-      } : undefined;
+      const firstPick = firstPickData ? (() => {
+        const pickWithScoring = firstPickData as any;
+        let recalculatedScore = 0;
+        
+        // Recalculate score if we have scoring data
+        if (pickWithScoring.movie_budget || pickWithScoring.rt_critics_score || 
+            pickWithScoring.imdb_rating || pickWithScoring.metacritic_score || 
+            pickWithScoring.letterboxd_rating) {
+          const scoringData = {
+            budget: pickWithScoring.movie_budget,
+            revenue: pickWithScoring.movie_revenue,
+            rtCriticsScore: pickWithScoring.rt_critics_score,
+            rtAudienceScore: pickWithScoring.rt_audience_score,
+            metacriticScore: pickWithScoring.metacritic_score,
+            imdbRating: pickWithScoring.imdb_rating,
+            letterboxdRating: pickWithScoring.letterboxd_rating,
+            oscarStatus: pickWithScoring.oscar_status
+          };
+          const scoreBreakdown = calculateDetailedScore(scoringData);
+          recalculatedScore = scoreBreakdown.finalScore;
+        }
+        
+        return {
+          title: firstPickData.movie_title,
+          score: recalculatedScore,
+          playerName: firstPickData.player_name,
+          poster: pickWithScoring.poster_path ? `https://image.tmdb.org/t/p/w500${pickWithScoring.poster_path}` : undefined,
+          year: pickWithScoring.movie_year,
+          genre: pickWithScoring.movie_genre,
+          category: pickWithScoring.category,
+          pickNumber: pickWithScoring.pick_order
+        };
+      })() : undefined;
 
       const draftData = {
         title: draftTitle,

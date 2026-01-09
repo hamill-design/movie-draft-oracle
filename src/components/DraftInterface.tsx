@@ -472,12 +472,21 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
               enrichmentData,
               calculatedScore: enrichmentData.calculatedScore,
               rtCritics: enrichmentData.rtCriticsScore,
-              imdb: enrichmentData.imdbRating
+              imdb: enrichmentData.imdbRating,
+              letterboxd: enrichmentData.letterboxdRating || enrichmentData.letterboxd_rating || 'not found'
             });
+            
+            // Log Letterboxd rating specifically
+            if (enrichmentData.letterboxdRating || enrichmentData.letterboxd_rating) {
+              console.log(`⭐ Letterboxd rating for ${pick.movie_title}: ${enrichmentData.letterboxdRating || enrichmentData.letterboxd_rating}/5`);
+            } else {
+              console.log(`⚠️ No Letterboxd rating found for ${pick.movie_title}`);
+            }
             
             enrichedPick.rt_critics_score = enrichmentData.rtCriticsScore || enrichmentData.rt_critics_score || null;
             enrichedPick.metacritic_score = enrichmentData.metacriticScore || enrichmentData.metacritic_score || null;
             enrichedPick.imdb_rating = enrichmentData.imdbRating || enrichmentData.imdb_rating || null;
+            enrichedPick.letterboxd_rating = enrichmentData.letterboxdRating || enrichmentData.letterboxd_rating || null;
             enrichedPick.movie_budget = enrichmentData.budget || enrichmentData.movie_budget || null;
             enrichedPick.movie_revenue = enrichmentData.revenue || enrichmentData.movie_revenue || null;
             enrichedPick.oscar_status = enrichmentData.oscarStatus || enrichmentData.oscar_status || null;
@@ -487,35 +496,107 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
             let calculatedScore = enrichmentData.calculatedScore || enrichmentData.calculated_score;
             
             if (!calculatedScore && (enrichedPick.rt_critics_score || enrichedPick.imdb_rating || enrichedPick.metacritic_score)) {
-              // Calculate score manually if not provided
-              const componentScores: number[] = [];
+              // Calculate score manually if not provided using consensus scoring
               
-              // Box Office
+              // Box Office - Hybrid ROI-based formula
+              let boxOfficeScore = 0;
               if (enrichedPick.movie_budget && enrichedPick.movie_revenue && enrichedPick.movie_budget > 0) {
                 const profit = enrichedPick.movie_revenue - enrichedPick.movie_budget;
-                const profitPercentage = (profit / enrichedPick.movie_revenue) * 100;
-                componentScores.push(Math.min(Math.max(profitPercentage, 0), 100));
+                if (profit <= 0) {
+                  boxOfficeScore = 0; // Flops get 0
+                } else {
+                  const roiPercent = (profit / enrichedPick.movie_budget) * 100;
+                  if (roiPercent <= 100) {
+                    // Linear scaling: 0-100% ROI → 0-60 points (2x return = 60 points)
+                    boxOfficeScore = 60 * (roiPercent / 100);
+                  } else {
+                    // Logarithmic scaling: >100% ROI → 60-100 points (diminishing returns)
+                    boxOfficeScore = 60 + 40 * (1 - Math.exp(-(roiPercent - 100) / 200));
+                  }
+                }
               }
               
-              // RT Critics
-              if (enrichedPick.rt_critics_score) {
-                componentScores.push(enrichedPick.rt_critics_score);
+              // Convert scores to 0-100 scale
+              const rtCriticsScore = enrichedPick.rt_critics_score || 0;
+              const metacriticScore = enrichedPick.metacritic_score || 0;
+              const imdbScore = enrichedPick.imdb_rating ? (enrichedPick.imdb_rating / 10) * 100 : 0;
+              const letterboxdScore = enrichedPick.letterboxd_rating ? (enrichedPick.letterboxd_rating / 5) * 100 : 0;
+              
+              // Layer 1: Calculate Critics Score (Internal Consensus)
+              let criticsRawAvg = 0;
+              let criticsScore = 0;
+              if (rtCriticsScore && metacriticScore) {
+                criticsRawAvg = (rtCriticsScore + metacriticScore) / 2;
+                const criticsInternalDiff = Math.abs(rtCriticsScore - metacriticScore);
+                const criticsInternalModifier = Math.max(0, 1 - (criticsInternalDiff / 200));
+                criticsScore = criticsRawAvg * criticsInternalModifier;
+              } else if (rtCriticsScore) {
+                criticsRawAvg = rtCriticsScore;
+                criticsScore = rtCriticsScore;
+              } else if (metacriticScore) {
+                criticsRawAvg = metacriticScore;
+                criticsScore = metacriticScore;
               }
               
-              // Metacritic
-              if (enrichedPick.metacritic_score) {
-                componentScores.push(enrichedPick.metacritic_score);
+              // Layer 2: Calculate Audience Score (Internal Consensus)
+              let audienceRawAvg = 0;
+              let audienceScore = 0;
+              if (imdbScore && letterboxdScore) {
+                audienceRawAvg = (imdbScore + letterboxdScore) / 2;
+                const audienceInternalDiff = Math.abs(imdbScore - letterboxdScore);
+                const audienceInternalModifier = Math.max(0, 1 - (audienceInternalDiff / 200));
+                audienceScore = audienceRawAvg * audienceInternalModifier;
+              } else if (imdbScore) {
+                audienceRawAvg = imdbScore;
+                audienceScore = imdbScore;
+              } else if (letterboxdScore) {
+                audienceRawAvg = letterboxdScore;
+                audienceScore = letterboxdScore;
               }
               
-              // IMDB
-              if (enrichedPick.imdb_rating) {
-                componentScores.push((enrichedPick.imdb_rating / 10) * 100);
+              // Layer 3: Calculate Final Critical Score (Cross-Category Consensus)
+              let criticalScore = 0;
+              if (criticsRawAvg > 0 && audienceRawAvg > 0) {
+                // Use RAW averages for consensus calculation
+                const criticsAudienceDiff = Math.abs(criticsRawAvg - audienceRawAvg);
+                const consensusModifier = Math.max(0, 1 - (criticsAudienceDiff / 200));
+                
+                // Weighted average of penalized scores (50/50)
+                const weightedAvg = (criticsScore * 0.5) + (audienceScore * 0.5);
+                criticalScore = weightedAvg * consensusModifier;
+              } else if (criticsScore > 0) {
+                criticalScore = criticsScore;
+              } else if (audienceScore > 0) {
+                criticalScore = audienceScore;
               }
               
-              // Calculate average
-              const averageScore = componentScores.length > 0 
-                ? componentScores.reduce((sum, score) => sum + score, 0) / componentScores.length
-                : 0;
+              // Fixed weights: 20% Box Office, 80% Critical Score
+              let boxOfficeWeight = 0.20;
+              let criticalWeight = 0.80;
+              
+              if (boxOfficeScore > 0 && criticalScore > 0) {
+                // Both available: use fixed 20/80 split
+                boxOfficeWeight = 0.20;
+                criticalWeight = 0.80;
+              } else if (boxOfficeScore > 0) {
+                // Only Box Office available
+                boxOfficeWeight = 1.0;
+                criticalWeight = 0;
+              } else if (criticalScore > 0) {
+                // Only Critical Score available
+                boxOfficeWeight = 0;
+                criticalWeight = 1.0;
+              }
+              
+              // Calculate final average with fixed weights
+              let averageScore = 0;
+              if (boxOfficeScore > 0 && criticalScore > 0) {
+                averageScore = (boxOfficeScore * boxOfficeWeight) + (criticalScore * criticalWeight);
+              } else if (boxOfficeScore > 0) {
+                averageScore = boxOfficeScore;
+              } else if (criticalScore > 0) {
+                averageScore = criticalScore;
+              }
               
               // Add Oscar bonus
               let oscarBonus = 0;
