@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDraftGame } from '@/hooks/useDraftGame';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { useMovies } from '@/hooks/useMovies';
@@ -42,6 +43,7 @@ const generateLocalDraftId = () => {
 
 const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const hasShownToast = useRef(false);
   
   // Show success message for multiplayer draft creation
@@ -93,8 +95,16 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   useEffect(() => {
     draftIdRef.current = currentDraftId;
   }, [currentDraftId]);
+
+  // Persist draftId to localStorage whenever it changes
+  useEffect(() => {
+    if (currentDraftId) {
+      const storageKey = `draft_${draftState.theme}_${draftState.option}_${JSON.stringify(draftState.participants)}_${JSON.stringify(draftState.categories)}`;
+      localStorage.setItem(storageKey, currentDraftId);
+    }
+  }, [currentDraftId, draftState.theme, draftState.option, draftState.participants, draftState.categories]);
   
-  const { autoSaveDraft } = useDraftOperations();
+  const { autoSaveDraft, findExistingDraft, getDraftWithPicks } = useDraftOperations();
   
   const {
     picks,
@@ -109,6 +119,21 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const [enrichedPicks, setEnrichedPicks] = useState<any[] | null>(null);
   const [enriching, setEnriching] = useState(false);
   
+  // Check localStorage for existing draftId on mount
+  const hasCheckedLocalStorage = useRef(false);
+  useEffect(() => {
+    if (!currentDraftId && !hasInitialized.current && !hasCheckedLocalStorage.current) {
+      hasCheckedLocalStorage.current = true;
+      const storageKey = `draft_${draftState.theme}_${draftState.option}_${JSON.stringify(draftState.participants)}_${JSON.stringify(draftState.categories)}`;
+      const storedDraftId = localStorage.getItem(storageKey);
+      if (storedDraftId) {
+        // Navigate to URL with stored draftId instead of loading here
+        navigate(`/draft/${storedDraftId}`, { replace: true });
+        return;
+      }
+    }
+  }, [currentDraftId, draftState, navigate]);
+
   // Create draft immediately on mount if it doesn't exist
   // This applies to ALL local drafts: spec-draft, year, people, etc.
   // Works for both authenticated users and guest sessions
@@ -120,10 +145,35 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
       hasInitialized.current = true;
       
       try {
-        // Create draft with empty picks to get a draftId
-        // This works for all themes: spec-draft, year, people, etc.
-        // Guest sessions are handled automatically by useDraftOperations via guestSession
-        // Always start with isComplete: false - the completion save effect will update it
+        // First, check if a draft already exists with these parameters
+        const existingDraftId = await findExistingDraft({
+          theme: draftState.theme,
+          option: draftState.option,
+          participants: draftState.participants,
+          categories: draftState.categories,
+        });
+
+        if (existingDraftId) {
+          console.log('Found existing draft with ID:', existingDraftId);
+          setCurrentDraftId(existingDraftId);
+          draftIdRef.current = existingDraftId;
+          
+          // Navigate to URL with draftId
+          navigate(`/draft/${existingDraftId}`, { replace: true });
+          
+          // Load picks for the existing draft
+          try {
+            const { draft, picks } = await getDraftWithPicks(existingDraftId);
+            if (picks && picks.length > 0) {
+              loadExistingPicks(picks, draftState.participants);
+            }
+          } catch (error) {
+            console.error('Error loading existing picks:', error);
+          }
+          return;
+        }
+
+        // No existing draft found, create a new one
         const draftId = await autoSaveDraft({
           theme: draftState.theme, // Can be 'spec-draft', 'year', 'people', etc.
           option: draftState.option,
@@ -137,6 +187,9 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
           setCurrentDraftId(draftId);
           draftIdRef.current = draftId;
           console.log('Draft initialized with ID:', draftId, 'Theme:', draftState.theme);
+          
+          // Navigate to URL with draftId
+          navigate(`/draft/${draftId}`, { replace: true });
         }
       } catch (error) {
         console.error('Failed to initialize draft:', error);
@@ -152,7 +205,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     };
     
     initializeDraft();
-  }, [currentDraftId, existingPicks, draftState, autoSaveDraft]); // Removed isComplete from dependencies
+  }, [currentDraftId, existingPicks, draftState, autoSaveDraft, findExistingDraft, getDraftWithPicks, loadExistingPicks, navigate]);
 
   // Load existing picks when component mounts
   useEffect(() => {

@@ -288,10 +288,76 @@ export const useDraftOperations = () => {
     if (error) throw error;
   }, [user, guestSession]);
 
+  const findExistingDraft = useCallback(async (draftData: {
+    theme: string;
+    option: string;
+    participants: string[];
+    categories: string[];
+  }) => {
+    if (!user && !guestSession) return null;
+
+    try {
+      let query = supabase
+        .from('drafts')
+        .select('id, is_complete, created_at')
+        .eq('theme', draftData.theme)
+        .eq('option', draftData.option)
+        .eq('is_multiplayer', false) // Only check local drafts
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (user) {
+        query = query.eq('user_id', user.id);
+      } else if (guestSession) {
+        query = query.eq('guest_session_id', guestSession.id);
+      }
+
+      const { data: drafts, error } = await query;
+
+      if (error) {
+        console.error('Error finding existing draft:', error);
+        return null;
+      }
+
+      if (!drafts || drafts.length === 0) {
+        return null;
+      }
+
+      // Check if participants and categories match (arrays need special comparison)
+      const draft = drafts[0];
+      const { data: fullDraft } = await supabase
+        .from('drafts')
+        .select('participants, categories')
+        .eq('id', draft.id)
+        .single();
+
+      if (!fullDraft) return null;
+
+      // Compare participants and categories arrays
+      const participantsMatch = 
+        JSON.stringify([...fullDraft.participants].sort()) === 
+        JSON.stringify([...draftData.participants].sort());
+      
+      const categoriesMatch = 
+        JSON.stringify([...fullDraft.categories].sort()) === 
+        JSON.stringify([...draftData.categories].sort());
+
+      if (participantsMatch && categoriesMatch) {
+        return draft.id;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error in findExistingDraft:', error);
+      return null;
+    }
+  }, [user, guestSession]);
+
   return {
     autoSaveDraft,
     saveDraft,
     getDraftWithPicks,
-    makeDraftPublic
+    makeDraftPublic,
+    findExistingDraft
   };
 };

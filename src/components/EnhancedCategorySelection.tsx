@@ -331,14 +331,6 @@ const EnhancedCategorySelection = ({
     return category;
   };
 
-  const getBlockbusterText = () => {
-    if (!selectedMovie.isBlockbuster) return '';
-    const budget = selectedMovie.budget ? `$${(selectedMovie.budget / 1000000).toFixed(0)}M` : '';
-    const revenue = selectedMovie.revenue ? `$${(selectedMovie.revenue / 1000000).toFixed(0)}M` : '';
-    const parts = [budget, revenue].filter(Boolean);
-    return parts.length > 0 ? ` (${parts.join(') (')})` : '';
-  };
-
   return (
     <div 
       style={{
@@ -526,7 +518,7 @@ const EnhancedCategorySelection = ({
                     lineHeight: '20px'
                   }}
                 >
-                  Eligible for Blockbuster category{getBlockbusterText()}
+                  Eligible for Blockbuster category
                 </div>
               </div>
             )}

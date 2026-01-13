@@ -54,6 +54,13 @@ const Footer = () => {
           <div className="flex-1 min-w-80 flex items-center justify-end gap-4">
             <div className="w-full md:w-80 md:min-w-80 flex flex-col md:flex-row items-end md:items-center justify-end gap-2 md:gap-4 flex-nowrap whitespace-nowrap">
               <Link 
+                to="/about" 
+                className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
+              >
+                About
+              </Link>
+              <Separator orientation="vertical" className="hidden md:block h-4 bg-greyscale-blue-200" />
+              <Link 
                 to="/privacy-policy" 
                 className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
               >
