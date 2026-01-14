@@ -140,23 +140,8 @@ const Index = () => {
     }
   }, [draftState?.existingDraftId, draftState?.isMultiplayer, getDraftWithPicks]);
 
-  // Show loading state
-  if (loading || loadingExistingDraft) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-        <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>
-          {loadingExistingDraft ? 'Loading draft...' : 'Loading...'}
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render anything if no draft state and no URL draft ID
-  if (!finalDraftState && !urlDraftId) {
-    return null;
-  }
-
   // Fetch spec draft name when draftState changes (for location state drafts)
+  // IMPORTANT: This must be before any early returns to maintain hook order
   useEffect(() => {
     const fetchSpecDraftName = async () => {
       if (finalDraftState?.theme === 'spec-draft' && finalDraftState.option && !specDraftName) {
@@ -190,22 +175,55 @@ const Index = () => {
     
     const themeLabels: Record<string, string> = {
       'spec-draft': 'Spec Draft',
-      'year': `${finalDraftState.option} Movies`,
-      'people': `${finalDraftState.option} Movies`,
+      'year': `${finalDraftState.option || ''} Movies`,
+      'people': `${finalDraftState.option || ''} Movies`,
     };
     
     const themeLabel = themeLabels[finalDraftState.theme] || 'Draft';
     return `Movie Drafter - ${themeLabel}`;
   };
 
-  // Render multiplayer interface if this is a multiplayer draft or if we have a URL draft ID
-  if (finalDraftState?.isMultiplayer || urlDraftId) {
+  // Show loading state
+  if (loading || loadingExistingDraft) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+        <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>
+          {loadingExistingDraft ? 'Loading draft...' : 'Loading...'}
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render anything if no draft state and no URL draft ID
+  if (!finalDraftState && !urlDraftId) {
+    return null;
+  }
+
+  // Render multiplayer interface only if this is actually a multiplayer draft
+  // If we have urlDraftId but no finalDraftState yet, we need to wait for it to load
+  // to determine if it's multiplayer or not. But if draftState has isMultiplayer, use that.
+  if (finalDraftState?.isMultiplayer) {
     return (
       <MultiplayerDraftInterface 
         draftId={urlDraftId || finalDraftState?.existingDraftId}
         initialData={!urlDraftId && !finalDraftState?.existingDraftId ? finalDraftState : undefined}
       />
     );
+  }
+
+  // If we're still loading and have urlDraftId, show loading state
+  // (This handles the case where multiplayer draft is loading from URL)
+  if (urlDraftId && !finalDraftState && loadingExistingDraft) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+        <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>Loading draft...</div>
+      </div>
+    );
+  }
+
+  // Ensure we have finalDraftState before rendering local draft
+  if (!finalDraftState) {
+    return null;
   }
 
   return (
