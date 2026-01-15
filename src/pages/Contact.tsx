@@ -117,10 +117,10 @@ const Contact = () => {
         <meta property="og:title" content="Movie Drafter - Contact Support" />
         <meta property="og:description" content="Contact Movie Drafter support for help with your account, drafts, or any questions about our movie draft platform." />
         <meta property="og:url" content="https://moviedrafter.com/contact" />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
         <meta name="twitter:title" content="Movie Drafter - Contact Support" />
         <meta name="twitter:description" content="Contact Movie Drafter support for help with your account, drafts, or any questions about our movie draft platform." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
       </Helmet>
       <div className="min-h-screen p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <div className="max-w-2xl mx-auto">

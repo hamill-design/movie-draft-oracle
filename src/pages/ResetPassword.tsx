@@ -109,10 +109,10 @@ const ResetPassword = () => {
         <meta property="og:title" content="Movie Drafter - Reset Password" />
         <meta property="og:description" content="Reset your Movie Drafter password to regain access to your account and continue creating movie drafts." />
         <meta property="og:url" content="https://moviedrafter.com/reset-password" />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
         <meta name="twitter:title" content="Movie Drafter - Reset Password" />
         <meta name="twitter:description" content="Reset your Movie Drafter password to regain access to your account and continue creating movie drafts." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
       </Helmet>
       <div className="min-h-screen flex items-center justify-center px-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <Card className="w-full max-w-md bg-gray-800 border-gray-600">

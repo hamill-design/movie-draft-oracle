@@ -415,10 +415,10 @@ const Profile = () => {
         <meta property="og:title" content="Movie Drafter - Your Profile" />
         <meta property="og:description" content="View and manage your Movie Drafter profile. See all your drafts, track your progress, and manage your account settings." />
         <meta property="og:url" content="https://moviedrafter.com/profile" />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
         <meta name="twitter:title" content="Movie Drafter - Your Profile" />
         <meta name="twitter:description" content="View and manage your Movie Drafter profile. See all your drafts, track your progress, and manage your account settings." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
       </Helmet>
       <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <div className="container mx-auto px-4 py-8">

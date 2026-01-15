@@ -11,10 +11,10 @@ const LearnMore = () => {
         <meta property="og:title" content="Movie Drafter - Learn More" />
         <meta property="og:description" content="Learn how Movie Drafter works. Create fantasy movie drafts, compete with friends, and discover who has the best taste in cinema." />
         <meta property="og:url" content="https://moviedrafter.com/learn-more" />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
         <meta name="twitter:title" content="Movie Drafter - Learn More" />
         <meta name="twitter:description" content="Learn how Movie Drafter works. Create fantasy movie drafts, compete with friends, and discover who has the best taste in cinema." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
       </Helmet>
     <div style={{
       width: '100%',

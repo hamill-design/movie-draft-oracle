@@ -527,10 +527,10 @@ const SpecDraftSetup = () => {
         <meta property="og:title" content="Movie Drafter - Setup Special Draft" />
         <meta property="og:description" content="Set up a special movie draft with custom categories and participants. Create unique draft experiences for specific themes or events." />
         <meta property="og:url" content={`https://moviedrafter.com/spec-draft/${specDraftId}/setup`} />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
         <meta name="twitter:title" content="Movie Drafter - Setup Special Draft" />
         <meta name="twitter:description" content="Set up a special movie draft with custom categories and participants. Create unique draft experiences for specific themes or events." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
       </Helmet>
       <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <style>{`

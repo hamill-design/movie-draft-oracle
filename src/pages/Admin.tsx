@@ -282,10 +282,10 @@ const Admin = () => {
         <meta property="og:title" content="Movie Drafter - Admin" />
         <meta property="og:description" content="Admin panel for Movie Drafter. Manage special drafts, categories, and platform settings." />
         <meta property="og:url" content="https://moviedrafter.com/admin" />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
         <meta name="twitter:title" content="Movie Drafter - Admin" />
         <meta name="twitter:description" content="Admin panel for Movie Drafter. Manage special drafts, categories, and platform settings." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
       </Helmet>
       <SidebarProvider 
         className="flex flex-col min-h-full"

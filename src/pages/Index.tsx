@@ -234,10 +234,10 @@ const Index = () => {
         <meta property="og:title" content={getPageTitle()} />
         <meta property="og:description" content="Create and manage your movie draft. Pick your favorite films across different categories and compete with friends." />
         <meta property="og:url" content={`https://moviedrafter.com/draft${urlDraftId ? `/${urlDraftId}` : ''}`} />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
         <meta name="twitter:title" content={getPageTitle()} />
         <meta name="twitter:description" content="Create and manage your movie draft. Pick your favorite films across different categories and compete with friends." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
       </Helmet>
       <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <div className="container mx-auto px-4 py-8">

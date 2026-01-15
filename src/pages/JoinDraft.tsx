@@ -182,10 +182,10 @@ export const JoinDraft = () => {
         <meta property="og:title" content="Movie Drafter - Join Draft" />
         <meta property="og:description" content="Join an existing movie draft by entering an invite code or following an invitation link. Compete with friends and see who picks the best movies." />
         <meta property="og:url" content={`https://moviedrafter.com/join-draft${draftId ? `/${draftId}` : ''}`} />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
         <meta name="twitter:title" content="Movie Drafter - Join Draft" />
         <meta name="twitter:description" content="Join an existing movie draft by entering an invite code or following an invitation link. Compete with friends and see who picks the best movies." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg" />
+        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
       </Helmet>
       <div className="min-h-screen flex items-center justify-center p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <Card className="w-full max-w-md">
