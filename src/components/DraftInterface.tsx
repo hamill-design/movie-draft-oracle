@@ -77,6 +77,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [checkingOscarStatus, setCheckingOscarStatus] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(draftState?.existingDraftId || null);
   // Use ref to track draftId immediately (before state update)
   const draftIdRef = useRef<string | null>(draftState?.existingDraftId || null);
@@ -394,6 +395,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     
     // Simple Oscar status check - just check cache, no synchronous enrichment
     if (movie.id) {
+      setCheckingOscarStatus(true);
       try {
         // Try cache lookup by tmdb_id (with or without year)
         const { data: cached } = await supabase
@@ -409,6 +411,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
             hasOscar: cached.oscar_status === 'winner' || cached.oscar_status === 'nominee'
           };
           setSelectedMovie(updatedMovie);
+          setCheckingOscarStatus(false);
         } else {
           // If not in cache, enrich in background (async, non-blocking)
           supabase.functions.invoke('enrich-movie-data', {
@@ -425,11 +428,18 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
               };
               setSelectedMovie(updatedMovie);
             }
-          }).catch(err => console.log('Background Oscar fetch failed:', err));
+            setCheckingOscarStatus(false);
+          }).catch(err => {
+            console.log('Background Oscar fetch failed:', err);
+            setCheckingOscarStatus(false);
+          });
         }
       } catch (error) {
         console.log('Oscar status check failed:', error);
+        setCheckingOscarStatus(false);
       }
+    } else {
+      setCheckingOscarStatus(false);
     }
   };
 
@@ -724,6 +734,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
             currentPlayerId={currentPlayer.id}
             theme={draftState.theme}
             option={draftState.option}
+            checkingOscarStatus={checkingOscarStatus}
           />
 
           <PickConfirmation

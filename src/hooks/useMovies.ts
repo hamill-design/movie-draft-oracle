@@ -10,6 +10,7 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const enrichingRef = useRef(false);
 
   const fetchMovies = async () => {
     if (!category) return;
@@ -196,6 +197,95 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
       fetchMovies();
     }
   }, [category, themeOption, userSearchQuery]);
+
+  // Pre-enrich movies with Oscar status when loaded (especially for spec-draft where all movies load at once)
+  useEffect(() => {
+    // Only enrich if movies are loaded and not currently loading
+    if (movies.length === 0 || loading) return;
+    
+    // Prevent duplicate enrichment runs
+    if (enrichingRef.current) return;
+    
+    // Filter movies that don't already have Oscar status
+    const moviesToEnrich = movies.filter(m => m.id && (m.oscar_status === undefined || m.oscar_status === null));
+    if (moviesToEnrich.length === 0) return;
+    
+    // Batch check Oscar status for all movies (process in chunks for large batches)
+    const enrichOscarStatus = async () => {
+      enrichingRef.current = true;
+      try {
+        const movieIds = moviesToEnrich.map(m => m.id).filter(Boolean) as number[];
+        if (movieIds.length === 0) {
+          enrichingRef.current = false;
+          return;
+        }
+        
+        console.log(`🎬 Pre-enriching Oscar status for ${movieIds.length} movies...`);
+        
+        // Process in chunks of 200 to avoid query size limits
+        const CHUNK_SIZE = 200;
+        const chunks: number[][] = [];
+        for (let i = 0; i < movieIds.length; i += CHUNK_SIZE) {
+          chunks.push(movieIds.slice(i, i + CHUNK_SIZE));
+        }
+        
+        const allOscarData: Array<{ tmdb_id: number; oscar_status: string }> = [];
+        
+        // Process chunks in parallel (but limit concurrency to avoid overwhelming the database)
+        const MAX_CONCURRENT = 3;
+        for (let i = 0; i < chunks.length; i += MAX_CONCURRENT) {
+          const chunkBatch = chunks.slice(i, i + MAX_CONCURRENT);
+          const results = await Promise.all(
+            chunkBatch.map(chunk =>
+              supabase
+                .from('oscar_cache')
+                .select('tmdb_id, oscar_status')
+                .in('tmdb_id', chunk)
+                .then(({ data, error }) => {
+                  if (error) {
+                    console.error(`useMovies - Error checking chunk:`, error);
+                    return [];
+                  }
+                  return (data || []) as Array<{ tmdb_id: number; oscar_status: string }>;
+                })
+            )
+          );
+          
+          results.forEach(chunkData => allOscarData.push(...chunkData));
+        }
+        
+        // Create a map of tmdb_id to oscar_status
+        const oscarMap = new Map(
+          allOscarData.map((item) => [item.tmdb_id, item.oscar_status])
+        );
+        
+        // Update movies with Oscar status
+        setMovies(prevMovies => 
+          prevMovies.map(movie => {
+            if (!movie.id) return movie;
+            const oscarStatus = oscarMap.get(movie.id);
+            if (oscarStatus) {
+              return {
+                ...movie,
+                oscar_status: oscarStatus,
+                hasOscar: oscarStatus === 'winner' || oscarStatus === 'nominee'
+              };
+            }
+            return movie;
+          })
+        );
+        
+        const enrichedCount = oscarMap.size;
+        console.log(`✅ Pre-enriched ${enrichedCount} of ${movieIds.length} movies with Oscar status`);
+      } catch (err) {
+        console.error('useMovies - Error enriching Oscar status:', err);
+      } finally {
+        enrichingRef.current = false;
+      }
+    };
+    
+    enrichOscarStatus();
+  }, [movies, loading]);
 
   // Cleanup on unmount
   useEffect(() => {

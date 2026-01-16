@@ -54,6 +54,7 @@ export const MultiplayerDraftInterface = ({
   } = useMultiplayerDraft(draftId);
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [checkingOscarStatus, setCheckingOscarStatus] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
   const [specDraftName, setSpecDraftName] = useState<string | null>(null);
@@ -150,6 +151,7 @@ export const MultiplayerDraftInterface = ({
     
     // Simple Oscar status check - just check cache, no synchronous enrichment
     if (movie.id) {
+      setCheckingOscarStatus(true);
       try {
         // Try cache lookup by tmdb_id (with or without year)
         const { data: cached } = await supabase
@@ -165,6 +167,7 @@ export const MultiplayerDraftInterface = ({
             hasOscar: cached.oscar_status === 'winner' || cached.oscar_status === 'nominee'
           };
           setSelectedMovie(updatedMovie);
+          setCheckingOscarStatus(false);
         } else {
           // If not in cache, enrich in background (async, non-blocking)
           supabase.functions.invoke('enrich-movie-data', {
@@ -181,11 +184,18 @@ export const MultiplayerDraftInterface = ({
               };
               setSelectedMovie(updatedMovie);
             }
-          }).catch(err => console.log('Background Oscar fetch failed:', err));
+            setCheckingOscarStatus(false);
+          }).catch(err => {
+            console.log('Background Oscar fetch failed:', err);
+            setCheckingOscarStatus(false);
+          });
         }
       } catch (error) {
         console.log('Oscar status check failed:', error);
+        setCheckingOscarStatus(false);
       }
+    } else {
+      setCheckingOscarStatus(false);
     }
   };
 
@@ -1144,6 +1154,7 @@ export const MultiplayerDraftInterface = ({
                 })()}
                 theme={draft.theme}
                 option={draft.option}
+                checkingOscarStatus={checkingOscarStatus}
               />
 
               <PickConfirmation currentPlayerName={currentTurnPlayer?.participant_name || 'You'} selectedMovie={selectedMovie} selectedCategory={selectedCategory} onConfirm={confirmPick} />

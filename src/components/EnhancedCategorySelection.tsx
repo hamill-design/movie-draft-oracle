@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Switch } from '@/components/ui/switch';
+import { Loader2 } from 'lucide-react';
 import { getEligibleCategories } from '@/utils/movieCategoryUtils';
 import { CheckboxIcon } from '@/components/icons/CheckboxIcon';
 import { NAIcon } from '@/components/icons/NAIcon';
@@ -24,6 +25,7 @@ interface EnhancedCategorySelectionProps {
   currentPlayerId: number;
   theme?: string;
   option?: string;
+  checkingOscarStatus?: boolean;
 }
 
 const CategoryButton = ({ 
@@ -32,7 +34,8 @@ const CategoryButton = ({
   isDisabled, 
   isEligible, 
   onClick, 
-  tooltip 
+  tooltip,
+  isLoading
 }: {
   category: string;
   isSelected: boolean;
@@ -40,6 +43,7 @@ const CategoryButton = ({
   isEligible: boolean;
   onClick: () => void;
   tooltip: string;
+  isLoading?: boolean;
 }) => {
   const config = getCategoryConfig(category);
   
@@ -153,21 +157,40 @@ const CategoryButton = ({
   return (
     <button
       onClick={onClick}
-      disabled={isDisabled}
+      disabled={isDisabled || isLoading}
       style={getButtonStyle()}
       title={tooltip}
       onMouseEnter={(e) => {
-        if (!isDisabled && !isSelected) {
+        if (!isDisabled && !isSelected && !isLoading) {
           e.currentTarget.style.background = '#2C2B2D';
         }
       }}
       onMouseLeave={(e) => {
-        if (!isDisabled && !isSelected) {
+        if (!isDisabled && !isSelected && !isLoading) {
           e.currentTarget.style.background = '#1D1D1F';
         }
       }}
     >
-      {isDisabled ? (
+      {isLoading ? (
+        <>
+          <div style={getTextStyle()}>
+            {getCategoryDisplayName(category)}
+          </div>
+          <div 
+            style={{ 
+              width: '16px', 
+              height: '16px', 
+              color: '#FCFFFF',
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <Loader2 className="w-4 h-4 animate-spin" />
+          </div>
+        </>
+      ) : isDisabled ? (
         <>
           <div style={getTextStyle()}>
             {getCategoryDisplayName(category)}
@@ -203,7 +226,8 @@ const EnhancedCategorySelection = ({
   picks,
   currentPlayerId,
   theme,
-  option
+  option,
+  checkingOscarStatus = false
 }: EnhancedCategorySelectionProps) => {
   if (!selectedMovie) return null;
 
@@ -540,16 +564,19 @@ const EnhancedCategorySelection = ({
           const isEligible = eligibleCategories.includes(category);
           const isDisabled = isAlreadyPicked || (!isEligible && !houseOverrideEnabled);
           const isSelected = selectedCategory === category;
+          const isAcademyAward = category === 'Academy Award Nominee or Winner';
+          const isLoading = isAcademyAward && checkingOscarStatus && !isEligible;
           
           return (
             <CategoryButton
               key={category}
               category={category}
               isSelected={isSelected}
-              isDisabled={isDisabled}
+              isDisabled={isDisabled && !isLoading}
               isEligible={isEligible}
               onClick={() => onCategorySelect(category)}
               tooltip={getCategoryTooltip(category)}
+              isLoading={isLoading}
             />
           );
         })}
