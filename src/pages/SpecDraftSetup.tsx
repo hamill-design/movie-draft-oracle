@@ -545,7 +545,7 @@ const SpecDraftSetup = () => {
             <div className="uppercase" style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '32px', lineHeight: '36px', letterSpacing: '1.28px', color: 'var(--Text-Primary, #FCFFFF)' }}>
               SETTING UP
             </div>
-            <div className="text-brand-primary uppercase" style={{ fontFamily: 'CHANEY', fontWeight: 400, fontSize: '64px', lineHeight: '64px' }}>
+            <div className="text-brand-primary uppercase text-center w-full" style={{ fontFamily: 'CHANEY', fontWeight: 400, fontSize: '64px', lineHeight: '64px' }}>
               {specDraft.name.toUpperCase()}
             </div>
           </div>

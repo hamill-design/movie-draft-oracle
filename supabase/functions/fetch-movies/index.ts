@@ -190,7 +190,6 @@ function isDocumentaryOrArchiveContent(movie: any, movieGenres: any[]): boolean 
   const documentaryKeywords = [
     // Documentary keywords
     'documentary', 'making of', 'behind the scenes', 'retrospective',
-    'biography', 'life story', 'the story of', 'the life of',
     // Tribute/memorial keywords  
     'tribute', 'tribute to', 'legacy', 'remembering', 'in memoriam', 
     'celebrating', 'honoring', 'remembers',
@@ -213,7 +212,7 @@ function isDocumentaryOrArchiveContent(movie: any, movieGenres: any[]): boolean 
   const overview = (movie.overview || '').toLowerCase();
   const archiveKeywords = [
     'archive footage', 'archival footage', 'rare footage', 'unseen footage',
-    'behind the scenes', 'documentary about', 'tribute to', 'explores the life'
+    'behind the scenes', 'documentary about', 'tribute to'
   ];
   
   const hasArchiveKeywords = archiveKeywords.some(keyword => overview.includes(keyword));
@@ -612,6 +611,55 @@ function movieMatchesYear(movie: any, requestedYear: number): boolean {
   return matches;
 }
 
+// Flexible title matching helper - handles variations and partial matches
+function matchesTitleSearch(movieTitle: string, searchQuery: string): boolean {
+  if (!movieTitle || !searchQuery) return false;
+  
+  // Normalize both strings for comparison
+  const normalize = (str: string): string => {
+    return str
+      .toLowerCase()
+      .trim()
+      // Normalize multiple spaces to single space
+      .replace(/\s+/g, ' ')
+      // Normalize different apostrophe types
+      .replace(/[''']/g, "'")
+      // Normalize different dash types
+      .replace(/[–—]/g, '-')
+      // Remove punctuation that might interfere
+      .replace(/[.,!?:;]/g, '')
+      // Remove other special characters but keep spaces
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  };
+  
+  const normalizedTitle = normalize(movieTitle);
+  const normalizedQuery = normalize(searchQuery);
+  
+  // First try simple includes (fast path for exact matches)
+  if (normalizedTitle.includes(normalizedQuery)) {
+    return true;
+  }
+  
+  // Split query into words and check if all words appear in title
+  const queryWords = normalizedQuery.split(/\s+/).filter(word => word.length > 0);
+  if (queryWords.length === 0) return false;
+  
+  // Check if all query words appear in the title (in any order)
+  const allWordsMatch = queryWords.every(word => {
+    // For short words (1-2 chars), require exact word boundary match
+    if (word.length <= 2) {
+      const wordRegex = new RegExp(`\\b${word}\\b`, 'i');
+      return wordRegex.test(normalizedTitle);
+    }
+    // For longer words, allow partial matches
+    return normalizedTitle.includes(word);
+  });
+  
+  return allWordsMatch;
+}
+
 // Enhanced person validation and selection
 function selectBestPersonMatch(personResults: any[], searchQuery: string): any | null {
   if (!personResults || personResults.length === 0) {
@@ -725,8 +773,9 @@ serve(async (req) => {
           });
         }
         
-        // If movieSearchQuery is provided, use search API with year filter
-        if (movieSearchQuery && movieSearchQuery.trim().length >= 2) {
+        // If fetchAll=true, we want all movies for caching - use discover API and fetch all pages
+        // If movieSearchQuery is provided AND fetchAll=false, use search API with year filter
+        if (!fetchAll && movieSearchQuery && movieSearchQuery.trim().length >= 2) {
           const searchTerm = movieSearchQuery.trim();
           baseUrl = `https://api.themoviedb.org/3/search/movie?api_key=${tmdbApiKey}&query=${encodeURIComponent(searchTerm)}&year=${yearNum}`;
           url = `${baseUrl}&page=${page}`;
@@ -737,13 +786,14 @@ serve(async (req) => {
             url: url.replace(tmdbApiKey, 'API_KEY_HIDDEN')
           });
         } else {
-          // No search query - return first page only (popular movies from that year)
+          // No search query OR fetchAll=true - use discover API to get all movies for the year
           const startDate = `${yearNum}-01-01`;
           const endDate = `${yearNum}-12-31`;
           baseUrl = `https://api.themoviedb.org/3/discover/movie?api_key=${tmdbApiKey}&primary_release_year=${yearNum}&year=${yearNum}&release_date.gte=${startDate}&release_date.lte=${endDate}&sort_by=popularity.desc`;
-          url = `${baseUrl}&page=1`; // Only first page when no search
-          console.log('📋 Using DISCOVER API (no search query):', {
+          url = fetchAll ? `${baseUrl}&page=${page}` : `${baseUrl}&page=1`; // Fetch all pages if fetchAll=true
+          console.log(`📋 Using DISCOVER API (${fetchAll ? 'fetchAll=true' : 'no search query'}):`, {
             year: yearNum,
+            fetchAll,
             url: url.replace(tmdbApiKey, 'API_KEY_HIDDEN')
           });
         }
@@ -871,15 +921,57 @@ serve(async (req) => {
                 
                 console.log(`Person credits: ${creditsData.cast?.length || 0} cast + ${creditsData.crew?.length || 0} crew = ${allMovies.length} total, ${uniqueMovies.length} unique movies`);
                 
-                // Filter by movieSearchQuery if provided
-                if (movieSearchQuery && movieSearchQuery.trim().length >= 2) {
-                  const searchTerm = movieSearchQuery.trim().toLowerCase();
+                // Filter by movieSearchQuery if provided AND not fetching all (for caching)
+                // When fetchAll=true, we want all movies for caching, so skip this filter
+                if (!fetchAll && movieSearchQuery && movieSearchQuery.trim().length >= 2) {
+                  const searchTerm = movieSearchQuery.trim();
                   const originalCount = uniqueMovies.length;
+                  
+                  // Log sample of movies before filtering for debugging
+                  console.log(`🔍 Searching for "${searchTerm}" in ${originalCount} movies`);
+                  if (originalCount > 0 && originalCount <= 50) {
+                    console.log(`📋 All movies before search filter:`, uniqueMovies.map(m => `"${m.title}" (${extractMovieYear(m)})`).join(', '));
+                  } else if (originalCount > 50) {
+                    console.log(`📋 Sample movies before search filter (first 20):`, uniqueMovies.slice(0, 20).map(m => `"${m.title}" (${extractMovieYear(m)})`).join(', '));
+                  }
+                  
+                  // Check for specific movies that might be searched for
+                  const searchLower = searchTerm.toLowerCase();
+                  if (searchLower.includes('left foot') || searchLower.includes('my left')) {
+                    const leftFootMovies = uniqueMovies.filter(m => 
+                      m.title && (m.title.toLowerCase().includes('left foot') || m.title.toLowerCase().includes('my left'))
+                    );
+                    console.log(`🎬 Found ${leftFootMovies.length} movies with "left foot" before search filter:`, 
+                      leftFootMovies.map(m => `"${m.title}" (${extractMovieYear(m)})`).join(', '));
+                  }
+                  
                   uniqueMovies = uniqueMovies.filter((movie: any) => {
-                    const title = (movie.title || '').toLowerCase();
-                    return title.includes(searchTerm);
+                    const matches = matchesTitleSearch(movie.title || '', searchTerm);
+                    
+                    // Log matches for specific searches
+                    if (searchLower.includes('left foot') || searchLower.includes('my left')) {
+                      if (movie.title && (movie.title.toLowerCase().includes('left') || movie.title.toLowerCase().includes('foot'))) {
+                        console.log(`🔍 Checking "${movie.title}": matches=${matches}, searchTerm="${searchTerm}"`);
+                      }
+                    }
+                    
+                    return matches;
                   });
-                  console.log(`🔍 Filtered by movieSearchQuery "${movieSearchQuery}": ${originalCount} → ${uniqueMovies.length} movies`);
+                  
+                  const filteredCount = originalCount - uniqueMovies.length;
+                  console.log(`🔍 Filtered by movieSearchQuery "${searchTerm}": ${originalCount} → ${uniqueMovies.length} movies (removed ${filteredCount})`);
+                  
+                  // Log results for specific searches
+                  if (searchLower.includes('left foot') || searchLower.includes('my left')) {
+                    console.log(`🎬 Movies with "left foot" after search filter:`, 
+                      uniqueMovies.filter(m => m.title && (m.title.toLowerCase().includes('left') || m.title.toLowerCase().includes('foot')))
+                        .map(m => `"${m.title}" (${extractMovieYear(m)})`).join(', ') || 'NONE FOUND');
+                  }
+                  
+                  // Log all results if search returned few results
+                  if (uniqueMovies.length > 0 && uniqueMovies.length <= 10) {
+                    console.log(`✅ Search results:`, uniqueMovies.map(m => `"${m.title}" (${extractMovieYear(m)})`).join(', '));
+                  }
                 }
                 
                 // Enhanced debugging for specific person queries
@@ -1146,7 +1238,7 @@ serve(async (req) => {
     console.log('TMDB API response received with', (data.results || []).length, 'movies');
     
     // Log all movie titles from TMDB before any filtering
-    if (category === 'year' && movieSearchQuery) {
+    if (category === 'year' && movieSearchQuery && !fetchAll) {
       console.log('🔍 RAW TMDB RESULTS (before any filtering):');
       console.log('  Total movies:', (data.results || []).length);
       console.log('  First 20 titles:', (data.results || []).slice(0, 20).map((m: any) => m.title));
@@ -1182,9 +1274,10 @@ serve(async (req) => {
       const requestedYear = parseInt(searchQuery);
       const originalCount = (data.results || []).length;
       
-      // If this was a search query (movieSearchQuery exists), be more lenient with year matching
+      // If this was a search query (movieSearchQuery exists AND not fetchAll), be more lenient with year matching
       // TMDB search with year filter might return movies from adjacent years
-      const isSearchResult = !!movieSearchQuery;
+      // When fetchAll=true, we want exact year matches for caching
+      const isSearchResult = !!movieSearchQuery && !fetchAll;
       const yearTolerance = isSearchResult ? 1 : 0; // Allow ±1 year for search results
       
       // Enhanced year analysis for debugging

@@ -77,9 +77,9 @@ const MovieSearch = ({
     }
   }
 
-  // For year theme, backend already filtered by search query and year - use results directly
-  // For people theme, backend doesn't filter by user search query, so we need client-side filtering
-  // For other themes, apply client-side filtering
+  // For theme-based categories (person, year, spec-draft), movies are cached and filtered client-side
+  // This provides instant search results without API calls. The useMovies hook handles caching.
+  // For non-theme categories, apply client-side filtering on backend results
   const filteredMovies = theme === 'year'
     ? filteredMoviesByTheme // Use backend results directly - backend handles movieSearchQuery for year
     : searchQuery.trim() 
@@ -102,6 +102,18 @@ const MovieSearch = ({
           // Debug logging for Ocean's movies
           if (normalizedTitle.includes('ocean') && theme === 'people') {
             console.log('MovieSearch - Ocean movie check:', {
+              title: movie.title,
+              normalizedTitle,
+              query: searchQuery,
+              normalizedQuery,
+              matches
+            });
+          }
+          
+          // Debug logging for "My Left Foot" and similar searches
+          if ((normalizedQuery.includes('left foot') || normalizedQuery.includes('my left')) && 
+              (normalizedTitle.includes('left') || normalizedTitle.includes('foot'))) {
+            console.log('MovieSearch - Left Foot movie check:', {
               title: movie.title,
               normalizedTitle,
               query: searchQuery,
