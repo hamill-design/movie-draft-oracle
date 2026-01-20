@@ -67,7 +67,11 @@ export const useDraftGame = (participants: string[], categories: string[]) => {
   }, [randomizedPlayers, categories]);
 
   const currentPlayer = draftOrder[currentPickIndex];
-  const isComplete = currentPickIndex >= draftOrder.length;
+  // Only consider complete when we have a real draft order and all slots are filled.
+  // Avoids a race: on first render, initialPlayerOrder is [] (set async in useEffect),
+  // so draftOrder is [] and "0 >= 0" would incorrectly be true, causing saveCompletion
+  // to persist is_complete with zero picks.
+  const isComplete = draftOrder.length > 0 && currentPickIndex >= draftOrder.length;
 
   const addPick = (pick: Pick) => {
     const updatedPicks = [...picks, pick];

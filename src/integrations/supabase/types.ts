@@ -441,6 +441,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      get_invite_code_for_draft: {
+        Args: { p_draft_id: string }
+        Returns: string
+      }
       get_oscar_cache_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
