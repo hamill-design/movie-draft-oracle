@@ -16,9 +16,10 @@ export const JoinDraft = () => {
   const { draftId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, guestSession, loading: authLoading, getOrCreateGuestSession } = useAuth();
   const { toast } = useToast();
   const { joinDraftByCode, loading } = useMultiplayerDraft();
+  const [isRetryingGuest, setIsRetryingGuest] = useState(false);
 
   const [inviteCode, setInviteCode] = useState('');
   const [participantName, setParticipantName] = useState('');
@@ -41,31 +42,26 @@ export const JoinDraft = () => {
     }
   }, [draftId, invitedEmail, user?.email, participantName]);
 
-  // Auto-join effect for email invitations
+  // Auto-join effect for email invitations (works for both authenticated and guest)
   useEffect(() => {
-    if (autoJoin && draftId && user && invitedEmail && !isAutoJoining) {
+    if (autoJoin && draftId && (user || guestSession) && invitedEmail && !isAutoJoining) {
       handleAutoJoin();
     }
-  }, [autoJoin, draftId, user, invitedEmail, isAutoJoining]);
+  }, [autoJoin, draftId, user, guestSession, invitedEmail, isAutoJoining]);
 
   const handleAutoJoin = async () => {
-    if (!draftId || !invitedEmail || !user) return;
+    if (!draftId || !invitedEmail || (!user && !guestSession)) return;
     
     setIsAutoJoining(true);
     
     try {
-      // Get the invite code from the draft
-      const { data: draftData, error } = await supabase
-        .from('drafts')
-        .select('invite_code')
-        .eq('id', draftId)
-        .single();
-
-      if (error || !draftData?.invite_code) {
+      const { data: inviteCode, error } = await supabase.rpc('get_invite_code_for_draft', { p_draft_id: draftId });
+      if (error || !inviteCode) {
         throw new Error('Invalid or expired invitation');
       }
 
-      await joinDraftByCode(draftData.invite_code, invitedEmail);
+      const id = await joinDraftByCode(inviteCode, invitedEmail);
+      if (id) navigate(`/draft/${id}`);
     } catch (error) {
       console.error('Auto-join failed:', error);
       toast({
@@ -90,7 +86,8 @@ export const JoinDraft = () => {
     }
 
     try {
-      await joinDraftByCode(inviteCode.trim().toUpperCase(), participantName.trim());
+      const id = await joinDraftByCode(inviteCode.trim().toUpperCase(), participantName.trim());
+      if (id) navigate(`/draft/${id}`);
     } catch (error) {
       console.error('Failed to join draft:', error);
     }
@@ -107,19 +104,13 @@ export const JoinDraft = () => {
     }
 
     try {
-      // For email invites, we need to get the invite code from the draft
-      // and then use the normal join flow
-      const { data: draftData, error } = await supabase
-        .from('drafts')
-        .select('invite_code')
-        .eq('id', draftId)
-        .single();
-
-      if (error || !draftData?.invite_code) {
+      const { data: inviteCode, error } = await supabase.rpc('get_invite_code_for_draft', { p_draft_id: draftId });
+      if (error || !inviteCode) {
         throw new Error('Invalid or expired invitation');
       }
 
-      await joinDraftByCode(draftData.invite_code, participantName.trim());
+      const id = await joinDraftByCode(inviteCode, participantName.trim());
+      if (id) navigate(`/draft/${id}`);
     } catch (error) {
       console.error('Failed to join draft via email:', error);
       toast({
@@ -130,20 +121,55 @@ export const JoinDraft = () => {
     }
   };
 
-  if (!user) {
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+        <Card className="w-full max-w-md">
+          <CardContent className="pt-6 flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            <p className="text-muted-foreground">Loading...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!user && !guestSession) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle>Sign In Required</CardTitle>
+            <CardTitle>Sign In or Join as Guest</CardTitle>
           </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">
-              You need to sign in to join a draft
+          <CardContent className="text-center space-y-4">
+            <p className="text-muted-foreground">
+              Sign in with your account, or join as a guest to continue without an account.
             </p>
-            <Button onClick={() => navigate('/auth')}>
-              Sign In
-            </Button>
+            <div className="flex flex-col gap-2">
+              <Button onClick={() => navigate('/auth')}>
+                Sign In
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  setIsRetryingGuest(true);
+                  try {
+                    await getOrCreateGuestSession();
+                  } catch {
+                    toast({
+                      title: "Could not join as guest",
+                      description: "Please try again or sign in.",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setIsRetryingGuest(false);
+                  }
+                }}
+                disabled={isRetryingGuest}
+              >
+                {isRetryingGuest ? 'Joining...' : 'Join as guest'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

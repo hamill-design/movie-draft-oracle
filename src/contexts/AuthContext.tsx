@@ -14,6 +14,7 @@ interface AuthContextType {
   loading: boolean;
   signOut: () => Promise<void>;
   migrateGuestDraftsToUser: () => Promise<void>;
+  getOrCreateGuestSession: () => Promise<GuestSession | null>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   signOut: async () => {},
   migrateGuestDraftsToUser: async () => {},
+  getOrCreateGuestSession: async () => null,
 });
 
 export const useAuth = () => {
@@ -42,7 +44,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const {
     guestSession,
     loading: guestLoading,
-    migrateGuestDraftsToUser
+    migrateGuestDraftsToUser,
+    getOrCreateGuestSession
   } = useGuestSession(user);
 
   // Only include guest loading if user is not authenticated
@@ -142,6 +145,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signOut,
     migrateGuestDraftsToUser,
+    getOrCreateGuestSession: async () => {
+      try {
+        return await getOrCreateGuestSession();
+      } catch {
+        return null;
+      }
+    },
   };
 
   return (

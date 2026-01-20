@@ -215,10 +215,12 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     }
   }, [existingPicks, draftState.participants, loadExistingPicks]);
   
-  // Save draft when it completes (even with 0 picks) to ensure we have a draftId
+  // Save draft when it completes. Skip if isComplete with 0 picks (guards against
+  // useDraftGame race where draftOrder is temporarily [] and isComplete was true).
   useEffect(() => {
     const saveCompletion = async () => {
       if (!isComplete) return;
+      if (picks.length === 0) return;
       
       // If we don't have a draftId yet, wait a bit for initialization to complete
       let draftId = currentDraftId || draftIdRef.current;
