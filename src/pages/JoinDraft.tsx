@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,6 +25,7 @@ export const JoinDraft = () => {
   const [participantName, setParticipantName] = useState('');
   const [isEmailInvite, setIsEmailInvite] = useState(false);
   const [isAutoJoining, setIsAutoJoining] = useState(false);
+  const hasAttemptedAutoJoin = useRef(false);
 
   const invitedEmail = searchParams.get('email');
   const autoJoin = searchParams.get('auto') === 'true';
@@ -42,15 +43,11 @@ export const JoinDraft = () => {
     }
   }, [draftId, invitedEmail, user?.email, participantName]);
 
-  // Auto-join effect for email invitations (works for both authenticated and guest)
-  useEffect(() => {
-    if (autoJoin && draftId && (user || guestSession) && invitedEmail && !isAutoJoining) {
-      handleAutoJoin();
+  const handleAutoJoin = useCallback(async () => {
+    if (!draftId || !invitedEmail || (!user && !guestSession)) {
+      setIsAutoJoining(false);
+      return;
     }
-  }, [autoJoin, draftId, user, guestSession, invitedEmail, isAutoJoining]);
-
-  const handleAutoJoin = async () => {
-    if (!draftId || !invitedEmail || (!user && !guestSession)) return;
     
     setIsAutoJoining(true);
     
@@ -61,7 +58,17 @@ export const JoinDraft = () => {
       }
 
       const id = await joinDraftByCode(inviteCode, invitedEmail);
-      if (id) navigate(`/draft/${id}`);
+      if (id) {
+        // Navigate to the draft page
+        navigate(`/draft/${id}`, { replace: true });
+        // Reset loading state after a short delay to allow navigation to complete
+        // If navigation succeeds, the component will unmount, so this is safe
+        setTimeout(() => {
+          setIsAutoJoining(false);
+        }, 1000);
+      } else {
+        throw new Error('Failed to get draft ID after joining');
+      }
     } catch (error) {
       console.error('Auto-join failed:', error);
       toast({
@@ -70,8 +77,17 @@ export const JoinDraft = () => {
         variant: "destructive",
       });
       setIsAutoJoining(false);
+      hasAttemptedAutoJoin.current = false; // Allow retry
     }
-  };
+  }, [draftId, invitedEmail, user, guestSession, joinDraftByCode, navigate, toast]);
+
+  // Auto-join effect for email invitations (works for both authenticated and guest)
+  useEffect(() => {
+    if (autoJoin && draftId && (user || guestSession) && invitedEmail && !isAutoJoining && !hasAttemptedAutoJoin.current) {
+      hasAttemptedAutoJoin.current = true;
+      handleAutoJoin();
+    }
+  }, [autoJoin, draftId, user, guestSession, invitedEmail, isAutoJoining, handleAutoJoin]);
 
   const handleJoinByCode = async (e: React.FormEvent) => {
     e.preventDefault();
