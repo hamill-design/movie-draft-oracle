@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Users, User, Mail, Trash2 } from 'lucide-react';
 import { CheckboxIcon, MultiPersonIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useProfile } from '@/hooks/useProfile';
 import { getCategoryConfig } from '@/config/categoryConfigs';
@@ -198,6 +199,7 @@ const SpecDraftSetup = () => {
   const { specDraftId } = useParams<{ specDraftId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { participantId, loading: sessionLoading } = useCurrentUser();
   const { createMultiplayerDraft, loading: creatingDraft } = useMultiplayerDraft();
   const { getDisplayName, loading: profileLoading } = useProfile();
 
@@ -213,6 +215,10 @@ const SpecDraftSetup = () => {
   const [isAddButtonHovered, setIsAddButtonHovered] = useState(false);
   const [hoveredRemoveButton, setHoveredRemoveButton] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<Record<string, boolean>>({});
+
+  // Multiplayer create requires a session (participantId); block until ready
+  const canCreateMultiplayer = !!participantId;
+  const isPreparingSession = draftMode === 'multiplayer' && (sessionLoading || !canCreateMultiplayer);
 
   // Get host name for multiplayer mode
   const hostName = useMemo(() => {
@@ -466,6 +472,14 @@ const SpecDraftSetup = () => {
 
     try {
       if (draftMode === 'multiplayer') {
+        if (!participantId) {
+          toast({
+            title: 'Session not ready',
+            description: 'Please wait a moment for your session to load, then try again.',
+            variant: 'destructive',
+          });
+          return;
+        }
         // Create multiplayer draft
         // The host is automatically added by the backend, so we only send additional participants
         // Filter out the host from the participants list since they'll be added automatically
@@ -875,11 +889,11 @@ const SpecDraftSetup = () => {
           <div className="flex justify-center">
             <Button
               onClick={handleCreateDraft}
-              disabled={creatingDraft || selectedCategoriesList.length === 0}
+              disabled={creatingDraft || selectedCategoriesList.length === 0 || isPreparingSession}
               className="bg-yellow-500 hover:bg-yellow-300 text-greyscale-blue-800 px-6 py-3 rounded-[2px] h-12"
               style={{ fontFamily: 'Brockmann', fontWeight: 600, fontSize: '16px', lineHeight: '24px' }}
             >
-              {creatingDraft ? 'Creating...' : 'Create Draft'}
+              {isPreparingSession ? 'Preparing session...' : creatingDraft ? 'Creating...' : 'Create Draft'}
             </Button>
           </div>
         </div>

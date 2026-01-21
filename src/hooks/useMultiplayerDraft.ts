@@ -236,7 +236,11 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     categories: string[];
     participantEmails: string[];
   }) => {
-    if (!participantId) throw new Error('No participant ID available');
+    if (!participantId) {
+      throw new Error(
+        'Your session is still loading. Please wait a moment and try again. If this persists, refresh the page.'
+      );
+    }
 
     try {
       setLoading(true);
