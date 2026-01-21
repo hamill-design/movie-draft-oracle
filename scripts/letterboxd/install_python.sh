@@ -65,7 +65,7 @@ python3.11 --version
 echo ""
 echo "📦 Installing Python dependencies..."
 cd "$(dirname "$0")/../.."
-python3.11 -m pip install -r requirements.txt
+python3.11 -m pip install -r scripts/letterboxd/requirements.txt
 
 echo ""
 echo "✅ Installation complete!"
