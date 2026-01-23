@@ -49,7 +49,6 @@ Deno.serve(async (req) => {
       rtCriticsScore: null,
       metacriticScore: null,
       imdbRating: null,
-      letterboxdRating: null,
       oscarStatus: 'none',
       posterPath: null,
       movieGenre: null
@@ -205,75 +204,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch Letterboxd rating (optional - won't fail if unavailable)
-    console.log('=== STARTING LETTERBOXD FETCH ===')
-    try {
-      console.log('Fetching Letterboxd rating...')
-      console.log(`Movie title: ${movieTitle}, Year: ${movieYear}`)
-      
-      // Generate slug from title (Letterboxd format: lowercase, hyphens, no special chars)
-      const slug = movieTitle.toLowerCase()
-        .replace(/\s+/g, '-')           // Spaces to hyphens
-        .replace(/[':.,]/g, '')         // Remove common punctuation
-        .replace(/[^a-z0-9-]/g, '')     // Remove any other non-alphanumeric (except hyphens)
-        .replace(/-+/g, '-')            // Multiple hyphens to single
-        .replace(/^-|-$/g, '')          // Remove leading/trailing hyphens
-      
-      // Try to fetch Letterboxd page
-      const letterboxdUrl = `https://letterboxd.com/film/${slug}/`
-      console.log(`Letterboxd URL: ${letterboxdUrl}`)
-      
-      const response = await fetchWithTimeout(letterboxdUrl, 8000)
-      
-      if (response.ok) {
-        const html = await response.text()
-        
-        // Parse rating from HTML
-        // Letterboxd stores average rating in various places
-        let rating: number | null = null
-        
-        // Method 1: Try Twitter meta tag (most reliable: "4.18 out of 5")
-        const twitterMetaMatch = html.match(/<meta[^>]*name="twitter:data2"[^>]*content="([\d.]+)\s+out of 5"/i)
-        if (twitterMetaMatch) {
-          rating = parseFloat(twitterMetaMatch[1])
-          console.log(`Letterboxd: Found rating via Twitter meta tag: ${rating}`)
-        } else {
-          // Method 2: Try data-average-rating attribute
-          const dataRatingMatch = html.match(/data-average-rating="([\d.]+)"/)
-          if (dataRatingMatch) {
-            rating = parseFloat(dataRatingMatch[1])
-            console.log(`Letterboxd: Found rating via data attribute: ${rating}`)
-          } else {
-            // Method 3: Try JSON-LD structured data
-            const jsonLdMatch = html.match(/"ratingValue":\s*([\d.]+)/)
-            if (jsonLdMatch) {
-              rating = parseFloat(jsonLdMatch[1])
-              console.log(`Letterboxd: Found rating via JSON-LD: ${rating}`)
-            } else {
-              // Method 4: Try to find "X.XX out of 5" pattern anywhere
-              const outOfFiveMatch = html.match(/([\d.]+)\s+out of 5/i)
-              if (outOfFiveMatch) {
-                rating = parseFloat(outOfFiveMatch[1])
-                console.log(`Letterboxd: Found rating via "out of 5" pattern: ${rating}`)
-              }
-            }
-          }
-        }
-        
-        if (rating !== null && rating >= 0 && rating <= 5) {
-          enrichmentData.letterboxdRating = rating
-          console.log(`Letterboxd: ${rating}/5`)
-        } else {
-          console.log('Letterboxd: Rating not found or invalid in HTML')
-        }
-      } else {
-        console.log(`Letterboxd: HTTP ${response.status} - Page not found or inaccessible`)
-      }
-    } catch (error) {
-      console.log(`Letterboxd rating error: ${error.message}`)
-      // Don't fail the whole enrichment if Letterboxd fails
-    }
-
     // Calculate score
     const finalScore = calculateScore(enrichmentData)
     console.log(`Final score: ${finalScore}`)
@@ -308,10 +238,6 @@ Deno.serve(async (req) => {
       updateData.imdb_rating = enrichmentData.imdbRating
     }
     
-    if (enrichmentData.letterboxdRating !== null && typeof enrichmentData.letterboxdRating === 'number') {
-      updateData.letterboxd_rating = enrichmentData.letterboxdRating
-    }
-    
     if (enrichmentData.oscarStatus && typeof enrichmentData.oscarStatus === 'string') {
       updateData.oscar_status = enrichmentData.oscarStatus
     }
@@ -342,7 +268,6 @@ Deno.serve(async (req) => {
 
     console.log('SUCCESS: Database updated')
     console.log('=== ENRICHMENT DATA SUMMARY ===')
-    console.log(`Letterboxd Rating: ${enrichmentData.letterboxdRating || 'null'}`)
     console.log(`IMDB: ${enrichmentData.imdbRating || 'null'}`)
     console.log(`RT Critics: ${enrichmentData.rtCriticsScore || 'null'}`)
     console.log(`Metacritic: ${enrichmentData.metacriticScore || 'null'}`)
@@ -398,7 +323,6 @@ function calculateScore(data: any): number {
   const rtCriticsScore = data.rtCriticsScore || 0
   const metacriticScore = data.metacriticScore || 0
   const imdbScore = data.imdbRating ? (data.imdbRating / 10) * 100 : 0
-  const letterboxdScore = data.letterboxdRating ? (data.letterboxdRating / 5) * 100 : 0
 
   // Layer 1: Calculate Critics Score (Internal Consensus)
   let criticsRawAvg = 0
@@ -416,20 +340,12 @@ function calculateScore(data: any): number {
     criticsScore = metacriticScore
   }
 
-  // Layer 2: Calculate Audience Score (Internal Consensus)
+  // Layer 2: Calculate Audience Score (IMDB only, no Letterboxd)
   let audienceRawAvg = 0
   let audienceScore = 0
-  if (imdbScore && letterboxdScore) {
-    audienceRawAvg = (imdbScore + letterboxdScore) / 2
-    const audienceInternalDiff = Math.abs(imdbScore - letterboxdScore)
-    const audienceInternalModifier = Math.max(0, 1 - (audienceInternalDiff / 200))
-    audienceScore = audienceRawAvg * audienceInternalModifier
-  } else if (imdbScore) {
+  if (imdbScore) {
     audienceRawAvg = imdbScore
     audienceScore = imdbScore
-  } else if (letterboxdScore) {
-    audienceRawAvg = letterboxdScore
-    audienceScore = letterboxdScore
   }
 
   // Layer 3: Calculate Final Critical Score (Cross-Category Consensus)

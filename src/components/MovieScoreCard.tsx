@@ -6,7 +6,6 @@ import { RibbonIcon } from '@/components/icons/RibbonIcon';
 import { StarIcon } from '@/components/icons/StarIcon';
 import { FilmReelIcon } from '@/components/icons/FilmReelIcon';
 import { TrophyIcon } from '@/components/icons/TrophyIcon';
-import { LetterboxdIcon } from '@/components/icons/LetterboxdIcon';
 import { OscarStatusChip } from '@/components/OscarStatusChip';
 
 interface MovieScoreCardProps {
@@ -350,32 +349,6 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                 </div>
               )}
 
-              {/* Letterboxd */}
-              <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex' }}>
-                <div style={{ alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex' }}>
-                  <div style={{ justifyContent: 'flex-start', alignItems: 'center', gap: '8px', display: 'flex' }}>
-                     <LetterboxdIcon style={{ width: '16px', height: '16px', color: 'var(--Text-Light-grey, #BDC3C2)' }} />
-                    <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
-                      <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', wordWrap: 'break-word' }}>
-                        Letterboxd
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
-                    <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '16px', wordWrap: 'break-word' }}>
-                      {scoringData.letterboxdRating ? `${(scoringData.letterboxdRating / 5 * 100).toFixed(0)}%` : 'N/A'}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: '#2C2B2D', overflow: 'hidden', borderRadius: '9999px' }}>
-                  <div style={{ 
-                    width: `${Math.min(scoreBreakdown.letterboxdScore || 0, 100)}%`, 
-                    height: '8px', 
-                    position: 'absolute', 
-                    background: 'var(--Brand-Primary, #7142FF)' 
-                  }}></div>
-                </div>
-              </div>
 
               {/* Oscar Status */}
               <div style={{ alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex' }}>

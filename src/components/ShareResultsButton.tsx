@@ -51,8 +51,7 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
           const pickWithScoring = pick as any;
           // Only recalculate if we have scoring data
           if (pickWithScoring.movie_budget || pickWithScoring.rt_critics_score || 
-              pickWithScoring.imdb_rating || pickWithScoring.metacritic_score || 
-              pickWithScoring.letterboxd_rating) {
+              pickWithScoring.imdb_rating || pickWithScoring.metacritic_score) {
             const scoringData = {
               budget: pickWithScoring.movie_budget,
               revenue: pickWithScoring.movie_revenue,
@@ -60,7 +59,6 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
               rtAudienceScore: pickWithScoring.rt_audience_score,
               metacriticScore: pickWithScoring.metacritic_score,
               imdbRating: pickWithScoring.imdb_rating,
-              letterboxdRating: pickWithScoring.letterboxd_rating,
               oscarStatus: pickWithScoring.oscar_status
             };
             const scoreBreakdown = calculateDetailedScore(scoringData);
@@ -93,8 +91,7 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
         
         // Recalculate score if we have scoring data
         if (pickWithScoring.movie_budget || pickWithScoring.rt_critics_score || 
-            pickWithScoring.imdb_rating || pickWithScoring.metacritic_score || 
-            pickWithScoring.letterboxd_rating) {
+            pickWithScoring.imdb_rating || pickWithScoring.metacritic_score) {
           const scoringData = {
             budget: pickWithScoring.movie_budget,
             revenue: pickWithScoring.movie_revenue,
@@ -102,7 +99,6 @@ const ShareResultsButton: React.FC<ShareResultsButtonProps> = ({
             rtAudienceScore: pickWithScoring.rt_audience_score,
             metacriticScore: pickWithScoring.metacritic_score,
             imdbRating: pickWithScoring.imdb_rating,
-            letterboxdRating: pickWithScoring.letterboxd_rating,
             oscarStatus: pickWithScoring.oscar_status
           };
           const scoreBreakdown = calculateDetailedScore(scoringData);

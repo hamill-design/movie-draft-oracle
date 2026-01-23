@@ -6,7 +6,6 @@ export interface MovieScoringData {
   rtAudienceScore?: number | null;
   metacriticScore?: number | null;
   imdbRating?: number | null;
-  letterboxdRating?: number | null;
   oscarStatus?: string | null;
 }
 
@@ -16,7 +15,6 @@ export interface ScoreBreakdown {
   rtAudienceScore: number;
   metacriticScore: number;
   imdbScore: number;
-  letterboxdScore: number;
   criticsScore: number;
   audienceScore: number;
   criticalScore: number;
@@ -85,15 +83,6 @@ export const calculateDetailedScore = (data: MovieScoringData): ScoreBreakdown =
     missingComponents.push('IMDB');
   }
 
-  // Letterboxd Score - Convert to 0-100 scale (Letterboxd uses 0-5 star rating)
-  let letterboxdScore = 0;
-  if (data.letterboxdRating) {
-    letterboxdScore = (data.letterboxdRating / 5) * 100;
-    availableComponents.push('Letterboxd');
-  } else {
-    missingComponents.push('Letterboxd');
-  }
-
   // Layer 1: Calculate Critics Score (Internal Consensus)
   let criticsRawAvg = 0;
   let criticsScore = 0;
@@ -112,22 +101,14 @@ export const calculateDetailedScore = (data: MovieScoringData): ScoreBreakdown =
     criticsScore = metacriticScore;
   }
 
-  // Layer 2: Calculate Audience Score (Internal Consensus)
+  // Layer 2: Calculate Audience Score (IMDB only, no Letterboxd)
   let audienceRawAvg = 0;
   let audienceScore = 0;
   let audienceInternalModifier = 1;
   
-  if (imdbScore && letterboxdScore) {
-    audienceRawAvg = (imdbScore + letterboxdScore) / 2;
-    const audienceInternalDiff = Math.abs(imdbScore - letterboxdScore);
-    audienceInternalModifier = Math.max(0, 1 - (audienceInternalDiff / 200));
-    audienceScore = audienceRawAvg * audienceInternalModifier;
-  } else if (imdbScore) {
+  if (imdbScore) {
     audienceRawAvg = imdbScore;
     audienceScore = imdbScore;
-  } else if (letterboxdScore) {
-    audienceRawAvg = letterboxdScore;
-    audienceScore = letterboxdScore;
   }
 
   // Layer 3: Calculate Final Critical Score (Cross-Category Consensus)
@@ -194,7 +175,6 @@ export const calculateDetailedScore = (data: MovieScoringData): ScoreBreakdown =
     rtAudienceScore,
     metacriticScore,
     imdbScore: Math.round(imdbScore * 100) / 100,
-    letterboxdScore: Math.round(letterboxdScore * 100) / 100,
     criticsScore: Math.round(criticsScore * 100) / 100,
     audienceScore: Math.round(audienceScore * 100) / 100,
     criticalScore: Math.round(criticalScore * 100) / 100,
