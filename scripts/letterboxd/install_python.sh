@@ -64,8 +64,9 @@ python3.11 --version
 
 echo ""
 echo "📦 Installing Python dependencies..."
-cd "$(dirname "$0")/../.."
+cd "$(dirname "$0")"
 python3.11 -m pip install -r requirements.txt
+cd - > /dev/null
 
 echo ""
 echo "✅ Installation complete!"

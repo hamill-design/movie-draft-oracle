@@ -1,0 +1,26 @@
+# Ignore Python files - Python scripts are only for local development
+# These are NOT needed for the frontend build
+requirements.txt
+scripts/letterboxd/
+*.py
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+venv/
+env/
+ENV/
+.venv
+.python-version
+pip-log.txt
+pip-delete-this-directory.txt
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+*.egg
+*.whl
