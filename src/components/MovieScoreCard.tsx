@@ -233,7 +233,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
             {/* Score Metrics */}
             <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '12px', display: 'flex' }}>
               
-              {/* Box Office Profit */}
+              {/* Box Office Score */}
               {scoreBreakdown.availableComponents.includes('Box Office') && (
                 <div style={{ alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '8px', display: 'flex' }}>
                     <div style={{ alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex' }}>
@@ -241,7 +241,7 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                        <DollarIcon style={{ width: '16px', height: '16px', color: 'var(--Text-Light-grey, #BDC3C2)' }} />
                       <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
                         <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', wordWrap: 'break-word' }}>
-                          Box Office Profit
+                          Box Office Score
                         </div>
                       </div>
                     </div>
