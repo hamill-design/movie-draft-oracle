@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -43,51 +43,53 @@ export const JoinDraft = () => {
     }
   }, [draftId, invitedEmail, user?.email, participantName]);
 
-  const handleAutoJoin = useCallback(async () => {
-    if (!draftId || !invitedEmail || (!user && !guestSession)) {
-      setIsAutoJoining(false);
-      return;
-    }
-    
-    setIsAutoJoining(true);
-    
-    try {
-      const { data: inviteCode, error } = await supabase.rpc('get_invite_code_for_draft', { p_draft_id: draftId });
-      if (error || !inviteCode) {
-        throw new Error('Invalid or expired invitation');
-      }
-
-      const id = await joinDraftByCode(inviteCode, invitedEmail);
-      if (id) {
-        // Navigate to the draft page
-        navigate(`/draft/${id}`, { replace: true });
-        // Reset loading state after a short delay to allow navigation to complete
-        // If navigation succeeds, the component will unmount, so this is safe
-        setTimeout(() => {
-          setIsAutoJoining(false);
-        }, 1000);
-      } else {
-        throw new Error('Failed to get draft ID after joining');
-      }
-    } catch (error) {
-      console.error('Auto-join failed:', error);
-      toast({
-        title: "Auto-join Failed",
-        description: "Unable to automatically join the draft. Please try manually.",
-        variant: "destructive",
-      });
-      setIsAutoJoining(false);
-      hasAttemptedAutoJoin.current = false; // Allow retry
-    }
-  }, [draftId, invitedEmail, user, guestSession, joinDraftByCode, navigate, toast]);
-
   // Auto-join effect for email invitations (works for both authenticated and guest)
   useEffect(() => {
-    if (autoJoin && draftId && (user || guestSession) && invitedEmail && !isAutoJoining && !hasAttemptedAutoJoin.current) {
-      hasAttemptedAutoJoin.current = true;
-      handleAutoJoin();
+    // Early return if conditions aren't met or already attempted
+    if (!autoJoin || !draftId || !invitedEmail || (!user && !guestSession) || isAutoJoining || hasAttemptedAutoJoin.current) {
+      return;
     }
-  }, [autoJoin, draftId, user, guestSession, invitedEmail, isAutoJoining, handleAutoJoin]);
+
+    // Set the flag immediately to prevent duplicate calls
+    hasAttemptedAutoJoin.current = true;
+    setIsAutoJoining(true);
+
+    const performAutoJoin = async () => {
+      try {
+        const { data: inviteCode, error } = await supabase.rpc('get_invite_code_for_draft', { p_draft_id: draftId });
+        if (error || !inviteCode) {
+          throw new Error('Invalid or expired invitation');
+        }
+
+        // Use participantName if set, otherwise fall back to invitedEmail
+        const nameToUse = participantName.trim() || invitedEmail;
+        const id = await joinDraftByCode(inviteCode, nameToUse);
+        
+        if (id) {
+          // Navigate to the draft page
+          navigate(`/draft/${id}`, { replace: true });
+          // Reset loading state after a short delay to allow navigation to complete
+          // If navigation succeeds, the component will unmount, so this is safe
+          setTimeout(() => {
+            setIsAutoJoining(false);
+          }, 1000);
+        } else {
+          throw new Error('Failed to get draft ID after joining');
+        }
+      } catch (error) {
+        console.error('Auto-join failed:', error);
+        toast({
+          title: "Auto-join Failed",
+          description: "Unable to automatically join the draft. Please try manually.",
+          variant: "destructive",
+        });
+        setIsAutoJoining(false);
+        hasAttemptedAutoJoin.current = false; // Allow retry
+      }
+    };
+
+    performAutoJoin();
+  }, [autoJoin, draftId, user, guestSession, invitedEmail, isAutoJoining, participantName, joinDraftByCode, navigate, toast]);
 
   const handleJoinByCode = async (e: React.FormEvent) => {
     e.preventDefault();

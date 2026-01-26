@@ -68,8 +68,43 @@ serve(async (req) => {
       })) || []
     })) || []
 
-    // Sort by popularity (descending)
-    transformedResults.sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
+    // Calculate a composite score to prioritize famous actors/directors
+    // This helps ensure that when searching for "Ben", famous actors like
+    // Ben Affleck appear before obscure people named Ben
+    const calculateFameScore = (person: any): number => {
+      let score = person.popularity || 0;
+      
+      // Bonus for having known_for items (indicates notable work)
+      if (person.known_for && person.known_for.length > 0) {
+        score += person.known_for.length * 5;
+      }
+      
+      // Bonus for having a profile picture (more established actors have photos)
+      if (person.profile_path) {
+        score += 10;
+      }
+      
+      // Bonus for being in Acting or Directing departments (filter out crew)
+      const relevantDepartments = ['Acting', 'Directing', 'Production', 'Writing'];
+      if (relevantDepartments.includes(person.known_for_department)) {
+        score += 5;
+      }
+      
+      return score;
+    };
+
+    // Sort by composite fame score (descending), then by popularity as tiebreaker
+    transformedResults.sort((a: any, b: any) => {
+      const scoreA = calculateFameScore(a);
+      const scoreB = calculateFameScore(b);
+      
+      if (scoreB !== scoreA) {
+        return scoreB - scoreA;
+      }
+      
+      // Tiebreaker: use raw popularity
+      return (b.popularity || 0) - (a.popularity || 0);
+    });
 
     return new Response(
       JSON.stringify({ 

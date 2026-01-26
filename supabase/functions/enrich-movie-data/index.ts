@@ -55,13 +55,16 @@ Deno.serve(async (req) => {
       movieGenre: null
     }
 
-    // Simple timeout helper
-    const fetchWithTimeout = async (url: string, timeoutMs = 5000) => {
+    // Simple timeout helper with optional headers
+    const fetchWithTimeout = async (url: string, timeoutMs = 5000, headers?: Record<string, string>) => {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
       
       try {
-        const response = await fetch(url, { signal: controller.signal })
+        const response = await fetch(url, { 
+          signal: controller.signal,
+          headers: headers
+        })
         clearTimeout(timeoutId)
         return response
       } catch (error) {
@@ -212,18 +215,28 @@ Deno.serve(async (req) => {
       console.log(`Movie title: ${movieTitle}, Year: ${movieYear}`)
       
       // Generate slug from title (Letterboxd format: lowercase, hyphens, no special chars)
-      const slug = movieTitle.toLowerCase()
+      // Use TMDB title if available for better matching
+      const titleToUse = tmdbData?.title || movieTitle
+      
+      const slug = titleToUse.toLowerCase()
+        .replace(/&/g, 'and')          // Replace & with 'and'
         .replace(/\s+/g, '-')           // Spaces to hyphens
-        .replace(/[':.,]/g, '')         // Remove common punctuation
+        .replace(/[':.,!?]/g, '')       // Remove common punctuation
         .replace(/[^a-z0-9-]/g, '')     // Remove any other non-alphanumeric (except hyphens)
         .replace(/-+/g, '-')            // Multiple hyphens to single
         .replace(/^-|-$/g, '')          // Remove leading/trailing hyphens
       
-      // Try to fetch Letterboxd page
+      // Try to fetch Letterboxd page with proper headers
       const letterboxdUrl = `https://letterboxd.com/film/${slug}/`
       console.log(`Letterboxd URL: ${letterboxdUrl}`)
       
-      const response = await fetchWithTimeout(letterboxdUrl, 8000)
+      const letterboxdHeaders = {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9'
+      }
+      
+      const response = await fetchWithTimeout(letterboxdUrl, 8000, letterboxdHeaders)
       
       if (response.ok) {
         const html = await response.text()
@@ -255,6 +268,20 @@ Deno.serve(async (req) => {
               if (outOfFiveMatch) {
                 rating = parseFloat(outOfFiveMatch[1])
                 console.log(`Letterboxd: Found rating via "out of 5" pattern: ${rating}`)
+              } else {
+                // Method 5: Try to find rating in script tags or data attributes
+                const scriptRatingMatch = html.match(/averageRating["\s:]+([\d.]+)/i)
+                if (scriptRatingMatch) {
+                  rating = parseFloat(scriptRatingMatch[1])
+                  console.log(`Letterboxd: Found rating via script tag: ${rating}`)
+                } else {
+                  // Method 6: Try to find rating in itemprop
+                  const itempropMatch = html.match(/itemprop="ratingValue"[^>]*>([\d.]+)</i)
+                  if (itempropMatch) {
+                    rating = parseFloat(itempropMatch[1])
+                    console.log(`Letterboxd: Found rating via itemprop: ${rating}`)
+                  }
+                }
               }
             }
           }
@@ -265,9 +292,75 @@ Deno.serve(async (req) => {
           console.log(`Letterboxd: ${rating}/5`)
         } else {
           console.log('Letterboxd: Rating not found or invalid in HTML')
+          // If slug didn't work and we have TMDB data, try alternative slug generation
+          if (tmdbData && !rating) {
+            console.log('Letterboxd: Trying alternative slug from TMDB original title...')
+            const altSlug = (tmdbData.original_title || tmdbData.title || movieTitle).toLowerCase()
+              .replace(/&/g, 'and')
+              .replace(/\s+/g, '-')
+              .replace(/[':.,!?]/g, '')
+              .replace(/[^a-z0-9-]/g, '')
+              .replace(/-+/g, '-')
+              .replace(/^-|-$/g, '')
+            
+            if (altSlug !== slug) {
+              try {
+                const altUrl = `https://letterboxd.com/film/${altSlug}/`
+                console.log(`Letterboxd: Trying alternative URL: ${altUrl}`)
+                const altResponse = await fetchWithTimeout(altUrl, 8000, letterboxdHeaders)
+                
+                if (altResponse.ok) {
+                  const altHtml = await altResponse.text()
+                  const altTwitterMatch = altHtml.match(/<meta[^>]*name="twitter:data2"[^>]*content="([\d.]+)\s+out of 5"/i)
+                  if (altTwitterMatch) {
+                    rating = parseFloat(altTwitterMatch[1])
+                    if (rating >= 0 && rating <= 5) {
+                      enrichmentData.letterboxdRating = rating
+                      console.log(`Letterboxd: Found rating via alternative slug: ${rating}/5`)
+                    }
+                  }
+                }
+              } catch (altError) {
+                console.log(`Letterboxd: Alternative slug attempt failed: ${altError.message}`)
+              }
+            }
+          }
         }
       } else {
         console.log(`Letterboxd: HTTP ${response.status} - Page not found or inaccessible`)
+        // If 404 and we have TMDB data, try alternative slug
+        if (response.status === 404 && tmdbData) {
+          console.log('Letterboxd: Trying alternative slug from TMDB original title...')
+          const altSlug = (tmdbData.original_title || tmdbData.title || movieTitle).toLowerCase()
+            .replace(/&/g, 'and')
+            .replace(/\s+/g, '-')
+            .replace(/[':.,!?]/g, '')
+            .replace(/[^a-z0-9-]/g, '')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '')
+          
+          if (altSlug !== slug) {
+            try {
+              const altUrl = `https://letterboxd.com/film/${altSlug}/`
+              console.log(`Letterboxd: Trying alternative URL: ${altUrl}`)
+              const altResponse = await fetchWithTimeout(altUrl, 8000, letterboxdHeaders)
+              
+              if (altResponse.ok) {
+                const altHtml = await altResponse.text()
+                const altTwitterMatch = altHtml.match(/<meta[^>]*name="twitter:data2"[^>]*content="([\d.]+)\s+out of 5"/i)
+                if (altTwitterMatch) {
+                  const rating = parseFloat(altTwitterMatch[1])
+                  if (rating >= 0 && rating <= 5) {
+                    enrichmentData.letterboxdRating = rating
+                    console.log(`Letterboxd: Found rating via alternative slug: ${rating}/5`)
+                  }
+                }
+              }
+            } catch (altError) {
+              console.log(`Letterboxd: Alternative slug attempt failed: ${altError.message}`)
+            }
+          }
+        }
       }
     } catch (error) {
       console.log(`Letterboxd rating error: ${error.message}`)
