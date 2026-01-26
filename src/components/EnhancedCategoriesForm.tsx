@@ -787,6 +787,16 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
 
   const summaryStats = getSummaryStats();
 
+  // Memoize categories to render - must be at top level, not in JSX
+  const categoriesToRender = useMemo(() => {
+    // Create a fresh copy to ensure correct order
+    const categories = [...allCategories];
+    console.log('🎨 Rendering allCategories - length:', categories.length);
+    console.log('🎨 Rendering allCategories - first item:', categories[0]);
+    console.log('🎨 Rendering allCategories - JSON:', JSON.stringify(categories));
+    return categories;
+  }, [allCategories]);
+
   return (
     <div 
       className="w-full bg-greyscale-purp-900 rounded-[8px] flex flex-col"
@@ -806,14 +816,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
       <div 
         className="w-full grid grid-cols-1 sm:grid-cols-2 gap-5 items-start"
       >
-        {useMemo(() => {
-          // Create a fresh copy to ensure correct order
-          const categoriesToRender = [...allCategories];
-          console.log('🎨 Rendering allCategories - length:', categoriesToRender.length);
-          console.log('🎨 Rendering allCategories - first item:', categoriesToRender[0]);
-          console.log('🎨 Rendering allCategories - JSON:', JSON.stringify(categoriesToRender));
-          return categoriesToRender;
-        }, [allCategories]).map((category, index) => {
+        {categoriesToRender.map((category, index) => {
           const categoryConfig = getCategoryConfig(category);
           const isSpecCategory = specCategories.includes(category);
           const availability = getAvailabilityForCategory(category);
