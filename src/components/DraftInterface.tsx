@@ -537,21 +537,12 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
               enrichmentData,
               calculatedScore: enrichmentData.calculatedScore,
               rtCritics: enrichmentData.rtCriticsScore,
-              imdb: enrichmentData.imdbRating,
-              letterboxd: enrichmentData.letterboxdRating || enrichmentData.letterboxd_rating || 'not found'
+              imdb: enrichmentData.imdbRating
             });
-            
-            // Log Letterboxd rating specifically
-            if (enrichmentData.letterboxdRating || enrichmentData.letterboxd_rating) {
-              console.log(`⭐ Letterboxd rating for ${pick.movie_title}: ${enrichmentData.letterboxdRating || enrichmentData.letterboxd_rating}/5`);
-            } else {
-              console.log(`⚠️ No Letterboxd rating found for ${pick.movie_title}`);
-            }
             
             enrichedPick.rt_critics_score = enrichmentData.rtCriticsScore || enrichmentData.rt_critics_score || null;
             enrichedPick.metacritic_score = enrichmentData.metacriticScore || enrichmentData.metacritic_score || null;
             enrichedPick.imdb_rating = enrichmentData.imdbRating || enrichmentData.imdb_rating || null;
-            enrichedPick.letterboxd_rating = enrichmentData.letterboxdRating || enrichmentData.letterboxd_rating || null;
             enrichedPick.movie_budget = enrichmentData.budget || enrichmentData.movie_budget || null;
             enrichedPick.movie_revenue = enrichmentData.revenue || enrichmentData.movie_revenue || null;
             enrichedPick.oscar_status = enrichmentData.oscarStatus || enrichmentData.oscar_status || null;
@@ -585,7 +576,6 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
               const rtCriticsScore = enrichedPick.rt_critics_score || 0;
               const metacriticScore = enrichedPick.metacritic_score || 0;
               const imdbScore = enrichedPick.imdb_rating ? (enrichedPick.imdb_rating / 10) * 100 : 0;
-              const letterboxdScore = enrichedPick.letterboxd_rating ? (enrichedPick.letterboxd_rating / 5) * 100 : 0;
               
               // Layer 1: Calculate Critics Score (Internal Consensus)
               let criticsRawAvg = 0;
@@ -603,20 +593,12 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
                 criticsScore = metacriticScore;
               }
               
-              // Layer 2: Calculate Audience Score (Internal Consensus)
+              // Layer 2: Calculate Audience Score (IMDB only, no Letterboxd)
               let audienceRawAvg = 0;
               let audienceScore = 0;
-              if (imdbScore && letterboxdScore) {
-                audienceRawAvg = (imdbScore + letterboxdScore) / 2;
-                const audienceInternalDiff = Math.abs(imdbScore - letterboxdScore);
-                const audienceInternalModifier = Math.max(0, 1 - (audienceInternalDiff / 200));
-                audienceScore = audienceRawAvg * audienceInternalModifier;
-              } else if (imdbScore) {
+              if (imdbScore) {
                 audienceRawAvg = imdbScore;
                 audienceScore = imdbScore;
-              } else if (letterboxdScore) {
-                audienceRawAvg = letterboxdScore;
-                audienceScore = letterboxdScore;
               }
               
               // Layer 3: Calculate Final Critical Score (Cross-Category Consensus)

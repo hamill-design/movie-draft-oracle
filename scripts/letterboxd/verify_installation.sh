@@ -19,6 +19,7 @@ for version in python3.12 python3.11 python3.10; do
         if [ $? -eq 0 ]; then
             echo ""
             echo "📦 Installing/updating dependencies..."
+            cd "$(dirname "$0")/../.."
             $version -m pip install -r scripts/letterboxd/requirements.txt --quiet
             
             echo ""
