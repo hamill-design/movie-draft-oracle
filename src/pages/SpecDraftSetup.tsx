@@ -538,6 +538,7 @@ const SpecDraftSetup = () => {
       <Helmet>
         <title>Movie Drafter - Setup Special Draft</title>
         <meta name="description" content="Set up a special movie draft with custom categories and participants. Create unique draft experiences for specific themes or events." />
+        <link rel="canonical" href={`https://moviedrafter.com/spec-draft/${specDraftId}/setup`} />
         <meta property="og:title" content="Movie Drafter - Setup Special Draft" />
         <meta property="og:description" content="Set up a special movie draft with custom categories and participants. Create unique draft experiences for specific themes or events." />
         <meta property="og:url" content={`https://moviedrafter.com/spec-draft/${specDraftId}/setup`} />

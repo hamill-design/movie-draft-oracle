@@ -767,6 +767,7 @@ const FinalScores = () => {
       <Helmet>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
+        <link rel="canonical" href={`https://moviedrafter.com/final-scores/${draftId}`} />
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDescription} />
         <meta property="og:url" content={`https://moviedrafter.com/final-scores/${draftId}`} />

@@ -114,6 +114,7 @@ const Contact = () => {
       <Helmet>
         <title>Movie Drafter - Contact Support</title>
         <meta name="description" content="Contact Movie Drafter support for help with your account, drafts, or any questions about our movie draft platform." />
+        <link rel="canonical" href="https://moviedrafter.com/contact" />
         <meta property="og:title" content="Movie Drafter - Contact Support" />
         <meta property="og:description" content="Contact Movie Drafter support for help with your account, drafts, or any questions about our movie draft platform." />
         <meta property="og:url" content="https://moviedrafter.com/contact" />

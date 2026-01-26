@@ -6,6 +6,7 @@ const PrivacyPolicy = () => {
       <Helmet>
         <title>Movie Drafter - Privacy Policy</title>
         <meta name="description" content="Read Movie Drafter's Privacy Policy to understand how we collect, use, and protect your personal information." />
+        <link rel="canonical" href="https://moviedrafter.com/privacy-policy" />
         <meta property="og:title" content="Movie Drafter - Privacy Policy" />
         <meta property="og:description" content="Read Movie Drafter's Privacy Policy to understand how we collect, use, and protect your personal information." />
         <meta property="og:url" content="https://moviedrafter.com/privacy-policy" />

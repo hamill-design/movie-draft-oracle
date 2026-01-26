@@ -68,20 +68,51 @@ serve(async (req) => {
       })) || []
     })) || []
 
+    // Detect if this is a single-name query (likely just a first name)
+    const isSingleNameQuery = !sanitizedQuery.includes(' ') && sanitizedQuery.length > 2;
+
+    // For single-name queries, apply stricter filtering to prioritize famous actors
+    let filteredResults = transformedResults;
+    if (isSingleNameQuery) {
+      filteredResults = transformedResults.filter((person: any) => {
+        // Filter out people with very low popularity (likely obscure)
+        if ((person.popularity || 0) < 1.0) {
+          return false;
+        }
+        
+        // Filter out "Crew" department for single-name queries (users want actors/directors)
+        if (person.known_for_department === 'Crew') {
+          return false;
+        }
+        
+        // Require either known_for items OR high popularity (>= 5.0)
+        const hasKnownFor = person.known_for && person.known_for.length > 0;
+        const hasHighPopularity = (person.popularity || 0) >= 5.0;
+        
+        return hasKnownFor || hasHighPopularity;
+      });
+    }
+
     // Calculate a composite score to prioritize famous actors/directors
-    // This helps ensure that when searching for "Ben", famous actors like
-    // Ben Affleck appear before obscure people named Ben
-    const calculateFameScore = (person: any): number => {
-      let score = person.popularity || 0;
+    // For single-name queries, we heavily weight popularity to surface famous actors
+    const calculateFameScore = (person: any, isSingleName: boolean): number => {
+      // For single-name queries, multiply popularity by 3x to heavily prioritize famous people
+      const popularityWeight = isSingleName ? 3 : 1;
+      let score = (person.popularity || 0) * popularityWeight;
       
       // Bonus for having known_for items (indicates notable work)
+      // For single-name queries, this is even more important
       if (person.known_for && person.known_for.length > 0) {
-        score += person.known_for.length * 5;
+        const knownForWeight = isSingleName ? 10 : 5;
+        score += person.known_for.length * knownForWeight;
       }
       
       // Bonus for having a profile picture (more established actors have photos)
       if (person.profile_path) {
-        score += 10;
+        score += 15; // Increased from 10
+      } else if (isSingleName) {
+        // Penalty for no profile picture in single-name queries
+        score -= 5;
       }
       
       // Bonus for being in Acting or Directing departments (filter out crew)
@@ -94,9 +125,9 @@ serve(async (req) => {
     };
 
     // Sort by composite fame score (descending), then by popularity as tiebreaker
-    transformedResults.sort((a: any, b: any) => {
-      const scoreA = calculateFameScore(a);
-      const scoreB = calculateFameScore(b);
+    filteredResults.sort((a: any, b: any) => {
+      const scoreA = calculateFameScore(a, isSingleNameQuery);
+      const scoreB = calculateFameScore(b, isSingleNameQuery);
       
       if (scoreB !== scoreA) {
         return scoreB - scoreA;
@@ -108,7 +139,7 @@ serve(async (req) => {
 
     return new Response(
       JSON.stringify({ 
-        results: transformedResults,
+        results: filteredResults,
         total_results: data.total_results,
         page: data.page 
       }),

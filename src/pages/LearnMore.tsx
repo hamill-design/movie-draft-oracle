@@ -8,6 +8,7 @@ const LearnMore = () => {
       <Helmet>
         <title>Movie Drafter - Learn More</title>
         <meta name="description" content="Learn how Movie Drafter works. Create fantasy movie drafts, compete with friends, and discover who has the best taste in cinema." />
+        <link rel="canonical" href="https://moviedrafter.com/learn-more" />
         <meta property="og:title" content="Movie Drafter - Learn More" />
         <meta property="og:description" content="Learn how Movie Drafter works. Create fantasy movie drafts, compete with friends, and discover who has the best taste in cinema." />
         <meta property="og:url" content="https://moviedrafter.com/learn-more" />

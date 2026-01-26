@@ -106,6 +106,7 @@ const ResetPassword = () => {
       <Helmet>
         <title>Movie Drafter - Reset Password</title>
         <meta name="description" content="Reset your Movie Drafter password to regain access to your account and continue creating movie drafts." />
+        <link rel="canonical" href="https://moviedrafter.com/reset-password" />
         <meta property="og:title" content="Movie Drafter - Reset Password" />
         <meta property="og:description" content="Reset your Movie Drafter password to regain access to your account and continue creating movie drafts." />
         <meta property="og:url" content="https://moviedrafter.com/reset-password" />

@@ -6,6 +6,7 @@ const TermsOfService = () => {
       <Helmet>
         <title>Movie Drafter - Terms of Service</title>
         <meta name="description" content="Read Movie Drafter's Terms of Service to understand the rules and guidelines for using our movie draft platform." />
+        <link rel="canonical" href="https://moviedrafter.com/terms-of-service" />
         <meta property="og:title" content="Movie Drafter - Terms of Service" />
         <meta property="og:description" content="Read Movie Drafter's Terms of Service to understand the rules and guidelines for using our movie draft platform." />
         <meta property="og:url" content="https://moviedrafter.com/terms-of-service" />

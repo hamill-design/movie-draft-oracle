@@ -142,6 +142,7 @@ const Home = () => {
       <Helmet>
         <title>Movie Drafter - Draft Your Favorite Movies and Compete with Friends</title>
         <meta name="description" content="Draft your favorite movies and compete with friends. Create fantasy movie drafts, pick your favorite films, and see who has the best taste in cinema." />
+        <link rel="canonical" href="https://moviedrafter.com/" />
         <meta property="og:title" content="Movie Drafter - Draft Your Favorite Movies and Compete with Friends" />
         <meta property="og:description" content="Draft your favorite movies and compete with friends. Create fantasy movie drafts, pick your favorite films, and see who has the best taste in cinema." />
         <meta property="og:url" content="https://moviedrafter.com/" />

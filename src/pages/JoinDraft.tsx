@@ -55,6 +55,13 @@ export const JoinDraft = () => {
     setIsAutoJoining(true);
 
     const performAutoJoin = async () => {
+      // Safety timeout: if we're still here after 10 seconds, reset the state
+      const safetyTimeout = setTimeout(() => {
+        console.warn('Auto-join taking too long, resetting state');
+        setIsAutoJoining(false);
+        hasAttemptedAutoJoin.current = false; // Allow retry
+      }, 10000);
+
       try {
         const { data: inviteCode, error } = await supabase.rpc('get_invite_code_for_draft', { p_draft_id: draftId });
         if (error || !inviteCode) {
@@ -66,6 +73,9 @@ export const JoinDraft = () => {
         const id = await joinDraftByCode(inviteCode, nameToUse);
         
         if (id) {
+          // Clear safety timeout since we're navigating
+          clearTimeout(safetyTimeout);
+          
           // Navigate to the draft page
           navigate(`/draft/${id}`, { replace: true });
           // Reset loading state after a short delay to allow navigation to complete
@@ -77,6 +87,9 @@ export const JoinDraft = () => {
           throw new Error('Failed to get draft ID after joining');
         }
       } catch (error) {
+        // Clear safety timeout on error
+        clearTimeout(safetyTimeout);
+        
         console.error('Auto-join failed:', error);
         toast({
           title: "Auto-join Failed",
@@ -223,6 +236,7 @@ export const JoinDraft = () => {
       <Helmet>
         <title>Movie Drafter - Join Draft</title>
         <meta name="description" content="Join an existing movie draft by entering an invite code or following an invitation link. Compete with friends and see who picks the best movies." />
+        <link rel="canonical" href={`https://moviedrafter.com/join-draft${draftId ? `/${draftId}` : ''}`} />
         <meta property="og:title" content="Movie Drafter - Join Draft" />
         <meta property="og:description" content="Join an existing movie draft by entering an invite code or following an invitation link. Compete with friends and see who picks the best movies." />
         <meta property="og:url" content={`https://moviedrafter.com/join-draft${draftId ? `/${draftId}` : ''}`} />

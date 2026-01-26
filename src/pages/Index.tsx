@@ -231,6 +231,7 @@ const Index = () => {
       <Helmet>
         <title>{getPageTitle()}</title>
         <meta name="description" content="Create and manage your movie draft. Pick your favorite films across different categories and compete with friends." />
+        <link rel="canonical" href={`https://moviedrafter.com/draft${urlDraftId ? `/${urlDraftId}` : ''}`} />
         <meta property="og:title" content={getPageTitle()} />
         <meta property="og:description" content="Create and manage your movie draft. Pick your favorite films across different categories and compete with friends." />
         <meta property="og:url" content={`https://moviedrafter.com/draft${urlDraftId ? `/${urlDraftId}` : ''}`} />

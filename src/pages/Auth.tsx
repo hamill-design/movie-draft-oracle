@@ -254,6 +254,7 @@ const Auth = () => {
       <Helmet>
         <title>Movie Drafter - Sign In</title>
         <meta name="description" content="Sign in to Movie Drafter to create and manage your movie drafts. Join the competition and see who has the best taste in cinema." />
+        <link rel="canonical" href="https://moviedrafter.com/auth" />
         <meta property="og:title" content="Movie Drafter - Sign In" />
         <meta property="og:description" content="Sign in to Movie Drafter to create and manage your movie drafts. Join the competition and see who has the best taste in cinema." />
         <meta property="og:url" content="https://moviedrafter.com/auth" />

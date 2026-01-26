@@ -17,6 +17,7 @@ const NotFound = () => {
       <Helmet>
         <title>Movie Drafter - Page Not Found</title>
         <meta name="description" content="The page you're looking for doesn't exist. Return to Movie Drafter home to create or join a movie draft." />
+        <link rel="canonical" href="https://moviedrafter.com/" />
         <meta property="og:title" content="Movie Drafter - Page Not Found" />
         <meta property="og:description" content="The page you're looking for doesn't exist. Return to Movie Drafter home to create or join a movie draft." />
         <meta property="og:url" content="https://moviedrafter.com/404" />

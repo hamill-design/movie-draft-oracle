@@ -9,6 +9,7 @@ const About = () => {
       <Helmet>
         <title>Movie Drafter - About</title>
         <meta name="description" content="Learn about Movie Drafter - a competitive fantasy movie drafting platform where strategy meets cinema." />
+        <link rel="canonical" href="https://moviedrafter.com/about" />
         <meta property="og:title" content="Movie Drafter - About" />
         <meta property="og:description" content="Learn about Movie Drafter - a competitive fantasy movie drafting platform where strategy meets cinema." />
         <meta property="og:url" content="https://moviedrafter.com/about" />
