@@ -318,22 +318,8 @@ async function analyzeCategoryMovies(
   playerCount: number,
   preferFreshOscarStatus?: boolean
 ): Promise<CategoryAvailabilityResult> {
-  
-  // ALWAYS allow Oscar and Blockbuster categories - no validation needed
-  // These categories should always be available regardless of year or theme
-  if (category === 'Academy Award Nominee or Winner' || category === 'Blockbuster (minimum of $50 Mil)') {
-    const requiredCount = calculateRequiredMovies(category, playerCount);
-    console.log(`✅ Always allowing "${category}" - no validation needed (required: ${requiredCount})`);
-    
-    return {
-      categoryId: category,
-      available: true,
-      movieCount: Math.max(requiredCount * 2, 50), // Always return a reasonable count
-      sampleMovies: [],
-      status: 'sufficient'
-    };
-  }
-  
+  // Academy and Blockbuster are validated like other categories (fetch + filter + count).
+
   // Get spec categories if this is a person-based theme
   let specCategoriesMap = new Map<string, number[]>();
   if (theme === 'people' && option) {

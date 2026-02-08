@@ -687,19 +687,6 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   };
 
   const getAvailabilityForCategory = (category: string) => {
-    // Always allow Oscar and Blockbuster - no validation needed
-    if (category === 'Academy Award Nominee or Winner' || category === 'Blockbuster (minimum of $50 Mil)') {
-      const requiredCount = Math.max(playerCount * 1.5, 10);
-      return {
-        categoryId: category,
-        available: true,
-        movieCount: Math.max(requiredCount * 2, 50),
-        sampleMovies: [],
-        status: 'sufficient' as const,
-        isEstimate: false
-      };
-    }
-    
     // For spec categories, use the direct count from database
     if (specCategories.includes(category)) {
       const movieCount = specCategoryCounts.get(category) || 0;

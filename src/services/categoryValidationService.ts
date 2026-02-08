@@ -44,12 +44,8 @@ export class CategoryValidationService {
    */
   private hasErrorResults(results: CategoryAvailabilityResult[]): boolean {
     if (!results || results.length === 0) return false;
-    
-    // Exclude Oscar and Blockbuster from error detection - they should always be allowed
-    const resultsToCheck = results.filter(r => 
-      r.categoryId !== 'Academy Award Nominee or Winner' && 
-      r.categoryId !== 'Blockbuster (minimum of $50 Mil)'
-    );
+
+    const resultsToCheck = results;
     
     if (resultsToCheck.length === 0) return false;
     

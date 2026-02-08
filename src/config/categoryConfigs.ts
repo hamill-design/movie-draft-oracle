@@ -231,7 +231,7 @@ export const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
     themes: ['year', 'people'],
     popularity: 'medium',
     icon: '🏆',
-    alwaysAvailable: true // Always allow this category - no validation needed
+    alwaysAvailable: false
   },
   'Blockbuster (minimum of $50 Mil)': {
     id: 'blockbuster',
@@ -245,7 +245,7 @@ export const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
     themes: ['year', 'people'],
     popularity: 'high',
     icon: '💰',
-    alwaysAvailable: true // Always allow this category - no validation needed
+    alwaysAvailable: false
   }
 };
 
