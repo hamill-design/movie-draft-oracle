@@ -110,7 +110,7 @@ export function NewHomePage() {
                     </Heading>
                   </div>
                   <Input
-                    placeholder="Search for actors, directors..."
+                    placeholder="Search for an actor or director you'd like to draft"
                     className="font-brockmann-medium"
                   />
                 </div>

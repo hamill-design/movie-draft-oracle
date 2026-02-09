@@ -1,0 +1,9 @@
+{
+  "movies": [
+    { "tmdb_id": 424, "status": "winner" },
+    { "tmdb_id": 78, "status": "winner" },
+    { "tmdb_id": 238, "status": "winner" },
+    { "tmdb_id": 278, "status": "nominee" },
+    { "tmdb_id": 680, "status": "winner" }
+  ]
+}

@@ -109,7 +109,7 @@ export const ActorSpecCategoryList: React.FC<ActorSpecCategoryListProps> = ({
             <div className="relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-greyscale-blue-400 pointer-events-none" />
                 <Input
-                placeholder="Search for actors, directors..."
+                placeholder="Search for an actor or director you'd like to draft"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 h-12 border-greyscale-blue-400 text-sm font-brockmann-medium leading-5 placeholder:text-greyscale-blue-400"

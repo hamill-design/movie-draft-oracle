@@ -26,6 +26,13 @@ npm i
 npm run dev
 ```
 
+The app will be available at **http://localhost:8080** (or http://127.0.0.1:8080). To stop the server, press `Ctrl+C` in the terminal.
+
+**Running localhost in the future (after the first setup):**
+1. Open a terminal in the project folder.
+2. Run: `npm run dev`
+3. Open http://localhost:8080 in your browser.
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).
@@ -76,6 +83,14 @@ Tip: Ensure these keys match the Supabase project you want the deployment to use
   - Site URL: your Production Vercel domain
   - Redirect URLs: add both your Production and Preview domains
 - Edge Functions (if used): Project Settings → API → CORS → Allowed origins: add both your Production and Preview domains.
+
+**Deploying Supabase Edge Functions** (e.g. after changing `supabase/functions/*`):
+1. Log in: `npx supabase login` (or set `SUPABASE_ACCESS_TOKEN`).
+2. Link the project if needed: `npx supabase link --project-ref <your-project-ref>`.
+3. Deploy all functions: `npm run deploy:functions`  
+   Or deploy only the category-analysis function: `npm run deploy:functions:analyze`.
+   - **If you get "Bundle generation timed out"** (e.g. when Docker isn’t running): use the Management API to bundle: `npm run deploy:functions:use-api`. To deploy only `fetch-movies`: `npm run deploy:functions:fetch-movies`.
+4. **Academy Awards JSON (required for correct Oscar counts):** The `fetch-movies` function loads Oscar data from a URL. You must set the secret `ACADEMY_AWARDS_JSON_URL` to the public URL of `data/academy-awards.json` (e.g. after uploading it to Supabase Storage) for Academy Award category counts to work correctly. See `docs/category-count-flow.md` for steps. If unset, the Academy Awards map stays empty and Oscar counts rely only on `oscar_cache` and OMDb (counts may be wrong or missing).
 
 ### 5) Preview deployments as staging
 - Every PR or push to a non-main branch gets a Preview deployment with its own URL.

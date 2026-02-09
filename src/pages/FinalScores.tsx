@@ -825,7 +825,7 @@ const FinalScores = () => {
                 height: 'auto'
               }}
             >
-              Save Draft
+              Login to Save
             </Button>
           )}
           

@@ -26,6 +26,57 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// Academy Award JSON: first source for Oscar status (tmdb_id -> "winner" | "nominee"). Loaded once per cold start from ACADEMY_AWARDS_JSON_URL.
+let _academyAwardsMap: Map<number, string> | null = null;
+async function getAcademyAwardsMap(): Promise<Map<number, string>> {
+  if (_academyAwardsMap) return _academyAwardsMap;
+  _academyAwardsMap = new Map();
+  const jsonUrl = Deno.env.get('ACADEMY_AWARDS_JSON_URL');
+  if (!jsonUrl || jsonUrl.trim() === '') {
+    console.log('Academy awards JSON URL not set (ACADEMY_AWARDS_JSON_URL); skipping');
+    return _academyAwardsMap;
+  }
+  try {
+    const response = await fetch(jsonUrl);
+    if (!response.ok) {
+      console.log('Academy awards JSON fetch failed:', response.status, response.statusText);
+      return _academyAwardsMap;
+    }
+    const content = await response.text();
+    const data = JSON.parse(content);
+    // Handle array of award entries: [{ category, year, movies: [{ tmdb_id, ... }], won: boolean }, ...]
+    if (Array.isArray(data)) {
+      for (const entry of data) {
+        if (entry.movies && Array.isArray(entry.movies)) {
+          const status = entry.won === true ? 'winner' : 'nominee';
+          for (const movie of entry.movies) {
+            if (movie.tmdb_id != null) {
+              // If movie already in map (multiple nominations), prefer "winner" over "nominee"
+              const existing = _academyAwardsMap!.get(Number(movie.tmdb_id));
+              if (!existing || existing === 'nominee') {
+                _academyAwardsMap!.set(Number(movie.tmdb_id), status);
+              }
+            }
+          }
+        }
+      }
+      console.log(`Academy awards JSON loaded: ${_academyAwardsMap.size} movies`);
+    } else if (data.movies && Array.isArray(data.movies)) {
+      // Fallback: handle old format { movies: [{ tmdb_id, status }, ...] }
+      for (const m of data.movies) {
+        if (m.tmdb_id != null && m.status) _academyAwardsMap!.set(Number(m.tmdb_id), m.status);
+      }
+      console.log(`Academy awards JSON loaded (old format): ${_academyAwardsMap.size} movies`);
+    }
+  } catch (e) {
+    console.log('Academy awards JSON not loaded:', e);
+  }
+  if (_academyAwardsMap.size === 0) {
+    console.log('Academy Awards map is empty; set ACADEMY_AWARDS_JSON_URL for correct Oscar counts');
+  }
+  return _academyAwardsMap;
+}
+
 // Helper function to get person lifespan data by TMDB ID with auto-population from TMDB API
 async function getPersonLifespan(tmdbId: number): Promise<{birth_date: string | null, death_date: string | null} | null> {
   try {
@@ -1378,7 +1429,9 @@ serve(async (req) => {
 // Process movie results function to handle common transformations
 async function processMovieResults(data: any, tmdbApiKey: string, opts: { preferFreshOscarStatus?: boolean } = {}) {
   console.log(`📊 Processing ${(data.results || []).length} movies...`);
-  
+  const academyAwardsMap = await getAcademyAwardsMap();
+  console.log(`Academy Awards map size: ${academyAwardsMap.size} (source: ${academyAwardsMap.size > 0 ? 'JSON URL' : 'empty/cache+OMDb only'})`);
+
   // Apply TV content filtering to all results
   const originalCount = (data.results || []).length;
   
@@ -1429,21 +1482,28 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
       let oscarStatusNormalized = 'unknown';
       let isBlockbuster = false;
       
-      // SIMPLIFIED: Check Oscar cache FIRST before any API calls
-      const movieYear = extractMovieYear(movie);
-      try {
-        const { data: oscarCached } = await supabase
-          .from('oscar_cache')
-          .select('oscar_status')
-          .eq('tmdb_id', movie.id)
-          .maybeSingle();
-        
-        if (oscarCached) {
-          oscarStatusNormalized = oscarCached.oscar_status || 'unknown';
-          hasOscar = oscarStatusNormalized === 'winner' || oscarStatusNormalized === 'nominee';
+      // Academy Awards JSON is the authoritative source: check FIRST, even if cache has 'none'
+      if (academyAwardsMap.has(movie.id)) {
+        oscarStatusNormalized = academyAwardsMap.get(movie.id)!;
+        hasOscar = oscarStatusNormalized === 'winner' || oscarStatusNormalized === 'nominee';
+      }
+      
+      // Only check oscar_cache if not in Academy Awards map
+      if (oscarStatusNormalized === 'unknown') {
+        try {
+          const { data: oscarCached } = await supabase
+            .from('oscar_cache')
+            .select('oscar_status')
+            .eq('tmdb_id', movie.id)
+            .maybeSingle();
+          
+          if (oscarCached) {
+            oscarStatusNormalized = oscarCached.oscar_status || 'unknown';
+            hasOscar = oscarStatusNormalized === 'winner' || oscarStatusNormalized === 'nominee';
+          }
+        } catch (err) {
+          // Cache check failed, continue with API calls
         }
-      } catch (err) {
-        // Cache check failed, continue with API calls
       }
       
       try {
@@ -1452,13 +1512,13 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
         if (detailResponse.ok) {
           detailedMovie = await detailResponse.json();
           
-          // Proper blockbuster detection using actual budget/revenue data
+          // Blockbuster: $50M threshold for either budget or revenue (aligned with filter in analyze-category-availability)
           const budget = detailedMovie.budget || 0;
           const revenue = detailedMovie.revenue || 0;
-          isBlockbuster = budget >= 50000000 || revenue >= 100000000;
+          isBlockbuster = budget >= 50000000 || revenue >= 50000000;
         }
 
-        // Only fetch Oscar status from API if not already in cache
+        // Only fetch Oscar status from API if not already in cache or academy-awards.json
         if (oscarStatusNormalized === 'unknown') {
           const correctYear = extractMovieYear(detailedMovie);
           const oscarStatus = await resolveOscarStatus(movie.id, movie.title, correctYear, tmdbApiKey, { 
@@ -1526,7 +1586,8 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
     
     const blockbusterCount = transformedMovies.filter((m: any) => m.isBlockbuster === true).length;
     const hasRevenueCount = transformedMovies.filter((m: any) => m.revenue && m.revenue > 0).length;
-    console.log(`💰 Blockbuster stats: ${blockbusterCount} blockbusters, ${hasRevenueCount} movies with revenue data`);
+    const byBudget = transformedMovies.filter((m: any) => m.budget && m.budget >= 50000000).length;
+    console.log(`💰 Blockbuster: ${blockbusterCount} (budget>=50M: ${byBudget}, revenue data: ${hasRevenueCount})`);
     
     // Log sample of movies with Oscar status for debugging
     const oscarMovies = transformedMovies.filter((m: any) => m.oscar_status === 'winner' || m.oscar_status === 'nominee');

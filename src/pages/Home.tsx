@@ -265,7 +265,7 @@ const Home = () => {
           {isStepVisible('option') && (
             <div className="p-6 bg-greyscale-purp-900 rounded-[8px] space-y-4" style={{boxShadow: '0px 0px 6px #3B0394'}}>
                 <HeaderIcon3 
-                  title={theme === 'people' ? 'Search for a Person' : 'Select a Year'} 
+                  title={theme === 'people' ? 'Search for a Person' : "Select the year of films you'll draft"} 
                   icon={theme === 'people' ? 
                     <PersonIcon className="w-6 h-6 text-purple-300" /> : 
                     <CalendarIcon className="w-6 h-6 text-purple-300" />
@@ -275,7 +275,7 @@ const Home = () => {
                 {theme === 'people' ? (
                   <>
                     <Input
-                      placeholder="Search for actors, directors..."
+                      placeholder="Search for an actor or director you'd like to draft"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="mb-4 rounded-[2px] bg-greyscale-purp-850 text-greyscale-blue-100 placeholder:text-greyscale-blue-500 border-0 focus:border-0"

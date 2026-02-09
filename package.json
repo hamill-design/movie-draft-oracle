@@ -18,7 +18,11 @@
     "supabase": "npx supabase",
     "db:push": "npx supabase db push",
     "db:reset": "npx supabase db reset",
-    "db:migrate": "npx supabase migration up"
+    "db:migrate": "npx supabase migration up",
+    "deploy:functions": "npx supabase functions deploy",
+    "deploy:functions:use-api": "npx supabase functions deploy --use-api",
+    "deploy:functions:analyze": "npx supabase functions deploy analyze-category-availability",
+    "deploy:functions:fetch-movies": "npx supabase functions deploy fetch-movies --use-api"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -96,7 +100,12 @@
     "tailwindcss": "^3.4.11",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vercel": "^50.1.3",
+    "vercel": "^50.12.3",
     "vite": "^5.4.1"
+  },
+  "overrides": {
+    "esbuild": "^0.25.0",
+    "path-to-regexp": "^6.3.0",
+    "undici": "^6.21.1"
   }
 }
