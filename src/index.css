@@ -316,19 +316,33 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    overflow-x: hidden;
+    overflow-y: scroll;
+    height: 100%;
+    -webkit-overflow-scrolling: touch;
+  }
+
   body {
     @apply text-foreground;
     background: linear-gradient(140deg, hsl(var(--purple-900)) 16%, hsl(var(--purple-850)) 50%, hsl(var(--purple-900)) 83%);
     background-attachment: fixed;
     overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-y: none;
+    overflow-y: scroll;
+    height: auto;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
 
-  html {
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-y: none;
+  #root {
+    min-height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    position: relative;
   }
 }
 
