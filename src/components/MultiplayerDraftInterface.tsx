@@ -1458,13 +1458,7 @@ export const MultiplayerDraftInterface = ({
 
                     <PickConfirmation currentPlayerName={currentTurnPlayer?.participant_name || 'You'} selectedMovie={selectedMovie} selectedCategory={selectedCategory} onConfirm={confirmPick} />
                   </>
-                ) : (
-                  <div className="p-6 bg-greyscale-purp-900 rounded-lg text-center">
-                    <div className="text-greyscale-blue-100 text-lg font-brockmann font-medium">
-                      Waiting for {currentTurnPlayer.participant_name}'s turn...
-                    </div>
-                  </div>
-                )}
+                ) : null}
               </>
             )}
 

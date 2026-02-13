@@ -21,11 +21,13 @@ export async function makeAIPick(options: AIPickOptions): Promise<Movie | null> 
 
     let movies: Movie[] = [];
 
-    // Handle spec-draft theme - fetch movies directly from spec_draft_movies table
-    if (currentCategory === 'spec-draft' && draftOption) {
+    // Handle spec-draft theme - fetch movies from spec_draft_movies, filtered by current category.
+    // Use draftTheme (not currentCategory) to detect spec drafts; then filter by currentCategory
+    // so the AI only picks movies eligible for this round (via spec_draft_movie_categories).
+    if (draftTheme === 'spec-draft' && draftOption) {
       const { data: moviesData, error: moviesError } = await (supabase as any)
         .from('spec_draft_movies')
-        .select('movie_tmdb_id, movie_title, movie_year, movie_poster_path, movie_genres')
+        .select('id, movie_tmdb_id, movie_title, movie_year, movie_poster_path, movie_genres')
         .eq('spec_draft_id', draftOption)
         .order('movie_title', { ascending: true });
 
@@ -34,8 +36,22 @@ export async function makeAIPick(options: AIPickOptions): Promise<Movie | null> 
         throw moviesError;
       }
 
+      let pool = moviesData || [];
+      // When the draft has custom categories, only allow movies eligible for this round's category
+      if (currentCategory && currentCategory.trim() !== '') {
+        const { data: categoryData, error: categoryError } = await (supabase as any)
+          .from('spec_draft_movie_categories')
+          .select('spec_draft_movie_id')
+          .eq('category_name', currentCategory.trim());
+
+        if (!categoryError && categoryData && categoryData.length > 0) {
+          const eligibleIds = new Set(categoryData.map((r: { spec_draft_movie_id: string }) => r.spec_draft_movie_id));
+          pool = pool.filter((m: { id: string }) => eligibleIds.has(m.id));
+        }
+      }
+
       // Transform spec draft movies to Movie format
-      movies = (moviesData || []).map((movie: any) => {
+      movies = pool.map((movie: any) => {
         let genreString = '';
         if (movie.movie_genres && Array.isArray(movie.movie_genres) && movie.movie_genres.length > 0) {
           const genreNames = movie.movie_genres
