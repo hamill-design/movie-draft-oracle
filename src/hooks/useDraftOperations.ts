@@ -2,6 +2,7 @@
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { Participant, participantsToStrings, normalizeParticipants } from '@/types/participant';
 
 export const useDraftOperations = () => {
   const { user, guestSession } = useAuth();
@@ -9,11 +10,14 @@ export const useDraftOperations = () => {
   const autoSaveDraft = useCallback(async (draftData: {
     theme: string;
     option: string;
-    participants: string[];
+    participants: string[] | Participant[];
     categories: string[];
     picks: any[];
     isComplete: boolean;
   }, existingDraftId?: string) => {
+    // Normalize participants and convert to string[] for database storage
+    const normalizedParticipants = normalizeParticipants(draftData.participants);
+    const participantsForDB = participantsToStrings(normalizedParticipants);
     if (!user && !guestSession) throw new Error('No session available');
 
     // Generate a simple title (just the option)
@@ -100,7 +104,7 @@ export const useDraftOperations = () => {
         title,
         theme: draftData.theme,
         option: draftData.option,
-        participants: draftData.participants,
+        participants: participantsForDB,
         categories: draftData.categories,
         is_complete: draftData.isComplete,
       };
@@ -170,7 +174,7 @@ export const useDraftOperations = () => {
     title: string;
     theme: string;
     option: string;
-    participants: string[];
+    participants: string[] | Participant[];
     categories: string[];
     picks: any[];
     isComplete: boolean;
@@ -182,13 +186,17 @@ export const useDraftOperations = () => {
       throw new Error('Invalid draft data structure');
     }
 
+    // Normalize participants and convert to string[] for database storage
+    const normalizedParticipants = normalizeParticipants(draftData.participants);
+    const participantsForDB = participantsToStrings(normalizedParticipants);
+
     const { data: draft, error: draftError } = await supabase
       .from('drafts')
       .insert({
         title: draftData.title,
         theme: draftData.theme,
         option: draftData.option,
-        participants: draftData.participants,
+        participants: participantsForDB,
         categories: draftData.categories,
         is_complete: draftData.isComplete,
         user_id: user.id
@@ -291,9 +299,12 @@ export const useDraftOperations = () => {
   const findExistingDraft = useCallback(async (draftData: {
     theme: string;
     option: string;
-    participants: string[];
+    participants: string[] | Participant[];
     categories: string[];
   }) => {
+    // Normalize participants and convert to string[] for comparison
+    const normalizedParticipants = normalizeParticipants(draftData.participants);
+    const participantsForComparison = participantsToStrings(normalizedParticipants);
     if (!user && !guestSession) return null;
 
     try {
@@ -336,7 +347,7 @@ export const useDraftOperations = () => {
       // Compare participants and categories arrays
       const participantsMatch = 
         JSON.stringify([...fullDraft.participants].sort()) === 
-        JSON.stringify([...draftData.participants].sort());
+        JSON.stringify([...participantsForComparison].sort());
       
       const categoriesMatch = 
         JSON.stringify([...fullDraft.categories].sort()) === 

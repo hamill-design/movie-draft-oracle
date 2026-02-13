@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import { UseFormReturn } from 'react-hook-form';
+import { Participant, normalizeParticipants } from '@/types/participant';
 
 export interface DraftSetupForm {
-  participants: string[];
+  participants: Participant[];
   categories: string[];
 }
 
@@ -12,7 +13,7 @@ export type DraftMode = 'single' | 'multiplayer';
 export interface DraftFormState {
   theme: DraftTheme;
   selectedOption: string;
-  participants: string[];
+  participants: Participant[];
   draftMode: DraftMode;
   searchQuery: string;
   newParticipant: string;
@@ -120,21 +121,51 @@ export const useDraftForm = () => {
     }));
   }, []);
 
-  const addParticipant = useCallback((participant: string) => {
-    if (participant.trim() && !state.participants.includes(participant.trim())) {
+  const addParticipant = useCallback((participant: string | Participant) => {
+    let participantToAdd: Participant;
+    
+    if (typeof participant === 'string') {
+      // Backward compatibility: string input creates human participant
+      participantToAdd = { name: participant.trim(), isAI: false };
+    } else {
+      participantToAdd = participant;
+    }
+    
+    if (participantToAdd.name && !state.participants.some(p => p.name === participantToAdd.name)) {
       setState(prev => ({
         ...prev,
-        participants: [...prev.participants, participant.trim()],
+        participants: [...prev.participants, participantToAdd],
         newParticipant: '',
       }));
     }
   }, [state.participants]);
 
-  const removeParticipant = useCallback((participant: string) => {
-    setState(prev => ({
-      ...prev,
-      participants: prev.participants.filter(p => p !== participant),
-    }));
+  const addAIParticipant = useCallback((aiName: string) => {
+    const aiParticipant: Participant = { name: aiName, isAI: true };
+    if (!state.participants.some(p => p.name === aiName)) {
+      setState(prev => ({
+        ...prev,
+        participants: [...prev.participants, aiParticipant],
+      }));
+    }
+  }, [state.participants]);
+
+  const removeParticipant = useCallback((participant: string | Participant) => {
+    setState(prev => {
+      if (typeof participant === 'string') {
+        // Backward compatibility: remove by name
+        return {
+          ...prev,
+          participants: prev.participants.filter(p => p.name !== participant),
+        };
+      } else {
+        // Remove by object reference
+        return {
+          ...prev,
+          participants: prev.participants.filter(p => p.name !== participant.name || p.isAI !== participant.isAI),
+        };
+      }
+    });
   }, []);
 
   // Validation helpers
@@ -149,9 +180,11 @@ export const useDraftForm = () => {
     switch (step) {
       case 'participants':
         if (state.draftMode === 'multiplayer') {
-          const invalidEmails = state.participants.filter(p => !isEmailValid(p));
+          // Only validate human participants (emails), not AI participants
+          const humanParticipants = state.participants.filter(p => !p.isAI);
+          const invalidEmails = humanParticipants.filter(p => !isEmailValid(p.name));
           if (invalidEmails.length > 0) {
-            errors.push(`Invalid email addresses: ${invalidEmails.join(', ')}`);
+            errors.push(`Invalid email addresses: ${invalidEmails.map(p => p.name).join(', ')}`);
           }
         }
         break;
@@ -178,6 +211,7 @@ export const useDraftForm = () => {
     setSearchQuery,
     setNewParticipant,
     addParticipant,
+    addAIParticipant,
     removeParticipant,
     isEmailValid,
     validateStep,

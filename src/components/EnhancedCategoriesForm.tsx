@@ -133,8 +133,10 @@ const sortCategoriesForDisplay = (specCategories: string[], regularCategories: s
   return sorted;
 }
 
+import { Participant } from '@/types/participant';
+
 interface DraftSetupForm {
-  participants: string[];
+  participants: Participant[];
   categories: string[];
 }
 
@@ -145,7 +147,7 @@ interface EnhancedCategoriesFormProps {
   playerCount: number;
   selectedOption?: string;
   draftMode?: 'single' | 'multiplayer';
-  participants?: string[];
+  participants?: Participant[];
 }
 
 const CategoryStatusIcon = ({ status }: { status: 'sufficient' | 'limited' | 'insufficient' }) => {

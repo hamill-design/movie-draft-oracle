@@ -1,9 +1,11 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
+import { Participant, normalizeParticipants } from '@/types/participant';
 
 interface Player {
   id: number;
   name: string;
+  isAI: boolean;
 }
 
 interface Pick {
@@ -13,20 +15,26 @@ interface Pick {
   category: string;
 }
 
-export const useDraftGame = (participants: string[], categories: string[]) => {
+export const useDraftGame = (participants: string[] | Participant[], categories: string[]) => {
+  // Normalize participants to Participant[] format (handles backward compatibility)
+  const normalizedParticipants = useMemo(() => normalizeParticipants(participants), [participants]);
   const [picks, setPicks] = useState<Pick[]>([]);
   const [currentPickIndex, setCurrentPickIndex] = useState(0);
   const [initialPlayerOrder, setInitialPlayerOrder] = useState<Player[]>([]);
 
   // Initialize player order once when participants change and we don't have an order yet
   useEffect(() => {
-    if (initialPlayerOrder.length === 0 && participants && participants.length > 0) {
-      // Create new randomized order
-      const shuffled = [...participants].sort(() => Math.random() - 0.5);
-      const newOrder = shuffled.map((name, index) => ({ id: index, name }));
+    if (initialPlayerOrder.length === 0 && normalizedParticipants && normalizedParticipants.length > 0) {
+      // Create new randomized order, preserving isAI flag
+      const shuffled = [...normalizedParticipants].sort(() => Math.random() - 0.5);
+      const newOrder = shuffled.map((participant, index) => ({ 
+        id: index, 
+        name: participant.name,
+        isAI: participant.isAI
+      }));
       setInitialPlayerOrder(newOrder);
     }
-  }, [participants, initialPlayerOrder.length]);
+  }, [normalizedParticipants, initialPlayerOrder.length]);
 
   // Create stable randomized players - only randomize once or use existing order
   const randomizedPlayers = useMemo(() => {
@@ -35,11 +43,11 @@ export const useDraftGame = (participants: string[], categories: string[]) => {
       return initialPlayerOrder;
     }
     
-    if (!participants) return [];
+    if (!normalizedParticipants || normalizedParticipants.length === 0) return [];
     
     // Return empty array if not initialized yet (will be set by useEffect)
     return [];
-  }, [participants, initialPlayerOrder]);
+  }, [normalizedParticipants, initialPlayerOrder]);
 
   // Create snake draft order (1,2,3,4,4,3,2,1,1,2,3,4...)
   const draftOrder = useMemo(() => {
@@ -80,24 +88,29 @@ export const useDraftGame = (participants: string[], categories: string[]) => {
     return updatedPicks;
   };
 
-  const loadExistingPicks = useCallback((existingPicks: any[], originalParticipants?: string[]) => {
+  const loadExistingPicks = useCallback((existingPicks: any[], originalParticipants?: string[] | Participant[]) => {
     if (existingPicks && existingPicks.length > 0) {
       // Use original participants list if provided, otherwise fall back to extracting from picks
       let playerOrder: Player[];
       
       if (originalParticipants && originalParticipants.length > 0) {
+        // Normalize participants to Participant[] format
+        const normalized = normalizeParticipants(originalParticipants);
         // Preserve the original participants list to maintain all players
-        playerOrder = originalParticipants.map((name, index) => ({
+        playerOrder = normalized.map((participant, index) => ({
           id: index,
-          name
+          name: participant.name,
+          isAI: participant.isAI
         }));
       } else {
         // Fallback: Extract player order from existing picks (old behavior)
+        // Default to isAI: false for backward compatibility
         const playerNames = new Set<string>();
         existingPicks.forEach(pick => playerNames.add(pick.player_name));
         playerOrder = Array.from(playerNames).map((name, index) => ({
           id: index,
-          name
+          name,
+          isAI: false // Default for old picks
         }));
       }
       

@@ -16,6 +16,9 @@ import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
 import { useDraftForm, DraftSetupForm } from '@/hooks/useDraftForm';
+import { Participant } from '@/types/participant';
+import { getRandomAIName } from '@/data/aiNames';
+import { Bot } from 'lucide-react';
 
 
 const Home = () => {
@@ -32,6 +35,7 @@ const Home = () => {
     setSearchQuery,
     setNewParticipant,
     addParticipant,
+    addAIParticipant,
     removeParticipant,
     isEmailValid,
   } = useDraftForm();
@@ -67,7 +71,12 @@ const Home = () => {
     addParticipant(newParticipant);
   };
 
-  const handleRemoveParticipant = (participant: string) => {
+  const handleAddAIParticipant = () => {
+    const aiName = getRandomAIName();
+    addAIParticipant(aiName);
+  };
+
+  const handleRemoveParticipant = (participant: string | Participant) => {
     removeParticipant(participant);
   };
 
@@ -86,13 +95,14 @@ const Home = () => {
       }
     }
 
-    // For multiplayer, validate that all participants are valid emails
+    // For multiplayer, validate that all human participants are valid emails (skip AI participants)
     if (draftMode === 'multiplayer') {
-      const invalidEmails = participants.filter(p => !isEmailValid(p));
+      const humanParticipants = participants.filter(p => !p.isAI);
+      const invalidEmails = humanParticipants.filter(p => !isEmailValid(p.name));
       if (invalidEmails.length > 0) {
         toast({
           title: "Invalid Email Addresses",
-          description: `Please enter valid email addresses for: ${invalidEmails.join(', ')}`,
+          description: `Please enter valid email addresses for: ${invalidEmails.map(p => p.name).join(', ')}`,
           variant: "destructive",
         });
         return;
@@ -455,20 +465,29 @@ const Home = () => {
                 </span>
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Input
                   placeholder={draftMode === 'multiplayer' ? "Enter participant email..." : "Enter participant name..."}
                   value={newParticipant}
                   onChange={(e) => setNewParticipant(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleAddParticipant()}
-                  className="rounded-[2px] bg-greyscale-purp-850 text-greyscale-blue-100 placeholder:text-greyscale-blue-500 border-0 focus:border-0"
+                  className="rounded-[2px] bg-greyscale-purp-850 text-greyscale-blue-100 placeholder:text-greyscale-blue-500 border-0 focus:border-0 flex-1 min-w-[200px]"
                   style={{outline: '1px solid #666469', outlineOffset: '-1px'}}
                 />
                 <button 
                   onClick={handleAddParticipant} 
-                  className="px-4 py-2 bg-brand-primary hover:bg-purple-300 text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5 rounded-[2px] flex justify-center items-center transition-colors"
+                  className="px-4 py-2 bg-brand-primary hover:bg-purple-300 text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5 rounded-[2px] flex justify-center items-center transition-colors whitespace-nowrap"
                 >
                   Add
+                </button>
+                <button 
+                  onClick={handleAddAIParticipant} 
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-brockmann font-medium leading-5 rounded-[2px] flex justify-center items-center gap-2 transition-colors whitespace-nowrap"
+                  title="Add AI Player"
+                  type="button"
+                >
+                  <Bot size={16} />
+                  Add AI
                 </button>
               </div>
 
@@ -495,18 +514,25 @@ const Home = () => {
                   <div className="flex flex-wrap gap-2">
                     {participants.map((participant) => (
                       <div
-                        key={participant}
+                        key={participant.name}
                         className={`py-2 pl-4 pr-[10px] bg-brand-primary rounded flex items-center gap-2 ${
-                          draftMode === 'multiplayer' && !isEmailValid(participant)
+                          draftMode === 'multiplayer' && !participant.isAI && !isEmailValid(participant.name)
                             ? 'bg-red-900 border border-red-500'
                             : ''
                         }`}
                       >
-                        {draftMode === 'multiplayer' && <Mail size={16} className="text-greyscale-blue-100" />}
+                        {participant.isAI ? (
+                          <Bot size={16} className="text-greyscale-blue-100" />
+                        ) : draftMode === 'multiplayer' && (
+                          <Mail size={16} className="text-greyscale-blue-100" />
+                        )}
                         <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
-                          {participant}
+                          {participant.name}
                         </span>
-                        {draftMode === 'multiplayer' && !isEmailValid(participant) && (
+                        {participant.isAI && (
+                          <span className="text-xs text-greyscale-blue-300 ml-1">AI</span>
+                        )}
+                        {draftMode === 'multiplayer' && !participant.isAI && !isEmailValid(participant.name) && (
                           <span className="text-xs text-red-400 ml-1">Invalid</span>
                         )}
                         <button

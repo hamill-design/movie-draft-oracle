@@ -4,13 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Save } from 'lucide-react';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { useToast } from '@/hooks/use-toast';
+import { Participant } from '@/types/participant';
 
 interface SaveDraftButtonProps {
   draftData: {
     title?: string;
     theme: string;
     option: string;
-    participants: string[];
+    participants: string[] | Participant[];
     categories: string[];
     picks: any[];
     isComplete: boolean;

@@ -44,6 +44,7 @@ export type Database = {
           draft_id: string
           guest_participant_id: string | null
           id: string
+          is_ai: boolean
           is_host: boolean
           joined_at: string | null
           participant_name: string
@@ -55,6 +56,7 @@ export type Database = {
           draft_id: string
           guest_participant_id?: string | null
           id?: string
+          is_ai?: boolean
           is_host?: boolean
           joined_at?: string | null
           participant_name: string
@@ -66,6 +68,7 @@ export type Database = {
           draft_id?: string
           guest_participant_id?: string | null
           id?: string
+          is_ai?: boolean
           is_host?: boolean
           joined_at?: string | null
           participant_name?: string
@@ -402,6 +405,7 @@ export type Database = {
       }
       create_multiplayer_draft_unified: {
         Args: {
+          p_ai_participant_names?: string[]
           p_categories: string[]
           p_option: string
           p_participant_id: string

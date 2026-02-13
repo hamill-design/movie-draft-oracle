@@ -3,13 +3,15 @@ import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Users, User, Mail, Trash2 } from 'lucide-react';
+import { Users, User, Mail, Trash2, Bot } from 'lucide-react';
 import { CheckboxIcon, MultiPersonIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useProfile } from '@/hooks/useProfile';
 import { getCategoryConfig } from '@/config/categoryConfigs';
+import { Participant } from '@/types/participant';
+import { getRandomAIName } from '@/data/aiNames';
 // Simple checkbox component for category selection with live counter
 const CategoryCheckbox = ({ 
   category, 
@@ -209,7 +211,7 @@ const SpecDraftSetup = () => {
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [draftMode, setDraftMode] = useState<'local' | 'multiplayer'>('local');
-  const [participants, setParticipants] = useState<string[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [newParticipant, setNewParticipant] = useState('');
   const [hoveredMode, setHoveredMode] = useState<'local' | 'multiplayer' | null>(null);
   const [isAddButtonHovered, setIsAddButtonHovered] = useState(false);
@@ -230,12 +232,12 @@ const SpecDraftSetup = () => {
   useEffect(() => {
     if (draftMode === 'multiplayer' && hostName) {
       // Add host if not already in participants
-      if (!participants.includes(hostName)) {
-        setParticipants([hostName, ...participants]);
+      if (!participants.some(p => p.name === hostName && !p.isAI)) {
+        setParticipants([{ name: hostName, isAI: false }, ...participants]);
       }
     } else if (draftMode === 'local') {
       // Remove host when switching back to local mode
-      setParticipants(participants.filter(p => p !== hostName));
+      setParticipants(participants.filter(p => p.name !== hostName));
     }
   }, [draftMode, hostName]);
 
@@ -393,15 +395,23 @@ const SpecDraftSetup = () => {
 
   const handleAddParticipant = () => {
     const trimmed = newParticipant.trim();
-    if (trimmed && !participants.includes(trimmed)) {
-      setParticipants([...participants, trimmed]);
+    if (trimmed && !participants.some(p => p.name === trimmed)) {
+      setParticipants([...participants, { name: trimmed, isAI: false }]);
       setNewParticipant('');
     }
   };
 
-  const handleRemoveParticipant = (participant: string) => {
+  const handleAddAIParticipant = () => {
+    const aiName = getRandomAIName();
+    if (!participants.some(p => p.name === aiName)) {
+      setParticipants([...participants, { name: aiName, isAI: true }]);
+    }
+  };
+
+  const handleRemoveParticipant = (participant: string | Participant) => {
+    const participantName = typeof participant === 'string' ? participant : participant.name;
     // Don't allow removing the host in multiplayer mode
-    if (draftMode === 'multiplayer' && participant === hostName) {
+    if (draftMode === 'multiplayer' && participantName === hostName) {
       toast({
         title: 'Cannot remove host',
         description: 'The host must remain as a participant in multiplayer drafts.',
@@ -409,7 +419,7 @@ const SpecDraftSetup = () => {
       });
       return;
     }
-    setParticipants(participants.filter(p => p !== participant));
+    setParticipants(participants.filter(p => p.name !== participantName));
   };
 
   const handleCategoryToggle = (category: string, checked: boolean) => {
@@ -483,15 +493,21 @@ const SpecDraftSetup = () => {
         // Create multiplayer draft
         // The host is automatically added by the backend, so we only send additional participants
         // Filter out the host from the participants list since they'll be added automatically
-        // Allow empty array - others can join later with the invite code
-        const additionalParticipants = participants.filter(p => p !== hostName);
+        // Separate human participants (emails) from AI participants
+        const humanParticipants = participants
+          .filter(p => p.name !== hostName && !p.isAI)
+          .map(p => p.name);
+        const aiParticipants = participants
+          .filter(p => p.name !== hostName && p.isAI)
+          .map(p => p.name);
 
         const draftId = await createMultiplayerDraft({
           title: specDraft.name,
           theme: 'spec-draft',
           option: specDraft.id,
           categories: selectedCats,
-          participantEmails: additionalParticipants, // Only send additional participants, host is added automatically
+          participantEmails: humanParticipants, // Only send human participants (emails), host is added automatically
+          aiParticipantNames: aiParticipants, // Send AI participant names
         });
 
         navigate(`/draft/${draftId}`);
@@ -502,7 +518,7 @@ const SpecDraftSetup = () => {
             theme: 'spec-draft',
             option: specDraft.id,
             categories: selectedCats,
-            participants: participants.length > 0 ? participants : ['Player 1'],
+            participants: participants.length > 0 ? participants : [{ name: 'Player 1', isAI: false }],
             draftMode: 'local',
           },
         });
@@ -743,6 +759,14 @@ const SpecDraftSetup = () => {
               >
                 Add
               </button>
+              <button
+                onClick={handleAddAIParticipant}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-brockmann font-medium leading-5 rounded-[2px] flex justify-center items-center gap-2 transition-colors"
+                title="Add AI Player"
+              >
+                <Bot size={16} />
+                Add AI
+              </button>
             </div>
 
             {draftMode === 'multiplayer' && (
@@ -764,7 +788,7 @@ const SpecDraftSetup = () => {
                   <span className="text-greyscale-blue-300 text-base font-normal leading-6 font-brockmann">
                     Participants ({(() => {
                       if (draftMode === 'multiplayer') {
-                        const displayedParticipants = participants.filter(p => p !== hostName);
+                        const displayedParticipants = participants.filter(p => p.name !== hostName);
                         return hostName ? displayedParticipants.length + 1 : displayedParticipants.length;
                       }
                       return participants.length;
@@ -783,22 +807,29 @@ const SpecDraftSetup = () => {
                       </span>
                     </div>
                   )}
-                  {participants.filter(p => draftMode !== 'multiplayer' || p !== hostName).map((participant) => (
+                  {participants.filter(p => draftMode !== 'multiplayer' || p.name !== hostName).map((participant) => (
                     <div
-                      key={participant}
+                      key={participant.name}
                       className="py-2 pl-4 pr-[10px] bg-brand-primary rounded flex items-center gap-2"
                     >
-                      {draftMode === 'multiplayer' && <Mail size={16} className="text-greyscale-blue-100" />}
+                      {participant.isAI ? (
+                        <Bot size={16} className="text-greyscale-blue-100" />
+                      ) : draftMode === 'multiplayer' && (
+                        <Mail size={16} className="text-greyscale-blue-100" />
+                      )}
                       <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
-                        {participant}
+                        {participant.name}
                       </span>
+                      {participant.isAI && (
+                        <span className="text-xs text-greyscale-blue-300 ml-1">AI</span>
+                      )}
                       <button
                         onClick={() => handleRemoveParticipant(participant)}
-                        onMouseEnter={() => setHoveredRemoveButton(participant)}
+                        onMouseEnter={() => setHoveredRemoveButton(participant.name)}
                         onMouseLeave={() => setHoveredRemoveButton(null)}
                         className="p-1 rounded-xl flex justify-center items-center hover:bg-purple-300 transition-colors"
                         style={{
-                          background: hoveredRemoveButton === participant ? 'var(--Purple-300, #907AFF)' : 'transparent'
+                          background: hoveredRemoveButton === participant.name ? 'var(--Purple-300, #907AFF)' : 'transparent'
                         }}
                       >
                         <div className="w-4 h-4 flex justify-center items-center">

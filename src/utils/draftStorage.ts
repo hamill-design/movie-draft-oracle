@@ -1,3 +1,4 @@
+import { Participant, normalizeParticipants, participantsToStrings } from '@/types/participant';
 
 /**
  * Utility functions for managing pending draft saves in localStorage
@@ -9,7 +10,7 @@ export interface PendingDraft {
     title?: string;
     theme: string;
     option: string;
-    participants: string[];
+    participants: Participant[];
     categories: string[];
     picks: any[];
     isComplete: boolean;

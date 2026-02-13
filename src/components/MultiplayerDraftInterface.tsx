@@ -1,40 +1,45 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMovies } from '@/hooks/useMovies';
 import { useToast } from '@/hooks/use-toast';
+import { useAIPick } from '@/hooks/useAIPick';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Clock, Film, Trophy } from 'lucide-react';
+import { Copy, Check, Clock, Film, Trophy, Loader2 } from 'lucide-react';
 import { MultiPersonIcon } from '@/components/icons/MultiPersonIcon';
 import { PersonIcon } from '@/components/icons/PersonIcon';
 import MovieSearch from '@/components/MovieSearch';
 import EnhancedCategorySelection from '@/components/EnhancedCategorySelection';
 import PickConfirmation from '@/components/PickConfirmation';
 import DraftBoard from '@/components/DraftBoard';
-import { Skeleton } from '@/components/ui/skeleton';
 
 import { getCleanActorName } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import { Participant, normalizeParticipants } from '@/types/participant';
 
 interface MultiplayerDraftInterfaceProps {
   draftId?: string;
   initialData?: {
     theme: string;
     option: string;
-    participants: string[];
+    participants: string[] | Participant[];
     categories: string[];
     isHost?: boolean;
   };
+  /** When provided (e.g. from Index), allows load-draft to run before child's session is ready (fixes stuck loading for guests). */
+  participantId?: string | null;
 }
 
 export const MultiplayerDraftInterface = ({
   draftId,
-  initialData
+  initialData,
+  participantId: participantIdFromParent
 }: MultiplayerDraftInterfaceProps) => {
   const {
-    participantId
+    participantId,
+    loading: sessionLoading
   } = useCurrentUser();
   const {
     toast
@@ -51,13 +56,22 @@ export const MultiplayerDraftInterface = ({
     makePick,
     startDraft,
     manualRefresh
-  } = useMultiplayerDraft(draftId);
+  } = useMultiplayerDraft(draftId, undefined, participantIdFromParent);
+  // Use parent's participantId when available so we don't show "Authentication Required" while parent has session
+  const effectiveParticipantId = participantIdFromParent ?? participantId;
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [checkingOscarStatus, setCheckingOscarStatus] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
   const [specDraftName, setSpecDraftName] = useState<string | null>(null);
+  const { pickMovie: aiPickMovie, loading: aiPicking } = useAIPick();
+  const [isAITurn, setIsAITurn] = useState(false);
+  const isMakingAIPickRef = useRef(false);
+  // Stable row order: once draft has started, keep using last known turn order so rows don't flip on reload
+  const lastStableTurnOrderIdsRef = useRef<{ draftId: string; participantIds: string[] } | null>(null);
+  const playerIdToDisplayIndexRef = useRef<Map<number, number> | null>(null);
+  const playerIdMapDraftIdRef = useRef<string | null>(null);
 
   // Fetch spec draft name if theme is spec-draft
   useEffect(() => {
@@ -118,33 +132,59 @@ export const MultiplayerDraftInterface = ({
 
   // Create draft if this is a new multiplayer draft
   useEffect(() => {
-    if (initialData && !draftId && participantId) {
+    // Wait for session to load AND participantId to be available before creating draft
+    if (sessionLoading || !participantId) return;
+    
+    if (initialData && !draftId) {
       const createDraft = async () => {
         try {
+          // Normalize participants to handle both string[] and Participant[] formats
+          const normalizedParticipants = normalizeParticipants(initialData.participants);
+          
+          // Separate human participants (emails) from AI participants
+          const humanParticipants = normalizedParticipants
+            .filter(p => !p.isAI)
+            .map(p => p.name);
+          const aiParticipants = normalizedParticipants
+            .filter(p => p.isAI)
+            .map(p => p.name);
+
           const newDraftId = await createMultiplayerDraft({
             title: initialData.option,
             theme: initialData.theme,
             option: initialData.option,
             categories: initialData.categories,
-            participantEmails: initialData.participants
+            participantEmails: humanParticipants,
+            aiParticipantNames: aiParticipants
           });
 
-          // Navigate to the draft page with the multiplayer data
+          // Update URL without navigating to avoid remounting component
+          window.history.replaceState(null, '', `/draft/${newDraftId}`);
+          
+          // Trigger React Router to update by navigating with replace
           navigate(`/draft/${newDraftId}`, {
-            replace: true
+            replace: true,
+            state: { skipRemount: true }
           });
-        } catch (error) {
+        } catch (error: any) {
           console.error('Failed to create draft:', error);
+          
+          // Check if this is a migration issue
+          let errorMessage = error instanceof Error ? error.message : 'Failed to create multiplayer draft';
+          if (error?.code === 'PGRST202' || error?.message?.includes('schema cache')) {
+            errorMessage = 'Database migration not applied. Please run: supabase migration up';
+          }
+          
           toast({
             title: "Error",
-            description: "Failed to create multiplayer draft",
+            description: errorMessage,
             variant: "destructive"
           });
         }
       };
       createDraft();
     }
-  }, [initialData, draftId, participantId, createMultiplayerDraft, navigate, toast]);
+  }, [initialData, draftId, participantId, sessionLoading, createMultiplayerDraft, navigate, toast]);
 
   const handleMovieSelect = async (movie: any) => {
     setSelectedMovie(movie);
@@ -250,34 +290,165 @@ export const MultiplayerDraftInterface = ({
     const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
     if (!currentTurnId) return null;
     return participants.find(p => {
-      const participantId = p.user_id || p.guest_participant_id;
-      return participantId === currentTurnId;
+      // For AI participants, use the row id as participant_id
+      const participantId = p.participant_id || p.user_id || p.guest_participant_id || (p.is_ai ? p.id : null);
+      return participantId && String(participantId) === String(currentTurnId);
     });
   };
 
-  // Check if current user is the host
+  const currentTurnPlayer = getCurrentTurnPlayer();
+  const currentTurnIsAI = currentTurnPlayer?.is_ai === true;
+
+  // Check if current user is the host (must be declared before useEffect that uses it)
   const isHost = useMemo(() => {
-    if (!participants.length || !participantId) return false;
+    if (!participants.length || !effectiveParticipantId) return false;
     return participants.some(p => {
       if (p.is_host) {
         const pId = p.user_id || p.guest_participant_id;
-        return pId === participantId;
+        return pId === effectiveParticipantId;
       }
       return false;
     });
-  }, [participants, participantId]);
+  }, [participants, effectiveParticipantId]);
 
-  // Helper: Get participants sorted by created_at (matching database player_id calculation)
-  // Database uses: row_number() OVER (ORDER BY created_at ASC)
+  // Detect AI turn and handle auto-pick
+  useEffect(() => {
+    if (!draft || draft.is_complete || !currentTurnIsAI || aiPicking || !currentTurnPlayer) {
+      setIsAITurn(false);
+      return;
+    }
+    
+    setIsAITurn(true);
+    
+    // Only host can make picks for AI (they own the draft)
+    if (!isHost) {
+      // Not the host, just show that AI is thinking
+      return;
+    }
+
+    // Prevent double-fire when effect re-runs (e.g. after draft state update)
+    if (isMakingAIPickRef.current) {
+      return;
+    }
+    isMakingAIPickRef.current = true;
+
+    // AI's turn and we're the host - make pick after short delay
+    const makeAIPick = async () => {
+      try {
+        // Wait 1-2 seconds to simulate "thinking"
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Double-check it's still AI's turn by checking draft state
+        if (!draft || draft.is_complete) {
+          return;
+        }
+
+        const stillCurrentPlayer = getCurrentTurnPlayer();
+        if (!stillCurrentPlayer || !stillCurrentPlayer.is_ai) {
+          return;
+        }
+
+        // Determine current category from turn order
+        const currentPickNumber = draft.current_pick_number || 1;
+        const picksPerCategory = participants.length;
+        const currentRound = Math.floor((currentPickNumber - 1) / picksPerCategory);
+        const currentCategory = draft.categories?.[currentRound] || draft.categories?.[0] || '';
+
+        if (!currentCategory) {
+          console.error('No category found for AI pick');
+          toast({
+            title: "AI Pick Failed",
+            description: "No category for this pick.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const alreadyPickedMovieIds = picks.map(p => p.movie_id);
+
+        const selectedMovie = await aiPickMovie({
+          draftTheme: draft.theme || '',
+          draftOption: draft.option || '',
+          currentCategory: currentCategory,
+          alreadyPickedMovieIds: alreadyPickedMovieIds,
+        });
+
+        if (selectedMovie && stillCurrentPlayer) {
+          const aiParticipantId = stillCurrentPlayer.participant_id ||
+                                  stillCurrentPlayer.user_id ||
+                                  stillCurrentPlayer.guest_participant_id ||
+                                  (stillCurrentPlayer.is_ai ? stillCurrentPlayer.id : null);
+
+          if (!aiParticipantId) {
+            toast({
+              title: "AI Pick Failed",
+              description: "Could not identify AI participant.",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          try {
+            await makePick(
+              selectedMovie.id,
+              selectedMovie.title,
+              selectedMovie.year || new Date().getFullYear(),
+              selectedMovie.genre || 'Unknown',
+              currentCategory,
+              selectedMovie.poster_path,
+              aiParticipantId,
+              effectiveParticipantId
+            );
+            // Success: makePick shows "Pick Made!" toast; no error toast
+          } catch (error: any) {
+            const msg = error?.message ?? String(error);
+            // Don't show "AI Pick Failed" for "Not your turn" (race/double-fire after pick succeeded)
+            if (msg.includes('Not your turn')) {
+              return;
+            }
+            console.error('Failed to make AI pick:', error);
+            toast({
+              title: "AI Pick Failed",
+              description: msg || "The AI couldn't make its pick. Please try again.",
+              variant: "destructive",
+            });
+          }
+        } else {
+          toast({
+            title: "AI Pick Failed",
+            description: "The AI couldn't find a suitable movie to pick.",
+            variant: "destructive",
+          });
+        }
+      } finally {
+        isMakingAIPickRef.current = false;
+        setIsAITurn(false);
+      }
+    };
+
+    makeAIPick();
+  }, [draft, currentTurnIsAI, currentTurnPlayer, isHost, aiPicking, participants.length, picks, aiPickMovie, makePick, toast]);
+
+  // Helper: Get participants sorted by created_at (matching backend ORDER BY created_at ASC NULLS LAST, id ASC)
   // MUST be before early returns to maintain consistent hook order
   const getParticipantsSortedByCreatedAt = useMemo(() => {
     return [...participants].sort((a, b) => {
-      const aTime = a.created_at || a.joined_at || '';
-      const bTime = b.created_at || b.joined_at || '';
-      if (!aTime && !bTime) return 0;
+      const aTime = a.created_at ?? a.joined_at ?? '';
+      const bTime = b.created_at ?? b.joined_at ?? '';
+      // Null/missing sorts last (NULLS LAST)
+      if (!aTime && !bTime) {
+        const aId = String(a.id ?? a.participant_id ?? a.user_id ?? a.guest_participant_id ?? '');
+        const bId = String(b.id ?? b.participant_id ?? b.user_id ?? b.guest_participant_id ?? '');
+        return aId.localeCompare(bId);
+      }
       if (!aTime) return 1;
       if (!bTime) return -1;
-      return new Date(aTime).getTime() - new Date(bTime).getTime();
+      const timeDiff = new Date(aTime).getTime() - new Date(bTime).getTime();
+      if (timeDiff !== 0) return timeDiff;
+      // Tie-break by id to match backend id ASC
+      const aId = String(a.id ?? a.participant_id ?? a.user_id ?? a.guest_participant_id ?? '');
+      const bId = String(b.id ?? b.participant_id ?? b.user_id ?? b.guest_participant_id ?? '');
+      return aId.localeCompare(bId);
     });
   }, [participants]);
 
@@ -285,83 +456,131 @@ export const MultiplayerDraftInterface = ({
   const draftHasStarted = draft?.turn_order && draft.turn_order.length > 0;
 
   // Helper: Get players in turn order (for display)
-  // Use turn_order first round if available, otherwise fallback to created_at
+  // Use turn_order first round if available; sort by pick_number for stable order.
+  // Once draft has started, keep using last known turn order (ref) so rows don't flip when reload returns partial state.
   const getPlayersInTurnOrder = useMemo(() => {
-    if (draftHasStarted && draft.turn_order && Array.isArray(draft.turn_order) && draft.turn_order.length > 0) {
-      // Extract first round from turn_order
-      const firstRound = draft.turn_order.filter((item: any) => item.round === 1);
-      
-      // Get unique participants in turn order (first appearance)
+    const draftId = draft?.id;
+    if (draftId && lastStableTurnOrderIdsRef.current && lastStableTurnOrderIdsRef.current.draftId !== draftId) {
+      lastStableTurnOrderIdsRef.current = null;
+    }
+    const stored = lastStableTurnOrderIdsRef.current;
+    const hasStoredOrder = stored?.draftId === draftId && (stored?.participantIds?.length ?? 0) > 0;
+
+    if (draftHasStarted && draft?.turn_order && Array.isArray(draft.turn_order) && draft.turn_order.length > 0) {
+      // Extract first round (round can be number 1 or string "1" from JSON)
+      const firstRound = draft.turn_order
+        .filter((item: any) => item.round === 1 || item.round === '1')
+        .sort((a: any, b: any) => (Number(a.pick_number) ?? 0) - (Number(b.pick_number) ?? 0));
+
+      const orderedIds: string[] = [];
       const seenIds = new Set<string>();
-      const turnOrderParticipants: any[] = [];
-      
       firstRound.forEach((item: any) => {
-        const participantId = item.participant_id || item.user_id || item.guest_participant_id;
-        if (participantId && !seenIds.has(String(participantId))) {
-          seenIds.add(String(participantId));
-          const participant = participants.find(p => {
-            const pId = p.participant_id || p.user_id || p.guest_participant_id;
-            return pId && String(pId) === String(participantId);
-          });
-          if (participant) {
-            turnOrderParticipants.push(participant);
-          }
+        const pid = item.participant_id || item.user_id || item.guest_participant_id;
+        if (pid && !seenIds.has(String(pid))) {
+          seenIds.add(String(pid));
+          orderedIds.push(String(pid));
         }
       });
-      
-      // Fill in any missing participants (safety fallback)
+      if (orderedIds.length > 0) {
+        lastStableTurnOrderIdsRef.current = { draftId: draftId!, participantIds: orderedIds };
+      }
+
+      const turnOrderParticipants: any[] = [];
+      orderedIds.forEach(pid => {
+        const participant = participants.find(p => {
+          const pId = p.participant_id || p.user_id || p.guest_participant_id || (p.is_ai ? p.id : null);
+          return pId && String(pId) === pid;
+        });
+        if (participant) turnOrderParticipants.push(participant);
+      });
+
       participants.forEach(p => {
-        const pId = p.participant_id || p.user_id || p.guest_participant_id;
-        if (pId && !seenIds.has(String(pId))) {
-          turnOrderParticipants.push(p);
-        }
+        const pId = p.participant_id || p.user_id || p.guest_participant_id || (p.is_ai ? p.id : null);
+        if (pId && !seenIds.has(String(pId))) turnOrderParticipants.push(p);
       });
-      
+
       return turnOrderParticipants;
     }
-    
-    // Fallback: use created_at order if draft hasn't started
+
+    // Draft started but turn_order missing (e.g. mid-reload): use last stable order so rows don't flip
+    if (draftId && hasStoredOrder && stored?.participantIds) {
+      const orderedIds = stored.participantIds;
+      const turnOrderParticipants: any[] = [];
+      const seenIds = new Set<string>();
+      orderedIds.forEach(pid => {
+        const participant = participants.find(p => {
+          const pId = p.participant_id || p.user_id || p.guest_participant_id || (p.is_ai ? p.id : null);
+          return pId && String(pId) === pid;
+        });
+        if (participant) {
+          seenIds.add(pid);
+          turnOrderParticipants.push(participant);
+        }
+      });
+      participants.forEach(p => {
+        const pId = p.participant_id || p.user_id || p.guest_participant_id || (p.is_ai ? p.id : null);
+        if (pId && !seenIds.has(String(pId))) turnOrderParticipants.push(p);
+      });
+      return turnOrderParticipants;
+    }
+
+    // New draft or not started: clear stored order and use created_at
+    if (!draftId || !draftHasStarted) {
+      lastStableTurnOrderIdsRef.current = null;
+    }
     return getParticipantsSortedByCreatedAt;
-  }, [participants, draft?.turn_order, draftHasStarted, getParticipantsSortedByCreatedAt]);
+  }, [participants, draft?.id, draft?.turn_order, draftHasStarted, getParticipantsSortedByCreatedAt]);
 
   // Create mapping: database player_id -> display position
-  // Database player_id is based on created_at order (1, 2, 3...)
-  // Display position is based on turn order (may be 2, 1, 3...)
+  // Backend assigns player_id = row_number() OVER (ORDER BY created_at ASC NULLS LAST, id ASC).
+  // Freeze map in ref when draft has started so the same pick doesn't jump rows between subscription and reload.
   const playerIdToDisplayIndex = useMemo(() => {
+    const draftId = draft?.id ?? null;
+    if (draftId !== playerIdMapDraftIdRef.current) {
+      playerIdToDisplayIndexRef.current = null;
+      playerIdMapDraftIdRef.current = draftId;
+    }
     const map = new Map<number, number>();
-    getPlayersInTurnOrder.forEach((p, displayIndex) => {
-      // Find this participant's database player_id (created_at based)
-      const dbPlayerId = getParticipantsSortedByCreatedAt.findIndex(
-        dbP => {
-          const dbPId = dbP.participant_id || dbP.user_id || dbP.guest_participant_id;
-          const pId = p.participant_id || p.user_id || p.guest_participant_id;
-          return dbPId && pId && String(dbPId) === String(pId);
-        }
-      ) + 1; // player_id is 1-based
-      
-      if (dbPlayerId > 0) {
-        map.set(dbPlayerId, displayIndex);
-      }
+    const sameParticipant = (a: any, b: any) => {
+      const aId = a.participant_id ?? a.user_id ?? a.guest_participant_id ?? (a.is_ai ? a.id : null);
+      const bId = b.participant_id ?? b.user_id ?? b.guest_participant_id ?? (b.is_ai ? b.id : null);
+      return aId != null && bId != null && String(aId) === String(bId);
+    };
+    getParticipantsSortedByCreatedAt.forEach((participant, i) => {
+      const playerId = i + 1; // 1-based, matches backend row_number() ORDER BY created_at NULLS LAST, id
+      const displayIndex = getPlayersInTurnOrder.findIndex(p => sameParticipant(p, participant));
+      if (displayIndex >= 0) map.set(playerId, displayIndex);
     });
+    if (draftHasStarted && map.size > 0) {
+      playerIdToDisplayIndexRef.current = new Map(map);
+    }
     return map;
-  }, [getPlayersInTurnOrder, getParticipantsSortedByCreatedAt]);
+  }, [draft?.id, draftHasStarted, getPlayersInTurnOrder, getParticipantsSortedByCreatedAt]);
 
-  if (loading) {
+  // Normalize player_id to number for map lookup (picks from API may have string player_id).
+  // Use frozen ref when draft has started so mapping is stable between subscription update and reload.
+  const getDisplayIndexForPlayerId = (playerId: number | string): number => {
+    const n = typeof playerId === 'number' ? playerId : parseInt(String(playerId), 10);
+    if (Number.isNaN(n)) return 0;
+    const map = draftHasStarted && playerIdToDisplayIndexRef.current
+      ? playerIdToDisplayIndexRef.current
+      : playerIdToDisplayIndex;
+    return map.get(n) ?? 0;
+  };
+
+  // Single gentle loading screen (session or draft loading) — avoids big skeleton flicker when landing after create
+  const showDraftLoading = (loading || sessionLoading) || (draftId && !draft);
+  if (showDraftLoading) {
     return (
-      <div className="min-h-screen p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-        <div className="max-w-6xl mx-auto space-y-6">
-          <Skeleton className="h-8 w-64" />
-          <div className="grid md:grid-cols-3 gap-6">
-            <Skeleton className="h-96" />
-            <Skeleton className="h-96" />
-            <Skeleton className="h-96" />
-          </div>
-        </div>
+      <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
+        <Loader2 className="h-8 w-8 animate-spin text-purple-300 mb-4" />
+        <p className="text-greyscale-blue-100 text-lg font-medium">Loading your draft...</p>
       </div>
     );
   }
 
-  if (!participantId) {
+  // Only show "Authentication Required" if session is done loading but no participant id (from parent or child)
+  if (!sessionLoading && !effectiveParticipantId) {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <Card>
@@ -376,6 +595,7 @@ export const MultiplayerDraftInterface = ({
     );
   }
 
+  // Only show "Draft Not Found" if we don't have a draftId (user navigated directly to invalid URL)
   if (!draft) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
@@ -394,7 +614,6 @@ export const MultiplayerDraftInterface = ({
     );
   }
 
-  const currentTurnPlayer = getCurrentTurnPlayer();
   const isComplete = draft.is_complete;
 
   return (
@@ -509,6 +728,41 @@ export const MultiplayerDraftInterface = ({
               </>
             ) : (
               <>
+                {!draftHasStarted && participants.length >= 2 && !isHost ? (
+                  <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', gap: '8px', display: 'flex'}}>
+                    <div style={{
+                      alignSelf: 'stretch',
+                      textAlign: 'center',
+                      justifyContent: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      color: 'var(--Text-Primary, #FCFFFF)',
+                      fontSize: '16px',
+                      fontFamily: 'Brockmann',
+                      fontWeight: '600',
+                      lineHeight: '24px',
+                      wordWrap: 'break-word'
+                    }}>
+                      Waiting on the Host to start the draft
+                    </div>
+                    <div style={{
+                      alignSelf: 'stretch',
+                      textAlign: 'center',
+                      justifyContent: 'center',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      color: 'var(--Text-Light-grey, #BDC3C2)',
+                      fontSize: '14px',
+                      fontFamily: 'Brockmann',
+                      fontWeight: '400',
+                      lineHeight: '20px',
+                      wordWrap: 'break-word'
+                    }}>
+                      The host will begin the draft when ready.
+                    </div>
+                  </div>
+                ) : (
+                <>
                 <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', gap: '12px', display: 'flex'}}>
                   <div style={{alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex'}}>
                     <div style={{flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
@@ -656,6 +910,8 @@ export const MultiplayerDraftInterface = ({
                       </div>
                     </div>
                   </div>
+                )}
+              </>
                 )}
               </>
             )}
@@ -844,10 +1100,10 @@ export const MultiplayerDraftInterface = ({
                 gap: '8px', 
                 display: 'flex'
               }}>
-                {participants.map(participant => {
-                  const pId = participant.user_id || participant.guest_participant_id;
+                {getParticipantsSortedByCreatedAt.map(participant => {
+                  const pId = participant.participant_id || participant.user_id || participant.guest_participant_id || (participant.is_ai ? participant.id : null);
                   const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
-                  const isCurrentTurn = pId === currentTurnId;
+                  const isCurrentTurn = pId && currentTurnId && String(pId) === String(currentTurnId);
                   return (
                     <div key={participant.id} style={{
                       alignSelf: 'stretch', 
@@ -907,6 +1163,30 @@ export const MultiplayerDraftInterface = ({
                             gap: '4px', 
                             display: 'flex'
                           }}>
+                            {participant.is_ai && (
+                              <div style={{
+                                paddingLeft: '8px', 
+                                paddingRight: '8px', 
+                                paddingTop: '2px', 
+                                paddingBottom: '2px', 
+                                background: 'var(--Greyscale-Blue-800, #1A1D29)', 
+                                borderRadius: '4px', 
+                                justifyContent: 'flex-start', 
+                                alignItems: 'center', 
+                                display: 'flex'
+                              }}>
+                                <div style={{
+                                  color: 'var(--Greyscale-Blue-300, #828786)', 
+                                  fontSize: '12px', 
+                                  fontFamily: 'Brockmann', 
+                                  fontWeight: '500', 
+                                  lineHeight: '16px', 
+                                  wordWrap: 'break-word'
+                                }}>
+                                  AI
+                                </div>
+                              </div>
+                            )}
                             {participant.is_host && <div style={{
                               paddingLeft: '12px', 
                               paddingRight: '12px', 
@@ -1048,10 +1328,12 @@ export const MultiplayerDraftInterface = ({
         {/* Draft Content */}
         <div className="space-y-6">
           {/* Draft Board */}
+          {draftHasStarted && (
           <div>
             <DraftBoard picks={picks.map(pick => {
-              // Map database player_id to display position
-              const displayIndex = playerIdToDisplayIndex.get(pick.player_id) ?? 0;
+              const displayIndex = (draft?.player_id_to_display_row && Object.keys(draft.player_id_to_display_row).length > 0)
+                ? (draft.player_id_to_display_row[String(pick.player_id)] ?? 0)
+                : getDisplayIndexForPlayerId(pick.player_id);
               return {
                 playerId: displayIndex + 1,  // Display position (1-based)
                 playerName: pick.player_name,
@@ -1068,8 +1350,9 @@ export const MultiplayerDraftInterface = ({
               name: p.participant_name
             }))} categories={draft.categories} theme={draft.theme} draftOption={getCleanActorName(draft.option)} currentPlayer={currentTurnPlayer ? (() => {
               const displayIndex = getPlayersInTurnOrder.findIndex(p => {
-                const pId = p.participant_id || p.user_id || p.guest_participant_id;
-                const currentPlayerId = currentTurnPlayer.participant_id || currentTurnPlayer.user_id || currentTurnPlayer.guest_participant_id;
+                // For AI participants, also check row id
+                const pId = p.participant_id || p.user_id || p.guest_participant_id || (p.is_ai ? p.id : null);
+                const currentPlayerId = currentTurnPlayer.participant_id || currentTurnPlayer.user_id || currentTurnPlayer.guest_participant_id || (currentTurnPlayer.is_ai ? currentTurnPlayer.id : null);
                 return pId && currentPlayerId && String(pId) === String(currentPlayerId);
               });
               return {
@@ -1078,6 +1361,7 @@ export const MultiplayerDraftInterface = ({
               };
             })() : undefined} />
           </div>
+          )}
 
           {/* View Final Scores Button - Show when draft is complete */}
           {isComplete && (
@@ -1123,43 +1407,66 @@ export const MultiplayerDraftInterface = ({
 
           {/* Controls */}
           <div className="space-y-6">
-            {!isComplete && isMyTurn && <>
-              <MovieSearch theme={draft.theme} option={getCleanActorName(draft.option)} searchQuery={searchQuery} onSearchChange={setSearchQuery} movies={movies} loading={moviesLoading} onMovieSelect={handleMovieSelect} selectedMovie={selectedMovie} themeParameter={themeConstraint} />
+            {!isComplete && currentTurnPlayer && (
+              <>
+                {isAITurn ? (
+                  <div className="p-6 bg-greyscale-purp-900 rounded-lg flex flex-col items-center gap-4">
+                    <div className="text-greyscale-blue-100 text-lg font-brockmann font-medium">
+                      {currentTurnPlayer.participant_name} is thinking...
+                    </div>
+                    {aiPicking && (
+                      <div className="text-greyscale-blue-300 text-sm">
+                        Analyzing movies...
+                      </div>
+                    )}
+                  </div>
+                ) : isMyTurn ? (
+                  <>
+                    <MovieSearch theme={draft.theme} option={getCleanActorName(draft.option)} searchQuery={searchQuery} onSearchChange={setSearchQuery} movies={movies} loading={moviesLoading} onMovieSelect={handleMovieSelect} selectedMovie={selectedMovie} themeParameter={themeConstraint} />
 
-              <EnhancedCategorySelection 
-                selectedMovie={selectedMovie} 
-                categories={draft.categories} 
-                selectedCategory={selectedCategory} 
-                onCategorySelect={handleCategorySelect} 
-                picks={picks.map(pick => {
-                  // Map database player_id to display position
-                  const displayIndex = playerIdToDisplayIndex.get(pick.player_id) ?? 0;
-                  return {
-                    playerId: displayIndex + 1,  // Display position (1-based)
-                    playerName: pick.player_name,
-                    movie: {
-                      id: pick.movie_id,
-                      title: pick.movie_title,
-                      year: pick.movie_year,
-                      poster_path: pick.poster_path
-                    },
-                    category: pick.category
-                  };
-                })} 
-                currentPlayerId={(() => {
-                  const displayIndex = getPlayersInTurnOrder.findIndex(p => 
-                    (p.user_id || p.guest_participant_id) === participantId
-                  );
-                  return displayIndex >= 0 ? displayIndex + 1 : 1;
-                })()}
-                theme={draft.theme}
-                option={draft.option}
-                checkingOscarStatus={checkingOscarStatus}
-              />
+                    <EnhancedCategorySelection 
+                      selectedMovie={selectedMovie} 
+                      categories={draft.categories} 
+                      selectedCategory={selectedCategory} 
+                      onCategorySelect={handleCategorySelect} 
+                      picks={picks.map(pick => {
+                        const displayIndex = (draft?.player_id_to_display_row && Object.keys(draft.player_id_to_display_row).length > 0)
+                          ? (draft.player_id_to_display_row[String(pick.player_id)] ?? 0)
+                          : getDisplayIndexForPlayerId(pick.player_id);
+                        return {
+                          playerId: displayIndex + 1,  // Display position (1-based)
+                          playerName: pick.player_name,
+                          movie: {
+                            id: pick.movie_id,
+                            title: pick.movie_title,
+                            year: pick.movie_year,
+                            poster_path: pick.poster_path
+                          },
+                          category: pick.category
+                        };
+                      })} 
+                      currentPlayerId={(() => {
+                        const displayIndex = getPlayersInTurnOrder.findIndex(p => 
+                          (p.user_id || p.guest_participant_id) === effectiveParticipantId
+                        );
+                        return displayIndex >= 0 ? displayIndex + 1 : 1;
+                      })()}
+                      theme={draft.theme}
+                      option={draft.option}
+                      checkingOscarStatus={checkingOscarStatus}
+                    />
 
-              <PickConfirmation currentPlayerName={currentTurnPlayer?.participant_name || 'You'} selectedMovie={selectedMovie} selectedCategory={selectedCategory} onConfirm={confirmPick} />
-            </>
-            }
+                    <PickConfirmation currentPlayerName={currentTurnPlayer?.participant_name || 'You'} selectedMovie={selectedMovie} selectedCategory={selectedCategory} onConfirm={confirmPick} />
+                  </>
+                ) : (
+                  <div className="p-6 bg-greyscale-purp-900 rounded-lg text-center">
+                    <div className="text-greyscale-blue-100 text-lg font-brockmann font-medium">
+                      Waiting for {currentTurnPlayer.participant_name}'s turn...
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
 
           </div>
         </div>

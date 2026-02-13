@@ -7,12 +7,14 @@ import DraftInterface from '@/components/DraftInterface';
 import { MultiplayerDraftInterface } from '@/components/MultiplayerDraftInterface';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { supabase } from '@/integrations/supabase/client';
+import { Participant, normalizeParticipants } from '@/types/participant';
 
 interface DraftState {
   theme: string;
   option: string;
-  participants: string[];
+  participants: string[] | Participant[];
   categories: string[];
   existingDraftId?: string;
   isMultiplayer?: boolean;
@@ -24,6 +26,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { draftId: urlDraftId } = useParams();
   const { user, loading, guestSession } = useAuth();
+  const { participantId } = useCurrentUser();
   const { getDraftWithPicks } = useDraftOperations();
   const draftState = location.state as DraftState;
   const hasLoadedDraft = useRef(false);
@@ -54,47 +57,117 @@ const Index = () => {
     const loadDraftFromUrl = async () => {
       if (!urlDraftId || hasLoadedDraft.current || draftState) return;
       
+      // Wait for participantId to be available before loading
+      if (!participantId) return;
+      
       hasLoadedDraft.current = true;
       setLoadingExistingDraft(true);
       
       try {
         console.log('Loading draft from URL:', urlDraftId);
-        const { draft, picks } = await getDraftWithPicks(urlDraftId);
         
-        console.log('Draft loaded from URL:', draft);
-        console.log('Picks loaded from URL:', picks);
+        // Try using RPC function first (works for both local and multiplayer drafts)
+        const rpcResult = await supabase.rpc('load_draft_unified', {
+          p_draft_id: urlDraftId,
+          p_participant_id: participantId
+        });
         
-        // Reconstruct draft state from database
-        const reconstructedState: DraftState = {
-          theme: draft.theme,
-          option: draft.option,
-          participants: draft.participants,
-          categories: draft.categories,
-          existingDraftId: draft.id,
-          isMultiplayer: draft.is_multiplayer || false,
-        };
-        
-        setLoadedDraftState(reconstructedState);
-        
-        // Fetch spec draft name if theme is spec-draft
-        if (draft.theme === 'spec-draft' && draft.option) {
-          try {
-            const { data: specDraftData, error: specDraftError } = await supabase
-              .from('spec_drafts')
-              .select('name')
-              .eq('id', draft.option)
-              .single();
-
-            if (!specDraftError && specDraftData) {
-              setSpecDraftName(specDraftData.name);
-            }
-          } catch (err) {
-            console.error('Error fetching spec draft name:', err);
+        if (!rpcResult.error && rpcResult.data && rpcResult.data.length > 0) {
+          // RPC function succeeded - handle multiplayer draft
+          const draftData = rpcResult.data[0];
+          
+          // Check if it's a multiplayer draft
+          if (draftData.draft_is_multiplayer) {
+            // For multiplayer drafts, let MultiplayerDraftInterface handle loading
+            // Just set the state to indicate it's multiplayer
+            const reconstructedState: DraftState = {
+              theme: draftData.draft_theme,
+              option: draftData.draft_option,
+              participants: draftData.draft_participants || [],
+              categories: draftData.draft_categories || [],
+              existingDraftId: draftData.draft_id,
+              isMultiplayer: true,
+            };
+            setLoadedDraftState(reconstructedState);
+            setLoadingExistingDraft(false);
+            return;
           }
-        }
-        
-        if (picks && picks.length > 0) {
-          setExistingPicks(picks);
+          
+          // For local drafts, reconstruct state from RPC response
+          const normalizedParticipants = normalizeParticipants(draftData.draft_participants || []);
+          const reconstructedState: DraftState = {
+            theme: draftData.draft_theme,
+            option: draftData.draft_option,
+            participants: normalizedParticipants,
+            categories: draftData.draft_categories || [],
+            existingDraftId: draftData.draft_id,
+            isMultiplayer: false,
+          };
+          
+          setLoadedDraftState(reconstructedState);
+          
+          // Set picks if available
+          const picksArray = Array.isArray(draftData.picks_data) ? draftData.picks_data : [];
+          if (picksArray.length > 0) {
+            setExistingPicks(picksArray);
+          }
+          
+          // Fetch spec draft name if theme is spec-draft
+          if (draftData.draft_theme === 'spec-draft' && draftData.draft_option) {
+            try {
+              const { data: specDraftData, error: specDraftError } = await supabase
+                .from('spec_drafts')
+                .select('name')
+                .eq('id', draftData.draft_option)
+                .single();
+
+              if (!specDraftError && specDraftData) {
+                setSpecDraftName(specDraftData.name);
+              }
+            } catch (err) {
+              console.error('Error fetching spec draft name:', err);
+            }
+          }
+        } else {
+          // RPC function failed, fall back to direct query (for backward compatibility)
+          const { draft, picks } = await getDraftWithPicks(urlDraftId);
+          
+          console.log('Draft loaded from URL (fallback):', draft);
+          console.log('Picks loaded from URL (fallback):', picks);
+          
+          // Reconstruct draft state from database
+          const normalizedParticipants = normalizeParticipants(draft.participants || []);
+          const reconstructedState: DraftState = {
+            theme: draft.theme,
+            option: draft.option,
+            participants: normalizedParticipants,
+            categories: draft.categories,
+            existingDraftId: draft.id,
+            isMultiplayer: draft.is_multiplayer || false,
+          };
+          
+          setLoadedDraftState(reconstructedState);
+          
+          // Fetch spec draft name if theme is spec-draft
+          if (draft.theme === 'spec-draft' && draft.option) {
+            try {
+              const { data: specDraftData, error: specDraftError } = await supabase
+                .from('spec_drafts')
+                .select('name')
+                .eq('id', draft.option)
+                .single();
+
+              if (!specDraftError && specDraftData) {
+                setSpecDraftName(specDraftData.name);
+              }
+            } catch (err) {
+              console.error('Error fetching spec draft name:', err);
+            }
+          }
+          
+          if (picks && picks.length > 0) {
+            setExistingPicks(picks);
+          }
         }
       } catch (error) {
         console.error('Error loading draft from URL:', error);
@@ -106,7 +179,7 @@ const Index = () => {
     };
 
     loadDraftFromUrl();
-  }, [urlDraftId, draftState, getDraftWithPicks, navigate]);
+  }, [urlDraftId, draftState, participantId, getDraftWithPicks, navigate]);
 
   // Load existing draft data if existingDraftId is provided (from location state)
   useEffect(() => {
@@ -199,31 +272,51 @@ const Index = () => {
     return null;
   }
 
+  // Location state after create is { skipRemount: true } — not real draft data. Treat as usable only when we have theme or multiplayer + existingDraftId.
+  const hasUsableDraftState =
+    finalDraftState &&
+    (finalDraftState.theme != null || (finalDraftState.isMultiplayer && finalDraftState.existingDraftId));
+
   // Render multiplayer interface only if this is actually a multiplayer draft
-  // If we have urlDraftId but no finalDraftState yet, we need to wait for it to load
-  // to determine if it's multiplayer or not. But if draftState has isMultiplayer, use that.
+  // Always pass participantId so load-draft can run without waiting for child's guest session (fixes stuck loading for guests).
   if (finalDraftState?.isMultiplayer) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Index] Rendering MultiplayerDraftInterface via finalDraftState.isMultiplayer', { participantId: participantId ?? null, draftId: urlDraftId || finalDraftState?.existingDraftId });
+    }
     return (
       <MultiplayerDraftInterface 
         draftId={urlDraftId || finalDraftState?.existingDraftId}
         initialData={!urlDraftId && !finalDraftState?.existingDraftId ? finalDraftState : undefined}
+        participantId={participantId}
       />
     );
   }
 
-  // If we're still loading and have urlDraftId, show loading state
-  // (This handles the case where multiplayer draft is loading from URL)
-  if (urlDraftId && !finalDraftState && loadingExistingDraft) {
+  // When we have urlDraftId but no usable draft state (e.g. just navigated after create with state: { skipRemount: true }), render MultiplayerDraftInterface so it can call load_draft_unified.
+  if (urlDraftId && !hasUsableDraftState) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Index] Rendering MultiplayerDraftInterface via urlDraftId (no usable draft state)', { participantId: participantId ?? null, urlDraftId });
+    }
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-        <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>Loading draft...</div>
-      </div>
+      <MultiplayerDraftInterface 
+        draftId={urlDraftId}
+        initialData={undefined}
+        participantId={participantId}
+      />
     );
   }
 
-  // Ensure we have finalDraftState before rendering local draft
-  if (!finalDraftState) {
-    return null;
+  // For multiplayer drafts, we don't need option/theme checks - MultiplayerDraftInterface handles it
+  // Only check for local drafts
+  if (finalDraftState && !finalDraftState.isMultiplayer) {
+    // Ensure we have required properties before rendering local draft
+    if (!finalDraftState.option || !finalDraftState.theme) {
+      return (
+        <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+          <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>Loading draft...</div>
+        </div>
+      );
+    }
   }
 
   return (

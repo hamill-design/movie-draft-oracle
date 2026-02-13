@@ -74,10 +74,10 @@ const DraftHeader = ({
             >
               <span className="text-greyscale-blue-100">
                 {theme === 'spec-draft' 
-                  ? (specDraftName || draftOption).toUpperCase()
+                  ? (specDraftName || draftOption || '').toUpperCase()
                   : theme === 'people' 
-                    ? getCleanActorName(draftOption).toUpperCase()
-                    : draftOption.toString()}
+                    ? getCleanActorName(draftOption || '').toUpperCase()
+                    : (draftOption || '').toString()}
               </span>
               {theme !== 'spec-draft' && (
                 <>

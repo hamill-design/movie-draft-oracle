@@ -19,12 +19,33 @@ const getErrorMessage = (error: any): string => {
     : 'An unknown error occurred';
 };
 
+// Merge picks by id and sort stably (pick_order, player_id, id) to avoid row flicker on reload
+function mergePicksById(prev: any[], next: any[]): any[] {
+  const byId = new Map<string, any>();
+  prev.forEach(p => {
+    const key = p?.id != null ? String(p.id) : `${p?.pick_order}-${p?.player_id}-${p?.category}-${p?.movie_id}`;
+    byId.set(key, p);
+  });
+  next.forEach(p => {
+    const key = p?.id != null ? String(p.id) : `${p?.pick_order}-${p?.player_id}-${p?.category}-${p?.movie_id}`;
+    byId.set(key, p);
+  });
+  return Array.from(byId.values()).sort((a, b) => {
+    const o = (Number(a?.pick_order) ?? 0) - (Number(b?.pick_order) ?? 0);
+    if (o !== 0) return o;
+    const p = (Number(a?.player_id) ?? 0) - (Number(b?.player_id) ?? 0);
+    if (p !== 0) return p;
+    return String(a?.id ?? '').localeCompare(String(b?.id ?? ''));
+  });
+}
+
 interface DraftParticipant {
   id: string;
   user_id: string | null;
   guest_participant_id: string | null;
   participant_id?: string; // Unified ID from database
   participant_name: string;
+  is_ai?: boolean;
   status: 'invited' | 'joined' | 'left';
   is_host: boolean;
   joined_at: string | null;
@@ -47,14 +68,23 @@ interface MultiplayerDraft {
   invite_code: string | null;
   draft_order: string[] | null;
   turn_order: any;
+  /** Backend-computed map: player_id (string) -> 0-based display row. Used when present to place picks in correct board rows. */
+  player_id_to_display_row?: Record<string, number> | null;
 }
 
-export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft: any; participants: any[]; picks: any[] }) => {
+export const useMultiplayerDraft = (
+  draftId?: string,
+  initialDraftData?: { draft: any; participants: any[]; picks: any[] },
+  participantIdOverride?: string | null
+) => {
   const { participantId, isGuest, user } = useCurrentUser();
   const { guestSession } = useGuestSession(user);
   
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // When parent (e.g. Index) passes participantId, use it so load-draft can run before child's session is ready
+  const effectiveParticipantId = participantIdOverride ?? participantId;
   
   // Normalize draftId to ensure it's a string
   const normalizedDraftId = typeof draftId === 'string' ? draftId : (draftId && typeof draftId === 'object' && 'id' in draftId ? String(draftId.id) : undefined);
@@ -106,17 +136,17 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     console.log('Broadcast (optional):', type, payload);
   }, []);
 
-  // Debounced reload function to prevent excessive reloads
-  const debouncedReload = useCallback((draftId: string) => {
+  // Debounced reload function to prevent excessive reloads. Optional longer delay after picks to reduce flicker.
+  const debouncedReload = useCallback((draftId: string, delayMs: number = 500) => {
     if (debounceReloadTimeoutRef.current) {
       clearTimeout(debounceReloadTimeoutRef.current);
     }
     debounceReloadTimeoutRef.current = setTimeout(() => {
       console.log('🔄 Debounced reload triggered');
       if (loadDraftRef.current) {
-        loadDraftRef.current(draftId);
+        loadDraftRef.current(draftId, { background: true });
       }
-    }, 500);
+    }, delayMs);
   }, []);
 
   // Update last activity timestamp
@@ -140,7 +170,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       if (timeSinceLastUpdate > threshold) {
         console.log('📡 Polling: No updates received, reloading draft');
         if (loadDraftRef.current) {
-          loadDraftRef.current(draftId);
+          loadDraftRef.current(draftId, { background: true });
         }
       }
     }, pollingInterval);
@@ -176,9 +206,9 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       participantsChannelRef.current = null;
     }
     
-    // Reload draft to get fresh state
+    // Reload draft to get fresh state (background so UI does not flicker)
     if (loadDraftRef.current) {
-      loadDraftRef.current(draftId).finally(() => {
+      loadDraftRef.current(draftId, { background: true }).finally(() => {
         // Reconnection will happen automatically via the subscription useEffect
         isReconnectingRef.current = false;
       });
@@ -235,6 +265,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     option: string;
     categories: string[];
     participantEmails: string[];
+    aiParticipantNames?: string[];
   }) => {
     if (!participantId) {
       throw new Error(
@@ -253,7 +284,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         p_option: draftData.option,
         p_categories: draftData.categories,
         p_participants: draftData.participantEmails,
-        p_participant_name: 'Host'
+        p_participant_name: 'Host',
+        p_ai_participant_names: draftData.aiParticipantNames || []
       });
 
       if (result.error) throw result.error;
@@ -422,9 +454,10 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     }
   }, [participantId, toast, draft]);
 
-  // Load draft data
-  const loadDraft = useCallback(async (id: string) => {
-    if (!participantId) throw new Error('No participant ID available');
+  // Load draft data (uses effectiveParticipantId so parent-provided id can trigger load)
+  // When options.background is true (polling, reconnect, manual refresh), do not set loading so the UI does not flicker.
+  const loadDraft = useCallback(async (id: string, options?: { background?: boolean }) => {
+    if (!effectiveParticipantId) throw new Error('No participant ID available');
     
     // Ensure id is a string, not an object
     const draftIdString = typeof id === 'string' ? id : (id?.id || String(id));
@@ -432,11 +465,13 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       throw new Error(`Invalid draft ID: expected string, got ${typeof id}`);
     }
 
+    const background = options?.background === true;
+    if (!background) setLoading(true);
     try {
       // Use unified function
       const result = await supabase.rpc('load_draft_unified', {
         p_draft_id: draftIdString,
-        p_participant_id: participantId
+        p_participant_id: effectiveParticipantId
       });
 
       if (result.error) throw result.error;
@@ -460,6 +495,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         invite_code: draftData.draft_invite_code,
         draft_order: draftData.draft_draft_order,
         turn_order: draftData.draft_turn_order,
+        player_id_to_display_row: (draftData as { draft_player_id_to_display_row?: Record<string, number> | null }).draft_player_id_to_display_row ?? null,
       };
 
       setDraft(mappedDraft);
@@ -473,15 +509,15 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
       const enrichedParticipants = await enrichParticipantsWithEmails(participantsArray);
       setParticipants(enrichedParticipants);
 
-      // Set picks
+      // Set picks: merge with previous and sort stably to avoid row flicker between subscription and reload
       const picksArray = Array.isArray(draftData.picks_data) 
         ? draftData.picks_data 
         : [];
-      setPicks(picksArray);
+      setPicks(prev => mergePicksById(prev, picksArray));
 
       // Check if it's the current user's turn using unified ID
       const currentTurnId = mappedDraft.current_turn_participant_id || mappedDraft.current_turn_user_id;
-      setIsMyTurn(currentTurnId === participantId);
+      setIsMyTurn(currentTurnId === effectiveParticipantId);
 
       // Real-time updates are handled by database subscriptions
       // No need to broadcast participant activity
@@ -495,8 +531,10 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         variant: "destructive",
       });
       throw error;
+    } finally {
+      setLoading(false);
     }
-  }, [participantId, toast, enrichParticipantsWithEmails]);
+  }, [effectiveParticipantId, toast, enrichParticipantsWithEmails]);
 
   // Update the ref whenever loadDraft changes
   useEffect(() => {
@@ -594,20 +632,25 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   }, [participantId, toast, loadDraft]);
 
   // Make a pick
-  const makePick = useCallback(async (movieId: number, movieTitle: string, movieYear: number, movieGenre: string, category: string, posterPath?: string) => {
-    if (!draft?.id || !participantId) return;
+  const makePick = useCallback(async (movieId: number, movieTitle: string, movieYear: number, movieGenre: string, category: string, posterPath?: string, participantIdOverride?: string, callerParticipantId?: string) => {
+    // Use override if provided (for AI picks), otherwise use current user's participantId
+    const effectiveParticipantId = participantIdOverride || participantId;
+    if (!draft?.id || !effectiveParticipantId) return;
+    // When making an AI pick, caller is the host so backend can check access (guest hosts have no auth.uid())
+    const effectiveCallerId = callerParticipantId ?? participantId;
     
     try {
       // Use unified function
       const result = await supabase.rpc('make_multiplayer_pick_unified', {
         p_draft_id: draft.id,
-        p_participant_id: participantId,
+        p_participant_id: effectiveParticipantId,
         p_movie_id: movieId,
         p_movie_title: movieTitle,
         p_movie_year: movieYear,
         p_movie_genre: movieGenre,
         p_category: category,
-        p_poster_path: posterPath
+        p_poster_path: posterPath,
+        p_caller_participant_id: participantIdOverride ? effectiveCallerId : null
       });
 
       if (result.error) throw result.error;
@@ -684,19 +727,26 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
     setIsMyTurn(computedIsMyTurn);
   }, [computedIsMyTurn]);
 
-  // Load draft when draftId changes
+  // Load draft when draftId and effectiveParticipantId are available (effectiveParticipantId may come from parent)
   useEffect(() => {
-    if (normalizedDraftId && participantId) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[useMultiplayerDraft] load-draft effect', {
+        normalizedDraftId: normalizedDraftId ?? null,
+        effectiveParticipantId: effectiveParticipantId ?? null,
+        willCallLoadDraft: !!(normalizedDraftId && effectiveParticipantId),
+      });
+    }
+    if (normalizedDraftId && effectiveParticipantId) {
       loadDraft(normalizedDraftId);
     }
-  }, [normalizedDraftId, participantId, loadDraft]);
+  }, [normalizedDraftId, effectiveParticipantId, loadDraft]);
 
-  // Separate effect to reload draft when participantId becomes available
+  // Separate effect to reload draft when effectiveParticipantId becomes available and draft not yet loaded
   useEffect(() => {
-    if (normalizedDraftId && participantId && !draft) {
+    if (normalizedDraftId && effectiveParticipantId && !draft) {
       loadDraft(normalizedDraftId);
     }
-  }, [normalizedDraftId, participantId, draft, loadDraft]);
+  }, [normalizedDraftId, effectiveParticipantId, draft, loadDraft]);
 
   // Create a stable identifier for participants (sorted IDs joined as string)
   // This only changes when participant IDs actually change, not when array reference changes
@@ -886,8 +936,8 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
             return [...prev, payload.new];
           });
           
-          // IMPORTANT: Also reload draft state to ensure turn information is updated
-          debouncedReload(normalizedDraftId);
+          // IMPORTANT: Also reload draft state to ensure turn information is updated (slightly longer delay to reduce row flicker)
+          debouncedReload(normalizedDraftId, 800);
           
           // Show toast for new picks
           toast({
@@ -1007,7 +1057,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
         participantsChannelRef.current = null;
       }
     };
-  }, [normalizedDraftId, participantId, isGuest, participantsKey]);
+  }, [normalizedDraftId, participantId, isGuest, guestSession, participantsKey]);
 
   // Mobile-specific optimizations: Handle visibility changes (tab switching, app backgrounding)
   useEffect(() => {
@@ -1056,7 +1106,7 @@ export const useMultiplayerDraft = (draftId?: string, initialDraftData?: { draft
   const manualRefresh = useCallback(() => {
     if (normalizedDraftId && loadDraftRef.current) {
       console.log('🔄 Manual refresh triggered');
-      loadDraftRef.current(normalizedDraftId);
+      loadDraftRef.current(normalizedDraftId, { background: true });
       updateLastActivity();
     }
   }, [normalizedDraftId, updateLastActivity]);

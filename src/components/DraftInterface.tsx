@@ -1,11 +1,13 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDraftGame } from '@/hooks/useDraftGame';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { useMovies } from '@/hooks/useMovies';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Participant, normalizeParticipants } from '@/types/participant';
+import { useAIPick } from '@/hooks/useAIPick';
 
 import DraftBoard from './DraftBoard';
 import MovieSearch from './MovieSearch';
@@ -18,7 +20,7 @@ interface DraftInterfaceProps {
   draftState: {
     theme: string;
     option: string;
-    participants: string[];
+    participants: string[] | Participant[];
     categories: string[];
     existingDraftId?: string;
     isMultiplayer?: boolean;
@@ -46,27 +48,35 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const navigate = useNavigate();
   const hasShownToast = useRef(false);
   
+  // Ensure draftState has required properties with defaults
+  const safeDraftState = {
+    ...(draftState || {}),
+    participants: draftState?.participants || [],
+    categories: draftState?.categories || [],
+  };
+  
   // Show success message for multiplayer draft creation
   useEffect(() => {
-    if (draftState.isMultiplayer && !draftState.existingDraftId && !hasShownToast.current) {
+    if (safeDraftState.isMultiplayer && !safeDraftState.existingDraftId && !hasShownToast.current) {
+      const participantsCount = Array.isArray(safeDraftState.participants) ? safeDraftState.participants.length : 0;
       hasShownToast.current = true;
       toast({
         title: "Multiplayer Draft Created!",
-        description: `Email invitations have been sent to ${draftState.participants.length} participant(s)`,
+        description: `Email invitations have been sent to ${participantsCount} participant(s)`,
       });
     }
-  }, [draftState.isMultiplayer, draftState.existingDraftId, draftState.participants.length, toast]);
+  }, [safeDraftState.isMultiplayer, safeDraftState.existingDraftId, safeDraftState.participants, toast]);
   
   // If this is a multiplayer draft, use the multiplayer interface
-  if (draftState.isMultiplayer) {
+  if (safeDraftState.isMultiplayer) {
     return (
       <MultiplayerDraftInterface 
-        draftId={draftState.existingDraftId}
-        initialData={draftState.existingDraftId ? undefined : {
-          theme: draftState.theme,
-          option: draftState.option,
-          participants: draftState.participants,
-          categories: draftState.categories,
+        draftId={safeDraftState.existingDraftId}
+        initialData={safeDraftState.existingDraftId ? undefined : {
+          theme: safeDraftState.theme,
+          option: safeDraftState.option,
+          participants: safeDraftState.participants,
+          categories: safeDraftState.categories,
           isHost: true
         }}
       />
@@ -78,19 +88,19 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const [selectedMovie, setSelectedMovie] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [checkingOscarStatus, setCheckingOscarStatus] = useState(false);
-  const [currentDraftId, setCurrentDraftId] = useState<string | null>(draftState?.existingDraftId || null);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(safeDraftState?.existingDraftId || null);
   // Use ref to track draftId immediately (before state update)
-  const draftIdRef = useRef<string | null>(draftState?.existingDraftId || null);
+  const draftIdRef = useRef<string | null>(safeDraftState?.existingDraftId || null);
   // Track if initialization has been attempted to prevent duplicate runs
   const hasInitialized = useRef(false);
   
   // Update currentDraftId when existingDraftId changes (e.g., when restored from database)
   useEffect(() => {
-    if (draftState?.existingDraftId && !currentDraftId) {
-      setCurrentDraftId(draftState.existingDraftId);
-      draftIdRef.current = draftState.existingDraftId;
+    if (safeDraftState?.existingDraftId && !currentDraftId) {
+      setCurrentDraftId(safeDraftState.existingDraftId);
+      draftIdRef.current = safeDraftState.existingDraftId;
     }
-  }, [draftState?.existingDraftId, currentDraftId]);
+  }, [safeDraftState?.existingDraftId, currentDraftId]);
   
   // Sync ref with state
   useEffect(() => {
@@ -100,12 +110,15 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   // Persist draftId to localStorage whenever it changes
   useEffect(() => {
     if (currentDraftId) {
-      const storageKey = `draft_${draftState.theme}_${draftState.option}_${JSON.stringify(draftState.participants)}_${JSON.stringify(draftState.categories)}`;
+      const storageKey = `draft_${safeDraftState.theme}_${safeDraftState.option}_${JSON.stringify(safeDraftState.participants)}_${JSON.stringify(safeDraftState.categories)}`;
       localStorage.setItem(storageKey, currentDraftId);
     }
-  }, [currentDraftId, draftState.theme, draftState.option, draftState.participants, draftState.categories]);
+  }, [currentDraftId, safeDraftState.theme, safeDraftState.option, safeDraftState.participants, safeDraftState.categories]);
   
   const { autoSaveDraft, findExistingDraft, getDraftWithPicks } = useDraftOperations();
+  
+  // Normalize participants to Participant[] format
+  const normalizedParticipants = useMemo(() => normalizeParticipants(safeDraftState.participants), [safeDraftState.participants]);
   
   const {
     picks,
@@ -114,7 +127,10 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     randomizedPlayers,
     addPick,
     loadExistingPicks
-  } = useDraftGame(draftState.participants, draftState.categories);
+  } = useDraftGame(normalizedParticipants, safeDraftState.categories);
+
+  const { pickMovie: aiPickMovie, loading: aiPicking } = useAIPick();
+  const [isAITurn, setIsAITurn] = useState(false);
   
   // State to track enriched picks (with scoring data)
   const [enrichedPicks, setEnrichedPicks] = useState<any[] | null>(null);
@@ -125,7 +141,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   useEffect(() => {
     if (!currentDraftId && !hasInitialized.current && !hasCheckedLocalStorage.current) {
       hasCheckedLocalStorage.current = true;
-      const storageKey = `draft_${draftState.theme}_${draftState.option}_${JSON.stringify(draftState.participants)}_${JSON.stringify(draftState.categories)}`;
+      const storageKey = `draft_${safeDraftState.theme}_${safeDraftState.option}_${JSON.stringify(safeDraftState.participants)}_${JSON.stringify(safeDraftState.categories)}`;
       const storedDraftId = localStorage.getItem(storageKey);
       if (storedDraftId) {
         // Navigate to URL with stored draftId instead of loading here
@@ -133,7 +149,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
         return;
       }
     }
-  }, [currentDraftId, draftState, navigate]);
+  }, [currentDraftId, safeDraftState, navigate]);
 
   // Create draft immediately on mount if it doesn't exist
   // This applies to ALL local drafts: spec-draft, year, people, etc.
@@ -148,10 +164,10 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
       try {
         // First, check if a draft already exists with these parameters
         const existingDraftId = await findExistingDraft({
-          theme: draftState.theme,
-          option: draftState.option,
-          participants: draftState.participants,
-          categories: draftState.categories,
+          theme: safeDraftState.theme,
+          option: safeDraftState.option,
+          participants: normalizedParticipants,
+          categories: safeDraftState.categories,
         });
 
         if (existingDraftId) {
@@ -166,7 +182,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
           try {
             const { draft, picks } = await getDraftWithPicks(existingDraftId);
             if (picks && picks.length > 0) {
-              loadExistingPicks(picks, draftState.participants);
+              loadExistingPicks(picks, safeDraftState.participants);
             }
           } catch (error) {
             console.error('Error loading existing picks:', error);
@@ -176,10 +192,10 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
 
         // No existing draft found, create a new one
         const draftId = await autoSaveDraft({
-          theme: draftState.theme, // Can be 'spec-draft', 'year', 'people', etc.
-          option: draftState.option,
-          participants: draftState.participants,
-          categories: draftState.categories,
+          theme: safeDraftState.theme, // Can be 'spec-draft', 'year', 'people', etc.
+          option: safeDraftState.option,
+          participants: normalizedParticipants,
+          categories: safeDraftState.categories,
           picks: [], // Empty picks initially
           isComplete: false // Always start as incomplete - completion will be saved separately
         }, undefined); // No existing draftId
@@ -187,7 +203,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
         if (draftId) {
           setCurrentDraftId(draftId);
           draftIdRef.current = draftId;
-          console.log('Draft initialized with ID:', draftId, 'Theme:', draftState.theme);
+          console.log('Draft initialized with ID:', draftId, 'Theme:', safeDraftState.theme);
           
           // Navigate to URL with draftId
           navigate(`/draft/${draftId}`, { replace: true });
@@ -206,14 +222,173 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     };
     
     initializeDraft();
-  }, [currentDraftId, existingPicks, draftState, autoSaveDraft, findExistingDraft, getDraftWithPicks, loadExistingPicks, navigate]);
+  }, [currentDraftId, existingPicks, safeDraftState, autoSaveDraft, findExistingDraft, getDraftWithPicks, loadExistingPicks, navigate]);
+
+  // Auto-save function (defined early so it can be used in useEffect hooks)
+  const performAutoSave = useCallback(async (updatedPicks: any[], isComplete: boolean) => {
+    // Ensure we have a draftId (either from DB or local)
+    let draftId = currentDraftId || draftIdRef.current;
+    
+    try {
+      const savedDraftId = await autoSaveDraft({
+        theme: safeDraftState.theme,
+        option: safeDraftState.option,
+        participants: normalizedParticipants,
+        categories: safeDraftState.categories,
+        picks: updatedPicks,
+        isComplete
+      }, draftId || undefined);
+
+      // Always update currentDraftId if we got one back (even if it's the same)
+      if (savedDraftId) {
+        draftId = savedDraftId;
+        setCurrentDraftId(savedDraftId);
+        draftIdRef.current = savedDraftId;
+      }
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+      
+      // If we don't have a draftId yet, generate a local one
+      if (!draftId) {
+        draftId = generateLocalDraftId();
+        setCurrentDraftId(draftId);
+        draftIdRef.current = draftId;
+        console.log('Generated local draftId:', draftId);
+      }
+      
+      // Check if this is an RLS error
+      const isRLSError = (error as any)?.code === '42501' || 
+                        (error as any)?.message?.includes('row-level security policy') ||
+                        (typeof error === 'object' && JSON.stringify(error).includes('42501'));
+      
+      if (isRLSError) {
+        // For RLS errors, try to create a new draft if we don't have a draftId
+        if (!currentDraftId) {
+          try {
+            const newDraftId = await autoSaveDraft({
+              theme: safeDraftState.theme,
+              option: safeDraftState.option,
+              participants: normalizedParticipants,
+              categories: safeDraftState.categories,
+              picks: updatedPicks,
+              isComplete: false
+            }, undefined);
+            
+            if (newDraftId) {
+              setCurrentDraftId(newDraftId);
+              draftIdRef.current = newDraftId;
+              draftId = newDraftId;
+            }
+          } catch (createError) {
+            console.error('Failed to create draft after RLS error:', createError);
+          }
+        }
+      } else {
+        // For non-RLS errors, show toast (but still save locally)
+        toast({
+          title: "Auto-save failed",
+          description: "Your draft couldn't be saved to the server, but it's been saved locally.",
+          variant: "destructive"
+        });
+      }
+    }
+    
+    // Also save to localStorage as backup
+    if (draftId) {
+      try {
+        const localDraft = {
+          id: draftId,
+          theme: safeDraftState.theme,
+          option: safeDraftState.option,
+          participants: normalizedParticipants,
+          categories: safeDraftState.categories,
+          picks: updatedPicks,
+          isComplete,
+          savedAt: new Date().toISOString()
+        };
+        localStorage.setItem(`local_draft_${draftId}`, JSON.stringify(localDraft));
+        console.log('Draft saved locally:', draftId);
+      } catch (error) {
+        console.error('Failed to save draft locally:', error);
+      }
+    }
+  }, [currentDraftId, safeDraftState, normalizedParticipants, autoSaveDraft, toast]);
 
   // Load existing picks when component mounts
   useEffect(() => {
     if (existingPicks) {
-      loadExistingPicks(existingPicks, draftState.participants);
+      loadExistingPicks(existingPicks, normalizedParticipants);
     }
-  }, [existingPicks, draftState.participants, loadExistingPicks]);
+  }, [existingPicks, normalizedParticipants, loadExistingPicks]);
+
+  // Detect AI turn and handle auto-pick
+  useEffect(() => {
+    if (isComplete || !currentPlayer) {
+      setIsAITurn(false);
+      return;
+    }
+    
+    const playerIsAI = currentPlayer.isAI === true;
+    setIsAITurn(playerIsAI);
+    
+    if (playerIsAI && !aiPicking) {
+      // AI's turn - make pick after short delay
+      const makeAIPick = async () => {
+        // Wait 1-2 seconds to simulate "thinking"
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        if (!currentPlayer || !currentPlayer.isAI) return; // Double-check it's still AI's turn
+        
+        // Determine current category (need to figure out which category we're drafting)
+        // For now, we'll need to track which category round we're in
+        const picksPerCategory = normalizedParticipants.length;
+        const currentRound = Math.floor(picks.length / picksPerCategory);
+        const currentCategory = safeDraftState.categories[currentRound] || safeDraftState.categories[0];
+        
+        const alreadyPickedMovieIds = picks.map(p => p.movie.id);
+        
+        const selectedMovie = await aiPickMovie({
+          draftTheme: safeDraftState.theme,
+          draftOption: safeDraftState.option,
+          currentCategory: currentCategory,
+          alreadyPickedMovieIds: alreadyPickedMovieIds,
+        });
+        
+        if (selectedMovie) {
+          // Automatically add the AI's pick
+          const aiPick = {
+            playerId: currentPlayer.id,
+            playerName: currentPlayer.name,
+            movie: selectedMovie,
+            category: currentCategory
+          };
+          
+          const updatedPicks = addPick(aiPick);
+          const newIsComplete = updatedPicks.length >= normalizedParticipants.length * safeDraftState.categories.length;
+          
+          // Auto-save after AI pick
+          await performAutoSave(updatedPicks, newIsComplete);
+          
+          if (newIsComplete) {
+            toast({
+              title: "Draft Complete!",
+              description: "Your draft has been automatically saved.",
+            });
+          }
+        } else {
+          toast({
+            title: "AI Pick Failed",
+            description: "The AI couldn't find a suitable movie to pick.",
+            variant: "destructive",
+          });
+        }
+      };
+      
+      makeAIPick();
+    } else if (!playerIsAI) {
+      setIsAITurn(false);
+    }
+  }, [currentPlayer, picks.length, isComplete, aiPicking, normalizedParticipants, safeDraftState, aiPickMovie, addPick, performAutoSave, toast]);
   
   // Save draft when it completes. Skip if isComplete with 0 picks (guards against
   // useDraftGame race where draftOrder is temporarily [] and isComplete was true).
@@ -236,10 +411,10 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
       if (draftId) {
         try {
           await autoSaveDraft({
-            theme: draftState.theme,
-            option: draftState.option,
-            participants: draftState.participants,
-            categories: draftState.categories,
+            theme: safeDraftState.theme,
+            option: safeDraftState.option,
+            participants: normalizedParticipants,
+            categories: safeDraftState.categories,
             picks: picks,
             isComplete: true
           }, draftId);
@@ -253,7 +428,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     };
     
     saveCompletion();
-  }, [isComplete, currentDraftId, picks, draftState, autoSaveDraft]);
+  }, [isComplete, currentDraftId, picks, safeDraftState, autoSaveDraft]);
 
   // Enrich picks when draft completes
   useEffect(() => {
@@ -265,11 +440,11 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
 
   // Get the base category for initial movie loading
   const getBaseCategory = () => {
-    if (draftState?.theme === 'spec-draft') {
+    if (safeDraftState?.theme === 'spec-draft') {
       return 'spec-draft';
-    } else if (draftState?.theme === 'year') {
+    } else if (safeDraftState?.theme === 'year') {
       return 'year';
-    } else if (draftState?.theme === 'people') {
+    } else if (safeDraftState?.theme === 'people') {
       return 'person';
     }
     return 'popular';
@@ -279,8 +454,8 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   
   // For theme-based drafts, pass the theme option (year, person name, or spec draft ID) as the constraint
   // This will fetch ALL movies for that year/person/spec draft
-  const themeConstraint = draftState?.theme === 'year' || draftState?.theme === 'people' || draftState?.theme === 'spec-draft'
-    ? draftState.option 
+  const themeConstraint = safeDraftState?.theme === 'year' || safeDraftState?.theme === 'people' || safeDraftState?.theme === 'spec-draft'
+    ? safeDraftState.option 
     : '';
   
   // Use movies hook - pass the theme constraint and user's search query
@@ -310,86 +485,6 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     }
   };
 
-  // Auto-save function
-  const performAutoSave = async (updatedPicks: any[], isComplete: boolean) => {
-    // Ensure we have a draftId (either from DB or local)
-    let draftId = currentDraftId;
-    
-    try {
-      const savedDraftId = await autoSaveDraft({
-        theme: draftState.theme,
-        option: draftState.option,
-        participants: draftState.participants,
-        categories: draftState.categories,
-        picks: updatedPicks,
-        isComplete
-      }, currentDraftId || undefined);
-
-      // Always update currentDraftId if we got one back (even if it's the same)
-      if (savedDraftId) {
-        draftId = savedDraftId;
-        setCurrentDraftId(savedDraftId);
-        draftIdRef.current = savedDraftId;
-      }
-    } catch (error) {
-      console.error('Auto-save failed:', error);
-      
-      // If we don't have a draftId yet, generate a local one
-      if (!draftId) {
-        draftId = generateLocalDraftId();
-        setCurrentDraftId(draftId);
-        draftIdRef.current = draftId;
-        console.log('Generated local draftId:', draftId);
-      }
-      
-      // Check if this is an RLS error
-      const isRLSError = (error as any)?.code === '42501' || 
-                        (error as any)?.message?.includes('row-level security policy') ||
-                        (typeof error === 'object' && JSON.stringify(error).includes('42501'));
-      
-      if (isRLSError) {
-        // For RLS errors, try to create a new draft if we don't have a draftId
-        if (!currentDraftId) {
-          try {
-            const newDraftId = await autoSaveDraft({
-              theme: draftState.theme,
-              option: draftState.option,
-              participants: draftState.participants,
-              categories: draftState.categories,
-              picks: updatedPicks,
-              isComplete
-            }, undefined);
-            
-            if (newDraftId) {
-              draftId = newDraftId;
-              setCurrentDraftId(newDraftId);
-              draftIdRef.current = newDraftId;
-            }
-          } catch (retryError) {
-            console.error('Retry after RLS error also failed:', retryError);
-          }
-        }
-      } else {
-        // For non-RLS errors, show toast (but still save locally)
-        toast({
-          title: "Auto-save failed",
-          description: "Your draft couldn't be saved to the server, but it's been saved locally.",
-          variant: "destructive"
-        });
-      }
-    }
-    
-    // Always save to localStorage as a fallback, especially if database save failed
-    if (draftId) {
-      saveLocalDraft(draftId, {
-        theme: draftState.theme,
-        option: draftState.option,
-        participants: draftState.participants,
-        categories: draftState.categories,
-        isComplete
-      }, updatedPicks);
-    }
-  };
 
   const handleMovieSelect = async (movie: any) => {
     setSelectedMovie(movie);
@@ -471,7 +566,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     };
 
     const updatedPicks = addPick(newPick);
-    const newIsComplete = picks.length + 1 >= draftState.participants.length * draftState.categories.length;
+    const newIsComplete = picks.length + 1 >= normalizedParticipants.length * safeDraftState.categories.length;
 
     setSelectedMovie(null);
     setSelectedCategory('');
@@ -688,52 +783,67 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     <div className="space-y-6">
       <DraftBoard
         players={randomizedPlayers}
-        categories={draftState.categories}
+        categories={safeDraftState.categories}
         picks={picks}
-        theme={draftState.theme}
-        draftOption={draftState.option}
+        theme={safeDraftState.theme}
+        draftOption={safeDraftState.option}
         currentPlayer={currentPlayer}
       />
 
       {!isComplete && currentPlayer && (
         <>
-          <MovieSearch
-            theme={draftState.theme}
-            option={draftState.option}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            movies={movies}
-            loading={moviesLoading}
-            selectedMovie={selectedMovie}
-            onMovieSelect={handleMovieSelect}
-            themeParameter={themeConstraint}
-          />
+          {isAITurn ? (
+            <div className="p-6 bg-greyscale-purp-900 rounded-lg flex flex-col items-center gap-4">
+              <div className="text-greyscale-blue-100 text-lg font-brockmann font-medium">
+                {currentPlayer.name} is thinking...
+              </div>
+              {aiPicking && (
+                <div className="text-greyscale-blue-300 text-sm">
+                  Analyzing movies...
+                </div>
+              )}
+            </div>
+          ) : (
+            <>
+              <MovieSearch
+                theme={safeDraftState.theme}
+                option={safeDraftState.option}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                movies={movies}
+                loading={moviesLoading}
+                selectedMovie={selectedMovie}
+                onMovieSelect={handleMovieSelect}
+                themeParameter={themeConstraint}
+              />
 
-          <EnhancedCategorySelection
-            selectedMovie={selectedMovie}
-            categories={draftState.categories}
-            selectedCategory={selectedCategory}
-            onCategorySelect={handleCategorySelect}
-            picks={picks}
-            currentPlayerId={currentPlayer.id}
-            theme={draftState.theme}
-            option={draftState.option}
-            checkingOscarStatus={checkingOscarStatus}
-          />
+              <EnhancedCategorySelection
+                selectedMovie={selectedMovie}
+                categories={safeDraftState.categories}
+                selectedCategory={selectedCategory}
+                onCategorySelect={handleCategorySelect}
+                picks={picks}
+                currentPlayerId={currentPlayer.id}
+                theme={safeDraftState.theme}
+                option={safeDraftState.option}
+                checkingOscarStatus={checkingOscarStatus}
+              />
 
-          <PickConfirmation
-            currentPlayerName={currentPlayer.name}
-            selectedMovie={selectedMovie}
-            selectedCategory={selectedCategory}
-            onConfirm={confirmPick}
-          />
+              <PickConfirmation
+                currentPlayerName={currentPlayer.name}
+                selectedMovie={selectedMovie}
+                selectedCategory={selectedCategory}
+                onConfirm={confirmPick}
+              />
+            </>
+          )}
         </>
       )}
 
       {isComplete && (
         (() => {
-          // Use ref first (most up-to-date), then state, then draftState
-          let finalDraftId = draftIdRef.current || currentDraftId || draftState?.existingDraftId;
+          // Use ref first (most up-to-date), then state, then safeDraftState
+          let finalDraftId = draftIdRef.current || currentDraftId || safeDraftState?.existingDraftId;
           
           // If still no draftId and we have 0 picks (draft completed immediately), show loading state
           // The initialization is likely still in progress
@@ -761,9 +871,9 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
                 const draftJson = localStorage.getItem(key);
                 if (draftJson) {
                   const localDraft = JSON.parse(draftJson);
-                  if (localDraft.theme === draftState.theme && 
-                      localDraft.option === draftState.option &&
-                      localDraft.participants?.length === draftState.participants.length) {
+                  if (localDraft.theme === safeDraftState.theme && 
+                      localDraft.option === safeDraftState.option &&
+                      localDraft.participants?.length === normalizedParticipants.length) {
                     finalDraftId = localDraft.id;
                     setCurrentDraftId(finalDraftId || null);
                     draftIdRef.current = finalDraftId || null;
@@ -799,10 +909,10 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
             console.error('Draft completed but no draftId available', {
               draftIdRef: draftIdRef.current,
               currentDraftId,
-              existingDraftId: draftState?.existingDraftId,
-              theme: draftState?.theme,
+              existingDraftId: safeDraftState?.existingDraftId,
+              theme: safeDraftState?.theme,
               picksCount: picks.length,
-              draftState
+              draftState: safeDraftState
             });
             
             return (
@@ -829,11 +939,11 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
               draftId={finalDraftId}
               draftData={{
                 id: finalDraftId,
-                title: draftState.option,
-                theme: draftState.theme,
-                option: draftState.option,
-                participants: draftState.participants,
-                categories: draftState.categories,
+                title: safeDraftState.option,
+                theme: safeDraftState.theme,
+                option: safeDraftState.option,
+                participants: safeDraftState.participants,
+                categories: safeDraftState.categories,
                 is_complete: true
               }}
               picks={formattedPicks}

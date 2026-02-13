@@ -2,13 +2,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { Participant, normalizeParticipants } from '@/types/participant';
 
 export interface Draft {
   id: string;
   title: string;
   theme: string;
   option: string;
-  participants: string[];
+  participants: Participant[];
   categories: string[];
   is_complete: boolean;
   is_multiplayer: boolean;
@@ -50,7 +51,14 @@ export const useDrafts = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDrafts(data || []);
+      
+      // Convert participants from string[] to Participant[] when loading
+      const draftsWithParticipants = (data || []).map(draft => ({
+        ...draft,
+        participants: normalizeParticipants(draft.participants || [])
+      }));
+      
+      setDrafts(draftsWithParticipants);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch drafts');
     } finally {
