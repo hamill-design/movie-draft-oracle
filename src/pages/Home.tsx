@@ -340,7 +340,7 @@ const Home = () => {
                     )}
 
                     {selectedOption && (
-                      <div className="mb-4">
+                      <div className="mb-4 flex flex-col gap-4">
                         <div className="w-full h-full flex-col justify-start items-center gap-1.5 inline-flex">
                           <span className="text-greyscale-blue-100 text-sm font-medium leading-5 font-brockmann">
                             You've Selected
@@ -349,6 +349,14 @@ const Home = () => {
                             {selectedOption}
                           </span>
                         </div>
+                        <Button
+                          type="button"
+                          onClick={() => navigate(`/draft/people/${encodeURIComponent(selectedOption)}/setup`)}
+                          className="bg-yellow-500 hover:bg-yellow-300 text-greyscale-blue-800 font-brockmann font-semibold px-6 py-3 text-base rounded-[2px] tracking-wide w-full sm:w-auto"
+                          size="lg"
+                        >
+                          Begin setup
+                        </Button>
                       </div>
                     )}
                   </>
@@ -381,13 +389,23 @@ const Home = () => {
                     </div>
 
                     {selectedOption && (
-                      <div className="w-full flex flex-col justify-start items-center gap-1.5 mt-4">
-                        <span className="text-greyscale-blue-300 text-sm font-brockmann font-medium leading-5">
-                          You've Selected
-                        </span>
-                        <span className="text-purple-300 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
-                          {selectedOption}
-                        </span>
+                      <div className="w-full flex flex-col justify-start items-center gap-4 mt-4">
+                        <div className="w-full flex flex-col justify-start items-center gap-1.5">
+                          <span className="text-greyscale-blue-300 text-sm font-brockmann font-medium leading-5">
+                            You've Selected
+                          </span>
+                          <span className="text-purple-300 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
+                            {selectedOption}
+                          </span>
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={() => navigate(`/draft/year/${selectedOption}/setup`)}
+                          className="bg-yellow-500 hover:bg-yellow-300 text-greyscale-blue-800 font-brockmann font-semibold px-6 py-3 text-base rounded-[2px] tracking-wide"
+                          size="lg"
+                        >
+                          Begin setup
+                        </Button>
                       </div>
                     )}
                   </>
@@ -395,8 +413,8 @@ const Home = () => {
             </div>
           )}
 
-          {/* Draft Mode Selection */}
-          {isStepVisible('mode') && (
+          {/* Draft Mode Selection - only for non-theme flows (people/year use setup page) */}
+          {theme !== 'people' && theme !== 'year' && isStepVisible('mode') && (
             <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
               <div className="self-stretch flex flex-col justify-center items-center gap-2">
                 <div className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann">
@@ -454,7 +472,7 @@ const Home = () => {
           )}
 
           {/* Participants */}
-          {isStepVisible('participants') && (
+          {theme !== 'people' && theme !== 'year' && isStepVisible('participants') && (
             <div className="p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
               <div className="flex items-center gap-2">
                 <div className="w-6 h-6 flex justify-center items-center">
@@ -552,7 +570,7 @@ const Home = () => {
           )}
 
           {/* Categories Selection */}
-          {isStepVisible('categories') && (
+          {theme !== 'people' && theme !== 'year' && isStepVisible('categories') && (
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleStartDraft)} className="space-y-8">
                 <EnhancedCategoriesForm 

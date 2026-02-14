@@ -25,6 +25,7 @@ import NotFound from "./pages/NotFound";
 import { JoinDraft } from "./pages/JoinDraft";
 import LearnMore from "./pages/LearnMore";
 import SpecDraftSetup from "./pages/SpecDraftSetup";
+import ThemeDraftSetup from "./pages/ThemeDraftSetup";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -54,6 +55,8 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/draft" element={<Index />} />
+              <Route path="/draft/people/:name/setup" element={<ThemeDraftSetup theme="people" />} />
+              <Route path="/draft/year/:year/setup" element={<ThemeDraftSetup theme="year" />} />
               <Route path="/draft/:draftId" element={<Index />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<Admin />} />
