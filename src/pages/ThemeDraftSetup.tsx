@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Users, User, Mail } from 'lucide-react';
+import { Users, User, Mail, Bot } from 'lucide-react';
 import { MultiPersonIcon, EmailIcon, TrashIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -14,6 +14,8 @@ import EnhancedCategoriesForm from '@/components/EnhancedCategoriesForm';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { DraftSetupForm } from '@/hooks/useDraftForm';
+import { Participant } from '@/types/participant';
+import { getRandomAIName } from '@/data/aiNames';
 
 const isEmailValid = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -42,7 +44,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
   }, [theme, params.name, params.year]);
 
   const [draftMode, setDraftMode] = useState<'local' | 'multiplayer'>('local');
-  const [participants, setParticipants] = useState<string[]>([]);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [newParticipant, setNewParticipant] = useState('');
   const [isAddButtonHovered, setIsAddButtonHovered] = useState(false);
   const [hoveredRemoveButton, setHoveredRemoveButton] = useState<string | null>(null);
@@ -68,23 +70,30 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
   }, [option, navigate]);
 
   useEffect(() => {
-    if (draftMode === 'multiplayer' && hostName && !participants.includes(hostName)) {
-      setParticipants((prev) => [hostName, ...prev]);
+    if (draftMode === 'multiplayer' && hostName && !participants.some(p => p.name === hostName)) {
+      setParticipants((prev) => [{ name: hostName, isAI: false }, ...prev]);
     } else if (draftMode === 'local' && hostName) {
-      setParticipants((prev) => prev.filter((p) => p !== hostName));
+      setParticipants((prev) => prev.filter((p) => p.name !== hostName));
     }
   }, [draftMode, hostName]);
 
   const handleAddParticipant = () => {
     const trimmed = newParticipant.trim();
-    if (trimmed && !participants.includes(trimmed)) {
-      setParticipants((prev) => [...prev, trimmed]);
+    if (trimmed && !participants.some(p => p.name === trimmed)) {
+      setParticipants((prev) => [...prev, { name: trimmed, isAI: false }]);
       setNewParticipant('');
     }
   };
 
-  const handleRemoveParticipant = (participant: string) => {
-    if (draftMode === 'multiplayer' && participant === hostName) {
+  const handleAddAIParticipant = () => {
+    const aiName = getRandomAIName();
+    if (!participants.some(p => p.name === aiName)) {
+      setParticipants((prev) => [...prev, { name: aiName, isAI: true }]);
+    }
+  };
+
+  const handleRemoveParticipant = (participant: Participant) => {
+    if (draftMode === 'multiplayer' && participant.name === hostName) {
       toast({
         title: 'Cannot remove host',
         description: 'The host must remain as a participant in multiplayer drafts.',
@@ -92,7 +101,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
       });
       return;
     }
-    setParticipants((prev) => prev.filter((p) => p !== participant));
+    setParticipants((prev) => prev.filter((p) => p.name !== participant.name));
   };
 
   const handleSubmit = form.handleSubmit(async (data) => {
@@ -117,7 +126,15 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
     }
 
     if (draftMode === 'multiplayer') {
-      const invalidEmails = participants.filter((p) => p !== hostName && !isEmailValid(p));
+      // Separate human participants (emails) from AI participants
+      const humanParticipants = participants
+        .filter(p => p.name !== hostName && !p.isAI)
+        .map(p => p.name);
+      const aiParticipants = participants
+        .filter(p => p.name !== hostName && p.isAI)
+        .map(p => p.name);
+
+      const invalidEmails = humanParticipants.filter((email) => !isEmailValid(email));
       if (invalidEmails.length > 0) {
         toast({
           title: 'Invalid Email Addresses',
@@ -135,13 +152,13 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
         return;
       }
 
-      const additionalParticipants = participants.filter((p) => p !== hostName);
       const draftId = await createMultiplayerDraft({
         title: option,
         theme,
         option,
         categories: data.categories,
-        participantEmails: additionalParticipants,
+        participantEmails: humanParticipants,
+        aiParticipantNames: aiParticipants,
       });
       navigate(`/draft/${draftId}`);
       return;
@@ -277,6 +294,15 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                 >
                   Add
                 </button>
+                <button
+                  type="button"
+                  onClick={handleAddAIParticipant}
+                  className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-brockmann font-medium leading-5 rounded-[2px] flex justify-center items-center gap-2 transition-colors"
+                  title="Add AI Player"
+                >
+                  <Bot size={16} />
+                  Add AI
+                </button>
               </div>
               {draftMode === 'multiplayer' && (
                 <div className="p-4 bg-teal-900 rounded flex items-center gap-2" style={{ outline: '1px solid #B2FFEA', outlineOffset: '-1px' }}>
@@ -291,7 +317,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                   <span className="text-greyscale-blue-300 text-base font-normal leading-6 font-brockmann">
                     Participants (
                     {draftMode === 'multiplayer' && hostName
-                      ? participants.filter((p) => p !== hostName).length + 1
+                      ? participants.filter((p) => p.name !== hostName).length + 1
                       : participants.length}
                     ):
                   </span>
@@ -304,25 +330,29 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                         </span>
                       </div>
                     )}
-                    {participants.filter((p) => draftMode !== 'multiplayer' || p !== hostName).map((participant) => (
+                    {participants.filter((p) => draftMode !== 'multiplayer' || p.name !== hostName).map((participant) => (
                       <div
-                        key={participant}
+                        key={participant.name}
                         className={`py-2 pl-4 pr-[10px] bg-brand-primary rounded flex items-center gap-2 ${
-                          draftMode === 'multiplayer' && !isEmailValid(participant) && participant !== hostName ? 'bg-red-900 border border-red-500' : ''
+                          draftMode === 'multiplayer' && !participant.isAI && !isEmailValid(participant.name) && participant.name !== hostName ? 'bg-red-900 border border-red-500' : ''
                         }`}
                       >
-                        {draftMode === 'multiplayer' && <Mail size={16} className="text-greyscale-blue-100" />}
-                        <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">{participant}</span>
-                        {draftMode === 'multiplayer' && participant !== hostName && !isEmailValid(participant) && (
+                        {draftMode === 'multiplayer' && !participant.isAI && <Mail size={16} className="text-greyscale-blue-100" />}
+                        {participant.isAI && <Bot size={16} className="text-greyscale-blue-100" />}
+                        <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
+                          {participant.name}
+                          {participant.isAI && <span className="ml-1 text-xs opacity-75">(AI)</span>}
+                        </span>
+                        {draftMode === 'multiplayer' && !participant.isAI && participant.name !== hostName && !isEmailValid(participant.name) && (
                           <span className="text-xs text-red-400 ml-1">Invalid</span>
                         )}
                         <button
                           type="button"
                           onClick={() => handleRemoveParticipant(participant)}
-                          onMouseEnter={() => setHoveredRemoveButton(participant)}
+                          onMouseEnter={() => setHoveredRemoveButton(participant.name)}
                           onMouseLeave={() => setHoveredRemoveButton(null)}
                           className="p-1 rounded-xl flex justify-center items-center hover:bg-purple-300 transition-colors"
-                          style={{ background: hoveredRemoveButton === participant ? 'var(--Purple-300, #907AFF)' : 'transparent' }}
+                          style={{ background: hoveredRemoveButton === participant.name ? 'var(--Purple-300, #907AFF)' : 'transparent' }}
                         >
                           <TrashIcon className="w-4 h-4 text-greyscale-blue-100" />
                         </button>

@@ -344,10 +344,13 @@ export const useDraftOperations = () => {
 
       if (!fullDraft) return null;
 
-      // Compare participants and categories arrays
-      const participantsMatch = 
-        JSON.stringify([...fullDraft.participants].sort()) === 
-        JSON.stringify([...participantsForComparison].sort());
+      // Compare participants arrays
+      // Normalize both to Participant[] format first, then compare names
+      const draftParticipants = normalizeParticipants(fullDraft.participants || []);
+      const normalizedForComparison = normalizeParticipants(draftData.participants);
+      const draftNames = draftParticipants.map(p => p.name).sort();
+      const comparisonNames = normalizedForComparison.map(p => p.name).sort();
+      const participantsMatch = JSON.stringify(draftNames) === JSON.stringify(comparisonNames);
       
       const categoriesMatch = 
         JSON.stringify([...fullDraft.categories].sort()) === 
