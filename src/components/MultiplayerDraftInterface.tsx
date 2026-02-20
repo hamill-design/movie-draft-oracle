@@ -68,6 +68,8 @@ export const MultiplayerDraftInterface = ({
   const { pickMovie: aiPickMovie, loading: aiPicking } = useAIPick();
   const [isAITurn, setIsAITurn] = useState(false);
   const isMakingAIPickRef = useRef(false);
+  // Per-AI shuffled category order so AI doesn't always pick in left-to-right category order
+  const aiCategoryOrderByParticipantIdRef = useRef<Map<string, string[]>>(new Map());
   // Stable row order: once draft has started, keep using last known turn order so rows don't flip on reload
   const lastStableTurnOrderIdsRef = useRef<{ draftId: string; participantIds: string[] } | null>(null);
   const playerIdToDisplayIndexRef = useRef<Map<number, number> | null>(null);
@@ -348,11 +350,25 @@ export const MultiplayerDraftInterface = ({
           return;
         }
 
-        // Determine current category from turn order
+        const aiParticipantId = stillCurrentPlayer.participant_id ||
+                                stillCurrentPlayer.user_id ||
+                                stillCurrentPlayer.guest_participant_id ||
+                                (stillCurrentPlayer.is_ai ? stillCurrentPlayer.id : null);
+
+        // Determine current category: for AI, use a randomized order per participant; otherwise use round order
         const currentPickNumber = draft.current_pick_number || 1;
         const picksPerCategory = participants.length;
         const currentRound = Math.floor((currentPickNumber - 1) / picksPerCategory);
-        const currentCategory = draft.categories?.[currentRound] || draft.categories?.[0] || '';
+        const defaultCategory = draft.categories?.[currentRound] || draft.categories?.[0] || '';
+        // Backend stores picks with integer player_id; participant may have player_id from load_draft_unified
+        const aiPlayerId = (stillCurrentPlayer as { player_id?: number })?.player_id;
+        const aiPicksSoFar = typeof aiPlayerId === 'number' ? picks.filter(p => Number(p.player_id) === aiPlayerId).length : 0;
+        let order = aiParticipantId != null ? aiCategoryOrderByParticipantIdRef.current.get(String(aiParticipantId)) : undefined;
+        if (!order && draft.categories?.length) {
+          order = [...draft.categories].sort(() => Math.random() - 0.5);
+          if (aiParticipantId != null) aiCategoryOrderByParticipantIdRef.current.set(String(aiParticipantId), order);
+        }
+        const currentCategory = (order && order[aiPicksSoFar] != null) ? order[aiPicksSoFar] : defaultCategory;
 
         if (!currentCategory) {
           console.error('No category found for AI pick');
@@ -371,14 +387,10 @@ export const MultiplayerDraftInterface = ({
           draftOption: draft.option || '',
           currentCategory: currentCategory,
           alreadyPickedMovieIds: alreadyPickedMovieIds,
+          allCategories: draft.categories || [],
         });
 
         if (selectedMovie && stillCurrentPlayer) {
-          const aiParticipantId = stillCurrentPlayer.participant_id ||
-                                  stillCurrentPlayer.user_id ||
-                                  stillCurrentPlayer.guest_participant_id ||
-                                  (stillCurrentPlayer.is_ai ? stillCurrentPlayer.id : null);
-
           if (!aiParticipantId) {
             toast({
               title: "AI Pick Failed",

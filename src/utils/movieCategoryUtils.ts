@@ -24,6 +24,13 @@ export const getEligibleCategories = (
   if (!movie) return [];
 
   const eligibleCategories: string[] = [];
+  
+  // Debug logging for genre matching
+  const debugLog = (category: string, matched: boolean, reason: string) => {
+    if (matched) {
+      console.log(`getEligibleCategories: "${movie.title}" (genre: "${movie.genre}") → ${category} - ${reason}`);
+    }
+  };
 
   // Check spec categories first if this is a person-based theme
   if (theme === 'people' && option && specCategoriesMap && specCategoriesMap.size > 0) {
@@ -70,25 +77,57 @@ export const getEligibleCategories = (
   }
 
   // Genre-based categories
-  const genre = movie.genre?.toLowerCase() || '';
+  // Use strict word matching to ensure we match whole genre words, not substrings
+  const genre = movie.genre?.toLowerCase().trim() || '';
   
-  if (genre.includes('action') || genre.includes('adventure')) {
+  // Helper function to check if a genre keyword exists as a whole word
+  // Handles both single words and hyphenated words (e.g., "sci-fi")
+  const hasGenre = (keyword: string): boolean => {
+    if (!genre) return false;
+    // Split genre string by spaces to get individual genre words
+    const genreWords = genre.split(/\s+/);
+    // Check if any genre word exactly matches the keyword
+    // This ensures "animation" matches but "action" doesn't match "animation"
+    return genreWords.some(word => word === keyword);
+  };
+  
+  // Action/Adventure: matches "action" or "adventure" as whole words
+  if (hasGenre('action') || hasGenre('adventure')) {
     eligibleCategories.push('Action/Adventure');
+    debugLog('Action/Adventure', true, `matched: ${hasGenre('action') ? 'action' : 'adventure'}`);
   }
-  if (genre.includes('animation') || genre.includes('animated')) {
+  
+  // Animated: matches "animation" or "animated" as whole words (exact match only)
+  // This ensures only actual animated movies match, not movies with "animation" as a substring
+  if (hasGenre('animation') || hasGenre('animated')) {
     eligibleCategories.push('Animated');
+    const matchedTerm = hasGenre('animation') ? 'animation' : 'animated';
+    debugLog('Animated', true, `matched: ${matchedTerm}`);
   }
-  if (genre.includes('comedy')) {
+  
+  // Comedy: matches "comedy" as a whole word
+  if (hasGenre('comedy')) {
     eligibleCategories.push('Comedy');
+    debugLog('Comedy', true, 'matched: comedy');
   }
-  if (genre.includes('drama') || genre.includes('romance')) {
+  
+  // Drama/Romance: matches "drama" or "romance" as whole words
+  if (hasGenre('drama') || hasGenre('romance')) {
     eligibleCategories.push('Drama/Romance');
+    debugLog('Drama/Romance', true, `matched: ${hasGenre('drama') ? 'drama' : 'romance'}`);
   }
-  if (genre.includes('sci-fi') || genre.includes('science fiction') || genre.includes('fantasy')) {
+  
+  // Sci-Fi/Fantasy: matches "sci-fi" (hyphenated) or "fantasy" as whole words
+  // Note: "sci-fi" is stored as a hyphenated word, so we check for exact match
+  if (hasGenre('sci-fi') || hasGenre('fantasy')) {
     eligibleCategories.push('Sci-Fi/Fantasy');
+    debugLog('Sci-Fi/Fantasy', true, `matched: ${hasGenre('sci-fi') ? 'sci-fi' : 'fantasy'}`);
   }
-  if (genre.includes('horror') || genre.includes('thriller')) {
+  
+  // Horror/Thriller: matches "horror" or "thriller" as whole words
+  if (hasGenre('horror') || hasGenre('thriller')) {
     eligibleCategories.push('Horror/Thriller');
+    debugLog('Horror/Thriller', true, `matched: ${hasGenre('horror') ? 'horror' : 'thriller'}`);
   }
 
   // Academy Award category - using actual Oscar data
@@ -108,5 +147,12 @@ export const getEligibleCategories = (
   }
 
   // Filter to only return categories that exist in the draft's category list
-  return eligibleCategories.filter(category => allCategories.includes(category));
+  const filtered = eligibleCategories.filter(category => allCategories.includes(category));
+  
+  // Final debug log
+  if (filtered.length > 0) {
+    console.log(`getEligibleCategories: "${movie.title}" (genre: "${movie.genre}") → Final eligible: [${filtered.join(', ')}]`);
+  }
+  
+  return filtered;
 };

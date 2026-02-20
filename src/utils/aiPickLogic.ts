@@ -2,12 +2,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Movie } from '@/data/movies';
 import { getCleanActorName } from '@/lib/utils';
 import { getGenreName } from '@/utils/specDraftGenreMapper';
+import { getEligibleCategories } from '@/utils/movieCategoryUtils';
 
 export interface AIPickOptions {
   draftTheme: string;
   draftOption: string;
   currentCategory: string;
   alreadyPickedMovieIds: number[];
+  allCategories: string[];
   searchQuery?: string;
 }
 
@@ -17,7 +19,7 @@ export interface AIPickOptions {
  */
 export async function makeAIPick(options: AIPickOptions): Promise<Movie | null> {
   try {
-    const { draftTheme, draftOption, currentCategory, alreadyPickedMovieIds, searchQuery } = options;
+    const { draftTheme, draftOption, currentCategory, alreadyPickedMovieIds, allCategories, searchQuery } = options;
 
     let movies: Movie[] = [];
 
@@ -126,10 +128,101 @@ export async function makeAIPick(options: AIPickOptions): Promise<Movie | null> 
     }
 
     // Filter out already picked movies
-    const availableMovies = movies.filter(movie => !alreadyPickedMovieIds.includes(movie.id));
+    const unpickedMovies = movies.filter(movie => !alreadyPickedMovieIds.includes(movie.id));
+    let availableMovies = unpickedMovies;
+
+    // Filter movies to only include those eligible for the current category
+    // This ensures AI picks function like real players - respecting genre, year, Oscar status, etc.
+    if (currentCategory) {
+      // Use allCategories if provided, otherwise fallback to just currentCategory
+      // This prevents the filtering from being bypassed when allCategories is missing
+      const effectiveAllCategories = (allCategories && allCategories.length > 0) ? allCategories : [currentCategory];
+      
+      if (!allCategories || allCategories.length === 0) {
+        console.warn(`AI Pick: allCategories is missing or empty, using fallback [${currentCategory}] for filtering`);
+      }
+
+      // For people-based drafts, fetch spec categories map for this actor
+      let specCategoriesMap: Map<string, number[]> | undefined = undefined;
+      if (draftTheme === 'people' || draftTheme === 'person') {
+        specCategoriesMap = new Map<string, number[]>();
+        if (draftOption) {
+          const cleanedActorName = draftTheme === 'person' ? getCleanActorName(draftOption) : draftOption;
+          
+          // Try exact match first
+          let { data: specData, error: specError } = await supabase
+            .from('actor_spec_categories')
+            .select('category_name, movie_tmdb_ids')
+            .eq('actor_name', cleanedActorName);
+
+          if (specError || !specData || specData.length === 0) {
+            // Try case-insensitive match
+            ({ data: specData, error: specError } = await supabase
+              .from('actor_spec_categories')
+              .select('category_name, movie_tmdb_ids')
+              .ilike('actor_name', cleanedActorName));
+          }
+
+          if (!specError && specData && specData.length > 0) {
+            specData.forEach((row: { category_name: string; movie_tmdb_ids: number[] }) => {
+              specCategoriesMap!.set(row.category_name, row.movie_tmdb_ids || []);
+            });
+          }
+        }
+      }
+
+      // Filter movies to only include those eligible for the current category
+      // This works for all themes: year-based (decades), genre-based, Oscar, Blockbuster, etc.
+      const beforeFilterCount = availableMovies.length;
+      availableMovies = availableMovies.filter(movie => {
+        // Validate movie has required fields
+        if (!movie || !movie.title) {
+          console.warn(`AI Pick: Skipping invalid movie object`);
+          return false;
+        }
+
+        // Ensure genre field exists and is not "Unknown"
+        // For genre-based categories, we need valid genre data
+        if (!movie.genre || movie.genre === 'Unknown' || movie.genre.trim() === '') {
+          // Only skip if this is a genre-based category
+          const genreCategories = ['Action/Adventure', 'Animated', 'Comedy', 'Drama/Romance', 'Sci-Fi/Fantasy', 'Horror/Thriller'];
+          if (genreCategories.includes(currentCategory)) {
+            console.warn(`AI Pick: Movie "${movie.title}" has invalid/missing genre: "${movie.genre}", skipping for genre category "${currentCategory}"`);
+            return false;
+          }
+          // For non-genre categories (decades, Oscar, Blockbuster), we can still proceed
+        }
+
+        const eligibleCategories = getEligibleCategories(
+          movie as any,
+          effectiveAllCategories,
+          draftTheme,
+          draftOption,
+          specCategoriesMap
+        );
+        
+        const isEligible = eligibleCategories.includes(currentCategory);
+        
+        if (!isEligible) {
+          console.log(`AI Pick: Movie "${movie.title}" (genre: "${movie.genre || 'N/A'}", year: ${movie.year || 'N/A'}) is NOT eligible for "${currentCategory}". Eligible categories: [${eligibleCategories.join(', ')}]`);
+        } else {
+          console.log(`AI Pick: Movie "${movie.title}" (genre: "${movie.genre || 'N/A'}", year: ${movie.year || 'N/A'}) IS eligible for "${currentCategory}"`);
+        }
+        
+        return isEligible;
+      });
+      
+      console.log(`AI Pick: Filtered ${beforeFilterCount} movies down to ${availableMovies.length} eligible for "${currentCategory}"`);
+    }
+
+    // If no movies match the category (e.g. Blockbuster with only small films left), pick best from remaining pool so draft can complete
+    if (availableMovies.length === 0 && unpickedMovies.length > 0) {
+      console.warn(`AI Pick: No movies eligible for "${currentCategory}", falling back to best available from ${unpickedMovies.length} remaining`);
+      availableMovies = unpickedMovies;
+    }
 
     if (availableMovies.length === 0) {
-      console.warn('No available movies for AI to pick from');
+      console.warn(`AI Pick: No available movies for AI to pick from after filtering for category "${currentCategory}"`);
       return null;
     }
 
@@ -236,7 +329,13 @@ export async function makeAIPick(options: AIPickOptions): Promise<Movie | null> 
       ? Math.floor(Math.random() * closeCandidates.length)
       : 0;
     
-    return closeCandidates[selectedIndex] || sortedMovies[0] || null;
+    const selectedMovie = closeCandidates[selectedIndex] || sortedMovies[0] || null;
+    
+    if (selectedMovie) {
+      console.log(`AI Pick: Selected "${selectedMovie.title}" for category "${currentCategory}"`);
+    }
+    
+    return selectedMovie;
   } catch (error) {
     console.error('Error in makeAIPick:', error);
     return null;

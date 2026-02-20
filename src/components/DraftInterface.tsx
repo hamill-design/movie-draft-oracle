@@ -131,6 +131,10 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
 
   const { pickMovie: aiPickMovie, loading: aiPicking } = useAIPick();
   const [isAITurn, setIsAITurn] = useState(false);
+  // Prevent infinite retry when AI returns null (e.g. no movies at all)
+  const aiPickFailedForPickCountRef = useRef<number | null>(null);
+  // Per-AI shuffled category order so AI doesn't always pick in left-to-right category order
+  const aiCategoryOrderByPlayerIdRef = useRef<Map<number, string[]>>(new Map());
   
   // State to track enriched picks (with scoring data)
   const [enrichedPicks, setEnrichedPicks] = useState<any[] | null>(null);
@@ -246,8 +250,11 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
         draftIdRef.current = savedDraftId;
       }
     } catch (error) {
-      console.error('Auto-save failed:', error);
-      
+      const err = error as { code?: string; message?: string };
+      const isDuplicateKey = err?.code === '23505' || err?.message?.includes('unique_movie_per_draft');
+
+      if (!isDuplicateKey) console.error('Auto-save failed:', error);
+
       // If we don't have a draftId yet, generate a local one
       if (!draftId) {
         draftId = generateLocalDraftId();
@@ -255,41 +262,44 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
         draftIdRef.current = draftId;
         console.log('Generated local draftId:', draftId);
       }
-      
-      // Check if this is an RLS error
-      const isRLSError = (error as any)?.code === '42501' || 
-                        (error as any)?.message?.includes('row-level security policy') ||
-                        (typeof error === 'object' && JSON.stringify(error).includes('42501'));
-      
-      if (isRLSError) {
-        // For RLS errors, try to create a new draft if we don't have a draftId
-        if (!currentDraftId) {
-          try {
-            const newDraftId = await autoSaveDraft({
-              theme: safeDraftState.theme,
-              option: safeDraftState.option,
-              participants: normalizedParticipants,
-              categories: safeDraftState.categories,
-              picks: updatedPicks,
-              isComplete: false
-            }, undefined);
-            
-            if (newDraftId) {
-              setCurrentDraftId(newDraftId);
-              draftIdRef.current = newDraftId;
-              draftId = newDraftId;
+
+      // Duplicate key (23505): server already has this state; skip toast and still save locally
+      if (!isDuplicateKey) {
+        // Check if this is an RLS error
+        const isRLSError = err?.code === '42501' ||
+          err?.message?.includes('row-level security policy') ||
+          (typeof error === 'object' && JSON.stringify(error).includes('42501'));
+
+        if (isRLSError) {
+          // For RLS errors, try to create a new draft if we don't have a draftId
+          if (!currentDraftId) {
+            try {
+              const newDraftId = await autoSaveDraft({
+                theme: safeDraftState.theme,
+                option: safeDraftState.option,
+                participants: normalizedParticipants,
+                categories: safeDraftState.categories,
+                picks: updatedPicks,
+                isComplete: false
+              }, undefined);
+
+              if (newDraftId) {
+                setCurrentDraftId(newDraftId);
+                draftIdRef.current = newDraftId;
+                draftId = newDraftId;
+              }
+            } catch (createError) {
+              console.error('Failed to create draft after RLS error:', createError);
             }
-          } catch (createError) {
-            console.error('Failed to create draft after RLS error:', createError);
           }
+        } else {
+          // For other errors, show toast (but still save locally)
+          toast({
+            title: "Auto-save failed",
+            description: "Your draft couldn't be saved to the server, but it's been saved locally.",
+            variant: "destructive"
+          });
         }
-      } else {
-        // For non-RLS errors, show toast (but still save locally)
-        toast({
-          title: "Auto-save failed",
-          description: "Your draft couldn't be saved to the server, but it's been saved locally.",
-          variant: "destructive"
-        });
       }
     }
     
@@ -330,7 +340,15 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     
     const playerIsAI = currentPlayer.isAI === true;
     setIsAITurn(playerIsAI);
-    
+    // Clear failure ref when a pick was added (so next AI turn isn't skipped)
+    if (aiPickFailedForPickCountRef.current !== null && picks.length > aiPickFailedForPickCountRef.current) {
+      aiPickFailedForPickCountRef.current = null;
+    }
+    // Don't retry forever if AI already returned null for this turn
+    if (playerIsAI && aiPickFailedForPickCountRef.current === picks.length) {
+      return;
+    }
+
     if (playerIsAI && !aiPicking) {
       // AI's turn - make pick after short delay
       const makeAIPick = async () => {
@@ -339,12 +357,19 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
         
         if (!currentPlayer || !currentPlayer.isAI) return; // Double-check it's still AI's turn
         
-        // Determine current category (need to figure out which category we're drafting)
-        // For now, we'll need to track which category round we're in
+        // Determine current category: for AI, use a randomized order per player; otherwise use round order
         const picksPerCategory = normalizedParticipants.length;
-        const currentRound = Math.floor(picks.length / picksPerCategory);
-        const currentCategory = safeDraftState.categories[currentRound] || safeDraftState.categories[0];
-        
+        const defaultRound = Math.floor(picks.length / picksPerCategory);
+        const defaultCategory = safeDraftState.categories[defaultRound] || safeDraftState.categories[0];
+        let currentCategory: string;
+        const aiPicksSoFar = picks.filter(p => p.playerId === currentPlayer.id).length;
+        let order = aiCategoryOrderByPlayerIdRef.current.get(currentPlayer.id);
+        if (!order && safeDraftState.categories.length > 0) {
+          order = [...safeDraftState.categories].sort(() => Math.random() - 0.5);
+          aiCategoryOrderByPlayerIdRef.current.set(currentPlayer.id, order);
+        }
+        currentCategory = (order && order[aiPicksSoFar]) ? order[aiPicksSoFar] : defaultCategory;
+
         const alreadyPickedMovieIds = picks.map(p => p.movie.id);
         
         const selectedMovie = await aiPickMovie({
@@ -352,6 +377,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
           draftOption: safeDraftState.option,
           currentCategory: currentCategory,
           alreadyPickedMovieIds: alreadyPickedMovieIds,
+          allCategories: safeDraftState.categories,
         });
         
         if (selectedMovie) {
@@ -376,6 +402,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
             });
           }
         } else {
+          aiPickFailedForPickCountRef.current = picks.length;
           toast({
             title: "AI Pick Failed",
             description: "The AI couldn't find a suitable movie to pick.",
