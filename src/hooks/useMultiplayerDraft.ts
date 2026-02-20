@@ -5,18 +5,21 @@ import { useCurrentUser } from './useCurrentUser';
 import { useGuestSession } from './useGuestSession';
 import { useToast } from '@/hooks/use-toast';
 
-// Helper function to extract detailed error information
+// Helper function to extract detailed error information (Supabase RPC, PostgrestError, etc.)
 const getErrorMessage = (error: any): string => {
+  if (!error) return 'An unknown error occurred';
+  if (typeof error === 'string') return error;
   const parts: string[] = [];
-  
   if (error.message) parts.push(error.message);
   if (error.hint) parts.push(`Hint: ${error.hint}`);
   if (error.details) parts.push(`Details: ${error.details}`);
   if (error.code) parts.push(`Code: ${error.code}`);
-  
-  return parts.length > 0 
-    ? parts.join(' | ') 
-    : 'An unknown error occurred';
+  if (parts.length > 0) return parts.join(' | ');
+  try {
+    const s = JSON.stringify(error);
+    if (s !== '{}') return s;
+  } catch (_) {}
+  return 'An unknown error occurred';
 };
 
 // Merge picks by id and sort stably (pick_order, player_id, id) to avoid row flicker on reload
@@ -456,7 +459,11 @@ export const useMultiplayerDraft = (
 
   // Load draft data (uses effectiveParticipantId so parent-provided id can trigger load)
   // When options.background is true (polling, reconnect, manual refresh), do not set loading so the UI does not flicker.
-  const loadDraft = useCallback(async (id: string, options?: { background?: boolean }) => {
+  // When options.returnData is true, returns { draft, participants } for the caller to use (e.g. AI pick with fresh server state).
+  const loadDraft = useCallback(async (
+    id: string,
+    options?: { background?: boolean; returnData?: boolean }
+  ): Promise<{ draft: MultiplayerDraft; participants: DraftParticipant[]; picks: any[] } | void> => {
     if (!effectiveParticipantId) throw new Error('No participant ID available');
     
     // Ensure id is a string, not an object
@@ -466,6 +473,7 @@ export const useMultiplayerDraft = (
     }
 
     const background = options?.background === true;
+    const returnData = options?.returnData === true;
     if (!background) setLoading(true);
     try {
       // Use unified function
@@ -480,7 +488,7 @@ export const useMultiplayerDraft = (
       const draftData = result.data[0];
       
       // Map the response to our draft structure
-      const mappedDraft = {
+      const mappedDraft: MultiplayerDraft = {
         id: draftData.draft_id,
         title: draftData.draft_title,
         theme: draftData.draft_theme,
@@ -519,9 +527,7 @@ export const useMultiplayerDraft = (
       const currentTurnId = mappedDraft.current_turn_participant_id || mappedDraft.current_turn_user_id;
       setIsMyTurn(currentTurnId === effectiveParticipantId);
 
-      // Real-time updates are handled by database subscriptions
-      // No need to broadcast participant activity
-
+      if (returnData) return { draft: mappedDraft, participants: enrichedParticipants, picks: picksArray };
     } catch (error) {
       console.error('Error loading draft:', error);
       const errorMessage = getErrorMessage(error);
@@ -686,20 +692,23 @@ export const useMultiplayerDraft = (
       });
 
     } catch (error: any) {
-      console.error('Error making pick:', error);
-      
       const errorMessage = getErrorMessage(error);
-      
+      const isNotYourTurn = errorMessage.includes('Not your turn');
+      // When host makes an AI pick, "Not your turn" is often a benign race (pick already succeeded); don't log to host console
+      if (!(participantIdOverride && isNotYourTurn)) {
+        console.error('Error making pick:', errorMessage, error);
+      }
+      const isDuplicateMovie = error?.code === '23505' || errorMessage.includes('unique_movie_per_draft') || errorMessage.includes('already been drafted') || errorMessage.includes('duplicate key');
       if (error.message?.includes('Not your turn')) {
         toast({
           title: "Not Your Turn",
           description: errorMessage,
           variant: "destructive",
         });
-      } else if (error.message?.includes('already been drafted')) {
+      } else if (isDuplicateMovie) {
         toast({
           title: "Movie Already Drafted",
-          description: errorMessage,
+          description: "That movie was already picked in this draft. Choose another.",
           variant: "destructive",
         });
       } else {

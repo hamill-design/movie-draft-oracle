@@ -54,6 +54,7 @@ export const MultiplayerDraftInterface = ({
     isConnected,
     createMultiplayerDraft,
     makePick,
+    loadDraft,
     startDraft,
     manualRefresh
   } = useMultiplayerDraft(draftId, undefined, participantIdFromParent);
@@ -340,12 +341,39 @@ export const MultiplayerDraftInterface = ({
         // Wait 1-2 seconds to simulate "thinking"
         await new Promise(resolve => setTimeout(resolve, 1500));
 
-        // Double-check it's still AI's turn by checking draft state
-        if (!draft || draft.is_complete) {
+        // Reload draft from server so we use current turn / pick number (fixes AI second+ pick in multiplayer)
+        let freshDraft = draft;
+        let freshParticipants = participants;
+        let freshPicksFromReload: any[] = picks;
+        if (draft?.id) {
+          try {
+            const fresh = await loadDraft(draft.id, { background: true, returnData: true });
+            if (fresh) {
+              freshDraft = fresh.draft;
+              freshParticipants = fresh.participants;
+              freshPicksFromReload = fresh.picks ?? picks;
+            }
+          } catch (_) {
+            // Keep using current state if reload fails
+          }
+        }
+
+        if (!freshDraft || freshDraft.is_complete) {
           return;
         }
 
-        const stillCurrentPlayer = getCurrentTurnPlayer();
+        const currentTurnId = freshDraft.current_turn_participant_id || freshDraft.current_turn_user_id;
+        const findCurrentPlayer = (list: typeof participants) => currentTurnId ? list.find(p => {
+          const pid = p.participant_id || p.user_id || p.guest_participant_id || (p.is_ai ? p.id : null);
+          return pid && String(pid) === String(currentTurnId);
+        }) : null;
+
+        let stillCurrentPlayer = findCurrentPlayer(freshParticipants);
+        // Fallback: if reload returned different participant shape, use pre-reload participants so we don't skip AI's turn
+        if (!stillCurrentPlayer && currentTurnId) {
+          stillCurrentPlayer = findCurrentPlayer(participants);
+        }
+
         if (!stillCurrentPlayer || !stillCurrentPlayer.is_ai) {
           return;
         }
@@ -355,17 +383,21 @@ export const MultiplayerDraftInterface = ({
                                 stillCurrentPlayer.guest_participant_id ||
                                 (stillCurrentPlayer.is_ai ? stillCurrentPlayer.id : null);
 
-        // Determine current category: for AI, use a randomized order per participant; otherwise use round order
-        const currentPickNumber = draft.current_pick_number || 1;
-        const picksPerCategory = participants.length;
+        // Use fresh draft/participants/picks so second+ AI turn uses server state (fixes multiplayer)
+        const currentPickNumber = freshDraft.current_pick_number || 1;
+        const picksPerCategory = freshParticipants.length;
         const currentRound = Math.floor((currentPickNumber - 1) / picksPerCategory);
-        const defaultCategory = draft.categories?.[currentRound] || draft.categories?.[0] || '';
-        // Backend stores picks with integer player_id; participant may have player_id from load_draft_unified
-        const aiPlayerId = (stillCurrentPlayer as { player_id?: number })?.player_id;
-        const aiPicksSoFar = typeof aiPlayerId === 'number' ? picks.filter(p => Number(p.player_id) === aiPlayerId).length : 0;
+        const defaultCategory = freshDraft.categories?.[currentRound] || freshDraft.categories?.[0] || '';
+        // Backend stores picks with integer player_id (1-based index in participants created_at order). Participants from load_draft don't include player_id, so derive from position.
+        const aiIndex = freshParticipants.findIndex(p =>
+          (p.id != null && stillCurrentPlayer?.id != null && p.id === stillCurrentPlayer.id) ||
+          (p.participant_id != null && stillCurrentPlayer?.participant_id != null && String(p.participant_id) === String(stillCurrentPlayer.participant_id))
+        );
+        const aiPlayerId = (stillCurrentPlayer as { player_id?: number })?.player_id ?? (aiIndex >= 0 ? aiIndex + 1 : undefined);
+        const aiPicksSoFar = typeof aiPlayerId === 'number' ? freshPicksFromReload.filter((p: any) => Number(p.player_id) === aiPlayerId).length : 0;
         let order = aiParticipantId != null ? aiCategoryOrderByParticipantIdRef.current.get(String(aiParticipantId)) : undefined;
-        if (!order && draft.categories?.length) {
-          order = [...draft.categories].sort(() => Math.random() - 0.5);
+        if (!order && freshDraft.categories?.length) {
+          order = [...freshDraft.categories].sort(() => Math.random() - 0.5);
           if (aiParticipantId != null) aiCategoryOrderByParticipantIdRef.current.set(String(aiParticipantId), order);
         }
         const currentCategory = (order && order[aiPicksSoFar] != null) ? order[aiPicksSoFar] : defaultCategory;
@@ -380,14 +412,14 @@ export const MultiplayerDraftInterface = ({
           return;
         }
 
-        const alreadyPickedMovieIds = picks.map(p => p.movie_id);
+        const alreadyPickedMovieIds = freshPicksFromReload.map((p: any) => p.movie_id);
 
         const selectedMovie = await aiPickMovie({
-          draftTheme: draft.theme || '',
-          draftOption: draft.option || '',
+          draftTheme: freshDraft.theme || '',
+          draftOption: freshDraft.option || '',
           currentCategory: currentCategory,
           alreadyPickedMovieIds: alreadyPickedMovieIds,
-          allCategories: draft.categories || [],
+          allCategories: freshDraft.categories || [],
         });
 
         if (selectedMovie && stillCurrentPlayer) {
@@ -414,7 +446,7 @@ export const MultiplayerDraftInterface = ({
             // Success: makePick shows "Pick Made!" toast; no error toast
           } catch (error: any) {
             const msg = error?.message ?? String(error);
-            // Don't show "AI Pick Failed" for "Not your turn" (race/double-fire after pick succeeded)
+            // Don't show or log "Not your turn" — usually race/double-fire after pick already succeeded
             if (msg.includes('Not your turn')) {
               return;
             }
@@ -439,7 +471,7 @@ export const MultiplayerDraftInterface = ({
     };
 
     makeAIPick();
-  }, [draft, currentTurnIsAI, currentTurnPlayer, isHost, aiPicking, participants.length, picks, aiPickMovie, makePick, toast]);
+  }, [draft, currentTurnIsAI, currentTurnPlayer, isHost, aiPicking, participants.length, picks, aiPickMovie, makePick, loadDraft, toast]);
 
   // Helper: Get participants sorted by created_at (matching backend ORDER BY created_at ASC NULLS LAST, id ASC)
   // MUST be before early returns to maintain consistent hook order

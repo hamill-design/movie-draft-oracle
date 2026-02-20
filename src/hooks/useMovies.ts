@@ -164,10 +164,38 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
       return;
     }
     
-    // For year/person themes, only fetch when user searches (at least 2 characters)
-    if ((category === 'year' || category === 'person') && (!userSearchQuery || userSearchQuery.trim().length < 2)) {
-      setMovies([]);
-      setLoading(false);
+    // For year theme, only fetch when user has typed at least 2 characters
+    if (category === 'year') {
+      if (!userSearchQuery || userSearchQuery.trim().length < 2) {
+        setMovies([]);
+        setLoading(false);
+        return;
+      }
+      const timeoutId = setTimeout(() => fetchMovies(), 500);
+      return () => {
+        clearTimeout(timeoutId);
+        if (abortControllerRef.current) abortControllerRef.current.abort();
+      };
+    }
+    
+    // For person theme: fetch initial list when themeOption (actor name) is set so picker isn't empty.
+    // With 2+ char search, debounce and refetch.
+    if (category === 'person') {
+      if (!themeOption) {
+        setMovies([]);
+        setLoading(false);
+        return;
+      }
+      const hasSearch = userSearchQuery && userSearchQuery.trim().length >= 2;
+      if (hasSearch) {
+        const timeoutId = setTimeout(() => fetchMovies(), 500);
+        return () => {
+          clearTimeout(timeoutId);
+          if (abortControllerRef.current) abortControllerRef.current.abort();
+        };
+      }
+      // Initial load: show first page of movies for this person (empty search)
+      fetchMovies();
       return;
     }
     
@@ -175,21 +203,6 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
     if (category === 'spec-draft' && themeOption) {
       fetchMovies();
       return;
-    }
-    
-    // For year/person with search query, debounce the search
-    if ((category === 'year' || category === 'person') && userSearchQuery && userSearchQuery.trim().length >= 2) {
-      const timeoutId = setTimeout(() => {
-        fetchMovies();
-      }, 500); // 500ms debounce to reduce rapid requests
-      
-      return () => {
-        clearTimeout(timeoutId);
-        // Cancel any pending request when search query changes
-        if (abortControllerRef.current) {
-          abortControllerRef.current.abort();
-        }
-      };
     }
     
     // For other categories, fetch immediately
