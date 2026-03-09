@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Trophy, Users, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Trophy, Users, RefreshCw, Vote } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { useToast } from '@/hooks/use-toast';
@@ -12,7 +12,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { DraftPick } from '@/hooks/useDrafts';
 import TeamRoster from '@/components/TeamRoster';
 import ShareResultsButton from '@/components/ShareResultsButton';
-import SaveDraftButton from '@/components/SaveDraftButton';
 import { getScoreColor, getScoreGrade, calculateDetailedScore } from '@/utils/scoreCalculator';
 import RankBadge from '@/components/RankBadge';
 import { storePendingDraft } from '@/utils/draftStorage';
@@ -23,14 +22,17 @@ interface TeamScore {
   averageScore: number;
   completedPicks: number;
   totalPicks: number;
+  votePoints?: number;
+  voteCount?: number;
+  combinedScore?: number;
 }
 
 const FinalScores = () => {
   const { draftId } = useParams<{ draftId: string; }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading, isGuest } = useAuth();
-  const { getDraftWithPicks, autoSaveDraft } = useDraftOperations();
+  const { user, loading, isGuest, guestSession, getOrCreateGuestSession } = useAuth();
+  const { getDraftWithPicks, autoSaveDraft, submitDraftVote } = useDraftOperations();
   const { toast } = useToast();
   
   const [draft, setDraft] = useState<any>(null);
@@ -41,22 +43,71 @@ const FinalScores = () => {
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [hoveredTeam, setHoveredTeam] = useState<string>('');
-  
   const [isPublicView, setIsPublicView] = useState(false);
+  const [votes, setVotes] = useState<{ voted_participant_id: string | null; voted_player_name: string | null; voter_user_id: string | null; voter_guest_session_id: string | null }[]>([]);
+  const [draftParticipants, setDraftParticipants] = useState<{ id: string; participant_name: string; is_ai?: boolean }[]>([]);
+  const [submittingVote, setSubmittingVote] = useState(false);
+  const [localVotesFromState, setLocalVotesFromState] = useState<Record<string, string> | null>(null);
+
+  const votingMeta = useMemo(() => (
+    draft?.voting_ends_at != null
+      ? { voting_ends_at: draft.voting_ends_at as string, allow_public_voting: draft.allow_public_voting as boolean, is_multiplayer: draft.is_multiplayer as boolean }
+      : null
+  ), [draft?.voting_ends_at, draft?.allow_public_voting, draft?.is_multiplayer]);
 
   useEffect(() => {
     if (!draftId) {
       navigate('/');
       return;
     }
-    
-    // Check if this is a public share view
     const urlParams = new URLSearchParams(window.location.search);
     const isPublic = urlParams.get('public') === 'true';
     setIsPublicView(isPublic);
-    
     fetchDraftData();
   }, [draftId]);
+
+  useEffect(() => {
+    if (!draftId || !votingMeta?.voting_ends_at) return;
+    const load = async () => {
+      try {
+        if (guestSession) await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
+        const { data, error } = await supabase.from('draft_votes').select('voted_participant_id, voted_player_name, voter_user_id, voter_guest_session_id').eq('draft_id', draftId);
+        if (!error) setVotes(data ?? []);
+      } catch {
+        setVotes([]);
+      }
+    };
+    load();
+  }, [draftId, votingMeta?.voting_ends_at, guestSession]);
+
+  useEffect(() => {
+    if (!draftId || !draft?.is_multiplayer) return;
+    const load = async () => {
+      try {
+        if (guestSession) await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
+        const { data, error } = await supabase.from('draft_participants').select('id, participant_name, is_ai').eq('draft_id', draftId);
+        if (!error) setDraftParticipants(data ?? []);
+        else setDraftParticipants([]);
+      } catch {
+        setDraftParticipants([]);
+      }
+    };
+    load();
+  }, [draftId, draft?.is_multiplayer, guestSession]);
+
+  useEffect(() => {
+    if (isPublicView && !user && votingMeta?.allow_public_voting && votingMeta?.voting_ends_at && Date.now() < new Date(votingMeta.voting_ends_at).getTime()) {
+      getOrCreateGuestSession();
+    }
+  }, [isPublicView, user, votingMeta?.allow_public_voting, votingMeta?.voting_ends_at, getOrCreateGuestSession]);
+
+  // Redirect old public vote link to dedicated vote page when voting is still open
+  const votingOpen = votingMeta?.voting_ends_at != null && Date.now() < new Date(votingMeta.voting_ends_at).getTime();
+  useEffect(() => {
+    if (draftId && isPublicView && votingMeta?.allow_public_voting && votingOpen) {
+      navigate(`/vote/${draftId}`, { replace: true });
+    }
+  }, [draftId, isPublicView, votingMeta?.allow_public_voting, votingOpen, navigate]);
 
   const fixUnknownPlayers = async () => {
     try {
@@ -85,6 +136,9 @@ const FinalScores = () => {
   const fetchDraftData = async () => {
     try {
       setLoadingData(true);
+      if (guestSession) {
+        await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
+      }
       let draftData: any;
       let picksData: any[] = [];
       
@@ -95,11 +149,11 @@ const FinalScores = () => {
         console.log('Using draft data from navigation state', {
           draftData: stateData.draftData,
           picksCount: stateData.picks?.length,
-          firstPick: stateData.picks?.[0],
-          picksSample: stateData.picks?.slice(0, 3)
+          localVotes: stateData.localVotes
         });
         setDraft(stateData.draftData);
         setPicks(stateData.picks);
+        setLocalVotesFromState(stateData.localVotes ?? null);
         
         // Process initial team scores (may have 0 scores if no scoring data yet)
         const teams = processTeamScores(stateData.picks || []);
@@ -233,9 +287,29 @@ const FinalScores = () => {
         draftData = publicDraft;
         picksData = publicPicks || [];
       } else {
-        const { draft: fetchedDraft, picks: fetchedPicks } = await getDraftWithPicks(draftId!, isPublicView);
-        draftData = fetchedDraft;
-        picksData = fetchedPicks || [];
+        try {
+          const { draft: fetchedDraft, picks: fetchedPicks } = await getDraftWithPicks(draftId!, isPublicView);
+          draftData = fetchedDraft;
+          picksData = fetchedPicks || [];
+        } catch (participantError) {
+          // Fallback: completed drafts are viewable by anyone (RLS). Load as public so guests/participants don't get sent home on 500.
+          console.warn('Participant fetch failed, retrying as completed-draft (public) load:', participantError);
+          const { data: fallbackDraft, error: draftErr } = await supabase
+            .from('drafts')
+            .select('*')
+            .eq('id', draftId!)
+            .eq('is_complete', true)
+            .maybeSingle();
+          if (draftErr || !fallbackDraft) throw participantError;
+          const { data: fallbackPicks, error: picksErr } = await supabase
+            .from('draft_picks')
+            .select('*')
+            .eq('draft_id', draftId!)
+            .order('pick_order');
+          if (picksErr) throw participantError;
+          draftData = fallbackDraft;
+          picksData = fallbackPicks || [];
+        }
       }
       
       setDraft(draftData);
@@ -278,7 +352,8 @@ const FinalScores = () => {
         description: isPublicView ? "This draft is no longer available for public viewing" : "Failed to load draft data",
         variant: "destructive"
       });
-      navigate(isPublicView ? '/' : '/profile');
+      const isGuestUser = !user && guestSession;
+      navigate(isPublicView || isGuestUser ? '/' : '/profile');
     } finally {
       setLoadingData(false);
     }
@@ -527,6 +602,82 @@ const FinalScores = () => {
       setEnrichingScores(false);
     }
   };
+
+  const voteCountByPlayerName = useMemo(() => {
+    const map = new Map<string, number>();
+    if (localVotesFromState && Object.keys(localVotesFromState).length > 0) {
+      Object.values(localVotesFromState).forEach(votedFor => {
+        map.set(votedFor, (map.get(votedFor) ?? 0) + 1);
+      });
+      return map;
+    }
+    const participantIdToName = new Map<string, string>();
+    draftParticipants.forEach(p => participantIdToName.set(p.id, p.participant_name));
+    votes.forEach(v => {
+      const name = v.voted_player_name ?? (v.voted_participant_id ? participantIdToName.get(v.voted_participant_id) : null);
+      if (name) map.set(name, (map.get(name) ?? 0) + 1);
+    });
+    return map;
+  }, [votes, draftParticipants, localVotesFromState]);
+
+  const myVote = useMemo(() => votes.find(
+    v => (user && v.voter_user_id === user.id) || (guestSession && v.voter_guest_session_id === guestSession.id)
+  ), [votes, user, guestSession]);
+
+  const handlePublicVote = async (participantId: string | null, playerName: string | null) => {
+    if (!draftId) return;
+    setSubmittingVote(true);
+    try {
+      await submitDraftVote(draftId, { participantId: participantId ?? undefined, playerName: playerName ?? undefined });
+      if (guestSession) await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
+      const { data, error } = await supabase.from('draft_votes').select('voted_participant_id, voted_player_name, voter_user_id, voter_guest_session_id').eq('draft_id', draftId);
+      if (!error) setVotes(data ?? []);
+      toast({ title: 'Vote recorded' });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e?.message ?? 'Failed to submit vote', variant: 'destructive' });
+    } finally {
+      setSubmittingVote(false);
+    }
+  };
+
+  const teamScoresWithVotes = useMemo(() => {
+    const n = teamScores.length;
+    if (n === 0) return teamScores;
+    const withCounts = teamScores.map(t => ({ ...t, voteCount: voteCountByPlayerName.get(t.playerName) ?? 0 }));
+    const totalVotes = withCounts.reduce((s, t) => s + (t.voteCount ?? 0), 0);
+    if (totalVotes === 0) {
+      return teamScores.map(t => ({ ...t, voteCount: 0, votePoints: 0, combinedScore: t.averageScore }))
+        .sort((a, b) => b.averageScore - a.averageScore);
+    }
+    const byCount = [...withCounts].sort((a, b) => b.voteCount! - a.voteCount!);
+    const rankByPlayer = new Map<string, number>();
+    let rank = 1;
+    for (let i = 0; i < byCount.length; i++) {
+      if (i > 0 && byCount[i].voteCount! < byCount[i - 1].voteCount!) rank = i + 1;
+      rankByPlayer.set(byCount[i].playerName, rank);
+    }
+    const rankGroups = new Map<number, string[]>();
+    rankByPlayer.forEach((r, name) => {
+      if (!rankGroups.has(r)) rankGroups.set(r, []);
+      rankGroups.get(r)!.push(name);
+    });
+    const votePointsByPlayer = new Map<string, number>();
+    const pointsForRank = (r: number) => (n - r) / (n - 1) * 10;
+    rankGroups.forEach((names, startRank) => {
+      const endRank = startRank + names.length - 1;
+      let sum = 0;
+      for (let r = startRank; r <= endRank; r++) sum += pointsForRank(r);
+      const avg = sum / names.length;
+      names.forEach(name => votePointsByPlayer.set(name, Math.round(avg * 100) / 100));
+    });
+    return withCounts
+      .map(t => ({
+        ...t,
+        votePoints: votePointsByPlayer.get(t.playerName) ?? 0,
+        combinedScore: t.averageScore + (votePointsByPlayer.get(t.playerName) ?? 0)
+      }))
+      .sort((a, b) => (b.combinedScore ?? b.averageScore) - (a.combinedScore ?? a.averageScore));
+  }, [teamScores, voteCountByPlayerName]);
 
   const processTeamScores = (picksData: DraftPick[]): TeamScore[] => {
     const teamMap = new Map<string, DraftPick[]>();
@@ -828,12 +979,7 @@ const FinalScores = () => {
               Login to Save
             </Button>
           )}
-          
-          {/* Save Draft Button - only show for guests (not logged in) */}
-          {!user && !isPublicView && getDraftDataForSave() && (
-            <SaveDraftButton draftData={getDraftDataForSave()!} />
-          )}
-          
+
           {/* Share Results Button */}
           {teamScores.length > 0 && (
             <ShareResultsButton
@@ -857,7 +1003,7 @@ const FinalScores = () => {
               </div>
             </div>
             <div className="self-stretch flex flex-col gap-4">
-              {teamScores.map((team, index) => {
+              {teamScoresWithVotes.map((team, index) => {
                 const isSelected = selectedTeam === team.playerName;
                 const isHovered = hoveredTeam === team.playerName;
                 const isFirstPlace = index === 0;
@@ -906,9 +1052,12 @@ const FinalScores = () => {
                         {enrichingScores && team.averageScore === 0 ? (
                           <RefreshCw className="animate-spin" size={28} />
                         ) : (
-                          team.averageScore.toFixed(2)
+                          (team.combinedScore ?? team.averageScore).toFixed(2)
                         )}
                       </div>
+                      {(team.votePoints ?? 0) > 0 && (
+                        <div className="text-greyscale-blue-300 text-xs font-brockmann mt-0.5">+{team.votePoints?.toFixed(1)} vote</div>
+                      )}
                     </div>
                   </div>
                 );
@@ -917,11 +1066,11 @@ const FinalScores = () => {
           </div>
 
           {/* Selected Team Roster */}
-          {selectedTeam && teamScores.find(t => t.playerName === selectedTeam) && (
+          {selectedTeam && teamScoresWithVotes.find(t => t.playerName === selectedTeam) && (
             <TeamRoster
               playerName={selectedTeam}
-              picks={teamScores.find(t => t.playerName === selectedTeam)!.picks}
-              teamRank={teamScores.findIndex(t => t.playerName === selectedTeam) + 1}
+              picks={teamScoresWithVotes.find(t => t.playerName === selectedTeam)!.picks}
+              teamRank={teamScoresWithVotes.findIndex(t => t.playerName === selectedTeam) + 1}
             />
           )}
         </div>

@@ -355,7 +355,7 @@ const Home = () => {
                           className="bg-yellow-500 hover:bg-yellow-300 text-greyscale-blue-800 font-brockmann font-semibold px-6 py-3 text-base rounded-[2px] tracking-wide w-full sm:w-auto"
                           size="lg"
                         >
-                          Begin setup
+                          Begin Setup
                         </Button>
                       </div>
                     )}
@@ -404,7 +404,7 @@ const Home = () => {
                           className="bg-yellow-500 hover:bg-yellow-300 text-greyscale-blue-800 font-brockmann font-semibold px-6 py-3 text-base rounded-[2px] tracking-wide"
                           size="lg"
                         >
-                          Begin setup
+                          Begin Setup
                         </Button>
                       </div>
                     )}

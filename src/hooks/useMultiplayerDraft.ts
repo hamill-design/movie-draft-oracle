@@ -73,6 +73,8 @@ interface MultiplayerDraft {
   turn_order: any;
   /** Backend-computed map: player_id (string) -> 0-based display row. Used when present to place picks in correct board rows. */
   player_id_to_display_row?: Record<string, number> | null;
+  voting_ends_at?: string | null;
+  allow_public_voting?: boolean;
 }
 
 export const useMultiplayerDraft = (
@@ -476,7 +478,9 @@ export const useMultiplayerDraft = (
     const returnData = options?.returnData === true;
     if (!background) setLoading(true);
     try {
-      // Use unified function
+      if (guestSession) {
+        await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
+      }
       const result = await supabase.rpc('load_draft_unified', {
         p_draft_id: draftIdString,
         p_participant_id: effectiveParticipantId
@@ -487,7 +491,7 @@ export const useMultiplayerDraft = (
 
       const draftData = result.data[0];
       
-      // Map the response to our draft structure
+      // Map the response to our draft structure (voting fields from RPC so all participants see them)
       const mappedDraft: MultiplayerDraft = {
         id: draftData.draft_id,
         title: draftData.draft_title,
@@ -504,6 +508,8 @@ export const useMultiplayerDraft = (
         draft_order: draftData.draft_draft_order,
         turn_order: draftData.draft_turn_order,
         player_id_to_display_row: (draftData as { draft_player_id_to_display_row?: Record<string, number> | null }).draft_player_id_to_display_row ?? null,
+        voting_ends_at: (draftData as { draft_voting_ends_at?: string | null }).draft_voting_ends_at ?? null,
+        allow_public_voting: (draftData as { draft_allow_public_voting?: boolean }).draft_allow_public_voting ?? false,
       };
 
       setDraft(mappedDraft);
@@ -540,7 +546,7 @@ export const useMultiplayerDraft = (
     } finally {
       setLoading(false);
     }
-  }, [effectiveParticipantId, toast, enrichParticipantsWithEmails]);
+  }, [effectiveParticipantId, guestSession, toast, enrichParticipantsWithEmails]);
 
   // Update the ref whenever loadDraft changes
   useEffect(() => {
@@ -858,6 +864,12 @@ export const useMultiplayerDraft = (
               toast({
                 title: "Draft Complete!",
                 description: "All picks have been made!",
+              });
+            } else if (newPayload.voting_ends_at && !oldPayload?.voting_ends_at) {
+              debouncedReload(normalizedDraftId);
+              toast({
+                title: "Voting is open",
+                description: "Cast your vote for who you think won!",
               });
             } else if (oldPayload?.current_turn_participant_id !== newPayload.current_turn_participant_id || 
                        oldPayload?.current_turn_user_id !== newPayload.current_turn_user_id) {

@@ -165,8 +165,47 @@ export type Database = {
           },
         ]
       }
+      draft_votes: {
+        Row: {
+          id: string
+          draft_id: string
+          voter_user_id: string | null
+          voter_guest_session_id: string | null
+          voted_participant_id: string | null
+          voted_player_name: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          draft_id: string
+          voter_user_id?: string | null
+          voter_guest_session_id?: string | null
+          voted_participant_id?: string | null
+          voted_player_name?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          draft_id?: string
+          voter_user_id?: string | null
+          voter_guest_session_id?: string | null
+          voted_participant_id?: string | null
+          voted_player_name?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "draft_votes_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "drafts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drafts: {
         Row: {
+          allow_public_voting: boolean
           categories: string[]
           created_at: string | null
           current_pick_number: number | null
@@ -186,8 +225,10 @@ export type Database = {
           turn_order: Json | null
           updated_at: string | null
           user_id: string | null
+          voting_ends_at: string | null
         }
         Insert: {
+          allow_public_voting?: boolean
           categories: string[]
           created_at?: string | null
           current_pick_number?: number | null
@@ -207,8 +248,10 @@ export type Database = {
           turn_order?: Json | null
           updated_at?: string | null
           user_id?: string | null
+          voting_ends_at?: string | null
         }
         Update: {
+          allow_public_voting?: boolean
           categories?: string[]
           created_at?: string | null
           current_pick_number?: number | null
@@ -228,6 +271,7 @@ export type Database = {
           turn_order?: Json | null
           updated_at?: string | null
           user_id?: string | null
+          voting_ends_at?: string | null
         }
         Relationships: [
           {
@@ -441,6 +485,15 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      enable_draft_voting: {
+        Args: {
+          p_draft_id: string
+          p_public: boolean
+          p_duration_minutes: number
+          p_guest_session_id?: string | null
+        }
+        Returns: undefined
+      }
       generate_invite_code: {
         Args: Record<PropertyKey, never>
         Returns: string
@@ -634,6 +687,15 @@ export type Database = {
           draft_updated_at: string
           draft_user_id: string
         }[]
+      }
+      submit_draft_vote: {
+        Args: {
+          p_draft_id: string
+          p_voted_participant_id: string | null
+          p_voted_player_name: string | null
+          p_guest_session_id?: string | null
+        }
+        Returns: string
       }
     }
     Enums: {

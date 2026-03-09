@@ -17,6 +17,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import FinalScores from "./pages/FinalScores";
+import VotePage from "./pages/VotePage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import Contact from "./pages/Contact";
@@ -61,6 +62,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/final-scores/:draftId" element={<FinalScores />} />
+              <Route path="/vote/:draftId" element={<VotePage />} />
               <Route path="/join-draft/:draftId" element={<JoinDraft />} />
               <Route path="/join-draft" element={<JoinDraft />} />
               <Route path="/learn-more" element={<LearnMore />} />

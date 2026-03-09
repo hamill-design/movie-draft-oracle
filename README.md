@@ -70,7 +70,10 @@ This app is a Vite + React SPA. We've added `vercel.json` for SPA routing.
 - Build Command: `npm run build`
 - Output Directory: `dist`
 
-### 3) Environment Variables
+### 3) Supabase migrations (multiplayer voting)
+If you use multiplayer draft voting, ensure the voting migration is applied to your Supabase project. In the Supabase Dashboard → SQL Editor, run the contents of `supabase/migrations/20260226120000_add_draft_voting.sql`, or run `supabase db push` if the project is linked. Without it, "Enable voting" will fail with a schema cache error.
+
+### 4) Environment Variables
 Set these for both Production and Preview environments:
 - `VITE_SUPABASE_URL` = your Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` = your Supabase anon key

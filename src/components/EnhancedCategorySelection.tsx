@@ -229,8 +229,6 @@ const EnhancedCategorySelection = ({
   option,
   checkingOscarStatus = false
 }: EnhancedCategorySelectionProps) => {
-  if (!selectedMovie) return null;
-
   const [houseOverrideEnabled, setHouseOverrideEnabled] = useState(false);
   const [specDraftMovieCategories, setSpecDraftMovieCategories] = useState<string[]>([]);
   const [loadingSpecCategories, setLoadingSpecCategories] = useState(false);
@@ -296,6 +294,7 @@ const EnhancedCategorySelection = ({
   // For spec-draft, use the categories from the database
   // For other themes, use the standard eligibility logic
   const eligibleCategories = useMemo(() => {
+    if (!selectedMovie) return [];
     if (theme === 'spec-draft' && specDraftMovieCategories.length > 0) {
       // Filter to only include categories that are in the draft's category list
       return specDraftMovieCategories.filter(cat => categories.includes(cat));
@@ -348,6 +347,8 @@ const EnhancedCategorySelection = ({
       return 0;
     });
   }, [categories, eligibleCategories, picks, currentPlayerId]);
+
+  if (!selectedMovie) return null;
 
   const getCategoryDisplayName = (category: string) => {
     if (category === 'Academy Award Nominee or Winner') return 'Academy Award';

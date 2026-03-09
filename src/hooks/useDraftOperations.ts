@@ -268,7 +268,9 @@ export const useDraftOperations = () => {
   const getDraftWithPicks = useCallback(async (draftId: string, isPublicAccess: boolean = false) => {
     try {
       console.log('Fetching draft with ID:', draftId, 'Public access:', isPublicAccess);
-      
+      if (guestSession) {
+        await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
+      }
       const { data: draft, error: draftError } = await supabase
         .from('drafts')
         .select('*')
@@ -304,7 +306,7 @@ export const useDraftOperations = () => {
       console.error('Error in getDraftWithPicks:', error);
       throw error;
     }
-  }, []);
+  }, [guestSession]);
 
   const makeDraftPublic = useCallback(async (draftId: string) => {
     if (!user && !guestSession) throw new Error('No session available');
@@ -315,6 +317,62 @@ export const useDraftOperations = () => {
       .eq('id', draftId);
 
     if (error) throw error;
+  }, [user, guestSession]);
+
+  const enableVoting = useCallback(async (
+    draftId: string,
+    isPublic: boolean,
+    durationMinutes: number
+  ) => {
+    if (!user && !guestSession) throw new Error('No session available');
+    if (![5, 60, 1440].includes(durationMinutes)) {
+      throw new Error('Duration must be 5, 60, or 1440 minutes');
+    }
+    if (guestSession) {
+      await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
+    }
+    const { error } = await supabase.rpc('enable_draft_voting', {
+      p_draft_id: draftId,
+      p_public: isPublic,
+      p_duration_minutes: durationMinutes,
+      p_guest_session_id: user ? null : guestSession?.id ?? null
+    });
+    if (error) {
+      const msg = error.message || 'enable_draft_voting failed';
+      if (msg.includes('schema cache') || msg.includes('Could not find the function')) {
+        throw new Error('Voting is not available: run migration supabase/migrations/20260226120000_add_draft_voting.sql on your Supabase project.');
+      }
+      throw error;
+    }
+  }, [user, guestSession]);
+
+  const setAllowPublicVoting = useCallback(async (draftId: string, allow: boolean) => {
+    if (!user && !guestSession) throw new Error('No session available');
+    const updates: { allow_public_voting: boolean; is_public?: boolean } = { allow_public_voting: allow };
+    if (allow) updates.is_public = true;
+    const { error } = await supabase
+      .from('drafts')
+      .update(updates)
+      .eq('id', draftId);
+    if (error) throw error;
+  }, [user, guestSession]);
+
+  const submitDraftVote = useCallback(async (
+    draftId: string,
+    options: { participantId?: string; playerName?: string }
+  ) => {
+    if (!user && !guestSession) throw new Error('No session available');
+    if (guestSession) {
+      await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
+    }
+    const { data, error } = await supabase.rpc('submit_draft_vote', {
+      p_draft_id: draftId,
+      p_voted_participant_id: options.participantId ?? null,
+      p_voted_player_name: options.playerName ?? null,
+      p_guest_session_id: user ? null : guestSession?.id ?? null
+    });
+    if (error) throw error;
+    return data as string;
   }, [user, guestSession]);
 
   const findExistingDraft = useCallback(async (draftData: {
@@ -393,6 +451,9 @@ export const useDraftOperations = () => {
     saveDraft,
     getDraftWithPicks,
     makeDraftPublic,
+    enableVoting,
+    setAllowPublicVoting,
+    submitDraftVote,
     findExistingDraft
   };
 };
