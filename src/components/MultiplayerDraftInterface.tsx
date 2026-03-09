@@ -1691,8 +1691,8 @@ export const MultiplayerDraftInterface = ({
                   )}
                 </>
               )}
-              {/* Confirmation after host enables voting: show success and share link */}
-              {votingConfigured && votingJustEnabled && isHost && (
+              {/* Share vote link + QR: show for host when just enabled, and for everyone (including non-host) when voting is open and public */}
+              {votingConfigured && votingMeta?.allow_public_voting && draft?.id && (votingJustEnabled && isHost || votingOpen) && (
                 <div
                   className="w-full flex flex-wrap justify-center align-content-start rounded-lg"
                   style={{
@@ -1795,6 +1795,11 @@ export const MultiplayerDraftInterface = ({
                       </div>
                     ) : (
                       <>
+                        <div className="w-full max-w-[617px] flex flex-col justify-center items-center gap-2">
+                          <div className="w-full text-center text-[20px] font-brockmann font-medium leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">
+                            Cast Your Vote For Who Won
+                          </div>
+                        </div>
                         <div className="w-full max-w-[617px] flex flex-col justify-start items-start gap-4">
                           {participants.filter((p: any) => p.id !== myParticipantId).map((p: any) => (
                             <button
