@@ -250,20 +250,7 @@ const Profile = () => {
     setIsEditingName(false);
   };
 
-  // Show loading only for auth, allow profile and drafts to load independently
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-        <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>Loading...</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return null;
-  }
-
-  // Memoize draft list to prevent unnecessary re-renders
+  // Memoize draft list to prevent unnecessary re-renders (must be before any early returns to satisfy Rules of Hooks)
   const draftList = useMemo(() => {
     return drafts.map((draft, index) => (
       <div key={draft.id} className="w-full">
@@ -344,6 +331,72 @@ const Profile = () => {
             
             {/* Details */}
             <div className="self-stretch justify-start items-center gap-4 inline-flex flex-wrap">
+              {/* Role badge: Host or Player */}
+              <div className="justify-start items-center gap-1 flex">
+                {draft.role === 'guest' ? (
+                  <div
+                    style={{
+                      paddingLeft: 10,
+                      paddingRight: 10,
+                      paddingTop: 2,
+                      paddingBottom: 2,
+                      background: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
+                      borderRadius: 9999,
+                      outline: '0.50px var(--Text-Light-grey, #BDC3C2) solid',
+                      outlineOffset: '-0.50px',
+                      justifyContent: 'flex-start',
+                      alignItems: 'center',
+                      display: 'inline-flex',
+                    }}
+                  >
+                    <div
+                      style={{
+                        justifyContent: 'center',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        color: 'var(--Text-Light-grey, #BDC3C2)',
+                        fontSize: 12,
+                        fontFamily: 'Brockmann',
+                        fontWeight: 600,
+                        lineHeight: '16px',
+                        wordWrap: 'break-word',
+                      }}
+                    >
+                      Player
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      paddingLeft: 10,
+                      paddingRight: 10,
+                      paddingTop: 2,
+                      paddingBottom: 2,
+                      background: 'var(--Text-Light-grey, #BDC3C2)',
+                      borderRadius: 9999,
+                      justifyContent: 'flex-start',
+                      alignItems: 'center',
+                      display: 'inline-flex',
+                    }}
+                  >
+                    <div
+                      style={{
+                        justifyContent: 'center',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        color: 'var(--UI-Primary, #1D1D1F)',
+                        fontSize: 12,
+                        fontFamily: 'Brockmann',
+                        fontWeight: 600,
+                        lineHeight: '16px',
+                        wordWrap: 'break-word',
+                      }}
+                    >
+                      Host
+                    </div>
+                  </div>
+                )}
+              </div>
               {/* Date */}
               <div className="justify-start items-center gap-1 flex">
                 <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
@@ -360,7 +413,7 @@ const Profile = () => {
                   <Users size={16} className="text-greyscale-blue-300" />
                 </div>
                 <span className="text-greyscale-blue-300 text-sm font-brockmann font-medium leading-5">
-                  {draft.participants?.length ?? 0} players
+                  {draft.participant_count ?? draft.participants?.length ?? 0} players
                 </span>
               </div>
               
@@ -389,15 +442,17 @@ const Profile = () => {
             </Button>
             
             {/* Delete Button */}
-            <button 
-              onClick={() => openDeleteDialog(draft.id)}
-              className="px-3 py-2 rounded-[2px] justify-center items-center gap-2 inline-flex transition-colors"
-            >
-              <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
-                <Trash2 size={16} className="text-greyscale-blue-300" />
-              </div>
-              <span className="text-center text-greyscale-blue-300 text-sm font-brockmann font-medium leading-5">Delete</span>
-            </button>
+            {draft.role !== 'guest' && (
+              <button 
+                onClick={() => openDeleteDialog(draft.id)}
+                className="px-3 py-2 rounded-[2px] justify-center items-center gap-2 inline-flex transition-colors"
+              >
+                <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
+                  <Trash2 size={16} className="text-greyscale-blue-300" />
+                </div>
+                <span className="text-center text-greyscale-blue-300 text-sm font-brockmann font-medium leading-5">Delete</span>
+              </button>
+            )}
           </div>
         </div>
         
@@ -406,6 +461,19 @@ const Profile = () => {
       </div>
     ));
   }, [drafts, handleViewDraft, openDeleteDialog, specDraftData]);
+
+  // Show loading only for auth, allow profile and drafts to load independently
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+        <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <>
