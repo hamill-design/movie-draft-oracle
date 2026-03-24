@@ -1,5 +1,6 @@
-# Ignore Python scripts and dependencies during Vercel build
-scripts/
+# Ignore Letterboxd Python tooling during Vercel build (do not ignore scripts/ root:
+# npm run build runs node scripts/prerender.mjs).
+scripts/letterboxd/
 *.py
 __pycache__/
 *.pyc
