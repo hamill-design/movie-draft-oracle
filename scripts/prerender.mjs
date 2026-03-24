@@ -1,8 +1,12 @@
 /**
  * Post-build: prerender allowlisted SPA routes into dist/ so static hosts (e.g. Vercel)
  * serve real HTML before the SPA fallback rewrite.
+ *
+ * Vercel build images lack system libs for Puppeteer's bundled Chrome; on Vercel Linux
+ * we use @sparticuz/chromium + puppeteer-core. Locally we use puppeteer-core with
+ * puppeteer's downloaded Chrome (see devDependency puppeteer).
  */
-import puppeteer from "puppeteer";
+import puppeteerCore from "puppeteer-core";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -14,6 +18,30 @@ const root = path.join(__dirname, "..");
 const dist = path.join(root, "dist");
 const PORT = 4179;
 const BASE = `http://127.0.0.1:${PORT}`;
+
+/** True on Vercel builders (Linux); avoid Sparticuz on darwin (e.g. local `vercel build`). */
+function useVercelChromium() {
+  return process.env.VERCEL === "1" && process.platform === "linux";
+}
+
+async function launchBrowser() {
+  if (useVercelChromium()) {
+    const chromium = (await import("@sparticuz/chromium")).default;
+    return puppeteerCore.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
+  }
+
+  const puppeteer = await import("puppeteer");
+  return puppeteerCore.launch({
+    headless: true,
+    executablePath: puppeteer.default.executablePath(),
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+  });
+}
 
 /** Paths must match react-router (no trailing slash). */
 const ROUTES = [
@@ -75,10 +103,7 @@ async function main() {
   try {
     await waitForServer(BASE);
 
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
-    });
+    const browser = await launchBrowser();
     const page = await browser.newPage();
 
     for (const route of ROUTES) {
