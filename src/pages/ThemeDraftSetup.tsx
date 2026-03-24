@@ -218,20 +218,20 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
             </div>
 
             <div className="w-full flex flex-col gap-4 items-center justify-center py-6">
-              <div className="uppercase" style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '32px', lineHeight: '36px', letterSpacing: '1.28px', color: 'var(--Text-Primary, #FCFFFF)' }}>
+              <p className="uppercase m-0" style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '32px', lineHeight: '36px', letterSpacing: '1.28px', color: 'var(--Text-Primary, #FCFFFF)' }}>
                 SETTING UP
-              </div>
-              <div className="text-brand-primary uppercase text-center w-full" style={{ fontFamily: 'CHANEY', fontWeight: 400, fontSize: '64px', lineHeight: '64px' }}>
+              </p>
+              <h1 className="text-brand-primary uppercase text-center w-full m-0" style={{ fontFamily: 'CHANEY', fontWeight: 400, fontSize: '64px', lineHeight: '64px' }}>
                 {option.toUpperCase()}
-              </div>
+              </h1>
             </div>
 
             {/* Select Draft Mode */}
             <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{ boxShadow: '0px 0px 6px #3B0394' }}>
               <div className="self-stretch flex flex-col justify-center items-center gap-2">
-                <div className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann">
+                <h2 className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann m-0">
                   Select A Mode
-                </div>
+                </h2>
               </div>
               <div className="self-stretch flex flex-col sm:flex-row items-stretch sm:items-start gap-4">
                 <button
@@ -265,9 +265,9 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
               </div>
               {draftMode === 'multiplayer' && (
                 <div className="self-stretch p-4 bg-teal-900 rounded flex flex-col" style={{ outline: '1px solid #B2FFEA', outlineOffset: '-1px' }}>
-                  <span className="text-teal-200 text-sm font-medium leading-5 font-brockmann">
-                    <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They'll receive an email invitation to join your draft.
-                  </span>
+                  <p className="text-teal-200 text-sm font-medium leading-5 font-brockmann m-0">
+                    <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They&apos;ll receive an email invitation to join your draft.
+                  </p>
                 </div>
               )}
             </div>
@@ -276,9 +276,9 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
             <div className="p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{ boxShadow: '0px 0px 6px #3B0394' }}>
               <div className="flex items-center gap-2">
                 <MultiPersonIcon className="w-6 h-6 text-purple-300" />
-                <span className="text-greyscale-blue-100 text-xl font-brockmann font-medium leading-7">
+                <h2 className="text-greyscale-blue-100 text-xl font-brockmann font-medium leading-7 m-0">
                   Add Participants
-                </span>
+                </h2>
               </div>
               <div className="flex gap-2">
                 <Input
@@ -314,20 +314,20 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
               {draftMode === 'multiplayer' && (
                 <div className="p-4 bg-teal-900 rounded flex items-center gap-2" style={{ outline: '1px solid #B2FFEA', outlineOffset: '-1px' }}>
                   <EmailIcon className="w-6 h-6 text-teal-200" />
-                  <span className="text-teal-200 text-sm font-brockmann font-medium leading-5">
-                    <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They'll receive an email invitation to join.
-                  </span>
+                  <p className="text-teal-200 text-sm font-brockmann font-medium leading-5 m-0">
+                    <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They&apos;ll receive an email invitation to join.
+                  </p>
                 </div>
               )}
               {(participants.length > 0 || (draftMode === 'multiplayer' && hostName)) && (
                 <div className="flex flex-col gap-3">
-                  <span className="text-greyscale-blue-300 text-base font-normal leading-6 font-brockmann">
+                  <p className="text-greyscale-blue-300 text-base font-normal leading-6 font-brockmann m-0">
                     Participants (
                     {draftMode === 'multiplayer' && hostName
                       ? participants.filter((p) => p.name !== hostName).length + 1
                       : participants.length}
                     ):
-                  </span>
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {draftMode === 'multiplayer' && hostName && (
                       <div className="py-2 pl-4 pr-4 bg-brand-primary rounded flex items-center gap-2" title="Host (cannot be removed)">

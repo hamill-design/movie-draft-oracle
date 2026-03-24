@@ -58,26 +58,27 @@ const LearnMore = () => {
               alignItems: 'center',
               display: 'flex'
             }}>
-              <div style={{
+              <h1 style={{
                 alignSelf: 'stretch',
                 textAlign: 'center',
                 justifyContent: 'center',
                 display: 'flex',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                margin: 0
               }}>
                 <span className="text-4xl md:text-6xl lg:text-[64px] leading-[50px] md:leading-[60px] lg:leading-[76px]" style={{
                   color: 'var(--Text-Primary, #FCFFFF)',
                   fontFamily: 'CHANEY',
                   fontWeight: '400',
                   wordWrap: 'break-word'
-                }}>This isn't TRivia.      </span>
+                }}>This isn&apos;t TRivia.      </span>
                 <span className="text-4xl md:text-6xl lg:text-[64px] leading-[50px] md:leading-[60px] lg:leading-[76px]" style={{
                   color: 'var(--Yellow-500, #FFD60A)',
                   fontFamily: 'CHANEY',
                   fontWeight: '400',
                   wordWrap: 'break-word'
-                }}>It's Taste.</span>
-              </div>
+                }}>It&apos;s Taste.</span>
+              </h1>
             </div>
             <div style={{
               width: '100%',
@@ -88,7 +89,7 @@ const LearnMore = () => {
               alignItems: 'center',
               display: 'flex'
             }}>
-              <div className="text-sm md:text-lg leading-[20px] md:leading-[26px] px-4" style={{
+              <p className="text-sm md:text-lg leading-[20px] md:leading-[26px] px-4" style={{
                 width: '100%',
                 maxWidth: '724px',
                 textAlign: 'center',
@@ -98,10 +99,11 @@ const LearnMore = () => {
                 color: 'var(--Text-Primary, #FCFFFF)',
                 fontFamily: 'Brockmann',
                 fontWeight: '500',
-                wordWrap: 'break-word'
+                wordWrap: 'break-word',
+                margin: 0
               }}>
                 Movie Draft challenges you to curate the perfect collection of films. Strategy meets cinema in this competitive drafting experience.
-              </div>
+              </p>
             </div>
           </div>
         </section>
@@ -125,7 +127,7 @@ const LearnMore = () => {
             alignItems: 'center',
             display: 'flex'
           }}>
-            <div style={{
+            <h2 style={{
               textAlign: 'center',
               justifyContent: 'center',
               display: 'flex',
@@ -135,10 +137,11 @@ const LearnMore = () => {
               fontFamily: 'Brockmann',
               fontWeight: '700',
               lineHeight: '36px',
-              wordWrap: 'break-word'
+              wordWrap: 'break-word',
+              margin: 0
             }}>
               How to Play
-            </div>
+            </h2>
           </div>
           
           <div style={{
@@ -172,7 +175,7 @@ const LearnMore = () => {
                   alignItems: 'flex-start',
                   display: 'flex'
                 }}>
-                  <div style={{
+                  <h3 style={{
                     alignSelf: 'stretch',
                     justifyContent: 'center',
                     display: 'flex',
@@ -182,10 +185,11 @@ const LearnMore = () => {
                     fontFamily: 'Brockmann',
                     fontWeight: '400',
                     lineHeight: '28px',
-                    wordWrap: 'break-word'
+                    wordWrap: 'break-word',
+                    margin: 0
                   }}>
                     What is a Movie Draft?
-                  </div>
+                  </h3>
                 </div>
                 <div style={{
                   alignSelf: 'stretch',
@@ -194,7 +198,7 @@ const LearnMore = () => {
                   alignItems: 'flex-start',
                   display: 'flex'
                 }}>
-                  <div style={{
+                  <p style={{
                     alignSelf: 'stretch',
                     justifyContent: 'center',
                     display: 'flex',
@@ -204,10 +208,11 @@ const LearnMore = () => {
                     fontFamily: 'Brockmann',
                     fontWeight: '400',
                     lineHeight: '20px',
-                    wordWrap: 'break-word'
+                    wordWrap: 'break-word',
+                    margin: 0
                   }}>
                     Movie Draft is a competitive game where players take turns selecting movies based on a chosen theme. The goal is to build the highest-scoring collection of films!
-                  </div>
+                  </p>
                 </div>
               </div>
             </div>
@@ -235,7 +240,7 @@ const LearnMore = () => {
                   alignItems: 'flex-start',
                   display: 'flex'
                 }}>
-                  <div style={{
+                  <h3 style={{
                     alignSelf: 'stretch',
                     justifyContent: 'center',
                     display: 'flex',
@@ -245,10 +250,11 @@ const LearnMore = () => {
                     fontFamily: 'Brockmann',
                     fontWeight: '400',
                     lineHeight: '28px',
-                    wordWrap: 'break-word'
+                    wordWrap: 'break-word',
+                    margin: 0
                   }}>
                     How to Set Up
-                  </div>
+                  </h3>
                 </div>
                 <ol style={{
                   alignSelf: 'stretch',
@@ -328,7 +334,7 @@ const LearnMore = () => {
                   alignItems: 'flex-start',
                   display: 'flex'
                 }}>
-                  <div style={{
+                  <h3 style={{
                     alignSelf: 'stretch',
                     justifyContent: 'center',
                     display: 'flex',
@@ -338,10 +344,11 @@ const LearnMore = () => {
                     fontFamily: 'Brockmann',
                     fontWeight: '400',
                     lineHeight: '28px',
-                    wordWrap: 'break-word'
+                    wordWrap: 'break-word',
+                    margin: 0
                   }}>
                     How to Draft
-                  </div>
+                  </h3>
                 </div>
                 <ol style={{
                   alignSelf: 'stretch',
@@ -421,7 +428,7 @@ const LearnMore = () => {
                   alignItems: 'flex-start',
                   display: 'flex'
                 }}>
-                  <div style={{
+                  <h3 style={{
                     alignSelf: 'stretch',
                     justifyContent: 'center',
                     display: 'flex',
@@ -431,10 +438,11 @@ const LearnMore = () => {
                     fontFamily: 'Brockmann',
                     fontWeight: '400',
                     lineHeight: '28px',
-                    wordWrap: 'break-word'
+                    wordWrap: 'break-word',
+                    margin: 0
                   }}>
                     Scoring
-                  </div>
+                  </h3>
                 </div>
                 <div style={{
                   alignSelf: 'stretch',
@@ -443,7 +451,7 @@ const LearnMore = () => {
                   alignItems: 'flex-start',
                   display: 'flex'
                 }}>
-                  <div style={{
+                  <p style={{
                     alignSelf: 'stretch',
                     justifyContent: 'center',
                     display: 'flex',
@@ -453,10 +461,11 @@ const LearnMore = () => {
                     fontFamily: 'Brockmann',
                     fontWeight: '400',
                     lineHeight: '20px',
-                    wordWrap: 'break-word'
+                    wordWrap: 'break-word',
+                    margin: 0
                   }}>
                     Movies are scored based on the categories you selected (IMDb rating, box office, critics scores, etc.). The player with the highest total score wins!
-                  </div>
+                  </p>
                 </div>
               </div>
             </div>
@@ -477,7 +486,7 @@ const LearnMore = () => {
                 alignItems: 'flex-start',
                 display: 'flex'
               }}>
-                <div style={{
+                <h3 style={{
                   alignSelf: 'stretch',
                   justifyContent: 'center',
                   display: 'flex',
@@ -487,10 +496,11 @@ const LearnMore = () => {
                   fontFamily: 'Brockmann',
                   fontWeight: '400',
                   lineHeight: '28px',
-                  wordWrap: 'break-word'
+                  wordWrap: 'break-word',
+                  margin: 0
                 }}>
                   Pro Tips
-                </div>
+                </h3>
               </div>
               <ul style={{
                 alignSelf: 'stretch',

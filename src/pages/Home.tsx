@@ -221,9 +221,9 @@ const Home = () => {
           {/* Theme Selection */}
           <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
             <div className="self-stretch flex flex-col justify-center items-center gap-2">
-              <div className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann text-center">
+              <h2 className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann text-center m-0">
                 Choose Your Draft Theme
-              </div>
+              </h2>
             </div>
             <div className="self-stretch flex flex-col sm:flex-row items-stretch sm:items-start gap-4">
               <button
@@ -417,9 +417,9 @@ const Home = () => {
           {theme !== 'people' && theme !== 'year' && isStepVisible('mode') && (
             <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
               <div className="self-stretch flex flex-col justify-center items-center gap-2">
-                <div className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann">
+                <h2 className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann m-0">
                   Select A Mode
-                </div>
+                </h2>
               </div>
               <div className="self-stretch flex flex-col sm:flex-row items-stretch sm:items-start gap-4">
                 <button
@@ -461,11 +461,9 @@ const Home = () => {
               </div>
               {draftMode === 'multiplayer' && (
                 <div className="self-stretch p-4 bg-teal-900 rounded flex flex-col" style={{outline: '1px solid #B2FFEA', outlineOffset: '-1px'}}>
-                  <div className="self-stretch flex flex-col">
-                    <span className="text-teal-200 text-sm font-medium leading-5 font-brockmann">
-                      <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They'll receive an email invitation to join your draft.
-                    </span>
-                  </div>
+                  <p className="self-stretch flex flex-col text-teal-200 text-sm font-medium leading-5 font-brockmann m-0">
+                    <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They&apos;ll receive an email invitation to join your draft.
+                  </p>
                 </div>
               )}
             </div>
@@ -478,9 +476,9 @@ const Home = () => {
                 <div className="w-6 h-6 flex justify-center items-center">
                   <MultiPersonIcon className="w-6 h-6 text-purple-300" />
                 </div>
-                <span className="text-greyscale-blue-100 text-xl font-brockmann font-medium leading-7">
+                <h2 className="text-greyscale-blue-100 text-xl font-brockmann font-medium leading-7 m-0">
                   Add Participants
-                </span>
+                </h2>
               </div>
               
               <div className="flex gap-2 flex-wrap">
@@ -514,21 +512,17 @@ const Home = () => {
                   <div className="w-6 h-6 flex justify-center items-center">
                     <EmailIcon className="w-6 h-6 text-teal-200" />
                   </div>
-                  <div className="flex-1">
-                    <span className="text-teal-200 text-sm font-brockmann font-medium leading-5">
-                      <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They'll receive an email invitation to join.
-                    </span>
-                  </div>
+                  <p className="flex-1 text-teal-200 text-sm font-brockmann font-medium leading-5 m-0">
+                    <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They&apos;ll receive an email invitation to join.
+                  </p>
                 </div>
               )}
 
               {participants.length > 0 && (
-                <div className="flex flex-col gap-3">
-                  <div>
-                    <span className="text-greyscale-blue-300 text-base font-normal leading-6 font-brockmann">
-                      Participants ({participants.length}):
-                    </span>
-                  </div>
+                  <div className="flex flex-col gap-3">
+                  <p className="text-greyscale-blue-300 text-base font-normal leading-6 font-brockmann m-0">
+                    Participants ({participants.length}):
+                  </p>
                   <div className="flex flex-wrap gap-2">
                     {participants.map((participant) => (
                       <div

@@ -573,12 +573,12 @@ const SpecDraftSetup = () => {
         <div className="max-w-4xl mx-auto space-y-6">
           {/* Draft Title - No background container */}
           <div className="w-full flex flex-col gap-4 items-center justify-center py-6">
-            <div className="uppercase" style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '32px', lineHeight: '36px', letterSpacing: '1.28px', color: 'var(--Text-Primary, #FCFFFF)' }}>
+            <p className="uppercase m-0" style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '32px', lineHeight: '36px', letterSpacing: '1.28px', color: 'var(--Text-Primary, #FCFFFF)' }}>
               SETTING UP
-            </div>
-            <div className="text-brand-primary uppercase text-center w-full" style={{ fontFamily: 'CHANEY', fontWeight: 400, fontSize: '64px', lineHeight: '64px' }}>
+            </p>
+            <h1 className="text-brand-primary uppercase text-center w-full m-0" style={{ fontFamily: 'CHANEY', fontWeight: 400, fontSize: '64px', lineHeight: '64px' }}>
               {specDraft.name.toUpperCase()}
-            </div>
+            </h1>
           </div>
 
           {/* Select Draft Mode */}
@@ -602,7 +602,7 @@ const SpecDraftSetup = () => {
               gap: '8px',
               display: 'flex'
             }}>
-              <div style={{
+              <h2 style={{
                 justifyContent: 'center',
                 display: 'flex',
                 flexDirection: 'column',
@@ -612,10 +612,11 @@ const SpecDraftSetup = () => {
                 fontWeight: '700',
                 lineHeight: '32px',
                 letterSpacing: '0.96px',
-                wordWrap: 'break-word'
+                wordWrap: 'break-word',
+                margin: 0
               }}>
                 Select A Mode
-              </div>
+              </h2>
             </div>
             <div style={{
               alignSelf: 'stretch',
@@ -725,9 +726,9 @@ const SpecDraftSetup = () => {
               <div className="w-6 h-6 flex justify-center items-center">
                 <MultiPersonIcon className="w-6 h-6 text-purple-300" />
               </div>
-              <span className="text-greyscale-blue-100 text-xl font-brockmann font-medium leading-7">
+              <h2 className="text-greyscale-blue-100 text-xl font-brockmann font-medium leading-7 m-0">
                 Add Players
-              </span>
+              </h2>
             </div>
             
             <div className="flex gap-2">
@@ -774,27 +775,23 @@ const SpecDraftSetup = () => {
                 <div className="w-6 h-6 flex justify-center items-center">
                   <Mail className="w-6 h-6 text-teal-200" />
                 </div>
-                <div className="flex-1">
-                  <span className="text-teal-200 text-sm font-brockmann font-medium leading-5">
-                    <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They'll receive an email invitation to join.
-                  </span>
-                </div>
+                <p className="flex-1 text-teal-200 text-sm font-brockmann font-medium leading-5 m-0">
+                  <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They&apos;ll receive an email invitation to join.
+                </p>
               </div>
             )}
 
             {(participants.length > 0 || (draftMode === 'multiplayer' && hostName)) && (
               <div className="flex flex-col gap-3">
-                <div>
-                  <span className="text-greyscale-blue-300 text-base font-normal leading-6 font-brockmann">
-                    Participants ({(() => {
-                      if (draftMode === 'multiplayer') {
-                        const displayedParticipants = participants.filter(p => p.name !== hostName);
-                        return hostName ? displayedParticipants.length + 1 : displayedParticipants.length;
-                      }
-                      return participants.length;
-                    })()}):
-                  </span>
-                </div>
+                <p className="text-greyscale-blue-300 text-base font-normal leading-6 font-brockmann m-0">
+                  Participants ({(() => {
+                    if (draftMode === 'multiplayer') {
+                      const displayedParticipants = participants.filter(p => p.name !== hostName);
+                      return hostName ? displayedParticipants.length + 1 : displayedParticipants.length;
+                    }
+                    return participants.length;
+                  })()}):
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {draftMode === 'multiplayer' && hostName && (
                     <div

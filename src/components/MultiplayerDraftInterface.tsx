@@ -879,11 +879,11 @@ export const MultiplayerDraftInterface = ({
         <div className="mb-6">
           <div className="p-6 rounded-[8px]">
             <div className="flex flex-col justify-center items-center gap-4 text-center">
-              <span className="text-purple-300 text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px]">
+              <p className="text-purple-300 text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px] m-0">
                 NOW DRAFTING
-              </span>
-              <div 
-                className="font-chaney font-normal text-center break-words"
+              </p>
+              <h1
+                className="font-chaney font-normal text-center break-words m-0"
                 style={{
                   fontSize: '64px',
                   lineHeight: '64px',
@@ -891,9 +891,9 @@ export const MultiplayerDraftInterface = ({
                 }}
               >
                 <span className="text-greyscale-blue-100">
-                  {draft.theme === 'spec-draft' 
+                  {draft.theme === 'spec-draft'
                     ? (specDraftName || draft.option).toUpperCase()
-                    : draft.theme === 'people' 
+                    : draft.theme === 'people'
                       ? getCleanActorName(draft.option).toUpperCase() + ' '
                       : draft.option.toString() + ' '}
                 </span>
@@ -902,7 +902,7 @@ export const MultiplayerDraftInterface = ({
                     MOVIES
                   </span>
                 )}
-              </div>
+              </h1>
               
             </div>
           </div>

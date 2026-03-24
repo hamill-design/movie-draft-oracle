@@ -59,11 +59,11 @@ const DraftHeader = ({
       <div className="mb-6">
         <div className="p-6 rounded-[8px]">
           <div className="flex flex-col justify-center items-center gap-4 text-center">
-            <span className="text-purple-300 text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px]">
+            <p className="text-purple-300 text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px] m-0">
               NOW DRAFTING
-            </span>
-            <div 
-              className="font-chaney font-normal text-center"
+            </p>
+            <h1 
+              className="font-chaney font-normal text-center m-0"
               style={{
                 fontSize: 'clamp(32px, 4vw, 64px)',
                 lineHeight: 'clamp(32px, 4vw, 64px)',
@@ -87,7 +87,7 @@ const DraftHeader = ({
                   </span>
                 </>
               )}
-            </div>
+            </h1>
             {!isComplete && currentPlayer && (
               <div className="flex items-center justify-center gap-2 mt-4">
                 <Crown className="text-yellow-400" size={20} />

@@ -106,9 +106,9 @@ export const JoinDraftForm = () => {
           } 
         />
         <div className="self-stretch flex flex-col items-start">
-          <div className="self-stretch flex flex-col justify-center text-greyscale-blue-500 text-sm font-normal leading-5 font-brockmann">
+          <p className="self-stretch flex flex-col justify-center text-greyscale-blue-500 text-sm font-normal leading-5 font-brockmann m-0">
             Have an invite code? Join a multiplayer draft session
-          </div>
+          </p>
         </div>
       </div>
       <form onSubmit={handleJoin} className="self-stretch flex flex-col items-start gap-6">

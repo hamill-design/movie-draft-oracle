@@ -34,7 +34,7 @@ const About = () => {
             {/* Header Section */}
             <div className="w-full flex flex-col items-start justify-start gap-5">
               <div className="w-full flex flex-col items-center justify-start gap-1.5">
-                <div 
+                <h1 
                   className="w-full flex flex-col justify-center text-center"
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -45,8 +45,8 @@ const About = () => {
                   }}
                 >
                   About Movie Drafter
-                </div>
-                <div 
+                </h1>
+                <p 
                   className="flex flex-col justify-center text-center"
                   style={{
                     color: 'hsl(var(--purple-300))',
@@ -57,7 +57,7 @@ const About = () => {
                   }}
                 >
                   Where Strategy Meets Cinema
-                </div>
+                </p>
               </div>
 
               {/* Content */}
@@ -75,7 +75,7 @@ const About = () => {
                   Movie Drafter is a competitive fantasy movie drafting platform that transforms your love of cinema into an engaging, strategic game. Whether you're a casual movie fan or a cinephile, Movie Drafter challenges you to curate the perfect collection of films and compete with friends.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -86,7 +86,7 @@ const About = () => {
                   }}
                 >
                   Our Mission
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -100,7 +100,7 @@ const About = () => {
                   We want to build community within the movie going community. Let's get people more excited about the movies they like, and have a conversation about the ones they should know. Movie trivia is fun, but sometimes can be an inaccessible knowledge curve. By adding the fun of strategy, we're making a more competitive, satisfying and communal game for new and experienced movie fans alike. Movie Drafter brings together friends and film enthusiasts to compete in drafting the best movie collections based on a mesh of metrics like box office performance, critical acclaim, and audience ratings.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -111,7 +111,7 @@ const About = () => {
                   }}
                 >
                   How It Works
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -125,7 +125,7 @@ const About = () => {
                   Movie Drafter allows you to create custom movie drafts with your friends. Choose from themes like drafting movies by a specific actor, director, or year. Select your categories based on genre or timeframe, and fill those slots (like a player in a position) and fill out your roster. Once all the lists are full we'll provide you with a score to see who really has the best taste in movies.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -136,7 +136,7 @@ const About = () => {
                   }}
                 >
                   Features
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -186,7 +186,7 @@ const About = () => {
                   <span style={{ fontWeight: 700 }}>Detailed Analytics</span> Track your performance and see how your picks stack up
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -197,7 +197,7 @@ const About = () => {
                   }}
                 >
                   Powered by TMDB
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -223,7 +223,7 @@ const About = () => {
                   {" "}to provide comprehensive movie information, ratings, and metadata. We're grateful for their open API that makes this platform possible.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -234,7 +234,7 @@ const About = () => {
                   }}
                 >
                   Get Started
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -258,7 +258,7 @@ const About = () => {
                   {" "}or create your first draft and invite your friends to compete!
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -269,7 +269,7 @@ const About = () => {
                   }}
                 >
                   Contact Us
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -315,7 +315,7 @@ const About = () => {
 
             {/* A Note from the creator */}
             <div className="w-full flex flex-col items-start justify-start gap-3">
-              <div 
+              <h2 
                 className="w-full flex flex-col justify-center"
                 style={{
                   color: 'var(--Text-Primary, #FCFFFF)',
@@ -326,8 +326,8 @@ const About = () => {
                 }}
               >
                 A Note from the creator
-              </div>
-              <div 
+              </h2>
+              <p 
                 className="w-full flex flex-col justify-center"
                 style={{
                   color: 'var(--Text-Primary, #FCFFFF)',
@@ -338,7 +338,7 @@ const About = () => {
                 }}
               >
                 Hey there you little Movie Hog, my name is Robert Hamill. I started this project after I realized there was no conclusive way to score movie drafts, a la The Big Picture podcast. Overtime I realized I could bring this tool to more movie fans and give them the opportunity to participate in their own games. Further, we could learn what movies people feel more affection towards and give us data driven insights as to what people are looking for in the moment. I have a loose roadmap for this baby, including leagues, voting, and of course a native mobile app. I'm very excited about this and a couple other projects I would like to get in production for an enterprise that will, hopefully, get people off the couch and into the movie theater with friends new and old.
-              </div>
+              </p>
             </div>
           </div>
         </div>

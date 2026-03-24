@@ -326,11 +326,11 @@ const VotePage = () => {
           <div className="mb-6">
             <div className="p-6 rounded-[8px]">
               <div className="flex flex-col justify-center items-center gap-4 text-center">
-                <span className="text-purple-300 text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px]">
+                <p className="text-purple-300 text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px] m-0">
                   VOTE ON
-                </span>
-                <div
-                  className="font-chaney font-normal text-center break-words"
+                </p>
+                <h1
+                  className="font-chaney font-normal text-center break-words m-0"
                   style={{
                     fontSize: '64px',
                     lineHeight: '64px',
@@ -347,7 +347,7 @@ const VotePage = () => {
                   {draft.theme !== 'spec-draft' && (
                     <span className="text-purple-300">MOVIES</span>
                   )}
-                </div>
+                </h1>
               </div>
             </div>
           </div>

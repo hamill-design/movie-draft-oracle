@@ -495,9 +495,9 @@ const Profile = () => {
         <div className="w-full h-full justify-between items-center inline-flex mb-8">
           <div className="justify-start items-center gap-4 flex">
             <div className="flex-col justify-start items-start inline-flex">
-              <div className="justify-center flex flex-col text-greyscale-blue-100 text-5xl font-chaney font-normal leading-[52px] tracking-[1.92px]">
+              <h1 className="justify-center flex flex-col text-greyscale-blue-100 text-5xl font-chaney font-normal leading-[52px] tracking-[1.92px] m-0">
                 Profile
-              </div>
+              </h1>
             </div>
           </div>
           <div 
@@ -516,9 +516,9 @@ const Profile = () => {
         <div className="w-full h-full p-6 bg-greyscale-purp-900 rounded-[8px] flex-col justify-start items-start gap-3 inline-flex mb-8" style={{boxShadow: '0px 0px 6px #3B0394'}}>
           <div className="w-full flex justify-between items-center">
             <div className="flex-col justify-start items-start flex">
-              <div className="justify-center flex flex-col text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
+              <h2 className="justify-center flex flex-col text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px] m-0">
                 Account Information
-              </div>
+              </h2>
             </div>
             {isAdmin && (
               <Button
@@ -602,9 +602,9 @@ const Profile = () => {
         {/* Saved Drafts */}
         <div className="w-full h-full p-6 bg-greyscale-purp-900 rounded-[8px] flex-col justify-start items-start gap-6 inline-flex" style={{boxShadow: '0px 0px 6px #3B0394'}}>
           <div className="flex-col justify-start items-start flex">
-            <div className="justify-center flex flex-col text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
+            <h2 className="justify-center flex flex-col text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px] m-0">
               Saved Drafts
-            </div>
+            </h2>
           </div>
           <div className="w-full">
             {draftsLoading ? (

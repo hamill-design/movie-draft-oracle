@@ -933,8 +933,8 @@ const FinalScores = () => {
         <div className="w-full p-6 rounded-[8px] flex flex-wrap items-start content-start">
           <div className="flex-1 flex flex-col gap-6">
             <div className="self-stretch min-w-[310px] text-center flex flex-col justify-center">
-              <div 
-                className="break-words"
+              <h1 
+                className="break-words m-0"
                 style={{
                   fontSize: '64px', 
                   fontFamily: 'CHANEY', 
@@ -954,7 +954,7 @@ const FinalScores = () => {
                   {draft.title}
                 </span>
                 <span className="text-greyscale-blue-100">DRAFT</span>
-              </div>
+              </h1>
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -136,7 +136,7 @@ const Contact = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-3xl">Contact Support</CardTitle>
+            <h1 className="text-3xl font-semibold font-brockmann leading-none tracking-tight">Contact Support</h1>
             <CardDescription>
               Have a question or need help? Send us a message and we'll get back to you as soon as possible.
             </CardDescription>

@@ -350,6 +350,9 @@ const Admin = () => {
 
               {/* Main Content - Inside Container */}
               <div className="flex-1 space-y-6">
+                <h1 className="text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-wide m-0">
+                  Admin
+                </h1>
                 {/* Actor Spec Categories Section */}
                 {activeSection === 'actor-categories' && (
                   <div className="space-y-6">

@@ -796,9 +796,9 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
         <div className="flex justify-center items-center" style={{ width: '24px', height: '24px', padding: '2px' }}>
           <CheckboxIcon className="text-purple-300" />
         </div>
-        <span className="text-greyscale-blue-100 text-xl font-brockmann font-medium leading-7">
+        <h2 className="text-greyscale-blue-100 text-xl font-brockmann font-medium leading-7 m-0">
           Choose Categories
-        </span>
+        </h2>
       </div>
 
       {/* Categories Grid */}

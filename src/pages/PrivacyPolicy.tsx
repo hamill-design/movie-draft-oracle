@@ -31,7 +31,7 @@ const PrivacyPolicy = () => {
             {/* Header Section */}
             <div className="w-full flex flex-col items-start justify-start gap-5">
               <div className="w-full flex flex-col items-center justify-start gap-1.5">
-                <div 
+                <h1 
                   className="w-full flex flex-col justify-center text-center"
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -42,8 +42,8 @@ const PrivacyPolicy = () => {
                   }}
                 >
                   Privacy Policy
-                </div>
-                <div 
+                </h1>
+                <p 
                   className="flex flex-col justify-center text-center"
                   style={{
                     color: 'hsl(var(--purple-300))',
@@ -54,7 +54,7 @@ const PrivacyPolicy = () => {
                   }}
                 >
                   Effective Date: January 2026
-                </div>
+                </p>
               </div>
 
               {/* Content */}
@@ -84,7 +84,7 @@ const PrivacyPolicy = () => {
                   ), the privacy of our visitors is one of our main priorities. This Privacy Policy document contains types of information that is collected and recorded by Movie Drafter and how we use it.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -96,7 +96,7 @@ const PrivacyPolicy = () => {
                   }}
                 >
                   1. Information We Collect
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -134,7 +134,7 @@ const PrivacyPolicy = () => {
                   <span style={{ fontWeight: 700 }}>Automated Information:</span> Like most websites, we automatically collect certain data via cookies and log files, including IP addresses, browser type, and time stamps.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -145,7 +145,7 @@ const PrivacyPolicy = () => {
                   }}
                 >
                   2. Google AdSense & Third-Party Cookies
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -206,7 +206,7 @@ const PrivacyPolicy = () => {
                   <span style={{ fontWeight: 700 }}>Other Partners:</span> Other third-party ad servers or ad networks use technology like cookies, JavaScript, or Web Beacons that are used in their respective advertisements and links that appear on Movie Drafter. We have no access to or control over these cookies.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -217,7 +217,7 @@ const PrivacyPolicy = () => {
                   }}
                 >
                   3. Data Attribution & API Usage
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -231,7 +231,7 @@ const PrivacyPolicy = () => {
                   Movie Drafter provides data-driven insights using third-party APIs (such as TMDB). While we fetch movie data from these services, no personal user data is shared with these movie database providers.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -242,7 +242,7 @@ const PrivacyPolicy = () => {
                   }}
                 >
                   4. US State Privacy Rights (Updated 2026)
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -304,7 +304,7 @@ const PrivacyPolicy = () => {
                   To exercise these rights, please contact us via our Support page.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -315,7 +315,7 @@ const PrivacyPolicy = () => {
                   }}
                 >
                   5. GDPR Data Protection Rights (EEA/UK)
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -329,7 +329,7 @@ const PrivacyPolicy = () => {
                   If you are located in the European Economic Area (EEA) or the UK, we comply with the IAB TCF v2.3 framework. You have the right to access, rectify, or erase your data. We ensure that our consent management platform allows you to customize your ad preferences.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -339,8 +339,8 @@ const PrivacyPolicy = () => {
                     marginBottom: '0.5em'
                   }}
                 >
-                  6. Children's Information
-                </p>
+                  6. Children&apos;s Information
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -354,7 +354,7 @@ const PrivacyPolicy = () => {
                   Movie Drafter does not knowingly collect any Personal Identifiable Information from children under the age of 13. If you think your child provided this kind of information on our website, please contact us immediately.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -365,7 +365,7 @@ const PrivacyPolicy = () => {
                   }}
                 >
                   7. Contact Us
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',

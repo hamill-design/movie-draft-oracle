@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -170,7 +170,7 @@ export const JoinDraft = () => {
       <div className="min-h-screen flex items-center justify-center p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle>Sign In or Join as Guest</CardTitle>
+            <h1 className="text-2xl font-semibold font-brockmann leading-none tracking-tight">Sign In or Join as Guest</h1>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-muted-foreground">
@@ -213,10 +213,10 @@ export const JoinDraft = () => {
       <div className="min-h-screen flex items-center justify-center p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="flex items-center justify-center gap-2">
+            <h1 className="text-2xl font-semibold font-brockmann leading-none tracking-tight flex items-center justify-center gap-2">
               <Users className="h-6 w-6" />
               Joining Draft
-            </CardTitle>
+            </h1>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <div className="flex items-center justify-center">
@@ -248,10 +248,10 @@ export const JoinDraft = () => {
       <div className="min-h-screen flex items-center justify-center p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="flex items-center justify-center gap-2">
+          <h1 className="text-2xl font-semibold font-brockmann leading-none tracking-tight flex items-center justify-center gap-2">
             <Users className="h-6 w-6" />
             Join Draft
-          </CardTitle>
+          </h1>
           <p className="text-muted-foreground">
             Join a multiplayer movie draft session
           </p>
@@ -261,10 +261,10 @@ export const JoinDraft = () => {
           {isEmailInvite && !autoJoin ? (
             // Email invitation flow
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <h2 className="flex items-center gap-2 text-sm text-muted-foreground font-medium m-0">
                 <Mail className="h-4 w-4" />
                 Email Invitation
-              </div>
+              </h2>
               
               <div className="space-y-2">
                 <Label htmlFor="email">Invited Email</Label>
@@ -297,10 +297,10 @@ export const JoinDraft = () => {
           ) : (
             // Invite code flow
             <form onSubmit={handleJoinByCode} className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <h2 className="flex items-center gap-2 text-sm text-muted-foreground font-medium m-0">
                 <Hash className="h-4 w-4" />
                 Invite Code
-              </div>
+              </h2>
               
               <div className="space-y-2">
                 <Label htmlFor="code">Invite Code</Label>

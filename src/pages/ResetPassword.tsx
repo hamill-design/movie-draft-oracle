@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Film, Lock, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -121,7 +121,7 @@ const ResetPassword = () => {
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Film className="text-yellow-400" size={32} />
-            <CardTitle className="text-2xl text-white">Movie Draft League</CardTitle>
+            <h1 className="text-2xl text-white font-semibold font-brockmann leading-none tracking-tight m-0">Movie Draft League</h1>
           </div>
           <p className="text-gray-300">Create your new password</p>
         </CardHeader>

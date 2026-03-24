@@ -31,7 +31,7 @@ const TermsOfService = () => {
             {/* Header Section */}
             <div className="w-full flex flex-col items-start justify-start gap-5">
               <div className="w-full flex flex-col items-center justify-start gap-1.5">
-                <div 
+                <h1 
                   className="w-full flex flex-col justify-center text-center"
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -42,8 +42,8 @@ const TermsOfService = () => {
                   }}
                 >
                   Terms of Service
-                </div>
-                <div 
+                </h1>
+                <p 
                   className="flex flex-col justify-center text-center"
                   style={{
                     color: 'hsl(var(--purple-300))',
@@ -54,12 +54,12 @@ const TermsOfService = () => {
                   }}
                 >
                   Last updated: {new Date().toLocaleDateString()}
-                </div>
+                </p>
               </div>
 
               {/* Content */}
               <div className="w-full flex flex-col justify-center">
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -70,7 +70,7 @@ const TermsOfService = () => {
                   }}
                 >
                   Acceptance of Terms
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -84,7 +84,7 @@ const TermsOfService = () => {
                   By accessing and using this movie draft application, you accept and agree to be bound by the terms and provision of this agreement.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -95,7 +95,7 @@ const TermsOfService = () => {
                   }}
                 >
                   Use License
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -109,7 +109,7 @@ const TermsOfService = () => {
                   Permission is granted to temporarily download one copy of the materials on this application for personal, non-commercial transitory viewing only.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -120,7 +120,7 @@ const TermsOfService = () => {
                   }}
                 >
                   Service Description
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -134,7 +134,7 @@ const TermsOfService = () => {
                   Our service allows users to create and participate in movie drafts, track scores, and share results with friends.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -145,7 +145,7 @@ const TermsOfService = () => {
                   }}
                 >
                   User Accounts
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -159,7 +159,7 @@ const TermsOfService = () => {
                   You are responsible for maintaining the confidentiality of your account and password and for restricting access to your account.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -170,7 +170,7 @@ const TermsOfService = () => {
                   }}
                 >
                   Prohibited Uses
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -236,7 +236,7 @@ const TermsOfService = () => {
                   • To impersonate or attempt to impersonate the company, a company employee, another user, or any other person or entity
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -247,7 +247,7 @@ const TermsOfService = () => {
                   }}
                 >
                   Content
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -261,7 +261,7 @@ const TermsOfService = () => {
                   Our service may contain content that is not appropriate for all audiences. You acknowledge that you use the service at your own risk.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -272,7 +272,7 @@ const TermsOfService = () => {
                   }}
                 >
                   Termination
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -286,7 +286,7 @@ const TermsOfService = () => {
                   We may terminate or suspend your account and bar access to the service immediately, without prior notice or liability, under our sole discretion, for any reason whatsoever.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -297,7 +297,7 @@ const TermsOfService = () => {
                   }}
                 >
                   Disclaimer
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -311,7 +311,7 @@ const TermsOfService = () => {
                   The information on this application is provided on an 'as is' basis. To the fullest extent permitted by law, this company excludes all representations, warranties, conditions and terms.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -322,7 +322,7 @@ const TermsOfService = () => {
                   }}
                 >
                   Limitations
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -336,7 +336,7 @@ const TermsOfService = () => {
                   In no event shall Movie Draft Oracle or its suppliers be liable for any damages arising out of the use or inability to use the materials on this application.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -347,7 +347,7 @@ const TermsOfService = () => {
                   }}
                 >
                   Governing Law
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -361,7 +361,7 @@ const TermsOfService = () => {
                   These terms and conditions are governed by and construed in accordance with the laws and you irrevocably submit to the exclusive jurisdiction of the courts in that state or location.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -372,7 +372,7 @@ const TermsOfService = () => {
                   }}
                 >
                   Contact Information
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
@@ -386,7 +386,7 @@ const TermsOfService = () => {
                   If you have any questions about these Terms of Service, please contact us through our support channels.
                 </p>
 
-                <p 
+                <h2 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
                     fontSize: '14px',
@@ -397,7 +397,7 @@ const TermsOfService = () => {
                   }}
                 >
                   Third-Party Services and Attribution
-                </p>
+                </h2>
                 <p 
                   style={{
                     color: 'var(--Text-Primary, #FCFFFF)',
