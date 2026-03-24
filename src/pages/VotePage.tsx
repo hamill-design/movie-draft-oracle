@@ -16,6 +16,9 @@ interface RosterRow {
   picks: DraftPick[];
 }
 
+const SITE_ORIGIN = 'https://moviedrafter.com';
+const OG_IMAGE = `${SITE_ORIGIN}/og-image.jpg?v=2`;
+
 const VotePage = () => {
   const { draftId } = useParams<{ draftId: string }>();
   const navigate = useNavigate();
@@ -242,23 +245,57 @@ const VotePage = () => {
     }
   };
 
+  const voteCanonical = draftId ? `${SITE_ORIGIN}/vote/${draftId}` : `${SITE_ORIGIN}/vote`;
+
   if (loading) {
+    const loadTitle = 'Movie Drafter - Loading vote';
+    const loadDesc = 'Loading public voting for a movie draft on Movie Drafter.';
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
-        <div className="text-greyscale-blue-300 font-brockmann">Loading...</div>
-      </div>
+      <>
+        <Helmet>
+          <title>{loadTitle}</title>
+          <meta name="description" content={loadDesc} />
+          <link rel="canonical" href={voteCanonical} />
+          <meta property="og:title" content={loadTitle} />
+          <meta property="og:description" content={loadDesc} />
+          <meta property="og:url" content={voteCanonical} />
+          <meta property="og:image" content={OG_IMAGE} />
+          <meta name="twitter:title" content={loadTitle} />
+          <meta name="twitter:description" content={loadDesc} />
+          <meta name="twitter:image" content={OG_IMAGE} />
+        </Helmet>
+        <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
+          <div className="text-greyscale-blue-300 font-brockmann">Loading...</div>
+        </div>
+      </>
     );
   }
 
   if (error || !draft) {
+    const errTitle = 'Movie Drafter - Vote unavailable';
+    const errDesc = error ?? 'This draft is not open for public voting or could not be loaded.';
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
-        <p className="text-greyscale-blue-200 font-brockmann text-center">{error ?? 'Draft not found.'}</p>
-        <Button variant="outline" onClick={() => navigate('/')}>
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to home
-        </Button>
-      </div>
+      <>
+        <Helmet>
+          <title>{errTitle}</title>
+          <meta name="description" content={errDesc} />
+          <link rel="canonical" href={voteCanonical} />
+          <meta property="og:title" content={errTitle} />
+          <meta property="og:description" content={errDesc} />
+          <meta property="og:url" content={voteCanonical} />
+          <meta property="og:image" content={OG_IMAGE} />
+          <meta name="twitter:title" content={errTitle} />
+          <meta name="twitter:description" content={errDesc} />
+          <meta name="twitter:image" content={OG_IMAGE} />
+        </Helmet>
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
+          <p className="text-greyscale-blue-200 font-brockmann text-center">{error ?? 'Draft not found.'}</p>
+          <Button variant="outline" onClick={() => navigate('/')}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to home
+          </Button>
+        </div>
+      </>
     );
   }
 
@@ -266,10 +303,22 @@ const VotePage = () => {
     ? (myVote && participants.find((p) => p.id === myVote.voted_participant_id)?.participant_name) ?? myVote?.voted_player_name
     : myVote?.voted_player_name;
 
+  const pageTitle = `Movie Drafter - Vote on ${draft.title ?? 'Movie Draft'}`;
+  const pageDescription = `Cast your vote for “${draft.title ?? 'this movie draft'}” on Movie Drafter. Pick who had the best roster after the draft.`;
+
   return (
     <>
       <Helmet>
-        <title>Vote – {draft.title ?? 'Movie Draft'}</title>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <link rel="canonical" href={voteCanonical} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:url" content={voteCanonical} />
+        <meta property="og:image" content={OG_IMAGE} />
+        <meta name="twitter:title" content={pageTitle} />
+        <meta name="twitter:description" content={pageDescription} />
+        <meta name="twitter:image" content={OG_IMAGE} />
       </Helmet>
       <div className="min-h-screen text-foreground" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
         <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col gap-8">

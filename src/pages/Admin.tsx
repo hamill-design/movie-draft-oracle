@@ -277,6 +277,7 @@ const Admin = () => {
   return (
     <>
       <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
         <title>Movie Drafter - Admin</title>
         <meta name="description" content="Admin panel for Movie Drafter. Manage special drafts, categories, and platform settings." />
         <meta property="og:title" content="Movie Drafter - Admin" />

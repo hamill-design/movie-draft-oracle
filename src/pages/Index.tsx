@@ -256,14 +256,32 @@ const Index = () => {
     return `Movie Drafter - ${themeLabel}`;
   };
 
+  const draftCanonical = `https://moviedrafter.com/draft${urlDraftId ? `/${urlDraftId}` : ''}`;
+
   // Show loading state
   if (loading || loadingExistingDraft) {
+    const loadTitle = loadingExistingDraft ? 'Movie Drafter - Loading draft' : 'Movie Drafter - Draft';
+    const loadDesc = 'Create and manage your movie draft on Movie Drafter. Pick your favorite films across categories and compete with friends.';
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-        <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>
-          {loadingExistingDraft ? 'Loading draft...' : 'Loading...'}
+      <>
+        <Helmet>
+          <title>{loadTitle}</title>
+          <meta name="description" content={loadDesc} />
+          <link rel="canonical" href={draftCanonical} />
+          <meta property="og:title" content={loadTitle} />
+          <meta property="og:description" content={loadDesc} />
+          <meta property="og:url" content={draftCanonical} />
+          <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+          <meta name="twitter:title" content={loadTitle} />
+          <meta name="twitter:description" content={loadDesc} />
+          <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        </Helmet>
+        <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+          <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>
+            {loadingExistingDraft ? 'Loading draft...' : 'Loading...'}
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -311,10 +329,26 @@ const Index = () => {
   if (finalDraftState && !finalDraftState.isMultiplayer) {
     // Ensure we have required properties before rendering local draft
     if (!finalDraftState.option || !finalDraftState.theme) {
+      const loadTitle = 'Movie Drafter - Loading draft';
+      const loadDesc = 'Create and manage your movie draft on Movie Drafter. Pick your favorite films across categories and compete with friends.';
       return (
-        <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-          <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>Loading draft...</div>
-        </div>
+        <>
+          <Helmet>
+            <title>{loadTitle}</title>
+            <meta name="description" content={loadDesc} />
+            <link rel="canonical" href={draftCanonical} />
+            <meta property="og:title" content={loadTitle} />
+            <meta property="og:description" content={loadDesc} />
+            <meta property="og:url" content={draftCanonical} />
+            <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+            <meta name="twitter:title" content={loadTitle} />
+            <meta name="twitter:description" content={loadDesc} />
+            <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+          </Helmet>
+          <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+            <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>Loading draft...</div>
+          </div>
+        </>
       );
     }
   }
@@ -324,10 +358,10 @@ const Index = () => {
       <Helmet>
         <title>{getPageTitle()}</title>
         <meta name="description" content="Create and manage your movie draft. Pick your favorite films across different categories and compete with friends." />
-        <link rel="canonical" href={`https://moviedrafter.com/draft${urlDraftId ? `/${urlDraftId}` : ''}`} />
+        <link rel="canonical" href={draftCanonical} />
         <meta property="og:title" content={getPageTitle()} />
         <meta property="og:description" content="Create and manage your movie draft. Pick your favorite films across different categories and compete with friends." />
-        <meta property="og:url" content={`https://moviedrafter.com/draft${urlDraftId ? `/${urlDraftId}` : ''}`} />
+        <meta property="og:url" content={draftCanonical} />
         <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
         <meta name="twitter:title" content={getPageTitle()} />
         <meta name="twitter:description" content="Create and manage your movie draft. Pick your favorite films across different categories and compete with friends." />

@@ -478,6 +478,7 @@ const Profile = () => {
   return (
     <>
       <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
         <title>Movie Drafter - Your Profile</title>
         <meta name="description" content="View and manage your Movie Drafter profile. See all your drafts, track your progress, and manage your account settings." />
         <meta property="og:title" content="Movie Drafter - Your Profile" />

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -21,6 +22,9 @@ import { Participant, normalizeParticipants } from '@/types/participant';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { QRCodeSVG } from 'qrcode.react';
+
+const SITE_ORIGIN = 'https://moviedrafter.com';
+const OG_IMAGE = `${SITE_ORIGIN}/og-image.jpg?v=2`;
 
 interface MultiplayerDraftInterfaceProps {
   draftId?: string;
@@ -752,55 +756,121 @@ export const MultiplayerDraftInterface = ({
     return map.get(n) ?? 0;
   };
 
+  const canonicalDraftUrl = draftId ? `${SITE_ORIGIN}/draft/${draftId}` : `${SITE_ORIGIN}/draft`;
+
   // Single gentle loading screen (session or draft loading) — avoids big skeleton flicker when landing after create
   const showDraftLoading = (loading || sessionLoading) || (draftId && !draft);
   if (showDraftLoading) {
+    const loadTitle = 'Movie Drafter - Loading draft';
+    const loadDesc = 'Loading your multiplayer movie draft on Movie Drafter. Pick films across categories and compete with friends.';
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
-        <Loader2 className="h-8 w-8 animate-spin text-purple-300 mb-4" />
-        <p className="text-greyscale-blue-100 text-lg font-medium">Loading your draft...</p>
-      </div>
+      <>
+        <Helmet>
+          <title>{loadTitle}</title>
+          <meta name="description" content={loadDesc} />
+          <link rel="canonical" href={canonicalDraftUrl} />
+          <meta property="og:title" content={loadTitle} />
+          <meta property="og:description" content={loadDesc} />
+          <meta property="og:url" content={canonicalDraftUrl} />
+          <meta property="og:image" content={OG_IMAGE} />
+          <meta name="twitter:title" content={loadTitle} />
+          <meta name="twitter:description" content={loadDesc} />
+          <meta name="twitter:image" content={OG_IMAGE} />
+        </Helmet>
+        <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
+          <Loader2 className="h-8 w-8 animate-spin text-purple-300 mb-4" />
+          <p className="text-greyscale-blue-100 text-lg font-medium">Loading your draft...</p>
+        </div>
+      </>
     );
   }
 
   // Only show "Authentication Required" if session is done loading but no participant id (from parent or child)
   if (!sessionLoading && !effectiveParticipantId) {
+    const authTitle = 'Movie Drafter - Join draft';
+    const authDesc = 'Sign in or continue as a guest to join this multiplayer movie draft on Movie Drafter.';
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Authentication Required</CardTitle>
-            <CardDescription style={{color: 'var(--Text-Primary, #FCFFFF)'}}>
-              Loading your session to participate in the draft...
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
+      <>
+        <Helmet>
+          <title>{authTitle}</title>
+          <meta name="description" content={authDesc} />
+          <link rel="canonical" href={canonicalDraftUrl} />
+          <meta property="og:title" content={authTitle} />
+          <meta property="og:description" content={authDesc} />
+          <meta property="og:url" content={canonicalDraftUrl} />
+          <meta property="og:image" content={OG_IMAGE} />
+          <meta name="twitter:title" content={authTitle} />
+          <meta name="twitter:description" content={authDesc} />
+          <meta name="twitter:image" content={OG_IMAGE} />
+        </Helmet>
+        <div className="max-w-4xl mx-auto p-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Authentication Required</CardTitle>
+              <CardDescription style={{color: 'var(--Text-Primary, #FCFFFF)'}}>
+                Loading your session to participate in the draft...
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        </div>
+      </>
     );
   }
 
   // Only show "Draft Not Found" if we don't have a draftId (user navigated directly to invalid URL)
   if (!draft) {
+    const nfTitle = 'Movie Drafter - Draft not found';
+    const nfDesc = 'This draft does not exist or you do not have permission to view it. Start a new movie draft on Movie Drafter.';
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-        <Card>
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold mb-2">Draft Not Found</h2>
-            <p className="text-muted-foreground mb-4">
-              The draft you're looking for doesn't exist or you don't have permission to view it.
-            </p>
-            <Button onClick={() => navigate('/')}>
-              Back to Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <>
+        <Helmet>
+          <title>{nfTitle}</title>
+          <meta name="description" content={nfDesc} />
+          <link rel="canonical" href={canonicalDraftUrl} />
+          <meta property="og:title" content={nfTitle} />
+          <meta property="og:description" content={nfDesc} />
+          <meta property="og:url" content={canonicalDraftUrl} />
+          <meta property="og:image" content={OG_IMAGE} />
+          <meta name="twitter:title" content={nfTitle} />
+          <meta name="twitter:description" content={nfDesc} />
+          <meta name="twitter:image" content={OG_IMAGE} />
+        </Helmet>
+        <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
+          <Card>
+            <CardContent className="p-6 text-center">
+              <h2 className="text-xl font-semibold mb-2">Draft Not Found</h2>
+              <p className="text-muted-foreground mb-4">
+                The draft you're looking for doesn't exist or you don't have permission to view it.
+              </p>
+              <Button onClick={() => navigate('/')}>
+                Back to Home
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </>
     );
   }
 
   const isComplete = draft.is_complete;
 
+  const pageTitle = `Movie Drafter - ${draft.title}`;
+  const pageDescription = `“${draft.title}” — multiplayer movie draft on Movie Drafter. Pick films across categories and compete with friends.`;
+
   return (
+    <>
+    <Helmet>
+      <title>{pageTitle}</title>
+      <meta name="description" content={pageDescription} />
+      <link rel="canonical" href={canonicalDraftUrl} />
+      <meta property="og:title" content={pageTitle} />
+      <meta property="og:description" content={pageDescription} />
+      <meta property="og:url" content={canonicalDraftUrl} />
+      <meta property="og:image" content={OG_IMAGE} />
+      <meta name="twitter:title" content={pageTitle} />
+      <meta name="twitter:description" content={pageDescription} />
+      <meta name="twitter:image" content={OG_IMAGE} />
+    </Helmet>
     <div className="min-h-screen" style={{
       background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'
     }}>
@@ -1962,5 +2032,6 @@ export const MultiplayerDraftInterface = ({
 
       </div>
     </div>
+    </>
   );
 };
