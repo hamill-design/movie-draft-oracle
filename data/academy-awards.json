@@ -1,9 +1,837 @@
-{
-  "movies": [
-    { "tmdb_id": 424, "status": "winner" },
-    { "tmdb_id": 78, "status": "winner" },
-    { "tmdb_id": 238, "status": "winner" },
-    { "tmdb_id": 278, "status": "nominee" },
-    { "tmdb_id": 680, "status": "winner" }
-  ]
-}
+[
+  {
+    "category": "best_picture",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1054867,
+        "title": "One Battle After Another"
+      }
+    ]
+  },
+  {
+    "category": "best_picture",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 701387,
+        "title": "Bugonia"
+      },
+      {
+        "tmdb_id": 911430,
+        "title": "F1"
+      },
+      {
+        "tmdb_id": 1062722,
+        "title": "Frankenstein"
+      },
+      {
+        "tmdb_id": 858024,
+        "title": "Hamnet"
+      },
+      {
+        "tmdb_id": 1317288,
+        "title": "Marty Supreme"
+      },
+      {
+        "tmdb_id": 1220564,
+        "title": "The Secret Agent"
+      },
+      {
+        "tmdb_id": 1124566,
+        "title": "Sentimental Value"
+      },
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      },
+      {
+        "tmdb_id": 1241983,
+        "title": "Train Dreams"
+      }
+    ]
+  },
+  {
+    "category": "best_director",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1054867,
+        "title": "One Battle After Another"
+      }
+    ]
+  },
+  {
+    "category": "best_director",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 858024,
+        "title": "Hamnet"
+      },
+      {
+        "tmdb_id": 1317288,
+        "title": "Marty Supreme"
+      },
+      {
+        "tmdb_id": 1124566,
+        "title": "Sentimental Value"
+      },
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      }
+    ]
+  },
+  {
+    "category": "best_actor",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      }
+    ]
+  },
+  {
+    "category": "best_actor",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 1317288,
+        "title": "Marty Supreme"
+      },
+      {
+        "tmdb_id": 1054867,
+        "title": "One Battle After Another"
+      },
+      {
+        "tmdb_id": 1299655,
+        "title": "Blue Moon"
+      },
+      {
+        "tmdb_id": 1220564,
+        "title": "The Secret Agent"
+      }
+    ]
+  },
+  {
+    "category": "best_actress",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 858024,
+        "title": "Hamnet"
+      }
+    ]
+  },
+  {
+    "category": "best_actress",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 1160360,
+        "title": "If I Had Legs I'd Kick You"
+      },
+      {
+        "tmdb_id": 1371185,
+        "title": "Song Sung Blue"
+      },
+      {
+        "tmdb_id": 1124566,
+        "title": "Sentimental Value"
+      },
+      {
+        "tmdb_id": 701387,
+        "title": "Bugonia"
+      }
+    ]
+  },
+  {
+    "category": "best_supporting_actor",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1054867,
+        "title": "One Battle After Another"
+      }
+    ]
+  },
+  {
+    "category": "best_supporting_actor",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 1062722,
+        "title": "Frankenstein"
+      },
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      },
+      {
+        "tmdb_id": 1124566,
+        "title": "Sentimental Value"
+      }
+    ]
+  },
+  {
+    "category": "best_supporting_actress",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1078605,
+        "title": "Weapons"
+      }
+    ]
+  },
+  {
+    "category": "best_supporting_actress",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 1124566,
+        "title": "Sentimental Value"
+      },
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      },
+      {
+        "tmdb_id": 1054867,
+        "title": "One Battle After Another"
+      }
+    ]
+  },
+  {
+    "category": "best_original_screenplay",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      }
+    ]
+  },
+  {
+    "category": "best_original_screenplay",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 1299655,
+        "title": "Blue Moon"
+      },
+      {
+        "tmdb_id": 1456349,
+        "title": "It Was Just an Accident"
+      },
+      {
+        "tmdb_id": 1317288,
+        "title": "Marty Supreme"
+      },
+      {
+        "tmdb_id": 1124566,
+        "title": "Sentimental Value"
+      }
+    ]
+  },
+  {
+    "category": "best_adapted_screenplay",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1054867,
+        "title": "One Battle After Another"
+      }
+    ]
+  },
+  {
+    "category": "best_adapted_screenplay",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 701387,
+        "title": "Bugonia"
+      },
+      {
+        "tmdb_id": 1062722,
+        "title": "Frankenstein"
+      },
+      {
+        "tmdb_id": 858024,
+        "title": "Hamnet"
+      },
+      {
+        "tmdb_id": 1241983,
+        "title": "Train Dreams"
+      }
+    ]
+  },
+  {
+    "category": "best_animated_feature",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 803796,
+        "title": "KPop Demon Hunters"
+      }
+    ]
+  },
+  {
+    "category": "best_animated_feature",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 804370,
+        "title": "Arco"
+      },
+      {
+        "tmdb_id": 1022787,
+        "title": "Elio"
+      },
+      {
+        "tmdb_id": 682012,
+        "title": "Little Amélie or the Character of Rain"
+      },
+      {
+        "tmdb_id": 1084242,
+        "title": "Zootopia 2"
+      }
+    ]
+  },
+  {
+    "category": "best_international_feature",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1124566,
+        "title": "Sentimental Value"
+      }
+    ]
+  },
+  {
+    "category": "best_international_feature",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 1456349,
+        "title": "It Was Just an Accident"
+      },
+      {
+        "tmdb_id": 1220564,
+        "title": "The Secret Agent"
+      },
+      {
+        "tmdb_id": 1151272,
+        "title": "Sirāt"
+      },
+      {
+        "tmdb_id": 1480382,
+        "title": "The Voice of Hind Rajab"
+      }
+    ]
+  },
+  {
+    "category": "best_documentary_feature",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1393151,
+        "title": "Mr Nobody Against Putin"
+      }
+    ]
+  },
+  {
+    "category": "best_documentary_feature",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 1413805,
+        "title": "The Alabama Solution"
+      },
+      {
+        "tmdb_id": 1400780,
+        "title": "Come See Me in the Good Light"
+      },
+      {
+        "tmdb_id": 1400793,
+        "title": "Cutting Through Rocks"
+      },
+      {
+        "tmdb_id": 1400782,
+        "title": "The Perfect Neighbor"
+      }
+    ]
+  },
+  {
+    "category": "best_documentary_short",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1525091,
+        "title": "All the Empty Rooms"
+      }
+    ]
+  },
+  {
+    "category": "best_documentary_short",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 1422051,
+        "title": "Armed Only with a Camera: The Life and Death of Brent Renaud"
+      },
+      {
+        "tmdb_id": 1560400,
+        "title": "Children No More: \"Were and Are Gone\""
+      },
+      {
+        "tmdb_id": 1373150,
+        "title": "The Devil Is Busy"
+      },
+      {
+        "tmdb_id": 1278954,
+        "title": "Perfectly a Strangeness"
+      }
+    ]
+  },
+  {
+    "category": "best_live_action_short",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1442908,
+        "title": "The Singers"
+      }
+    ]
+  },
+  {
+    "category": "best_live_action_short",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1340625,
+        "title": "Two People Exchanging Saliva"
+      }
+    ]
+  },
+  {
+    "category": "best_live_action_short",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 1560394,
+        "title": "Butcher's Stain"
+      },
+      {
+        "tmdb_id": 1470465,
+        "title": "A Friend of Dorothy"
+      },
+      {
+        "tmdb_id": 1272266,
+        "title": "Jane Austen's Period Drama"
+      }
+    ]
+  },
+  {
+    "category": "best_animated_short",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1142149,
+        "title": "The Girl Who Cried Pearls"
+      }
+    ]
+  },
+  {
+    "category": "best_animated_short",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 1233361,
+        "title": "Butterfly"
+      },
+      {
+        "tmdb_id": 1477914,
+        "title": "Forevergreen"
+      },
+      {
+        "tmdb_id": 1316745,
+        "title": "Retirement Plan"
+      },
+      {
+        "tmdb_id": 1302562,
+        "title": "The Three Sisters"
+      }
+    ]
+  },
+  {
+    "category": "best_original_score",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      }
+    ]
+  },
+  {
+    "category": "best_original_score",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 701387,
+        "title": "Bugonia"
+      },
+      {
+        "tmdb_id": 1062722,
+        "title": "Frankenstein"
+      },
+      {
+        "tmdb_id": 858024,
+        "title": "Hamnet"
+      },
+      {
+        "tmdb_id": 1054867,
+        "title": "One Battle After Another"
+      }
+    ]
+  },
+  {
+    "category": "best_original_song",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 803796,
+        "title": "KPop Demon Hunters"
+      }
+    ]
+  },
+  {
+    "category": "best_original_song",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 826338,
+        "title": "Diane Warren: Relentless"
+      },
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      },
+      {
+        "tmdb_id": 1358554,
+        "title": "Viva Verdi!"
+      },
+      {
+        "tmdb_id": 1241983,
+        "title": "Train Dreams"
+      }
+    ]
+  },
+  {
+    "category": "best_sound",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 911430,
+        "title": "F1"
+      }
+    ]
+  },
+  {
+    "category": "best_sound",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 1062722,
+        "title": "Frankenstein"
+      },
+      {
+        "tmdb_id": 1054867,
+        "title": "One Battle After Another"
+      },
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      },
+      {
+        "tmdb_id": 1151272,
+        "title": "Sirāt"
+      }
+    ]
+  },
+  {
+    "category": "best_casting",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1054867,
+        "title": "One Battle After Another"
+      }
+    ]
+  },
+  {
+    "category": "best_casting",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 858024,
+        "title": "Hamnet"
+      },
+      {
+        "tmdb_id": 1317288,
+        "title": "Marty Supreme"
+      },
+      {
+        "tmdb_id": 1220564,
+        "title": "The Secret Agent"
+      },
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      }
+    ]
+  },
+  {
+    "category": "best_production_design",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1062722,
+        "title": "Frankenstein"
+      }
+    ]
+  },
+  {
+    "category": "best_production_design",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 858024,
+        "title": "Hamnet"
+      },
+      {
+        "tmdb_id": 1317288,
+        "title": "Marty Supreme"
+      },
+      {
+        "tmdb_id": 1054867,
+        "title": "One Battle After Another"
+      },
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      }
+    ]
+  },
+  {
+    "category": "best_cinematography",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      }
+    ]
+  },
+  {
+    "category": "best_cinematography",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 1062722,
+        "title": "Frankenstein"
+      },
+      {
+        "tmdb_id": 1317288,
+        "title": "Marty Supreme"
+      },
+      {
+        "tmdb_id": 1054867,
+        "title": "One Battle After Another"
+      },
+      {
+        "tmdb_id": 1241983,
+        "title": "Train Dreams"
+      }
+    ]
+  },
+  {
+    "category": "best_makeup_hairstyling",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1062722,
+        "title": "Frankenstein"
+      }
+    ]
+  },
+  {
+    "category": "best_makeup_hairstyling",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 1379266,
+        "title": "Kokuho"
+      },
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      },
+      {
+        "tmdb_id": 760329,
+        "title": "The Smashing Machine"
+      },
+      {
+        "tmdb_id": 1284120,
+        "title": "The Ugly Stepsister"
+      }
+    ]
+  },
+  {
+    "category": "best_costume_design",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1062722,
+        "title": "Frankenstein"
+      }
+    ]
+  },
+  {
+    "category": "best_costume_design",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 83533,
+        "title": "Avatar: Fire and Ash"
+      },
+      {
+        "tmdb_id": 858024,
+        "title": "Hamnet"
+      },
+      {
+        "tmdb_id": 1317288,
+        "title": "Marty Supreme"
+      },
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      }
+    ]
+  },
+  {
+    "category": "best_film_editing",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 1054867,
+        "title": "One Battle After Another"
+      }
+    ]
+  },
+  {
+    "category": "best_film_editing",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 911430,
+        "title": "F1"
+      },
+      {
+        "tmdb_id": 1317288,
+        "title": "Marty Supreme"
+      },
+      {
+        "tmdb_id": 1124566,
+        "title": "Sentimental Value"
+      },
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      }
+    ]
+  },
+  {
+    "category": "best_visual_effects",
+    "year": 2026,
+    "won": true,
+    "movies": [
+      {
+        "tmdb_id": 83533,
+        "title": "Avatar: Fire and Ash"
+      }
+    ]
+  },
+  {
+    "category": "best_visual_effects",
+    "year": 2026,
+    "won": false,
+    "movies": [
+      {
+        "tmdb_id": 911430,
+        "title": "F1"
+      },
+      {
+        "tmdb_id": 1234821,
+        "title": "Jurassic World Rebirth"
+      },
+      {
+        "tmdb_id": 1236470,
+        "title": "The Lost Bus"
+      },
+      {
+        "tmdb_id": 1233413,
+        "title": "Sinners"
+      }
+    ]
+  }
+]

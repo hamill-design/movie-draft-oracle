@@ -56,10 +56,10 @@ const Home = () => {
 
   const categories = useDraftCategories(theme || null);
 
-  // Generate years from 1970 to 2024
+  // Generate year options (newest first) through 1939
   const generateYears = () => {
     const years = [];
-    for (let year = 2024; year >= 1939; year--) {
+    for (let year = 2025; year >= 1939; year--) {
       years.push(year.toString());
     }
     return years;
