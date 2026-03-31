@@ -12,6 +12,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { getCategoryConfig } from '@/config/categoryConfigs';
 import { Participant } from '@/types/participant';
 import { getRandomAIName } from '@/data/aiNames';
+import { isUuidParam } from '@/utils/specDraftSlug';
 // Simple checkbox component for category selection with live counter
 const CategoryCheckbox = ({ 
   category, 
@@ -185,6 +186,7 @@ const CategoryCheckbox = ({
 interface SpecDraft {
   id: string;
   name: string;
+  slug: string;
   description: string | null;
   photo_url: string | null;
 }
@@ -198,7 +200,7 @@ interface SpecDraftCategory {
 
 
 const SpecDraftSetup = () => {
-  const { specDraftId } = useParams<{ specDraftId: string }>();
+  const { specDraftSlug } = useParams<{ specDraftSlug: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { participantId, loading: sessionLoading } = useCurrentUser();
@@ -265,17 +267,25 @@ const SpecDraftSetup = () => {
 
   useEffect(() => {
     const fetchSpecDraft = async () => {
-      if (!specDraftId) return;
+      if (!specDraftSlug) return;
 
       try {
         setLoading(true);
 
-        // Fetch spec draft
-        const draftResult = await (supabase
-          .from('spec_drafts' as any)
-          .select('id, name, description, photo_url, created_at, updated_at')
-          .eq('id', specDraftId)
-          .single()) as { data: SpecDraft | null; error: any };
+        const byId = isUuidParam(specDraftSlug);
+        const draftSelect =
+          'id, name, slug, description, photo_url, created_at, updated_at';
+        const draftResult = byId
+          ? await (supabase
+              .from('spec_drafts' as any)
+              .select(draftSelect)
+              .eq('id', specDraftSlug)
+              .single() as Promise<{ data: SpecDraft | null; error: any }>)
+          : await (supabase
+              .from('spec_drafts' as any)
+              .select(draftSelect)
+              .eq('slug', specDraftSlug.toLowerCase())
+              .maybeSingle() as Promise<{ data: SpecDraft | null; error: any }>);
         const { data: draftData, error: draftError } = draftResult;
 
         if (draftError) throw draftError;
@@ -289,13 +299,19 @@ const SpecDraftSetup = () => {
           return;
         }
 
-        setSpecDraft(draftData);
+        const resolved: SpecDraft = {
+          ...draftData,
+          slug: (draftData as SpecDraft).slug ?? draftData.id,
+        };
+        setSpecDraft(resolved);
+
+        const resolvedId = resolved.id;
 
         // Fetch custom categories
         const customCatsResult = await (supabase
           .from('spec_draft_categories' as any)
           .select('*')
-          .eq('spec_draft_id', specDraftId)) as { data: SpecDraftCategory[] | null; error: any };
+          .eq('spec_draft_id', resolvedId)) as { data: SpecDraftCategory[] | null; error: any };
         const { data: customCats, error: customError } = customCatsResult;
 
         if (customError) {
@@ -308,7 +324,7 @@ const SpecDraftSetup = () => {
         const moviesResult = await (supabase
           .from('spec_draft_movies' as any)
           .select('id')
-          .eq('spec_draft_id', specDraftId)) as { data: Array<{ id: string }> | null; error: any };
+          .eq('spec_draft_id', resolvedId)) as { data: Array<{ id: string }> | null; error: any };
         const { data: moviesData, error: moviesError } = moviesResult;
 
         if (moviesError) {
@@ -391,7 +407,15 @@ const SpecDraftSetup = () => {
     };
 
     fetchSpecDraft();
-  }, [specDraftId, navigate, toast]);
+  }, [specDraftSlug, navigate, toast]);
+
+  // Canonical URL uses name-based slug (replace legacy UUID links)
+  useEffect(() => {
+    if (!specDraft?.slug || !specDraftSlug) return;
+    if (specDraftSlug !== specDraft.slug) {
+      navigate(`/spec-draft/${specDraft.slug}/setup`, { replace: true });
+    }
+  }, [specDraft?.slug, specDraftSlug, navigate]);
 
   const handleAddParticipant = () => {
     const trimmed = newParticipant.trim();
@@ -552,12 +576,12 @@ const SpecDraftSetup = () => {
   return (
     <>
       <Helmet>
-        <title>Movie Drafter - Setup Special Draft</title>
-        <meta name="description" content="Set up a special movie draft with custom categories and participants. Create unique draft experiences for specific themes or events." />
-        <link rel="canonical" href={`https://moviedrafter.com/spec-draft/${specDraftId}/setup`} />
-        <meta property="og:title" content="Movie Drafter - Setup Special Draft" />
+        <title>{`Movie Drafter — ${specDraft.name} — Setup`}</title>
+        <meta name="description" content={`Set up the ${specDraft.name} special movie draft with custom categories and participants on Movie Drafter.`} />
+        <link rel="canonical" href={`https://moviedrafter.com/spec-draft/${specDraft.slug}/setup`} />
+        <meta property="og:title" content={`Movie Drafter — ${specDraft.name} — Setup`} />
         <meta property="og:description" content="Set up a special movie draft with custom categories and participants. Create unique draft experiences for specific themes or events." />
-        <meta property="og:url" content={`https://moviedrafter.com/spec-draft/${specDraftId}/setup`} />
+        <meta property="og:url" content={`https://moviedrafter.com/spec-draft/${specDraft.slug}/setup`} />
         <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
         <meta name="twitter:title" content="Movie Drafter - Setup Special Draft" />
         <meta name="twitter:description" content="Set up a special movie draft with custom categories and participants. Create unique draft experiences for specific themes or events." />

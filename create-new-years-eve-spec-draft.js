@@ -475,6 +475,7 @@ async function createNewYearsEveSpecDraft() {
       .from('spec_drafts')
       .insert({
         name: "New Year's Eve",
+        slug: 'new-years-eve',
         description: 'Movies set on or around New Year\'s Eve',
       })
       .select()

@@ -7,6 +7,7 @@ import { Film, ChevronDown, ChevronUp } from 'lucide-react';
 interface SpecDraft {
   id: string;
   name: string;
+  slug?: string | null;
   description: string | null;
   photo_url: string | null;
   display_order: number | null;
@@ -27,7 +28,7 @@ export const SpecDraftSelector = () => {
         // Try to fetch with all columns first
         const queryResult = await supabase
           .from('spec_drafts' as any)
-          .select('id, name, description, photo_url, display_order, is_hidden, created_at, updated_at')
+          .select('id, name, slug, description, photo_url, display_order, is_hidden, created_at, updated_at')
           .eq('is_hidden', false)
           .order('display_order', { ascending: true, nullsFirst: false })
           .order('created_at', { ascending: false });
@@ -81,9 +82,9 @@ export const SpecDraftSelector = () => {
     fetchSpecDrafts();
   }, []);
 
-  const handleBeginSetup = (specDraftId: string) => {
-    // Navigate to a new page for setting up the spec draft
-    navigate(`/spec-draft/${specDraftId}/setup`);
+  const handleBeginSetup = (draft: SpecDraft) => {
+    const segment = (draft.slug && String(draft.slug).trim()) || draft.id;
+    navigate(`/spec-draft/${segment}/setup`);
   };
 
   const getPosterUrl = (posterPath: string | null) => {
@@ -193,7 +194,7 @@ export const SpecDraftSelector = () => {
 
                 {/* Begin Setup Button */}
                 <Button
-                  onClick={() => handleBeginSetup(draft.id)}
+                  onClick={() => handleBeginSetup(draft)}
                   className="bg-brand-primary hover:bg-purple-300 text-greyscale-blue-100 h-9 px-4 py-2 rounded-[2px] w-full transition-colors"
                   style={{ 
                     fontFamily: 'Brockmann', 

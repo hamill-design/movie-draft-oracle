@@ -1,10 +1,13 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { uniqueSpecDraftSlug } from '@/utils/specDraftSlug';
 
 export interface SpecDraft {
   id: string;
   name: string;
+  /** URL segment; falls back to id if the slug column is not migrated yet */
+  slug: string;
   description: string | null;
   photo_url: string | null;
   display_order: number | null;
@@ -65,7 +68,7 @@ export const useSpecDraftsAdmin = () => {
       // First try with display_order in the order clause
       const { data, error: fetchError } = await (supabase
         .from('spec_drafts' as any)
-        .select('id, name, description, photo_url, display_order, is_hidden, created_at, updated_at')
+        .select('id, name, slug, description, photo_url, display_order, is_hidden, created_at, updated_at')
         .order('display_order', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false }) as any);
 
@@ -100,6 +103,7 @@ export const useSpecDraftsAdmin = () => {
             // Map to include missing columns as defaults
             setSpecDrafts((minimalData || []).map((draft: any) => ({ 
               ...draft, 
+              slug: draft.slug ?? draft.id,
               photo_url: null,
               display_order: null,
               is_hidden: false
@@ -110,6 +114,7 @@ export const useSpecDraftsAdmin = () => {
           // Map to include missing columns as defaults
           setSpecDrafts((fallbackData || []).map((draft: any) => ({ 
             ...draft, 
+            slug: draft.slug ?? draft.id,
             display_order: null,
             is_hidden: false
           })));
@@ -118,7 +123,12 @@ export const useSpecDraftsAdmin = () => {
         throw fetchError;
       }
 
-      setSpecDrafts(data || []);
+      setSpecDrafts(
+        (data || []).map((d: any) => ({
+          ...d,
+          slug: d.slug ?? d.id,
+        }))
+      );
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch spec drafts';
       setError(errorMessage);
@@ -141,7 +151,7 @@ export const useSpecDraftsAdmin = () => {
       let draftData: any;
       const { data: initialDraftData, error: draftError } = await (supabase
         .from('spec_drafts' as any)
-        .select('id, name, description, photo_url, display_order, is_hidden, created_at, updated_at')
+        .select('id, name, slug, description, photo_url, display_order, is_hidden, created_at, updated_at')
         .eq('id', specDraftId)
         .single() as any);
       
@@ -176,6 +186,7 @@ export const useSpecDraftsAdmin = () => {
           
           draftData = { 
             ...minimalData, 
+            slug: (minimalData as any).slug ?? minimalData.id,
             photo_url: null,
             display_order: null,
             is_hidden: false
@@ -184,6 +195,7 @@ export const useSpecDraftsAdmin = () => {
           if (!fallbackData) return null;
           draftData = { 
             ...fallbackData, 
+            slug: (fallbackData as any).slug ?? fallbackData.id,
             display_order: null,
             is_hidden: false
           };
@@ -191,7 +203,10 @@ export const useSpecDraftsAdmin = () => {
       } else {
         if (draftError) throw draftError;
         if (!initialDraftData) return null;
-        draftData = initialDraftData;
+        draftData = {
+          ...initialDraftData,
+          slug: (initialDraftData as any).slug ?? (initialDraftData as any).id,
+        };
       }
 
       // Fetch movies
@@ -277,14 +292,17 @@ export const useSpecDraftsAdmin = () => {
         throw new Error('You must be logged in to create spec drafts');
       }
 
+      const slug = await uniqueSpecDraftSlug(supabase, name.trim());
+
       const { data, error: createError } = await (supabase
         .from('spec_drafts' as any)
         .insert({
           name: name.trim(),
+          slug,
           description: description?.trim() || null,
           photo_url: photoUrl || null,
         } as any)
-        .select('id, name, description, photo_url, display_order, is_hidden, created_at, updated_at')
+        .select('id, name, slug, description, photo_url, display_order, is_hidden, created_at, updated_at')
         .single() as any);
 
       if (createError) throw createError;
@@ -294,7 +312,12 @@ export const useSpecDraftsAdmin = () => {
         ? Math.max(...specDrafts.map(d => d.display_order || 0))
         : 0;
       
-      const draftWithOrder = { ...(data as any), display_order: maxOrder + 1, is_hidden: false };
+      const draftWithOrder = {
+        ...(data as any),
+        slug: (data as any).slug ?? (data as any).id,
+        display_order: maxOrder + 1,
+        is_hidden: false,
+      };
       
       // Update the draft with display_order
       await (supabase
@@ -322,7 +345,7 @@ export const useSpecDraftsAdmin = () => {
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, specDrafts]);
 
   const updateSpecDraft = useCallback(async (
     id: string,
@@ -349,6 +372,11 @@ export const useSpecDraftsAdmin = () => {
         ...updates,
         updated_at: new Date().toISOString(),
       };
+
+      if (typeof updates.name === 'string') {
+        updateData.name = updates.name.trim();
+        updateData.slug = await uniqueSpecDraftSlug(supabase, updateData.name, id);
+      }
       
       // Try to update with photo_url first
       let data: any;
@@ -364,7 +392,7 @@ export const useSpecDraftsAdmin = () => {
         .from('spec_drafts' as any)
         .update(updateData as any)
         .eq('id', id)
-        .select('id, name, description, photo_url, display_order, is_hidden, created_at, updated_at')
+        .select('id, name, slug, description, photo_url, display_order, is_hidden, created_at, updated_at')
         .single() as any);
       
       data = updateResult;
@@ -390,7 +418,7 @@ export const useSpecDraftsAdmin = () => {
           .from('spec_drafts' as any)
           .update(updateData as any)
           .eq('id', id)
-          .select('id, name, description, photo_url, created_at, updated_at')
+          .select('id, name, slug, description, photo_url, created_at, updated_at')
           .single() as any);
         
         if (fallbackError) {
@@ -400,12 +428,13 @@ export const useSpecDraftsAdmin = () => {
             .from('spec_drafts' as any)
             .update(updateWithoutPhoto as any)
             .eq('id', id)
-            .select('id, name, description, created_at, updated_at')
+            .select('id, name, slug, description, created_at, updated_at')
             .single() as any);
           
           if (minimalError) throw minimalError;
           data = { 
             ...(minimalResult as any), 
+            slug: (minimalResult as any).slug ?? id,
             photo_url: null,
             display_order: null,
             is_hidden: false
@@ -413,6 +442,7 @@ export const useSpecDraftsAdmin = () => {
         } else {
           data = { 
             ...(fallbackResult as any), 
+            slug: (fallbackResult as any).slug ?? id,
             display_order: null,
             is_hidden: false
           };
@@ -423,8 +453,13 @@ export const useSpecDraftsAdmin = () => {
       
       if (updateError) throw updateError;
 
+      const normalized = {
+        ...data,
+        slug: (data as any).slug ?? id,
+      };
+
       setSpecDrafts(prev => prev.map(draft => 
-        draft.id === id ? data : draft
+        draft.id === id ? normalized : draft
       ));
 
       toast({
@@ -432,7 +467,7 @@ export const useSpecDraftsAdmin = () => {
         description: 'Spec draft updated successfully',
       });
 
-      return data;
+      return normalized;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to update spec draft';
       setError(errorMessage);
@@ -881,7 +916,7 @@ export const useSpecDraftsAdmin = () => {
           updated_at: new Date().toISOString() 
         } as any)
         .eq('id', id)
-        .select('id, name, description, photo_url, display_order, is_hidden, created_at, updated_at')
+        .select('id, name, slug, description, photo_url, display_order, is_hidden, created_at, updated_at')
         .single() as any);
 
       if (updateError) {
@@ -901,8 +936,9 @@ export const useSpecDraftsAdmin = () => {
       }
 
       // Update local state
+      const normalized = { ...data, slug: (data as any).slug ?? id };
       setSpecDrafts(prev => prev.map(draft => 
-        draft.id === id ? data : draft
+        draft.id === id ? normalized : draft
       ));
 
       toast({
@@ -910,7 +946,7 @@ export const useSpecDraftsAdmin = () => {
         description: `Spec draft ${isHidden ? 'hidden' : 'shown'} successfully`,
       });
 
-      return data;
+      return normalized;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to toggle visibility';
       setError(errorMessage);

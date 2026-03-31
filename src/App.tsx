@@ -70,7 +70,7 @@ const App = () => (
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/about" element={<About />} />
-              <Route path="/spec-draft/:specDraftId/setup" element={<SpecDraftSetup />} />
+              <Route path="/spec-draft/:specDraftSlug/setup" element={<SpecDraftSetup />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
