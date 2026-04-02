@@ -246,6 +246,21 @@ export const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
     popularity: 'high',
     icon: '💰',
     alwaysAvailable: false
+  },
+  Sequel: {
+    id: 'sequel',
+    name: 'Sequel',
+    description:
+      'Film is in a TMDB collection where at least one other film has an earlier release date (not the first released installment)',
+    minMoviesRequired: (playerCount) => Math.max(playerCount * 1.2, 8),
+    validationRules: [
+      { type: 'minMovies', config: { minimum: 8 } },
+      { type: 'themeCompatible', config: { themes: ['year', 'people'] } }
+    ],
+    themes: ['year', 'people'],
+    popularity: 'medium',
+    icon: '🔢',
+    alwaysAvailable: false
   }
 };
 

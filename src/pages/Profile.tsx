@@ -3,6 +3,8 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { syncMarketingAudience } from '@/lib/marketingAudienceSync';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
@@ -43,6 +45,7 @@ const Profile = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [draftToDelete, setDraftToDelete] = useState<string | null>(null);
   const [specDraftData, setSpecDraftData] = useState<Map<string, { name: string; photo_url: string | null }>>(new Map());
+  const [marketingPrefUpdating, setMarketingPrefUpdating] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -248,6 +251,59 @@ const Profile = () => {
   const handleCancelEdit = () => {
     setNewName(profile?.name || '');
     setIsEditingName(false);
+  };
+
+  const handleMarketingPrefChange = async (checked: boolean) => {
+    if (!user?.id) return;
+    setMarketingPrefUpdating(true);
+    try {
+      const updates: {
+        marketing_emails_opt_in: boolean;
+        marketing_emails_opt_in_at: string | null;
+        marketing_emails_opt_out_at: string | null;
+      } = checked
+        ? {
+            marketing_emails_opt_in: true,
+            marketing_emails_opt_in_at: new Date().toISOString(),
+            marketing_emails_opt_out_at: null,
+          }
+        : {
+            marketing_emails_opt_in: false,
+            marketing_emails_opt_in_at: null,
+            marketing_emails_opt_out_at: new Date().toISOString(),
+          };
+
+      const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
+
+      if (error) throw error;
+
+      setProfile((prev: any) => (prev ? { ...prev, ...updates } : { ...updates }));
+
+      const { error: syncError } = await syncMarketingAudience();
+      if (syncError) {
+        toast({
+          title: 'Preference saved',
+          description: `Saved in your account, but we could not sync to our email provider: ${syncError}. You can try again later.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: 'Email preferences updated',
+        description: checked
+          ? 'You may receive product updates and occasional news from Movie Drafter.'
+          : 'You will not receive marketing emails. You may still get transactional emails (e.g. password reset).',
+      });
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to update email preferences.',
+        variant: 'destructive',
+      });
+    } finally {
+      setMarketingPrefUpdating(false);
+    }
   };
 
   // Memoize draft list to prevent unnecessary re-renders (must be before any early returns to satisfy Rules of Hooks)
@@ -597,6 +653,36 @@ const Profile = () => {
               </div>
             </div>
           </div>
+
+          {!profileLoading && profile && (
+            <div
+              className="self-stretch mt-4 pt-4 flex flex-col gap-3"
+              style={{ borderTop: '1px solid #49474B' }}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex flex-col gap-1 max-w-xl">
+                  <span className="text-greyscale-blue-100 text-base font-brockmann font-semibold leading-6">
+                    Product updates by email
+                  </span>
+                  <span className="text-greyscale-blue-300 text-sm font-brockmann font-normal leading-5">
+                    Optional. Get product news and occasional tips from Movie Drafter. You can change this anytime.
+                    Marketing emails include an unsubscribe link. See our{' '}
+                    <Link to="/privacy-policy" className="text-brand-primary hover:underline">
+                      Privacy Policy
+                    </Link>
+                    .
+                  </span>
+                </div>
+                <Switch
+                  checked={!!profile.marketing_emails_opt_in}
+                  onCheckedChange={handleMarketingPrefChange}
+                  disabled={marketingPrefUpdating}
+                  className="shrink-0 data-[state=checked]:bg-brand-primary"
+                  aria-label="Receive product updates by email"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Saved Drafts */}

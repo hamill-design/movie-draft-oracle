@@ -645,6 +645,9 @@ function isMovieEligibleForCategory(
     
     case 'Blockbuster (minimum of $50 Mil)':
       return movie.isBlockbuster === true || (movie.revenue && movie.revenue >= 50000000);
+
+    case 'Sequel':
+      return movie.isSequel === true;
     
     default:
       console.log(`Unknown category: ${category}`);

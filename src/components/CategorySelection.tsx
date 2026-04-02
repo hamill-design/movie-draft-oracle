@@ -51,6 +51,9 @@ const CategorySelection = ({
       const revenue = selectedMovie.revenue ? `$${(selectedMovie.revenue / 1000000).toFixed(0)}M revenue` : '';
       return `This movie is eligible: ${budget}${budget && revenue ? ', ' : ''}${revenue}`;
     }
+    if (category === 'Sequel' && (selectedMovie as { isSequel?: boolean }).isSequel === true) {
+      return 'Another film in the same TMDB collection was released earlier';
+    }
     return '';
   };
 
@@ -60,6 +63,9 @@ const CategorySelection = ({
     }
     if (category === 'Blockbuster (minimum of $50 Mil)') {
       return 'Blockbuster';
+    }
+    if (category === 'Sequel') {
+      return 'Sequel';
     }
     return category;
   };
@@ -100,6 +106,13 @@ const CategorySelection = ({
               <div className="w-full flex flex-col">
                 <div className="w-full text-[#06C995] text-sm font-brockmann font-normal leading-5">
                   Eligible for Blockbuster category
+                </div>
+              </div>
+            )}
+            {(selectedMovie as { isSequel?: boolean }).isSequel === true && (
+              <div className="w-full flex flex-col">
+                <div className="w-full text-[#06C995] text-sm font-brockmann font-normal leading-5">
+                  Eligible for Sequel category
                 </div>
               </div>
             )}

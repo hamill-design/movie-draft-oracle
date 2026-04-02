@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getPendingDraft, clearPendingDraft } from '@/utils/draftStorage';
 
@@ -13,6 +13,7 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [marketingEmailsOptIn, setMarketingEmailsOptIn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isButtonHovered, setIsButtonHovered] = useState(false);
@@ -86,7 +87,8 @@ const Auth = () => {
           options: {
             emailRedirectTo: `${window.location.origin}/`,
             data: {
-              name: name.trim()
+              name: name.trim(),
+              marketing_emails_opt_in: marketingEmailsOptIn,
             }
           }
         });
@@ -145,6 +147,7 @@ const Auth = () => {
     setEmail('');
     setPassword('');
     setName('');
+    setMarketingEmailsOptIn(false);
     setIsResetMode(false);
   };
 
@@ -519,6 +522,50 @@ const Auth = () => {
                    </div>
                  </div>
 
+                {!isLogin && (
+                  <label
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      cursor: 'pointer',
+                      paddingTop: '4px',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={marketingEmailsOptIn}
+                      onChange={(e) => setMarketingEmailsOptIn(e.target.checked)}
+                      style={{
+                        marginTop: '3px',
+                        width: '18px',
+                        height: '18px',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span
+                      style={{
+                        color: 'var(--Text-Light-grey, #BDC3C2)',
+                        fontSize: '13px',
+                        fontFamily: 'Brockmann',
+                        fontWeight: '400',
+                        lineHeight: '20px',
+                      }}
+                    >
+                      I want to receive product updates and occasional news from Movie Drafter. See our{' '}
+                      <Link
+                        to="/privacy-policy"
+                        style={{ color: 'var(--Brand-Primary, #7142FF)' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Privacy Policy
+                      </Link>
+                      .
+                    </span>
+                  </label>
+                )}
+
                 {isLogin && (
                   <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                      <button
@@ -593,6 +640,7 @@ const Auth = () => {
                      setEmail('');
                      setPassword('');
                      setName('');
+                     setMarketingEmailsOptIn(false);
                    }}
                    onMouseEnter={() => setIsTextButtonHovered(true)}
                    onMouseLeave={() => setIsTextButtonHovered(false)}

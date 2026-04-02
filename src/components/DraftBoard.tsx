@@ -39,7 +39,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
   const categoryDisplayNames: { [key: string]: string } = {
     'Academy Award Nominee or Winner': 'Academy Award',
     'Blockbuster (minimum of $50 Mil)': 'Blockbuster',
-    // Add more mappings as needed
+    Sequel: 'Sequel',
   };
 
   // Function to get display name for category

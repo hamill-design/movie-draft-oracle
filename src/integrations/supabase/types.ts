@@ -372,6 +372,9 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          marketing_emails_opt_in: boolean
+          marketing_emails_opt_in_at: string | null
+          marketing_emails_opt_out_at: string | null
           name: string | null
           updated_at: string
         }
@@ -379,6 +382,9 @@ export type Database = {
           created_at?: string
           email?: string | null
           id: string
+          marketing_emails_opt_in?: boolean
+          marketing_emails_opt_in_at?: string | null
+          marketing_emails_opt_out_at?: string | null
           name?: string | null
           updated_at?: string
         }
@@ -386,6 +392,9 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          marketing_emails_opt_in?: boolean
+          marketing_emails_opt_in_at?: string | null
+          marketing_emails_opt_out_at?: string | null
           name?: string | null
           updated_at?: string
         }

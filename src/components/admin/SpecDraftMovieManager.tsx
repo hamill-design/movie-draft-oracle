@@ -28,6 +28,7 @@ interface MovieSearchResult {
   hasOscar?: boolean;
   revenue?: number;
   isBlockbuster?: boolean;
+  isSequel?: boolean;
 }
 
 // CustomCheckbox Component (reused from EnhancedCategoriesForm)
@@ -164,6 +165,7 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
     "2020's",
     'Academy Award Nominee or Winner',
     'Blockbuster (minimum of $50 Mil)',
+    'Sequel',
   ];
 
   // Custom categories from the spec draft
@@ -229,6 +231,7 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
             hasOscar: movie.hasOscar || (movie.oscar_status === 'winner' || movie.oscar_status === 'nominee'),
             revenue: movie.revenue || null,
             isBlockbuster: movie.isBlockbuster || (movie.revenue && movie.revenue >= 50000000),
+            isSequel: movie.isSequel === true,
           };
         });
 
@@ -290,7 +293,8 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
         movie.oscarStatus,
         movie.revenue,
         movie.hasOscar,
-        movie.isBlockbuster
+        movie.isBlockbuster,
+        movie.isSequel === true
       );
 
       // Add movie to spec draft with all available data
@@ -305,6 +309,7 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
           movie_genres: movie.genres || [],
           oscar_status: movie.oscarStatus ?? null,
           revenue: movie.revenue ?? null,
+          is_sequel: movie.isSequel === true,
         } as any)
         .select()
         .single();
@@ -418,7 +423,8 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
           movie.oscar_status,
           movie.revenue,
           hasOscar ? true : undefined,
-          isBlockbuster ? true : undefined
+          isBlockbuster ? true : undefined,
+          movie.is_sequel === true
         );
 
         // Update categories

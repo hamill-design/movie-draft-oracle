@@ -5,6 +5,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { useGuestSession, GuestSession } from '@/hooks/useGuestSession';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { getPendingDraft, clearPendingDraft } from '@/utils/draftStorage';
+import { syncMarketingAudience } from '@/lib/marketingAudienceSync';
+
+const MARKETING_SYNC_STORAGE_PREFIX = 'md_ma_sync_';
+
+function clearMarketingSyncFlags() {
+  try {
+    for (let i = sessionStorage.length - 1; i >= 0; i--) {
+      const k = sessionStorage.key(i);
+      if (k?.startsWith(MARKETING_SYNC_STORAGE_PREFIX)) {
+        sessionStorage.removeItem(k);
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}
 
 interface AuthContextType {
   user: User | null;
@@ -104,6 +120,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return null; // This component doesn't render anything
   };
 
+  const MarketingAudienceSync: React.FC<{ user: User | null }> = ({ user }) => {
+    useEffect(() => {
+      if (!user?.id || !user.email_confirmed_at) return;
+      const key = `${MARKETING_SYNC_STORAGE_PREFIX}${user.id}`;
+      try {
+        if (sessionStorage.getItem(key)) return;
+      } catch {
+        /* ignore */
+      }
+
+      (async () => {
+        try {
+          const { error } = await syncMarketingAudience();
+          if (!error) {
+            try {
+              sessionStorage.setItem(key, '1');
+            } catch {
+              /* ignore */
+            }
+          }
+        } catch (e) {
+          console.warn('Marketing audience sync failed:', e);
+        }
+      })();
+    }, [user?.id, user?.email_confirmed_at]);
+
+    return null;
+  };
+
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -111,6 +156,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
         setAuthLoading(false);
+
+        if (event === 'SIGNED_OUT') {
+          clearMarketingSyncFlags();
+        }
 
         // If user just signed in and we have a guest session, migrate drafts
         if (event === 'SIGNED_IN' && session?.user && guestSession) {
@@ -134,6 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []); // Remove guestSession dependency to prevent loops
 
   const signOut = async () => {
+    clearMarketingSyncFlags();
     await supabase.auth.signOut();
   };
 
@@ -157,6 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider value={value}>
       <PendingDraftProcessor />
+      <MarketingAudienceSync user={user} />
       {children}
     </AuthContext.Provider>
   );

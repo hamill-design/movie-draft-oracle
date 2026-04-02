@@ -50,6 +50,7 @@ const CategoryButton = ({
   const getCategoryDisplayName = (category: string) => {
     if (category === 'Academy Award Nominee or Winner') return 'Academy Award';
     if (category === 'Blockbuster (minimum of $50 Mil)') return 'Blockbuster';
+    if (category === 'Sequel') return 'Sequel';
     return category;
   };
 
@@ -320,6 +321,9 @@ const EnhancedCategorySelection = ({
       const revenue = selectedMovie.revenue ? `$${(selectedMovie.revenue / 1000000).toFixed(0)}M revenue` : '';
       tooltip += `\nThis movie is eligible: ${budget}${budget && revenue ? ', ' : ''}${revenue}`;
     }
+    if (category === 'Sequel' && (selectedMovie as { isSequel?: boolean }).isSequel === true) {
+      tooltip += '\nAnother film in the same TMDB collection was released earlier';
+    }
     
     return tooltip;
   };
@@ -353,6 +357,7 @@ const EnhancedCategorySelection = ({
   const getCategoryDisplayName = (category: string) => {
     if (category === 'Academy Award Nominee or Winner') return 'Academy Award';
     if (category === 'Blockbuster (minimum of $50 Mil)') return 'Blockbuster';
+    if (category === 'Sequel') return 'Sequel';
     return category;
   };
 
@@ -544,6 +549,33 @@ const EnhancedCategorySelection = ({
                   }}
                 >
                   Eligible for Blockbuster category
+                </div>
+              </div>
+            )}
+            {(selectedMovie as { isSequel?: boolean }).isSequel === true && (
+              <div
+                style={{
+                  alignSelf: 'stretch',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  alignItems: 'flex-start',
+                  display: 'flex'
+                }}
+              >
+                <div
+                  style={{
+                    alignSelf: 'stretch',
+                    justifyContent: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    color: '#06C995',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: 400,
+                    lineHeight: '20px'
+                  }}
+                >
+                  Eligible for Sequel category
                 </div>
               </div>
             )}

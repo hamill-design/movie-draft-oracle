@@ -9,6 +9,9 @@ interface Profile {
   email: string | null;
   created_at: string;
   updated_at: string;
+  marketing_emails_opt_in?: boolean;
+  marketing_emails_opt_in_at?: string | null;
+  marketing_emails_opt_out_at?: string | null;
 }
 
 export const useProfile = () => {

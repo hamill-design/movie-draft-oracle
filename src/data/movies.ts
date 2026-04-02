@@ -24,6 +24,8 @@ export interface Movie {
   backdropPath?: string;
   voteAverage?: number;
   releaseDate?: string;
+  /** TMDB collection: another part has an earlier release date (see fetch-movies) */
+  isSequel?: boolean;
 }
 
 // Keep the original movies as fallback/demo data

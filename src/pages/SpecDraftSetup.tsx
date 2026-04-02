@@ -263,6 +263,7 @@ const SpecDraftSetup = () => {
     "2020's",
     'Academy Award Nominee or Winner',
     'Blockbuster (minimum of $50 Mil)',
+    'Sequel',
   ];
 
   useEffect(() => {

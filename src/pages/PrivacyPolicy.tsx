@@ -141,6 +141,44 @@ const PrivacyPolicy = () => {
                     fontFamily: 'Brockmann',
                     fontWeight: 700,
                     lineHeight: '20px',
+                    marginBottom: '0.5em',
+                    marginTop: '1em'
+                  }}
+                >
+                  Marketing and transactional email
+                </h2>
+                <p 
+                  style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: 400,
+                    lineHeight: '20px',
+                    marginBottom: '0.5em'
+                  }}
+                >
+                  We send <span style={{ fontWeight: 700 }}>transactional</span> emails when needed to operate the service—for example, account confirmation, password reset, and draft invitations you or other participants trigger. These are not promotional, and you may receive them even if you have not opted in to marketing.
+                </p>
+                <p 
+                  style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: 400,
+                    lineHeight: '20px',
+                    marginBottom: '1em'
+                  }}
+                >
+                  <span style={{ fontWeight: 700 }}>Optional marketing email:</span> If you choose to receive product updates and occasional news (for example, via the checkbox when you create an account or from your profile), we use your email address only for that purpose with our email provider. You can turn this off anytime in your profile. Marketing messages include an unsubscribe link, and unsubscribing through that link updates your preference in our systems.
+                </p>
+
+                <h2 
+                  style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: 700,
+                    lineHeight: '20px',
                     marginBottom: '0.5em'
                   }}
                 >

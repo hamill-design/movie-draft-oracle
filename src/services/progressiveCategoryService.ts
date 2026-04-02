@@ -226,7 +226,8 @@ export class ProgressiveCategoryService {
       "2010's": 150,
       "2020's": 50,
       'Academy Award Nominee or Winner': 80,
-      'Blockbuster (minimum of $50 Mil)': 90
+      'Blockbuster (minimum of $50 Mil)': 90,
+      Sequel: 70
     };
 
     const estimatedCount = estimates[category] || 50;

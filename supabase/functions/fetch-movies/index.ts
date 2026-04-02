@@ -1426,6 +1426,34 @@ serve(async (req) => {
   }
 });
 
+/** Parse TMDB release_date (YYYY-MM-DD) for comparison; invalid → null */
+function parseReleaseDateMs(releaseDate: string | null | undefined): number | null {
+  if (!releaseDate || typeof releaseDate !== 'string') return null;
+  const t = Date.parse(releaseDate);
+  return Number.isNaN(t) ? null : t;
+}
+
+type CollectionPart = { id: number; release_date?: string };
+
+/**
+ * True if another film in the same TMDB collection has a strictly earlier theatrical release date.
+ */
+function computeIsSequelFromParts(
+  movieId: number,
+  thisReleaseDate: string | null | undefined,
+  parts: CollectionPart[]
+): boolean {
+  const selfMs = parseReleaseDateMs(thisReleaseDate ?? undefined);
+  if (selfMs === null) return false;
+  for (const p of parts) {
+    if (p.id === movieId) continue;
+    const otherMs = parseReleaseDateMs(p.release_date);
+    if (otherMs === null) continue;
+    if (otherMs < selfMs) return true;
+  }
+  return false;
+}
+
 // Process movie results function to handle common transformations
 async function processMovieResults(data: any, tmdbApiKey: string, opts: { preferFreshOscarStatus?: boolean } = {}) {
   console.log(`📊 Processing ${(data.results || []).length} movies...`);
@@ -1475,12 +1503,46 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
   const BATCH_SIZE = 50;
   const transformedMovies: any[] = [];
   const shouldBatch = data.results.length > 100; // Only batch if we have many movies
+
+  const collectionPartsCache = new Map<number, CollectionPart[]>();
+  const collectionInflight = new Map<number, Promise<CollectionPart[]>>();
+
+  async function getCachedCollectionParts(collectionId: number): Promise<CollectionPart[]> {
+    const hit = collectionPartsCache.get(collectionId);
+    if (hit) return hit;
+    let inflight = collectionInflight.get(collectionId);
+    if (!inflight) {
+      inflight = (async () => {
+        try {
+          const res = await fetch(
+            `https://api.themoviedb.org/3/collection/${collectionId}?api_key=${tmdbApiKey}`
+          );
+          if (!res.ok) {
+            console.log(`Collection fetch failed ${collectionId}: ${res.status}`);
+            return [];
+          }
+          const json = await res.json();
+          const parts: CollectionPart[] = Array.isArray(json.parts) ? json.parts : [];
+          collectionPartsCache.set(collectionId, parts);
+          return parts;
+        } catch (e) {
+          console.log(`Collection fetch error ${collectionId}:`, e);
+          return [];
+        } finally {
+          collectionInflight.delete(collectionId);
+        }
+      })();
+      collectionInflight.set(collectionId, inflight);
+    }
+    return inflight;
+  }
   
   const processMovie = async (movie: any) => {
       let detailedMovie = movie;
       let hasOscar = false;
       let oscarStatusNormalized = 'unknown';
       let isBlockbuster = false;
+      let isSequel = false;
       
       // Academy Awards JSON is the authoritative source: check FIRST, even if cache has 'none'
       if (academyAwardsMap.has(movie.id)) {
@@ -1516,6 +1578,14 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
           const budget = detailedMovie.budget || 0;
           const revenue = detailedMovie.revenue || 0;
           isBlockbuster = budget >= 50000000 || revenue >= 50000000;
+
+          const collectionId = detailedMovie.belongs_to_collection?.id;
+          if (collectionId != null && typeof collectionId === 'number') {
+            const parts = await getCachedCollectionParts(collectionId);
+            const releaseForCompare =
+              detailedMovie.release_date || movie.release_date || null;
+            isSequel = computeIsSequelFromParts(movie.id, releaseForCompare, parts);
+          }
         }
 
         // Only fetch Oscar status from API if not already in cache or academy-awards.json
@@ -1556,7 +1626,8 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
       revenue: detailedMovie.revenue || 0,
       hasOscar,
       oscar_status: oscarStatusNormalized,
-      isBlockbuster
+      isBlockbuster,
+      isSequel
     };
   };
   

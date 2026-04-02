@@ -39,7 +39,7 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
       if (category === 'spec-draft' && themeOption) {
         const { data: moviesData, error: moviesError } = await (supabase as any)
           .from('spec_draft_movies')
-          .select('movie_tmdb_id, movie_title, movie_year, movie_poster_path, movie_genres')
+          .select('movie_tmdb_id, movie_title, movie_year, movie_poster_path, movie_genres, is_sequel')
           .eq('spec_draft_id', themeOption)
           .order('movie_title', { ascending: true });
 
@@ -64,13 +64,15 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
 
           return {
             id: movie.movie_tmdb_id,
+            tmdbId: movie.movie_tmdb_id,
             title: movie.movie_title,
             year: movie.movie_year,
             poster_path: movie.movie_poster_path,
             genre: genreString,
             overview: '',
             rating: 0,
-            vote_count: 0
+            vote_count: 0,
+            isSequel: movie.is_sequel === true,
           };
         });
 

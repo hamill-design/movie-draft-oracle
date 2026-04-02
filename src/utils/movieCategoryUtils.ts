@@ -12,6 +12,7 @@ interface Movie {
   budget?: number;
   revenue?: number;
   tmdbId?: number; // TMDB ID for spec category matching
+  isSequel?: boolean;
 }
 
 export const getEligibleCategories = (
@@ -144,6 +145,10 @@ export const getEligibleCategories = (
   // Blockbuster category - using actual budget/revenue data
   if (movie.isBlockbuster && allCategories.includes('Blockbuster (minimum of $50 Mil)')) {
     eligibleCategories.push('Blockbuster (minimum of $50 Mil)');
+  }
+
+  if (movie.isSequel === true && allCategories.includes('Sequel')) {
+    eligibleCategories.push('Sequel');
   }
 
   // Filter to only return categories that exist in the draft's category list

@@ -219,7 +219,8 @@ export class CategoryValidationService {
       "2010's": 150,
       "2020's": 50,
       'Academy Award Nominee or Winner': 80,
-      'Blockbuster (minimum of $50 Mil)': 90
+      'Blockbuster (minimum of $50 Mil)': 90,
+      Sequel: 70
     };
     
     return estimates[category] || 50;

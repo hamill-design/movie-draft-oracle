@@ -35,6 +35,7 @@ const TMDB_GENRE_MAP: Record<number, string> = {
  * @param revenue Optional revenue for Blockbuster category
  * @param hasOscar Optional boolean for Academy Award (alternative to oscarStatus)
  * @param isBlockbuster Optional boolean for Blockbuster (alternative to revenue check)
+ * @param isSequel Optional boolean for Sequel category (TMDB collection ordering)
  * @returns Array of category names the movie qualifies for
  */
 export function mapGenresToCategories(
@@ -43,7 +44,8 @@ export function mapGenresToCategories(
   oscarStatus?: string | null,
   revenue?: number | null,
   hasOscar?: boolean,
-  isBlockbuster?: boolean
+  isBlockbuster?: boolean,
+  isSequel?: boolean
 ): string[] {
   const categories: string[] = [];
 
@@ -116,6 +118,10 @@ export function mapGenresToCategories(
   // Blockbuster (minimum of $50 Mil) (same logic as isMovieEligibleForCategory)
   if (isBlockbuster === true || (revenue && revenue >= 50000000)) {
     categories.push('Blockbuster (minimum of $50 Mil)');
+  }
+
+  if (isSequel === true) {
+    categories.push('Sequel');
   }
 
   return [...new Set(categories)]; // Remove duplicates

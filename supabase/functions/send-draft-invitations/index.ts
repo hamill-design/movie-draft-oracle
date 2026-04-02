@@ -1,3 +1,5 @@
+// Optional: add a similar one-line P.S. in Supabase Dashboard → Authentication → Email Templates
+// (confirm signup / reset password) pointing users to /profile to opt in to marketing email.
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
 import { Resend } from "npm:resend@2.0.0";
@@ -180,6 +182,11 @@ const handler = async (req: Request): Promise<Response> => {
                   
                   <p style="color: #999; font-size: 12px;">
                     This invitation was sent to ${email}. If you didn't expect this invitation, you can safely ignore this email.
+                  </p>
+                  <p style="color: #999; font-size: 12px; margin-top: 16px;">
+                    <strong>P.S.</strong> Want occasional product updates from Movie Drafter? You can opt in anytime from your
+                    <a href="${origin}/profile" style="color: #007bff;">profile settings</a>
+                    (account required).
                   </p>
                 </div>
               `,

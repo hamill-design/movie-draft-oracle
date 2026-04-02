@@ -26,6 +26,7 @@ export interface SpecDraftMovie {
   movie_genres: number[] | null;
   oscar_status: string | null;
   revenue: number | null;
+  is_sequel?: boolean;
   created_at: string;
 }
 

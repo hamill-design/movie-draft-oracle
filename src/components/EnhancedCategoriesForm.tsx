@@ -40,7 +40,8 @@ const sortCategoriesForDisplay = (specCategories: string[], regularCategories: s
   
   const endCategories = [
     'Academy Award Nominee or Winner',
-    'Blockbuster (minimum of $50 Mil)'
+    'Blockbuster (minimum of $50 Mil)',
+    'Sequel'
   ];
   
   // Separate regular categories into groups

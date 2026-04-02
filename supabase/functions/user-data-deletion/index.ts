@@ -76,6 +76,25 @@ function generateConfirmationCode(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
 }
 
+async function removeResendMarketingContact(email: string | undefined): Promise<void> {
+  if (!email) return;
+  const apiKey = Deno.env.get('RESEND_API_KEY');
+  if (!apiKey) return;
+  const encoded = encodeURIComponent(email);
+  try {
+    const res = await fetch(`https://api.resend.com/contacts/${encoded}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    if (!res.ok && res.status !== 404) {
+      const body = await res.text();
+      console.warn('user-data-deletion: Resend contact delete', res.status, body);
+    }
+  } catch (e) {
+    console.warn('user-data-deletion: Resend contact delete failed', e);
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -209,6 +228,10 @@ Deno.serve(async (req) => {
     }
 
     console.log('Deleting data for user:', userId);
+
+    const { data: authUserData } = await supabase.auth.admin.getUserById(userId);
+    const userEmail = authUserData.user?.email;
+    await removeResendMarketingContact(userEmail);
 
     // Delete user data in order (respecting foreign key constraints)
     
