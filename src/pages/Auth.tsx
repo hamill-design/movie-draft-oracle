@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { AlertCircle } from 'lucide-react';
@@ -6,6 +5,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getPendingDraft, clearPendingDraft } from '@/utils/draftStorage';
+
+/** Origin for Supabase auth email links (signup confirm, password reset). Override with VITE_APP_URL for local testing. */
+const PUBLIC_SITE_URL = (import.meta.env.VITE_APP_URL || 'https://moviedrafter.com').replace(
+  /\/+$/,
+  ''
+);
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -85,7 +90,7 @@ const Auth = () => {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/`,
+            emailRedirectTo: `${PUBLIC_SITE_URL}/`,
             data: {
               name: name.trim(),
               marketing_emails_opt_in: marketingEmailsOptIn,
@@ -121,7 +126,7 @@ const Auth = () => {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${PUBLIC_SITE_URL}/reset-password`,
       });
 
       if (error) {
