@@ -5,6 +5,36 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
+/** Supabase recovery links put tokens in the URL hash (#access_token=…); query params are optional. */
+function getTokensFromUrl(searchParams: URLSearchParams): {
+  access_token: string | null;
+  refresh_token: string | null;
+} {
+  let access = searchParams.get('access_token');
+  let refresh = searchParams.get('refresh_token');
+  if (access && refresh) {
+    return { access_token: access, refresh_token: refresh };
+  }
+
+  const hash = typeof window !== 'undefined' ? window.location.hash.replace(/^#/, '') : '';
+  if (hash) {
+    const fromHash = new URLSearchParams(hash);
+    access = fromHash.get('access_token');
+    refresh = fromHash.get('refresh_token');
+    if (access && refresh) {
+      return { access_token: access, refresh_token: refresh };
+    }
+  }
+
+  return { access_token: null, refresh_token: null };
+}
+
+function stripAuthFromAddressBar() {
+  if (typeof window === 'undefined') return;
+  const { pathname, search } = window.location;
+  window.history.replaceState(null, '', pathname + search);
+}
+
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,18 +49,66 @@ const ResetPassword = () => {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    const accessToken = searchParams.get('access_token');
-    const refreshToken = searchParams.get('refresh_token');
+    let cancelled = false;
 
-    if (!accessToken || !refreshToken) {
-      setError('Invalid reset link. Please request a new password reset.');
-      return;
-    }
+    const establishSession = async () => {
+      const { access_token: accessToken, refresh_token: refreshToken } = getTokensFromUrl(searchParams);
 
-    supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
+      if (accessToken && refreshToken) {
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+        });
+        if (cancelled) return;
+        if (sessionError) {
+          setError(
+            sessionError.message ||
+              'Invalid reset link. Please request a new password reset.'
+          );
+          return;
+        }
+        setError('');
+        stripAuthFromAddressBar();
+        return;
+      }
+
+      const code = searchParams.get('code');
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(
+          window.location.href
+        );
+        if (cancelled) return;
+        if (exchangeError) {
+          setError(
+            exchangeError.message ||
+              'Invalid reset link. Please request a new password reset.'
+          );
+          return;
+        }
+        setError('');
+        stripAuthFromAddressBar();
+        return;
+      }
+
+      // Hash/query already consumed (e.g. React Strict Mode remount) but session was established.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (cancelled) return;
+      if (session) {
+        setError('');
+        return;
+      }
+
+      if (!cancelled) {
+        setError('Invalid reset link. Please request a new password reset.');
+      }
+    };
+
+    void establishSession();
+    return () => {
+      cancelled = true;
+    };
   }, [searchParams]);
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
