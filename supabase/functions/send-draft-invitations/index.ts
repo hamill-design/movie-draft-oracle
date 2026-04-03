@@ -19,6 +19,160 @@ interface DraftInviteRequest {
   option: string;
 }
 
+/** Strip path from Origin/Referer so join links and assets use the site root. */
+function siteBaseUrl(raw: string): string {
+  const t = raw.trim();
+  if (!t) return "https://moviedrafter.com";
+  try {
+    const u = new URL(t.includes("://") ? t : `https://${t}`);
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return "https://moviedrafter.com";
+  }
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function escapeHtmlAttr(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
+
+function buildDraftInvitationHtml(params: {
+  baseUrl: string;
+  inviteLink: string;
+  draftTitle: string;
+  hostName: string;
+  theme: string;
+  option: string;
+  inviteCode: string | null;
+  recipientEmail: string;
+}): string {
+  const {
+    baseUrl,
+    inviteLink,
+    draftTitle,
+    hostName,
+    theme,
+    option,
+    inviteCode,
+    recipientEmail,
+  } = params;
+  const e = escapeHtml;
+  const hrefInvite = escapeHtmlAttr(inviteLink);
+  const codeRow =
+    inviteCode != null && inviteCode !== ""
+      ? `<p style="margin:0 0 12px 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#9e9ca3;">
+              <strong style="color:#fcffff;">Invite code:</strong> <span style="font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:0.04em;color:#d9e0df;">${e(inviteCode)}</span>
+            </p>`
+      : "";
+
+  return `<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#100029;opacity:0;">
+  Join a Movie Drafter multiplayer draft — open this email for your personal link.
+</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0;padding:0;background-color:#100029;background-image:linear-gradient(140deg,#100029 16%,#160038 50%,#100029 83%);">
+  <tr>
+    <td align="center" style="padding:40px 16px 0 16px;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;border-collapse:separate;">
+        <tr>
+          <td align="center" style="padding:4px 32px;">
+            <a href="${escapeHtmlAttr(baseUrl)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+              <img src="${escapeHtmlAttr(baseUrl)}/wordmark-email.png" width="200" height="58" alt="Movie Drafter" border="0" style="display:block;margin:0 auto;width:200px;height:58px;max-width:100%;" />
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" style="padding:32px 16px 0 16px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;margin:0 auto;border-collapse:separate;">
+        <tr>
+          <td style="background-color:#0e0e0f;border-radius:4px;padding:32px 28px 28px 28px;border:1px solid #49474b;box-shadow:0 0 6px rgba(59,3,148,0.35);">
+            <p style="margin:0 0 8px 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;line-height:1.4;letter-spacing:0.06em;text-transform:uppercase;color:#907aff;">
+              Multiplayer draft
+            </p>
+            <h1 style="margin:0 0 16px 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:22px;font-weight:600;line-height:1.3;letter-spacing:0.02em;color:#fcffff;">
+              You're invited
+            </h1>
+            <p style="margin:0 0 20px 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#bdc3c2;">
+              <strong style="color:#fcffff;">${e(hostName)}</strong> invited you to join the draft <strong style="color:#fcffff;">"${e(draftTitle)}"</strong>.
+            </p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 24px 0;border-collapse:separate;">
+              <tr>
+                <td style="background-color:#161618;border:1px solid #2c2b2d;border-radius:4px;padding:18px 20px;">
+                  <p style="margin:0 0 10px 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#9e9ca3;">
+                    Draft details
+                  </p>
+                  <p style="margin:0 0 8px 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#bdc3c2;">
+                    <strong style="color:#fcffff;">Theme:</strong> ${e(theme)}
+                  </p>
+                  <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#bdc3c2;">
+                    <strong style="color:#fcffff;">Category:</strong> ${e(option)}
+                  </p>
+                </td>
+              </tr>
+            </table>
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:0 auto 24px auto;">
+              <tr>
+                <td align="center" bgcolor="#7142ff" style="border-radius:2px;mso-padding-alt:14px 28px;">
+                  <a href="${hrefInvite}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 28px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;line-height:1.2;color:#fcffff;text-decoration:none;border-radius:2px;">
+                    Join draft
+                  </a>
+                </td>
+              </tr>
+            </table>
+            ${codeRow}
+            <p style="margin:0 0 12px 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#9e9ca3;">
+              If the button does not work, copy and paste this link into your browser:
+            </p>
+            <p style="margin:0 0 24px 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;word-break:break-all;">
+              <a href="${hrefInvite}" target="_blank" rel="noopener noreferrer" style="color:#907aff;text-decoration:underline;">${e(inviteLink)}</a>
+            </p>
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:#666469;border-top:1px solid #2c2b2d;padding-top:20px;">
+              This invitation was sent to <strong style="color:#9e9ca3;">${e(recipientEmail)}</strong>. If you did not expect it, you can ignore this email.
+              <br /><br />
+              <strong>P.S.</strong> Want occasional product updates? Opt in anytime from your
+              <a href="${escapeHtmlAttr(baseUrl)}/profile" style="color:#7142ff;text-decoration:none;font-weight:600;">profile settings</a>
+              (account required).
+              <br /><br />
+              <a href="${escapeHtmlAttr(baseUrl)}" style="color:#7142ff;text-decoration:none;font-weight:600;">moviedrafter.com</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" style="padding:28px 16px 48px 16px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;margin:0 auto;border-collapse:collapse;">
+        <tr>
+          <td style="border-top:1px solid #7142ff;padding:0;line-height:0;font-size:0;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:18px 12px 0 12px;">
+            <a href="https://www.instagram.com/moviedrafter/" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;">
+              <img src="https://moviedrafter.com/Instagram-Icon-white.png" width="28" height="28" alt="Follow Movie Drafter on Instagram" border="0" style="display:block;margin:0 auto 10px auto;width:28px;height:28px;" />
+            </a>
+            <a href="https://www.instagram.com/moviedrafter/" target="_blank" rel="noopener noreferrer" style="font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:14px;font-weight:500;line-height:20px;color:#d9e0df;text-decoration:underline;display:block;">
+              Follow us on Instagram
+            </a>
+            <a href="https://www.instagram.com/moviedrafter/" target="_blank" rel="noopener noreferrer" style="font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#bdc3c2;text-decoration:underline;display:block;margin-top:4px;">
+              @moviedrafter
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   console.log('📧 EDGE FUNCTION - Request received:', req.method);
   
@@ -112,8 +266,11 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const resend = resendApiKey ? new Resend(resendApiKey) : null;
-    const origin = req.headers.get('origin') || req.headers.get('referer') || 'https://moviedrafter.com';
-    console.log('📧 EDGE FUNCTION - Using origin:', origin);
+    const originRaw =
+      req.headers.get("origin") || req.headers.get("referer") ||
+      "https://moviedrafter.com";
+    const origin = siteBaseUrl(originRaw);
+    console.log("📧 EDGE FUNCTION - Using site base URL:", origin);
 
     // Get draft invite code for fallback
     let inviteCode = null;
@@ -149,47 +306,16 @@ const handler = async (req: Request): Promise<Response> => {
               from: "Movie Draft <noreply@moviedrafter.com>",
               to: [email],
               subject: `🎬 You're invited to join "${draftTitle}"`,
-              html: `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                  <h1 style="color: #333; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
-                    🎬 Movie Draft Invitation
-                  </h1>
-                  
-                  <p>Hi there!</p>
-                  
-                  <p><strong>${hostName}</strong> has invited you to join their movie draft: <strong>"${draftTitle}"</strong></p>
-                  
-                  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-                    <h3 style="margin-top: 0; color: #007bff;">Draft Details</h3>
-                    <p><strong>Theme:</strong> ${theme}</p>
-                    <p><strong>Category:</strong> ${option}</p>
-                  </div>
-                  
-                  <div style="text-align: center; margin: 30px 0;">
-                    <a href="${inviteLink}" 
-                       style="background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
-                      Join Draft Session
-                    </a>
-                  </div>
-                  
-                  <p style="color: #666; font-size: 14px;">
-                    <strong>Invite Code:</strong> ${inviteCode}<br>
-                    If the button doesn't work, copy and paste this link into your browser:<br>
-                    <a href="${inviteLink}">${inviteLink}</a>
-                  </p>
-                  
-                  <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
-                  
-                  <p style="color: #999; font-size: 12px;">
-                    This invitation was sent to ${email}. If you didn't expect this invitation, you can safely ignore this email.
-                  </p>
-                  <p style="color: #999; font-size: 12px; margin-top: 16px;">
-                    <strong>P.S.</strong> Want occasional product updates from Movie Drafter? You can opt in anytime from your
-                    <a href="${origin}/profile" style="color: #007bff;">profile settings</a>
-                    (account required).
-                  </p>
-                </div>
-              `,
+              html: buildDraftInvitationHtml({
+                baseUrl: origin,
+                inviteLink,
+                draftTitle,
+                hostName,
+                theme,
+                option,
+                inviteCode,
+                recipientEmail: email,
+              }),
             });
 
             if (emailResponse.error) {
