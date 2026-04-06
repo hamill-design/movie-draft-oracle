@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Movie } from '@/data/movies';
 import { getCleanActorName } from '@/lib/utils';
 import { getGenreName } from '@/utils/specDraftGenreMapper';
+import { mergeOscarStatusFromSources } from '@/utils/movieCategoryUtils';
 
 export const useMovies = (category?: string, themeOption?: string, userSearchQuery?: string) => {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -274,19 +275,20 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
           allOscarData.map((item) => [item.tmdb_id, item.oscar_status])
         );
         
-        // Update movies with Oscar status
-        setMovies(prevMovies => 
-          prevMovies.map(movie => {
+        // Merge DB cache with edge function data — do not let stale `none` overwrite winner/nominee
+        setMovies(prevMovies =>
+          prevMovies.map((movie) => {
             if (!movie.id) return movie;
-            const oscarStatus = oscarMap.get(movie.id);
-            if (oscarStatus) {
-              return {
-                ...movie,
-                oscar_status: oscarStatus,
-                hasOscar: oscarStatus === 'winner' || oscarStatus === 'nominee'
-              };
+            const fromCache = oscarMap.get(movie.id);
+            const merged = mergeOscarStatusFromSources(movie.oscar_status, fromCache);
+            if (fromCache === undefined && movie.oscar_status === undefined) {
+              return movie;
             }
-            return movie;
+            return {
+              ...movie,
+              oscar_status: merged.oscar_status,
+              hasOscar: merged.hasOscar,
+            };
           })
         );
         

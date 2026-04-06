@@ -10,10 +10,12 @@
     INVITE_LINK      — full join URL with query params
     DRAFT_TITLE      — draft name
     HOST_NAME        — inviter display name
-    THEME            — draft theme label
-    OPTION           — category / option label
+    THEME_DISPLAY    — friendly theme (e.g. Special draft); derived from DB theme slug in the Edge Function
+    OPTION_DISPLAY   — category line; use OPTION_LABEL when option is a UUID (e.g. spec draft id)
     INVITE_CODE      — short code (optional; omit block if unavailable)
     RECIPIENT_EMAIL  — who received the mail (footer disclaimer)
+
+  After changing markup, redeploy: npx supabase functions deploy send-draft-invitations
 
   Assets (PNG on production host; SVG often breaks in Gmail):
     /wordmark-email.png

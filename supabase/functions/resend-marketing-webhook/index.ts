@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
-import { Webhook } from 'npm:svix@1.38.0';
+import { Webhook } from 'npm:svix@1.45.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Participant, normalizeParticipants } from '@/types/participant';
 import { useAIPick } from '@/hooks/useAIPick';
+import { mergeOscarStatusFromSources } from '@/utils/movieCategoryUtils';
 
 import DraftBoard from './DraftBoard';
 import MovieSearch from './MovieSearch';
@@ -529,12 +530,12 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
           .maybeSingle();
         
         if (cached) {
-          const updatedMovie = {
+          const merged = mergeOscarStatusFromSources(movie.oscar_status, cached.oscar_status);
+          setSelectedMovie({
             ...movie,
-            oscar_status: cached.oscar_status || 'unknown',
-            hasOscar: cached.oscar_status === 'winner' || cached.oscar_status === 'nominee'
-          };
-          setSelectedMovie(updatedMovie);
+            oscar_status: merged.oscar_status,
+            hasOscar: merged.hasOscar,
+          });
           setCheckingOscarStatus(false);
         } else {
           // If not in cache, enrich in background (async, non-blocking)
@@ -542,15 +543,16 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
             body: { movieId: movie.id, movieTitle: movie.title, movieYear: movie.year }
           }).then(({ data: enrichmentData }) => {
             if (enrichmentData?.enrichmentData) {
-              const updatedMovie = {
+              const fromEnrich =
+                enrichmentData.enrichmentData.oscarStatus ||
+                enrichmentData.enrichmentData.oscar_status ||
+                undefined;
+              const merged = mergeOscarStatusFromSources(movie.oscar_status, fromEnrich);
+              setSelectedMovie({
                 ...movie,
-                oscar_status: enrichmentData.enrichmentData.oscarStatus || enrichmentData.enrichmentData.oscar_status || 'unknown',
-                hasOscar: enrichmentData.enrichmentData.oscarStatus === 'winner' || 
-                         enrichmentData.enrichmentData.oscarStatus === 'nominee' ||
-                         enrichmentData.enrichmentData.oscar_status === 'winner' ||
-                         enrichmentData.enrichmentData.oscar_status === 'nominee'
-              };
-              setSelectedMovie(updatedMovie);
+                oscar_status: merged.oscar_status,
+                hasOscar: merged.hasOscar,
+              });
             }
             setCheckingOscarStatus(false);
           }).catch(err => {

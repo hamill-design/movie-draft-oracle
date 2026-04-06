@@ -16,7 +16,10 @@ interface DraftInviteRequest {
   hostName: string;
   participantEmails: string[];
   theme: string;
+  /** Stored draft option (e.g. spec UUID); use optionLabel for human-readable email copy. */
   option: string;
+  /** When set (e.g. spec draft name), shown as "Category" in the email instead of option. */
+  optionLabel?: string;
 }
 
 /** Strip path from Origin/Referer so join links and assets use the site root. */
@@ -43,13 +46,34 @@ function escapeHtmlAttr(text: string): string {
   return text.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 }
 
+/** Readable theme line for email (DB uses slugs like spec-draft). */
+function displayThemeForEmail(theme: string): string {
+  switch (theme) {
+    case "spec-draft":
+      return "Special draft";
+    case "people":
+      return "Person";
+    case "year":
+      return "Year";
+    default:
+      return theme;
+  }
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function looksLikeUuid(s: string): boolean {
+  return UUID_RE.test(String(s).trim());
+}
+
 function buildDraftInvitationHtml(params: {
   baseUrl: string;
   inviteLink: string;
   draftTitle: string;
   hostName: string;
-  theme: string;
-  option: string;
+  themeDisplay: string;
+  optionDisplay: string;
   inviteCode: string | null;
   recipientEmail: string;
 }): string {
@@ -58,8 +82,8 @@ function buildDraftInvitationHtml(params: {
     inviteLink,
     draftTitle,
     hostName,
-    theme,
-    option,
+    themeDisplay,
+    optionDisplay,
     inviteCode,
     recipientEmail,
   } = params;
@@ -110,10 +134,10 @@ function buildDraftInvitationHtml(params: {
                     Draft details
                   </p>
                   <p style="margin:0 0 8px 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#bdc3c2;">
-                    <strong style="color:#fcffff;">Theme:</strong> ${e(theme)}
+                    <strong style="color:#fcffff;">Theme:</strong> ${e(themeDisplay)}
                   </p>
                   <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#bdc3c2;">
-                    <strong style="color:#fcffff;">Category:</strong> ${e(option)}
+                    <strong style="color:#fcffff;">Category:</strong> ${e(optionDisplay)}
                   </p>
                 </td>
               </tr>
@@ -215,17 +239,20 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Invalid JSON request body');
     }
 
-    const { draftId, draftTitle, hostName, participantEmails, theme, option }: DraftInviteRequest = requestBody;
-
-    console.log('📧 EDGE FUNCTION - Processing invitations:', { 
-      draftId, 
+    const {
+      draftId,
       draftTitle,
       hostName,
-      emailCount: participantEmails?.length,
+      participantEmails,
       theme,
       option,
-      emails: participantEmails
-    });
+      optionLabel,
+    }: DraftInviteRequest = requestBody;
+
+    const themeDisplay = displayThemeForEmail(theme);
+    let optionDisplay = (optionLabel != null && String(optionLabel).trim() !== "")
+      ? String(optionLabel).trim()
+      : option;
 
     // Validate required fields
     if (!draftId || !draftTitle || !participantEmails || !Array.isArray(participantEmails)) {
@@ -237,6 +264,41 @@ const handler = async (req: Request): Promise<Response> => {
       });
       throw new Error('Missing required fields in request');
     }
+
+    // Spec drafts store `option` as spec_drafts.id; always show the template name in email.
+    if (theme === "spec-draft" && option?.trim() && looksLikeUuid(option.trim())) {
+      const clientSentReadableLabel =
+        optionLabel != null &&
+        String(optionLabel).trim() !== "" &&
+        !looksLikeUuid(String(optionLabel).trim());
+      if (!clientSentReadableLabel) {
+        const { data: specRow, error: specErr } = await supabase
+          .from("spec_drafts")
+          .select("name")
+          .eq("id", option.trim())
+          .maybeSingle();
+        if (specErr) {
+          console.warn("📧 EDGE FUNCTION - spec_drafts lookup:", specErr.message);
+        }
+        if (specRow?.name) {
+          optionDisplay = specRow.name;
+        } else if (looksLikeUuid(String(optionDisplay).trim()) && draftTitle.trim()) {
+          optionDisplay = draftTitle.trim();
+        }
+      }
+    }
+
+    console.log('📧 EDGE FUNCTION - Processing invitations:', { 
+      draftId, 
+      draftTitle,
+      hostName,
+      emailCount: participantEmails?.length,
+      theme,
+      option,
+      optionLabel: optionLabel ?? null,
+      optionDisplayForEmail: optionDisplay,
+      emails: participantEmails
+    });
 
     // Validate email addresses
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -311,8 +373,8 @@ const handler = async (req: Request): Promise<Response> => {
                 inviteLink,
                 draftTitle,
                 hostName,
-                theme,
-                option,
+                themeDisplay,
+                optionDisplay,
                 inviteCode,
                 recipientEmail: email,
               }),

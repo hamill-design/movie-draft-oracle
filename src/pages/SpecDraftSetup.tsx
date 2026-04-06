@@ -530,6 +530,8 @@ const SpecDraftSetup = () => {
           title: specDraft.name,
           theme: 'spec-draft',
           option: specDraft.id,
+          optionLabel: specDraft.name,
+          hostDisplayName: hostName || 'Host',
           categories: selectedCats,
           participantEmails: humanParticipants, // Only send human participants (emails), host is added automatically
           aiParticipantNames: aiParticipants, // Send AI participant names

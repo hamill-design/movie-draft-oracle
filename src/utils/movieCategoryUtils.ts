@@ -15,6 +15,39 @@ interface Movie {
   isSequel?: boolean;
 }
 
+const OSCAR_STATUS_RANK: Record<string, number> = {
+  winner: 3,
+  nominee: 2,
+  none: 1,
+  unknown: 0,
+};
+
+function oscarStatusRank(status: string | null | undefined): number {
+  if (status == null || status === '') return 0;
+  return OSCAR_STATUS_RANK[status] ?? 0;
+}
+
+/**
+ * Combine Oscar signals from fetch-movies (academy JSON), oscar_cache, and enrichment.
+ * Picks the strongest: winner > nominee > none > unknown — so stale `oscar_cache` rows
+ * (e.g. `none` from before awards night) cannot overwrite fresh winner/nominee from the edge function.
+ */
+export function mergeOscarStatusFromSources(
+  ...statuses: (string | null | undefined)[]
+): { oscar_status: string; hasOscar: boolean } {
+  let best: string = 'unknown';
+  let bestR = 0;
+  for (const s of statuses) {
+    const r = oscarStatusRank(s);
+    if (r > bestR) {
+      bestR = r;
+      best = (s as string) || 'unknown';
+    }
+  }
+  const hasOscar = best === 'winner' || best === 'nominee';
+  return { oscar_status: best, hasOscar };
+}
+
 export const getEligibleCategories = (
   movie: Movie, 
   allCategories: string[],

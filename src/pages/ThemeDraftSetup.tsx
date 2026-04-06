@@ -156,6 +156,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
         title: option,
         theme,
         option,
+        hostDisplayName: hostName || 'Host',
         categories: data.categories,
         participantEmails: humanParticipants,
         aiParticipantNames: aiParticipants,

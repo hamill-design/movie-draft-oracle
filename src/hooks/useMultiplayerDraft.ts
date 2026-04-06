@@ -268,6 +268,10 @@ export const useMultiplayerDraft = (
     title: string;
     theme: string;
     option: string;
+    /** Shown in invite email for "Category" (e.g. spec draft name when option is a UUID). */
+    optionLabel?: string;
+    /** Inviter name in the invite email; falls back to "Host". */
+    hostDisplayName?: string;
     categories: string[];
     participantEmails: string[];
     aiParticipantNames?: string[];
@@ -344,10 +348,13 @@ export const useMultiplayerDraft = (
           const invitePayload = {
             draftId: newDraft.id,
             draftTitle: draftData.title,
-            hostName: 'Host',
+            hostName: draftData.hostDisplayName?.trim() || 'Host',
             participantEmails: draftData.participantEmails,
             theme: draftData.theme,
             option: draftData.option,
+            ...(draftData.optionLabel != null && draftData.optionLabel.trim() !== ''
+              ? { optionLabel: draftData.optionLabel.trim() }
+              : {}),
           };
 
           const inviteResponse = await supabase.functions.invoke('send-draft-invitations', {

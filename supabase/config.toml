@@ -9,8 +9,10 @@ verify_jwt = false
 [functions.receive-support-email]
 verify_jwt = false
 
+# false: browser OPTIONS preflight has no JWT; gateway would 401 before Deno runs.
+# Auth is enforced inside the function (Bearer + getUser()).
 [functions.sync-marketing-audience]
-verify_jwt = true
+verify_jwt = false
 
 [functions.resend-marketing-webhook]
 verify_jwt = false
