@@ -6,6 +6,66 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Same Academy JSON contract as fetch-movies (ACADEMY_AWARDS_JSON_URL); merged with OMDb so nominees are not downgraded.
+let _academyAwardsMapEnrich: Map<number, string> | null = null
+async function getAcademyAwardsMap(): Promise<Map<number, string>> {
+  if (_academyAwardsMapEnrich) return _academyAwardsMapEnrich
+  _academyAwardsMapEnrich = new Map()
+  const jsonUrl = Deno.env.get('ACADEMY_AWARDS_JSON_URL')
+  if (!jsonUrl || jsonUrl.trim() === '') {
+    console.log('Academy awards JSON URL not set (ACADEMY_AWARDS_JSON_URL); enrich Oscar merge skipped')
+    return _academyAwardsMapEnrich
+  }
+  try {
+    const response = await fetch(jsonUrl)
+    if (!response.ok) {
+      console.log('Academy awards JSON fetch failed:', response.status, response.statusText)
+      return _academyAwardsMapEnrich
+    }
+    const content = await response.text()
+    const data = JSON.parse(content)
+    if (Array.isArray(data)) {
+      for (const entry of data) {
+        if (entry.movies && Array.isArray(entry.movies)) {
+          const status = entry.won === true ? 'winner' : 'nominee'
+          for (const movie of entry.movies) {
+            if (movie.tmdb_id != null) {
+              const existing = _academyAwardsMapEnrich!.get(Number(movie.tmdb_id))
+              if (!existing || existing === 'nominee') {
+                _academyAwardsMapEnrich!.set(Number(movie.tmdb_id), status)
+              }
+            }
+          }
+        }
+      }
+      console.log(`[enrich] Academy awards JSON loaded: ${_academyAwardsMapEnrich.size} movies`)
+    } else if (data.movies && Array.isArray(data.movies)) {
+      for (const m of data.movies) {
+        if (m.tmdb_id != null && m.status) _academyAwardsMapEnrich!.set(Number(m.tmdb_id), m.status)
+      }
+      console.log(`[enrich] Academy awards JSON loaded (old format): ${_academyAwardsMapEnrich.size} movies`)
+    }
+  } catch (e) {
+    console.log('[enrich] Academy awards JSON not loaded:', e)
+  }
+  return _academyAwardsMapEnrich
+}
+
+function mergeOscarStatusesForEnrich(...statuses: (string | null | undefined)[]): string {
+  const rank = (s: string | null | undefined) =>
+    s === 'winner' ? 3 : s === 'nominee' ? 2 : s === 'none' ? 1 : 0
+  let best = 'none'
+  let br = 0
+  for (const s of statuses) {
+    const r = rank(s)
+    if (r > br) {
+      br = r
+      best = typeof s === 'string' && s.length > 0 ? s : 'none'
+    }
+  }
+  return best
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -206,6 +266,12 @@ Deno.serve(async (req) => {
         console.log(`OMDB error: ${error.message}`)
       }
     }
+
+    const academyMap = await getAcademyAwardsMap()
+    const tmdbNum = Number(movieId)
+    const fromAcademy = Number.isFinite(tmdbNum) ? academyMap.get(tmdbNum) : undefined
+    enrichmentData.oscarStatus = mergeOscarStatusesForEnrich(enrichmentData.oscarStatus, fromAcademy)
+    console.log(`Oscar after Academy JSON merge: ${enrichmentData.oscarStatus}`)
 
     // Calculate score
     const finalScore = calculateScore(enrichmentData)

@@ -15,6 +15,8 @@ import ShareResultsButton from '@/components/ShareResultsButton';
 import { getScoreColor, getScoreGrade, calculateDetailedScore } from '@/utils/scoreCalculator';
 import RankBadge from '@/components/RankBadge';
 import { storePendingDraft } from '@/utils/draftStorage';
+import { fetchOscarCacheMap, mergePicksOscarWithCache } from '@/utils/oscarPickSync';
+import { mergeOscarStatusFromSources } from '@/utils/movieCategoryUtils';
 
 interface TeamScore {
   playerName: string;
@@ -109,7 +111,7 @@ const FinalScores = () => {
     }
   }, [draftId, isPublicView, votingMeta?.allow_public_voting, votingOpen, navigate]);
 
-  const fixUnknownPlayers = async () => {
+  const fixUnknownPlayers = async (): Promise<DraftPick[] | null> => {
     try {
       const { data, error } = await supabase.functions.invoke('fix-unknown-players', {
         body: { draftId }
@@ -117,19 +119,23 @@ const FinalScores = () => {
 
       if (error) {
         console.error('Error fixing unknown players:', error);
-      } else {
-        console.log('Fixed unknown players:', data);
-        // Refresh the data after fixing
-        const { draft: refreshedDraft, picks: refreshedPicks } = await getDraftWithPicks(draftId!);
-        setPicks(refreshedPicks || []);
-        const refreshedTeams = processTeamScores(refreshedPicks || []);
-        setTeamScores(refreshedTeams);
-        if (refreshedTeams.length > 0) {
-          setSelectedTeam(refreshedTeams[0].playerName);
-        }
+        return null;
       }
+      console.log('Fixed unknown players:', data);
+      const { picks: refreshedPicks } = await getDraftWithPicks(draftId!);
+      const rawPicks = refreshedPicks || [];
+      const fixCacheMap = await fetchOscarCacheMap(supabase, rawPicks.map((p) => p.movie_id));
+      const mergedAfterFix = mergePicksOscarWithCache(rawPicks, fixCacheMap);
+      setPicks(mergedAfterFix);
+      const refreshedTeams = processTeamScores(mergedAfterFix);
+      setTeamScores(refreshedTeams);
+      if (refreshedTeams.length > 0) {
+        setSelectedTeam(refreshedTeams[0].playerName);
+      }
+      return mergedAfterFix;
     } catch (error) {
       console.error('Error calling fix-unknown-players function:', error);
+      return null;
     }
   };
 
@@ -151,12 +157,17 @@ const FinalScores = () => {
           picksCount: stateData.picks?.length,
           localVotes: stateData.localVotes
         });
+        const navCacheMap = await fetchOscarCacheMap(
+          supabase,
+          (stateData.picks || []).map((p: any) => p.movie_id)
+        );
+        const mergedNavPicks = mergePicksOscarWithCache(stateData.picks || [], navCacheMap);
         setDraft(stateData.draftData);
-        setPicks(stateData.picks);
+        setPicks(mergedNavPicks);
         setLocalVotesFromState(stateData.localVotes ?? null);
         
         // Process initial team scores (may have 0 scores if no scoring data yet)
-        const teams = processTeamScores(stateData.picks || []);
+        const teams = processTeamScores(mergedNavPicks);
         console.log('Processed team scores:', teams);
         setTeamScores(teams);
         if (teams.length > 0) {
@@ -165,13 +176,12 @@ const FinalScores = () => {
         setLoadingData(false);
         
         // Check if picks need enrichment (don't have scoring data)
-        const needsEnrichment = stateData.picks?.some((pick: any) => 
+        const needsEnrichment = mergedNavPicks.some((pick: any) => 
           !pick.calculated_score && (!pick.rt_critics_score && !pick.imdb_rating && !pick.metacritic_score)
         );
         
         if (needsEnrichment) {
-          // Enrich in background and update state
-          autoEnrichMovieData(stateData.picks).catch(err => {
+          autoEnrichMovieData(mergedNavPicks, navCacheMap).catch(err => {
             console.error('Background enrichment failed:', err);
           });
         }
@@ -225,8 +235,13 @@ const FinalScores = () => {
                   scoring_data_complete: pickWithScoring.scoring_data_complete ?? false
                 };
               });
-              setPicks(formattedPicks);
-              const teams = processTeamScores(formattedPicks);
+              const localCacheMap = await fetchOscarCacheMap(
+                supabase,
+                formattedPicks.map((p) => p.movie_id)
+              );
+              const mergedLocalPicks = mergePicksOscarWithCache(formattedPicks, localCacheMap);
+              setPicks(mergedLocalPicks);
+              const teams = processTeamScores(mergedLocalPicks);
               setTeamScores(teams);
               if (teams.length > 0) {
                 setSelectedTeam(teams[0].playerName);
@@ -234,7 +249,7 @@ const FinalScores = () => {
               setLoadingData(false);
               
               // Always enrich movies when loading from localStorage (they may be missing scores)
-              autoEnrichMovieData(formattedPicks).catch(err => {
+              autoEnrichMovieData(mergedLocalPicks, localCacheMap).catch(err => {
                 console.error('Background enrichment failed:', err);
               });
               
@@ -312,10 +327,16 @@ const FinalScores = () => {
         }
       }
       
+      const dbCacheMap = await fetchOscarCacheMap(
+        supabase,
+        (picksData || []).map((p) => p.movie_id)
+      );
+      const mergedDbPicks = mergePicksOscarWithCache(picksData || [], dbCacheMap);
+
       setDraft(draftData);
-      setPicks(picksData);
+      setPicks(mergedDbPicks);
       
-      console.log('Fetched picks with scoring data:', picksData?.map(p => ({
+      console.log('Fetched picks with scoring data:', mergedDbPicks?.map(p => ({
         title: p.movie_title,
         player_name: p.player_name,
         scoring_data_complete: (p as any).scoring_data_complete,
@@ -325,26 +346,34 @@ const FinalScores = () => {
       })));
 
       // Check for unknown players and fix them
-      const hasUnknownPlayers = picksData?.some(pick => 
+      const hasUnknownPlayers = mergedDbPicks?.some(pick => 
         pick.player_name === 'Unknown Player' || 
         pick.player_name === 'Unknown User' ||
         !pick.player_name
       );
       
+      let picksForEnrich: DraftPick[] = mergedDbPicks;
       if (hasUnknownPlayers) {
         console.log('Found unknown players, attempting to fix...');
-        await fixUnknownPlayers();
+        const afterFix = await fixUnknownPlayers();
+        if (afterFix) {
+          picksForEnrich = afterFix;
+        } else {
+          const teams = processTeamScores(mergedDbPicks);
+          setTeamScores(teams);
+          if (teams.length > 0) {
+            setSelectedTeam(teams[0].playerName);
+          }
+        }
       } else {
-        // Process team scores normally
-        const teams = processTeamScores(picksData || []);
+        const teams = processTeamScores(mergedDbPicks);
         setTeamScores(teams);
         if (teams.length > 0) {
           setSelectedTeam(teams[0].playerName);
         }
       }
 
-      // Automatically enrich data if needed
-      await autoEnrichMovieData(picksData || []);
+      await autoEnrichMovieData(picksForEnrich, dbCacheMap);
     } catch (error) {
       console.error('Error fetching draft data:', error);
       toast({
@@ -392,7 +421,17 @@ const FinalScores = () => {
   };
 
 
-  const autoEnrichMovieData = async (picksData: DraftPick[]) => {
+  const autoEnrichMovieData = async (
+    picksData: DraftPick[],
+    oscarCacheMap?: Map<number, string>
+  ) => {
+    const cacheMap =
+      oscarCacheMap ??
+      (await fetchOscarCacheMap(
+        supabase,
+        picksData.map((p) => p.movie_id)
+      ));
+
     // First, fix any incorrect movie years
     await fixMovieYears();
     
@@ -457,7 +496,22 @@ const FinalScores = () => {
             enrichedPick.imdb_rating = enrichmentData.imdbRating || enrichmentData.imdb_rating || enrichedPick.imdb_rating || null;
             enrichedPick.movie_budget = enrichmentData.budget || enrichmentData.movie_budget || enrichedPick.movie_budget || null;
             enrichedPick.movie_revenue = enrichmentData.revenue || enrichmentData.movie_revenue || enrichedPick.movie_revenue || null;
-            enrichedPick.oscar_status = enrichmentData.oscarStatus || enrichmentData.oscar_status || enrichedPick.oscar_status || null;
+            const omdbOscar =
+              enrichmentData.oscarStatus ??
+              enrichmentData.oscar_status ??
+              'none';
+            const mid =
+              typeof enrichedPick.movie_id === 'number'
+                ? enrichedPick.movie_id
+                : Number(enrichedPick.movie_id);
+            const fromCache =
+              Number.isFinite(mid) && mid > 0 ? cacheMap.get(mid) : undefined;
+            const mergedOscar = mergeOscarStatusFromSources(
+              enrichedPick.oscar_status,
+              omdbOscar,
+              fromCache
+            );
+            enrichedPick.oscar_status = mergedOscar.oscar_status;
             enrichedPick.poster_path = enrichmentData.posterPath || enrichmentData.poster_path || enrichedPick.poster_path || null;
             
             // Use calculatedScore from response, or calculate it ourselves if missing
@@ -583,14 +637,16 @@ const FinalScores = () => {
         }
       }
 
+      const picksAfterCache = mergePicksOscarWithCache(enrichedPicks, cacheMap);
+
       // Update state with enriched picks (don't try to fetch from database for local drafts)
-      setPicks(enrichedPicks);
+      setPicks(picksAfterCache);
 
       // Recalculate team scores with enriched data
-      const refreshedTeams = processTeamScores(enrichedPicks);
+      const refreshedTeams = processTeamScores(picksAfterCache);
       setTeamScores(refreshedTeams);
       
-      console.log('Updated picks with scores:', enrichedPicks.map((p: any) => ({
+      console.log('Updated picks with scores:', picksAfterCache.map((p: any) => ({
         title: p.movie_title,
         calculated_score: p.calculated_score
       })));

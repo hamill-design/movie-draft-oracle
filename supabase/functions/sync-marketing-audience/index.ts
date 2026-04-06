@@ -37,6 +37,37 @@ async function resendJson(
   return { ok: res.ok, status: res.status, data };
 }
 
+/** Resend: contacts are global; marketing list = segment (same UUID as Audiences in dashboard). */
+async function addContactToSegment(
+  apiKey: string,
+  email: string,
+  segmentId: string,
+): Promise<{ ok: boolean; status: number; data: unknown }> {
+  const sid = segmentId.trim();
+  const res = await fetch(
+    `${RESEND_API}/contacts/${encodeURIComponent(email)}/segments/${encodeURIComponent(sid)}`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}` },
+    },
+  );
+  let data: unknown = null;
+  try {
+    data = await res.json();
+  } catch {
+    /* empty */
+  }
+  return { ok: res.ok, status: res.status, data };
+}
+
+function segmentAddIsOk(status: number, data: unknown): boolean {
+  if (status === 200 || status === 201 || status === 204) return true;
+  if (status === 409) return true;
+  const msg = String((data as { message?: string } | null)?.message || '').toLowerCase();
+  if (status === 422 && (msg.includes('already') || msg.includes('exist'))) return true;
+  return false;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -53,7 +84,8 @@ Deno.serve(async (req) => {
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
-  const audienceId = Deno.env.get('RESEND_MARKETING_AUDIENCE_ID');
+  /** Marketing segment UUID from Resend (Audiences appear as segments in the dashboard). */
+  const marketingSegmentId = Deno.env.get('RESEND_MARKETING_AUDIENCE_ID');
 
   if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
     return new Response(JSON.stringify({ error: 'Server configuration error' }), {
@@ -86,7 +118,7 @@ Deno.serve(async (req) => {
     });
   }
 
-  if (!resendApiKey || !audienceId) {
+  if (!resendApiKey || !marketingSegmentId) {
     console.warn('sync-marketing-audience: RESEND_API_KEY or RESEND_MARKETING_AUDIENCE_ID not set');
     return new Response(
       JSON.stringify({ success: true, skipped: true, reason: 'resend_not_configured' }),
@@ -139,7 +171,6 @@ Deno.serve(async (req) => {
   const { first_name, last_name } = splitName(profile.name);
 
   const createBody = {
-    audience_id: audienceId,
     email,
     first_name: first_name || undefined,
     last_name: last_name || undefined,
@@ -172,6 +203,14 @@ Deno.serve(async (req) => {
           { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
+      const seg = await addContactToSegment(resendApiKey, email, marketingSegmentId);
+      if (!segmentAddIsOk(seg.status, seg.data)) {
+        console.error('sync-marketing-audience: add to segment failed', seg.status, seg.data);
+        return new Response(
+          JSON.stringify({ error: 'Failed to add contact to marketing segment', details: seg.data }),
+          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+        );
+      }
       return new Response(
         JSON.stringify({ success: true, action: 'updated' }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
@@ -181,6 +220,15 @@ Deno.serve(async (req) => {
     console.error('sync-marketing-audience: create contact failed', post.status, post.data);
     return new Response(
       JSON.stringify({ error: 'Failed to create marketing contact', details: post.data }),
+      { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+    );
+  }
+
+  const segAfterCreate = await addContactToSegment(resendApiKey, email, marketingSegmentId);
+  if (!segmentAddIsOk(segAfterCreate.status, segAfterCreate.data)) {
+    console.error('sync-marketing-audience: add to segment failed', segAfterCreate.status, segAfterCreate.data);
+    return new Response(
+      JSON.stringify({ error: 'Failed to add contact to marketing segment', details: segAfterCreate.data }),
       { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     );
   }

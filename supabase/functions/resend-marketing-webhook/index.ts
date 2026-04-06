@@ -11,7 +11,10 @@ interface ContactUpdatedPayload {
   created_at: string;
   data: {
     id: string;
-    audience_id: string;
+    /** Legacy Audiences API */
+    audience_id?: string;
+    /** Segments (current Resend model) */
+    segment_id?: string;
     email: string;
     first_name?: string;
     last_name?: string;
@@ -32,11 +35,12 @@ Deno.serve(async (req) => {
   }
 
   const secret = Deno.env.get('RESEND_WEBHOOK_SECRET');
-  const audienceId = Deno.env.get('RESEND_MARKETING_AUDIENCE_ID');
+  /** Marketing segment UUID (env name kept for backward compatibility). */
+  const marketingSegmentId = Deno.env.get('RESEND_MARKETING_AUDIENCE_ID');
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-  if (!secret || !audienceId || !supabaseUrl || !supabaseServiceKey) {
+  if (!secret || !marketingSegmentId || !supabaseUrl || !supabaseServiceKey) {
     console.error('resend-marketing-webhook: missing env');
     return new Response(JSON.stringify({ error: 'Server configuration error' }), {
       status: 500,
@@ -81,7 +85,9 @@ Deno.serve(async (req) => {
   }
 
   const { data } = evt;
-  if (!data?.email || data.audience_id !== audienceId) {
+  const segmentMatches =
+    data.audience_id === marketingSegmentId || data.segment_id === marketingSegmentId;
+  if (!data?.email || !segmentMatches) {
     return new Response(JSON.stringify({ received: true, ignored: 'wrong_audience_or_email' }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
