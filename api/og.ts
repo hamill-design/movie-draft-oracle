@@ -6,7 +6,7 @@ import { ImageResponse } from '@vercel/og';
 import { createElement } from 'react';
 
 /** Node runtime: Edge bundling for Vite `/api` does not support `@vercel/og`. */
-export const config = { runtime: 'nodejs22.x' };
+export const config = { runtime: 'nodejs' };
 
 export default function handler(request: Request) {
   try {
