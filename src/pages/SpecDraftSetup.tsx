@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -585,10 +586,9 @@ const SpecDraftSetup = () => {
         <meta property="og:title" content={`Movie Drafter — ${specDraft.name} — Setup`} />
         <meta property="og:description" content="Set up a special movie draft with custom categories and participants. Create unique draft experiences for specific themes or events." />
         <meta property="og:url" content={`https://moviedrafter.com/spec-draft/${specDraft.slug}/setup`} />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        {socialShareImageMetaNodes()}
         <meta name="twitter:title" content="Movie Drafter - Setup Special Draft" />
         <meta name="twitter:description" content="Set up a special movie draft with custom categories and participants. Create unique draft experiences for specific themes or events." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
       </Helmet>
       <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <style>{`
@@ -799,8 +799,8 @@ const SpecDraftSetup = () => {
 
             {draftMode === 'multiplayer' && (
               <div className="p-4 bg-teal-900 rounded flex items-center gap-2" style={{outline: '1px solid #B2FFEA', outlineOffset: '-1px'}}>
-                <div className="w-6 h-6 flex justify-center items-center">
-                  <Mail className="w-6 h-6 text-teal-200" />
+                <div className="flex w-6 shrink-0 justify-center items-center max-md:hidden">
+                  <Mail className="h-6 w-6 text-teal-200" />
                 </div>
                 <p className="flex-1 text-teal-200 text-sm font-brockmann font-medium leading-5 m-0">
                   <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They&apos;ll receive an email invitation to join.
@@ -825,7 +825,9 @@ const SpecDraftSetup = () => {
                       className="py-2 pl-4 pr-4 bg-brand-primary rounded flex items-center gap-2"
                       title="Host (cannot be removed)"
                     >
-                      {draftMode === 'multiplayer' && <Mail size={16} className="text-greyscale-blue-100" />}
+                      {draftMode === 'multiplayer' && (
+                        <Mail size={16} className="shrink-0 text-greyscale-blue-100 max-md:hidden" />
+                      )}
                       <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
                         {hostName} (Host)
                       </span>
@@ -839,7 +841,7 @@ const SpecDraftSetup = () => {
                       {participant.isAI ? (
                         <Bot size={16} className="text-greyscale-blue-100" />
                       ) : draftMode === 'multiplayer' && (
-                        <Mail size={16} className="text-greyscale-blue-100" />
+                        <Mail size={16} className="shrink-0 text-greyscale-blue-100 max-md:hidden" />
                       )}
                       <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
                         {participant.name}

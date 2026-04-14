@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft } from "lucide-react";
 import { Helmet } from "react-helmet-async";
+import { socialShareImageMetaNodes } from "@/components/seo/SocialShareImageMeta";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
@@ -113,15 +114,14 @@ const Contact = () => {
     <>
       <Helmet>
         <title>Movie Drafter - Contact Support</title>
-        <meta name="description" content="Contact Movie Drafter support for help with your account, drafts, or any questions about our movie draft platform." />
+        <meta name="description" content="Contact Movie Drafter support for help with your account, fantasy movie drafts, or any questions about our movie drafting game." />
         <link rel="canonical" href="https://moviedrafter.com/contact" />
         <meta property="og:title" content="Movie Drafter - Contact Support" />
-        <meta property="og:description" content="Contact Movie Drafter support for help with your account, drafts, or any questions about our movie draft platform." />
+        <meta property="og:description" content="Contact Movie Drafter support for help with your account, fantasy movie drafts, or any questions about our movie drafting game." />
         <meta property="og:url" content="https://moviedrafter.com/contact" />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        {socialShareImageMetaNodes()}
         <meta name="twitter:title" content="Movie Drafter - Contact Support" />
-        <meta name="twitter:description" content="Contact Movie Drafter support for help with your account, drafts, or any questions about our movie draft platform." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        <meta name="twitter:description" content="Contact Movie Drafter support for help with your account, fantasy movie drafts, or any questions about our movie drafting game." />
       </Helmet>
       <div className="min-h-screen p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <div className="max-w-2xl mx-auto">

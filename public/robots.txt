@@ -3,3 +3,4 @@ Allow: /
 Disallow: /admin
 
 Sitemap: https://moviedrafter.com/sitemap.xml
+Sitemap: https://moviedrafter.com/sitemap-themes.xml

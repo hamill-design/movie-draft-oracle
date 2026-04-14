@@ -17,7 +17,7 @@ export function ThemeSelector({ selectedTheme, onThemeSelect }: ThemeSelectorPro
           font="brockmann-bold" 
           className="text-text-primary text-center"
         >
-          Choose Your Draft Theme
+          Setup Your Own Draft Now
         </Heading>
       </div>
       
@@ -33,7 +33,7 @@ export function ThemeSelector({ selectedTheme, onThemeSelect }: ThemeSelectorPro
           }`}
         >
           <PersonIcon className="w-6 h-6" />
-          <span className="text-lg font-medium font-brockmann-medium">Draft by Person</span>
+          <span className="text-lg font-medium font-brockmann-medium">Draft by Filmography</span>
         </Button>
         
         <Button

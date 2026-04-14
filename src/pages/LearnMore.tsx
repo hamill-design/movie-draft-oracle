@@ -1,21 +1,22 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 
 const LearnMore = () => {
   return (
     <>
       <Helmet>
-        <title>Movie Drafter - Learn More</title>
-        <meta name="description" content="Learn how Movie Drafter works. Create fantasy movie drafts, compete with friends, and discover who has the best taste in cinema." />
+        <title>Movie Drafter - How the movie drafting game works</title>
+        <meta name="description" content="Learn how the movie drafting game works on Movie Drafter: fantasy movie drafts, multiplayer picks, and scoring with our cinema drafting tool." />
         <link rel="canonical" href="https://moviedrafter.com/learn-more" />
-        <meta property="og:title" content="Movie Drafter - Learn More" />
-        <meta property="og:description" content="Learn how Movie Drafter works. Create fantasy movie drafts, compete with friends, and discover who has the best taste in cinema." />
+        <meta property="og:title" content="Movie Drafter - How the movie drafting game works" />
+        <meta property="og:description" content="Learn how the movie drafting game works on Movie Drafter: fantasy movie drafts, multiplayer picks, and scoring with our cinema drafting tool." />
         <meta property="og:url" content="https://moviedrafter.com/learn-more" />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
-        <meta name="twitter:title" content="Movie Drafter - Learn More" />
-        <meta name="twitter:description" content="Learn how Movie Drafter works. Create fantasy movie drafts, compete with friends, and discover who has the best taste in cinema." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        {socialShareImageMetaNodes()}
+        <meta name="twitter:title" content="Movie Drafter - How the movie drafting game works" />
+        <meta name="twitter:description" content="Learn how the movie drafting game works on Movie Drafter: fantasy movie drafts, multiplayer picks, and scoring with our cinema drafting tool." />
       </Helmet>
     <div style={{
       width: '100%',
@@ -89,20 +90,22 @@ const LearnMore = () => {
               alignItems: 'center',
               display: 'flex'
             }}>
-              <p className="text-sm md:text-lg leading-[20px] md:leading-[26px] px-4" style={{
-                width: '100%',
-                maxWidth: '724px',
-                textAlign: 'center',
-                justifyContent: 'center',
-                display: 'flex',
-                flexDirection: 'column',
+              <p className="text-sm md:text-lg leading-[20px] md:leading-[26px] px-4 text-center text-pretty max-w-[724px] w-full mx-auto" style={{
                 color: 'var(--Text-Primary, #FCFFFF)',
                 fontFamily: 'Brockmann',
                 fontWeight: '500',
-                wordWrap: 'break-word',
                 margin: 0
               }}>
-                Movie Draft challenges you to curate the perfect collection of films. Strategy meets cinema in this competitive drafting experience.
+                Movie Draft challenges you to curate the perfect collection of films. Strategy meets cinema in this competitive drafting experience.{' '}
+                For rules, scoring, and strategy in one place, read the{' '}
+                <Link to="/how-to-draft" className="text-[var(--Yellow-500,#FFD60A)] underline hover:opacity-90">
+                  how to draft movies
+                </Link>{' '}
+                guide—or browse{' '}
+                <Link to="/special-draft" className="text-[var(--Yellow-500,#FFD60A)] underline hover:opacity-90">
+                  curated theme film lists
+                </Link>
+                .
               </p>
             </div>
           </div>
@@ -275,7 +278,7 @@ const LearnMore = () => {
                     lineHeight: '20px',
                     wordWrap: 'break-word'
                   }}>
-                    Choose a draft theme (by Person or by Year)
+                    Choose a draft theme (by Filmography or by Year)
                   </li>
                   <li style={{
                     color: 'var(--Text-Primary, #FCFFFF)',

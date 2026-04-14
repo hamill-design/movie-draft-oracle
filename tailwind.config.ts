@@ -59,6 +59,8 @@ export default {
 				
 				// Greyscale Blue Scale
 				'greyscale-blue': {
+					// Alias: used for primary light text on dark UI (matches --greyscale-blue-100 / #fcffff)
+					50: 'hsl(var(--greyscale-blue-100))',
 					100: 'hsl(var(--greyscale-blue-100))',
 					150: 'hsl(var(--greyscale-blue-150))',
 					200: 'hsl(var(--greyscale-blue-200))',

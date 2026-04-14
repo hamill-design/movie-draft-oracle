@@ -12,6 +12,7 @@ import EnhancedCategoriesForm from '@/components/EnhancedCategoriesForm';
 import { JoinDraftForm } from '@/components/JoinDraftForm';
 import { SpecDraftSelector } from '@/components/SpecDraftSelector';
 import { HeaderIcon3 } from '@/components/HeaderIcon3';
+import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
@@ -150,16 +151,15 @@ const Home = () => {
   return (
     <>
       <Helmet>
-        <title>Movie Drafter - Draft Your Favorite Movies and Compete with Friends</title>
-        <meta name="description" content="Draft your favorite movies and compete with friends. Create fantasy movie drafts, pick your favorite films, and see who has the best taste in cinema." />
+        <title>Movie Drafter - Movie drafting game with friends</title>
+        <meta name="description" content="The movie drafting game for friends: fantasy movie drafts and a cinema drafting tool to pick films, compete, and see who knows movies best." />
         <link rel="canonical" href="https://moviedrafter.com/" />
-        <meta property="og:title" content="Movie Drafter - Draft Your Favorite Movies and Compete with Friends" />
-        <meta property="og:description" content="Draft your favorite movies and compete with friends. Create fantasy movie drafts, pick your favorite films, and see who has the best taste in cinema." />
+        <meta property="og:title" content="Movie Drafter - Movie drafting game with friends" />
+        <meta property="og:description" content="The movie drafting game for friends: fantasy movie drafts and a cinema drafting tool to pick films, compete, and see who knows movies best." />
         <meta property="og:url" content="https://moviedrafter.com/" />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
-        <meta name="twitter:title" content="Movie Drafter - Draft Your Favorite Movies and Compete with Friends" />
-        <meta name="twitter:description" content="Draft your favorite movies and compete with friends. Create fantasy movie drafts, pick your favorite films, and see who has the best taste in cinema." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        {socialShareImageMetaNodes()}
+        <meta name="twitter:title" content="Movie Drafter - Movie drafting game with friends" />
+        <meta name="twitter:description" content="The movie drafting game for friends: fantasy movie drafts and a cinema drafting tool to pick films, compete, and see who knows movies best." />
       </Helmet>
       <div className="relative min-h-screen overflow-x-hidden">
         {/* Background Image - Absolutely Positioned to sit behind content */}
@@ -212,17 +212,18 @@ const Home = () => {
         <div className="container mx-auto px-4 pt-0 pb-8 relative z-10">
 
         <div className="max-w-4xl mx-auto space-y-8">
-          {/* Join Existing Draft */}
-          <JoinDraftForm />
-          
-          {/* Start a Special Draft */}
-          <SpecDraftSelector />
+          {/* Join Existing Draft + Start a Special Draft */}
+          {/* Grid: equal row heights; minmax(0,1fr) avoids overflow in narrow columns */}
+          <div className="grid w-full grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-stretch">
+            <JoinDraftForm className="min-h-0 h-full min-w-0" />
+            <SpecDraftSelector className="min-h-0 h-full min-w-0" />
+          </div>
           
           {/* Theme Selection */}
           <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
             <div className="self-stretch flex flex-col justify-center items-center gap-2">
               <h2 className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann text-center m-0">
-                Choose Your Draft Theme
+                Setup Your Own Draft Now
               </h2>
             </div>
             <div className="self-stretch flex flex-col sm:flex-row items-stretch sm:items-start gap-4">
@@ -245,7 +246,7 @@ const Home = () => {
                 <div className="w-6 h-6 flex justify-center items-center">
                   <PersonIcon className="w-6 h-6" />
                 </div>
-                <span className="font-brockmann">Draft by Person</span>
+                <span className="font-brockmann">Draft by Filmography</span>
               </button>
               <button
                 onClick={() => {
@@ -275,7 +276,7 @@ const Home = () => {
           {isStepVisible('option') && (
             <div className="p-6 bg-greyscale-purp-900 rounded-[8px] space-y-4" style={{boxShadow: '0px 0px 6px #3B0394'}}>
                 <HeaderIcon3 
-                  title={theme === 'people' ? 'Search for a Person' : "Select the year of films you'll draft"} 
+                  title={theme === 'people' ? 'Search Actors, Directors, Writers...' : "Select the year of films you'll draft"} 
                   icon={theme === 'people' ? 
                     <PersonIcon className="w-6 h-6 text-purple-300" /> : 
                     <CalendarIcon className="w-6 h-6 text-purple-300" />
@@ -285,7 +286,7 @@ const Home = () => {
                 {theme === 'people' ? (
                   <>
                     <Input
-                      placeholder="Search for an actor or director you'd like to draft"
+                      placeholder="Search actors, directors, writers..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="mb-4 rounded-[2px] bg-greyscale-purp-850 text-greyscale-blue-100 placeholder:text-greyscale-blue-500 border-0 focus:border-0"
@@ -509,8 +510,8 @@ const Home = () => {
 
               {draftMode === 'multiplayer' && (
                 <div className="p-4 bg-teal-900 rounded flex items-center gap-2" style={{outline: '1px solid #B2FFEA', outlineOffset: '-1px'}}>
-                  <div className="w-6 h-6 flex justify-center items-center">
-                    <EmailIcon className="w-6 h-6 text-teal-200" />
+                  <div className="flex w-6 shrink-0 justify-center items-center max-md:hidden">
+                    <EmailIcon className="h-6 w-6 text-teal-200" />
                   </div>
                   <p className="flex-1 text-teal-200 text-sm font-brockmann font-medium leading-5 m-0">
                     <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They&apos;ll receive an email invitation to join.
@@ -536,7 +537,7 @@ const Home = () => {
                         {participant.isAI ? (
                           <Bot size={16} className="text-greyscale-blue-100" />
                         ) : draftMode === 'multiplayer' && (
-                          <Mail size={16} className="text-greyscale-blue-100" />
+                          <Mail size={16} className="shrink-0 text-greyscale-blue-100 max-md:hidden" />
                         )}
                         <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
                           {participant.name}

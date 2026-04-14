@@ -1604,6 +1604,11 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
 
       // Use enhanced year extraction for consistency
       const correctYear = extractMovieYear(detailedMovie);
+
+      const synopsisRaw =
+        (typeof detailedMovie?.overview === 'string' && detailedMovie.overview.trim()) ||
+        (typeof movie.overview === 'string' && movie.overview.trim()) ||
+        '';
       
     return {
       id: movie.id,
@@ -1615,7 +1620,7 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
       director: 'Unknown',
       runtime: detailedMovie.runtime || 120,
       poster: getMovieEmoji(movie.genre_ids?.[0]),
-      description: movie.overview || 'No description available',
+      description: synopsisRaw || 'No description available',
       isDrafted: false,
       tmdbId: movie.id,
       posterPath: movie.poster_path,

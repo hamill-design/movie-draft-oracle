@@ -161,29 +161,32 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
                       width: '100%'
                     }}
                   >
-                    <div 
-                      className="flex flex-col justify-center items-start"
-                      style={{
-                        flex: '0 0 120.59px',
-                        minWidth: '120.59px',
-                        paddingTop: '13.50px',
-                        paddingBottom: '14.50px',
-                        paddingLeft: '16px',
-                        paddingRight: '16px'
-                      }}
-                    >
-                      <div 
-                        style={{
-                          color: '#FCFFFF',
-                          fontSize: '14px',
-                          fontFamily: 'Brockmann',
-                          fontWeight: 500,
-                          lineHeight: '20px'
-                        }}
-                      >
-                        {player.name}
-                      </div>
-                    </div>
+              <div 
+                className="flex flex-col justify-center items-start min-w-0 overflow-hidden"
+                style={{
+                  flex: '0 0 120.59px',
+                  minWidth: '120.59px',
+                  maxWidth: '120.59px',
+                  paddingTop: '13.50px',
+                  paddingBottom: '14.50px',
+                  paddingLeft: '16px',
+                  paddingRight: '16px'
+                }}
+              >
+                <div 
+                  className="w-full truncate"
+                  style={{
+                    color: '#FCFFFF',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: 500,
+                    lineHeight: '20px'
+                  }}
+                  title={player.name}
+                >
+                  {player.name}
+                </div>
+              </div>
                     
                     {categories.map((category) => {
                       const pick = picks.find(p => p.playerId === player.id && p.category === category);

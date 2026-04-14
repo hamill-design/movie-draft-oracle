@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -196,10 +197,9 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
         <meta property="og:title" content={`Movie Drafter - ${pageTitle}`} />
         <meta property="og:description" content={`Set up your ${theme === 'people' ? 'person' : 'year'} movie draft: ${option}. Choose participants and categories.`} />
         <meta property="og:url" content={`https://moviedrafter.com${setupUrl}`} />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        {socialShareImageMetaNodes()}
         <meta name="twitter:title" content={`Movie Drafter - ${pageTitle}`} />
         <meta name="twitter:description" content={`Set up your ${theme === 'people' ? 'person' : 'year'} movie draft: ${option}. Choose participants and categories.`} />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
       </Helmet>
       <div className="min-h-screen" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
         <style>{`
@@ -314,7 +314,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
               </div>
               {draftMode === 'multiplayer' && (
                 <div className="p-4 bg-teal-900 rounded flex items-center gap-2" style={{ outline: '1px solid #B2FFEA', outlineOffset: '-1px' }}>
-                  <EmailIcon className="w-6 h-6 text-teal-200" />
+                  <EmailIcon className="w-6 h-6 shrink-0 text-teal-200 max-md:hidden" />
                   <p className="text-teal-200 text-sm font-brockmann font-medium leading-5 m-0">
                     <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They&apos;ll receive an email invitation to join.
                   </p>
@@ -332,7 +332,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                   <div className="flex flex-wrap gap-2">
                     {draftMode === 'multiplayer' && hostName && (
                       <div className="py-2 pl-4 pr-4 bg-brand-primary rounded flex items-center gap-2" title="Host (cannot be removed)">
-                        <Mail size={16} className="text-greyscale-blue-100" />
+                        <Mail size={16} className="shrink-0 text-greyscale-blue-100 max-md:hidden" />
                         <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
                           {hostName} (Host)
                         </span>
@@ -345,7 +345,9 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                           draftMode === 'multiplayer' && !participant.isAI && !isEmailValid(participant.name) && participant.name !== hostName ? 'bg-red-900 border border-red-500' : ''
                         }`}
                       >
-                        {draftMode === 'multiplayer' && !participant.isAI && <Mail size={16} className="text-greyscale-blue-100" />}
+                        {draftMode === 'multiplayer' && !participant.isAI && (
+                          <Mail size={16} className="shrink-0 text-greyscale-blue-100 max-md:hidden" />
+                        )}
                         {participant.isAI && <Bot size={16} className="text-greyscale-blue-100" />}
                         <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
                           {participant.name}

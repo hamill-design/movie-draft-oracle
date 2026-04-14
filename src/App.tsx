@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "./contexts/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -27,6 +27,14 @@ import { JoinDraft } from "./pages/JoinDraft";
 import LearnMore from "./pages/LearnMore";
 import SpecDraftSetup from "./pages/SpecDraftSetup";
 import ThemeDraftSetup from "./pages/ThemeDraftSetup";
+import ThemeHubPage from "./pages/ThemeHubPage";
+import ThemeLandingPage from "./pages/ThemeLandingPage";
+import HowToDraftPage from "./pages/HowToDraftPage";
+
+function LegacyThemesSlugRedirect() {
+  const { slug } = useParams<{ slug: string }>();
+  return <Navigate to={`/special-draft/${slug}`} replace />;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,6 +74,11 @@ const App = () => (
               <Route path="/join-draft/:draftId" element={<JoinDraft />} />
               <Route path="/join-draft" element={<JoinDraft />} />
               <Route path="/learn-more" element={<LearnMore />} />
+              <Route path="/how-to-draft" element={<HowToDraftPage />} />
+              <Route path="/special-draft" element={<ThemeHubPage />} />
+              <Route path="/special-draft/:slug" element={<ThemeLandingPage />} />
+              <Route path="/themes" element={<Navigate to="/special-draft" replace />} />
+              <Route path="/themes/:slug" element={<LegacyThemesSlugRedirect />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/contact" element={<Contact />} />

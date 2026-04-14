@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { socialShareImageMetaNodes } from "@/components/seo/SocialShareImageMeta";
 
 const TermsOfService = () => {
   return (
@@ -10,10 +11,9 @@ const TermsOfService = () => {
         <meta property="og:title" content="Movie Drafter - Terms of Service" />
         <meta property="og:description" content="Read Movie Drafter's Terms of Service to understand the rules and guidelines for using our movie draft platform." />
         <meta property="og:url" content="https://moviedrafter.com/terms-of-service" />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        {socialShareImageMetaNodes()}
         <meta name="twitter:title" content="Movie Drafter - Terms of Service" />
         <meta name="twitter:description" content="Read Movie Drafter's Terms of Service to understand the rules and guidelines for using our movie draft platform." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
       </Helmet>
       <div 
         className="min-h-screen w-full flex flex-col items-center justify-start"

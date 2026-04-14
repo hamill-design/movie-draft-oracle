@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import DraftHeader from '@/components/DraftHeader';
 import DraftInterface from '@/components/DraftInterface';
 import { MultiplayerDraftInterface } from '@/components/MultiplayerDraftInterface';
@@ -261,7 +262,7 @@ const Index = () => {
   // Show loading state
   if (loading || loadingExistingDraft) {
     const loadTitle = loadingExistingDraft ? 'Movie Drafter - Loading draft' : 'Movie Drafter - Draft';
-    const loadDesc = 'Create and manage your movie draft on Movie Drafter. Pick your favorite films across categories and compete with friends.';
+    const loadDesc = 'Play the movie drafting game on Movie Drafter: fantasy movie drafts, category picks, and competing with friends in your cinema drafting session.';
     return (
       <>
         <Helmet>
@@ -271,10 +272,9 @@ const Index = () => {
           <meta property="og:title" content={loadTitle} />
           <meta property="og:description" content={loadDesc} />
           <meta property="og:url" content={draftCanonical} />
-          <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+          {socialShareImageMetaNodes()}
           <meta name="twitter:title" content={loadTitle} />
           <meta name="twitter:description" content={loadDesc} />
-          <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
         </Helmet>
         <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
           <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>
@@ -330,7 +330,7 @@ const Index = () => {
     // Ensure we have required properties before rendering local draft
     if (!finalDraftState.option || !finalDraftState.theme) {
       const loadTitle = 'Movie Drafter - Loading draft';
-      const loadDesc = 'Create and manage your movie draft on Movie Drafter. Pick your favorite films across categories and compete with friends.';
+      const loadDesc = 'Play the movie drafting game on Movie Drafter: fantasy movie drafts, category picks, and competing with friends in your cinema drafting session.';
       return (
         <>
           <Helmet>
@@ -340,10 +340,9 @@ const Index = () => {
             <meta property="og:title" content={loadTitle} />
             <meta property="og:description" content={loadDesc} />
             <meta property="og:url" content={draftCanonical} />
-            <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+            {socialShareImageMetaNodes()}
             <meta name="twitter:title" content={loadTitle} />
             <meta name="twitter:description" content={loadDesc} />
-            <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
           </Helmet>
           <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
             <div style={{color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px'}}>Loading draft...</div>
@@ -357,15 +356,14 @@ const Index = () => {
     <>
       <Helmet>
         <title>{getPageTitle()}</title>
-        <meta name="description" content="Create and manage your movie draft. Pick your favorite films across different categories and compete with friends." />
+        <meta name="description" content="Play the movie drafting game: pick films across categories, run fantasy movie drafts with friends, and compete on Movie Drafter." />
         <link rel="canonical" href={draftCanonical} />
         <meta property="og:title" content={getPageTitle()} />
-        <meta property="og:description" content="Create and manage your movie draft. Pick your favorite films across different categories and compete with friends." />
+        <meta property="og:description" content="Play the movie drafting game: pick films across categories, run fantasy movie drafts with friends, and compete on Movie Drafter." />
         <meta property="og:url" content={draftCanonical} />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        {socialShareImageMetaNodes()}
         <meta name="twitter:title" content={getPageTitle()} />
-        <meta name="twitter:description" content="Create and manage your movie draft. Pick your favorite films across different categories and compete with friends." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        <meta name="twitter:description" content="Play the movie drafting game: pick films across categories, run fantasy movie drafts with friends, and compete on Movie Drafter." />
       </Helmet>
       <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <div className="container mx-auto px-4 py-8">

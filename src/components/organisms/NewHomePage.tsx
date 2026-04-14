@@ -106,11 +106,11 @@ export function NewHomePage() {
                   <div className="flex items-center gap-2">
                     <User size={24} className="text-brand-primary" />
                     <Heading as="h3" size="h5" font="brockmann-medium" className="text-text-primary">
-                      Search for a Person
+                      Search Actors, Directors, Writers...
                     </Heading>
                   </div>
                   <Input
-                    placeholder="Search for an actor or director you'd like to draft"
+                    placeholder="Search actors, directors, writers..."
                     className="font-brockmann-medium"
                   />
                 </div>
@@ -165,7 +165,7 @@ export function NewHomePage() {
 
                 {/* Multiplayer Notice */}
                 <div className="p-4 bg-teal-100 border border-teal-700 rounded flex items-center gap-2">
-                  <Mail size={24} className="text-teal-700" />
+                  <Mail size={24} className="shrink-0 text-teal-700 max-md:hidden" />
                   <div className="flex-1">
                     <Text size="sm" className="text-teal-700">
                       <span className="font-bold font-brockmann-bold">Multiplayer Mode:</span>

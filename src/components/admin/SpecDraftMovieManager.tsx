@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Search, X, Loader2, CheckCircle2, Film, CheckSquare2, Edit2, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { SpecDraftWithMovies, SpecDraftMovie } from '@/hooks/useSpecDraftsAdmin';
@@ -29,6 +30,115 @@ interface MovieSearchResult {
   revenue?: number;
   isBlockbuster?: boolean;
   isSequel?: boolean;
+  /** From fetch-movies `description` (TMDB overview) */
+  description?: string | null;
+}
+
+function normalizeMovieOverview(raw: string | null | undefined): string | null {
+  if (!raw || typeof raw !== 'string') return null;
+  const t = raw.trim();
+  if (!t || t === 'No description available') return null;
+  return t;
+}
+
+/** Theme landing (/special-draft/:slug) copy — stored on spec_draft_movies */
+function SpecDraftMovieThemeCopyEditor({
+  movie,
+  onSaved,
+}: {
+  movie: { id: string; movie_overview?: string | null; seo_blurb?: string | null };
+  onSaved: () => void;
+}) {
+  const [overview, setOverview] = useState(() => movie.movie_overview ?? '');
+  const [blurb, setBlurb] = useState(() => movie.seo_blurb ?? '');
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    setOverview(movie.movie_overview ?? '');
+    setBlurb(movie.seo_blurb ?? '');
+  }, [movie.id, movie.movie_overview, movie.seo_blurb]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('spec_draft_movies' as never)
+        .update({
+          movie_overview: overview.trim() || null,
+          seo_blurb: blurb.trim() || null,
+        } as never)
+        .eq('id', movie.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Saved',
+        description: 'Theme page copy updated.',
+      });
+      onSaved();
+    } catch (err) {
+      console.error('Save theme copy:', err);
+      toast({
+        title: 'Error',
+        description: err instanceof Error ? err.message : 'Failed to save copy',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="border-t border-greyscale-blue-200 pt-4 space-y-3 w-full">
+      <p
+        className="text-xs text-greyscale-blue-600 m-0"
+        style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
+      >
+        Public theme page (/special-draft/…)
+      </p>
+      <div className="space-y-1">
+        <Label
+          className="text-xs text-greyscale-blue-700"
+          style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
+        >
+          Overview (synopsis)
+        </Label>
+        <Textarea
+          value={overview}
+          onChange={(e) => setOverview(e.target.value)}
+          placeholder="Usually filled from TMDB when you add the film; edit for clarity or length."
+          rows={4}
+          className="text-sm border-greyscale-blue-300"
+        />
+      </div>
+      <div className="space-y-1">
+        <Label
+          className="text-xs text-greyscale-blue-700"
+          style={{ fontFamily: 'Brockmann', fontWeight: 500 }}
+        >
+          SEO blurb (optional)
+        </Label>
+        <Textarea
+          value={blurb}
+          onChange={(e) => setBlurb(e.target.value)}
+          placeholder="If set, this replaces the overview on the public theme guide."
+          rows={2}
+          className="text-sm border-greyscale-blue-300"
+        />
+      </div>
+      <Button
+        type="button"
+        variant="secondary"
+        size="sm"
+        className="font-brockmann"
+        onClick={handleSave}
+        disabled={saving}
+      >
+        {saving ? 'Saving…' : 'Save theme copy'}
+      </Button>
+    </div>
+  );
 }
 
 // CustomCheckbox Component (reused from EnhancedCategoriesForm)
@@ -232,6 +342,7 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
             revenue: movie.revenue || null,
             isBlockbuster: movie.isBlockbuster || (movie.revenue && movie.revenue >= 50000000),
             isSequel: movie.isSequel === true,
+            description: typeof movie.description === 'string' ? movie.description : null,
           };
         });
 
@@ -307,6 +418,8 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
           movie_year: movie.year ?? null,
           movie_poster_path: movie.posterPath ?? null,
           movie_genres: movie.genres || [],
+          movie_overview: normalizeMovieOverview(movie.description ?? null),
+          seo_blurb: null,
           oscar_status: movie.oscarStatus ?? null,
           revenue: movie.revenue ?? null,
           is_sequel: movie.isSequel === true,
@@ -736,6 +849,8 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
                           </div>
                         )}
                       </div>
+
+                      <SpecDraftMovieThemeCopyEditor movie={movie} onSaved={onMovieAdded} />
                     </div>
                   </div>
 

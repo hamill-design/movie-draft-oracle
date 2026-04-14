@@ -1,5 +1,6 @@
 import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
+import { socialShareImageMetaNodes } from "@/components/seo/SocialShareImageMeta";
 
 const About = () => {
   const navigate = useNavigate();
@@ -7,16 +8,15 @@ const About = () => {
   return (
     <>
       <Helmet>
-        <title>Movie Drafter - About</title>
-        <meta name="description" content="Learn about Movie Drafter - a competitive fantasy movie drafting platform where strategy meets cinema." />
+        <title>Movie Drafter - About the movie drafting game</title>
+        <meta name="description" content="Movie Drafter is a competitive movie drafting game and cinema drafting tool where fantasy movie drafts meet strategy and film taste." />
         <link rel="canonical" href="https://moviedrafter.com/about" />
-        <meta property="og:title" content="Movie Drafter - About" />
-        <meta property="og:description" content="Learn about Movie Drafter - a competitive fantasy movie drafting platform where strategy meets cinema." />
+        <meta property="og:title" content="Movie Drafter - About the movie drafting game" />
+        <meta property="og:description" content="Movie Drafter is a competitive movie drafting game and cinema drafting tool where fantasy movie drafts meet strategy and film taste." />
         <meta property="og:url" content="https://moviedrafter.com/about" />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
-        <meta name="twitter:title" content="Movie Drafter - About" />
-        <meta name="twitter:description" content="Learn about Movie Drafter - a competitive fantasy movie drafting platform where strategy meets cinema." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        {socialShareImageMetaNodes()}
+        <meta name="twitter:title" content="Movie Drafter - About the movie drafting game" />
+        <meta name="twitter:description" content="Movie Drafter is a competitive movie drafting game and cinema drafting tool where fantasy movie drafts meet strategy and film taste." />
       </Helmet>
       <div 
         className="min-h-screen w-full flex flex-col items-center justify-start"

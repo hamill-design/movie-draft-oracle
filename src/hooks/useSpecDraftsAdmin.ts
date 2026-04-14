@@ -24,6 +24,10 @@ export interface SpecDraftMovie {
   movie_year: number | null;
   movie_poster_path: string | null;
   movie_genres: number[] | null;
+  /** TMDB-style synopsis for /special-draft/:slug pages (truncated when seo_blurb is empty) */
+  movie_overview?: string | null;
+  /** Optional curated copy; overrides movie_overview on public theme pages */
+  seo_blurb?: string | null;
   oscar_status: string | null;
   revenue: number | null;
   is_sequel?: boolean;

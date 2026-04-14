@@ -13,8 +13,8 @@ const Footer = () => {
       <InlineAd className="py-4" />
       <footer className="border-t border-brand-primary bg-greyscale-blue-900 backdrop-blur-sm">
       <div className="w-full px-6 py-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex-1 min-w-80 flex flex-col items-start justify-start">
+        <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-start sm:gap-x-6">
+          <div className="min-w-0 flex flex-col items-start justify-start">
             <p className="text-sm font-brockmann font-normal text-greyscale-blue-200 leading-5">
               © 2024 Movie Drafter. All rights reserved.
             </p>
@@ -39,7 +39,7 @@ const Footer = () => {
             </p>
           </div>
           
-          <div className="flex-1 min-w-80 flex items-center justify-center">
+          <div className="flex justify-center sm:pt-0.5">
             <a
               href="https://www.instagram.com/moviedrafter/"
               target="_blank"
@@ -51,13 +51,27 @@ const Footer = () => {
             </a>
           </div>
           
-          <div className="flex-1 min-w-80 flex items-center justify-end gap-4">
-            <div className="w-full md:w-80 md:min-w-80 flex flex-col md:flex-row items-end md:items-center justify-end gap-2 md:gap-4 flex-nowrap whitespace-nowrap">
+          <div className="flex min-w-0 flex-col items-end justify-end gap-3 sm:justify-self-end">
+            <div className="flex w-full max-w-lg flex-wrap items-center justify-end gap-x-3 gap-y-2">
               <Link 
                 to="/about" 
                 className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
               >
                 About
+              </Link>
+              <Separator orientation="vertical" className="hidden md:block h-4 bg-greyscale-blue-200" />
+              <Link
+                to="/special-draft"
+                className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
+              >
+                Special drafts
+              </Link>
+              <Separator orientation="vertical" className="hidden md:block h-4 bg-greyscale-blue-200" />
+              <Link
+                to="/how-to-draft"
+                className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
+              >
+                How to draft
               </Link>
               <Separator orientation="vertical" className="hidden md:block h-4 bg-greyscale-blue-200" />
               <Link 
@@ -81,6 +95,20 @@ const Footer = () => {
                 Contact Support
               </button>
             </div>
+            <a
+              href="https://www.producthunt.com/products/movie-drafter?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-movie-drafter"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0"
+            >
+              <img
+                alt="Movie Drafter - The web-app for playing Movie Draft games | Product Hunt"
+                width={250}
+                height={54}
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1120116&theme=dark&t=1776086005783"
+                className="max-w-full h-auto"
+              />
+            </a>
           </div>
         </div>
       </div>

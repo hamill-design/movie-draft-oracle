@@ -1,10 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Trophy, Users, RefreshCw, Vote } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { useToast } from '@/hooks/use-toast';
@@ -12,11 +10,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { DraftPick } from '@/hooks/useDrafts';
 import TeamRoster from '@/components/TeamRoster';
 import ShareResultsButton from '@/components/ShareResultsButton';
-import { getScoreColor, getScoreGrade, calculateDetailedScore } from '@/utils/scoreCalculator';
+import { calculateDetailedScore } from '@/utils/scoreCalculator';
 import RankBadge from '@/components/RankBadge';
 import { storePendingDraft } from '@/utils/draftStorage';
 import { fetchOscarCacheMap, mergePicksOscarWithCache } from '@/utils/oscarPickSync';
 import { mergeOscarStatusFromSources } from '@/utils/movieCategoryUtils';
+import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
+import { dynamicOgImageUrl, OG_IMAGE_ALT, SITE_ORIGIN } from '@/config/socialShareMeta';
 
 interface TeamScore {
   playerName: string;
@@ -34,7 +34,7 @@ const FinalScores = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading, isGuest, guestSession, getOrCreateGuestSession } = useAuth();
-  const { getDraftWithPicks, autoSaveDraft, submitDraftVote } = useDraftOperations();
+  const { getDraftWithPicks, autoSaveDraft } = useDraftOperations();
   const { toast } = useToast();
   
   const [draft, setDraft] = useState<any>(null);
@@ -42,13 +42,11 @@ const FinalScores = () => {
   const [teamScores, setTeamScores] = useState<TeamScore[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [enrichingScores, setEnrichingScores] = useState(false);
-  const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
   const [hoveredTeam, setHoveredTeam] = useState<string>('');
   const [isPublicView, setIsPublicView] = useState(false);
   const [votes, setVotes] = useState<{ voted_participant_id: string | null; voted_player_name: string | null; voter_user_id: string | null; voter_guest_session_id: string | null }[]>([]);
   const [draftParticipants, setDraftParticipants] = useState<{ id: string; participant_name: string; is_ai?: boolean }[]>([]);
-  const [submittingVote, setSubmittingVote] = useState(false);
   const [localVotesFromState, setLocalVotesFromState] = useState<Record<string, string> | null>(null);
 
   const votingMeta = useMemo(() => (
@@ -125,7 +123,7 @@ const FinalScores = () => {
       const { picks: refreshedPicks } = await getDraftWithPicks(draftId!);
       const rawPicks = refreshedPicks || [];
       const fixCacheMap = await fetchOscarCacheMap(supabase, rawPicks.map((p) => p.movie_id));
-      const mergedAfterFix = mergePicksOscarWithCache(rawPicks, fixCacheMap);
+      const mergedAfterFix = mergePicksOscarWithCache<DraftPick>((rawPicks || []) as DraftPick[], fixCacheMap);
       setPicks(mergedAfterFix);
       const refreshedTeams = processTeamScores(mergedAfterFix);
       setTeamScores(refreshedTeams);
@@ -161,7 +159,7 @@ const FinalScores = () => {
           supabase,
           (stateData.picks || []).map((p: any) => p.movie_id)
         );
-        const mergedNavPicks = mergePicksOscarWithCache(stateData.picks || [], navCacheMap);
+        const mergedNavPicks = mergePicksOscarWithCache<DraftPick>((stateData.picks || []) as DraftPick[], navCacheMap);
         setDraft(stateData.draftData);
         setPicks(mergedNavPicks);
         setLocalVotesFromState(stateData.localVotes ?? null);
@@ -209,21 +207,21 @@ const FinalScores = () => {
                 isLocal: true
               });
               // Convert picks to DraftPick format, preserving scoring data
-              const formattedPicks = localDraft.picks.map((pick: any, index: number) => {
+              const formattedPicks: DraftPick[] = localDraft.picks.map((pick: any, index: number) => {
                 const pickWithScoring = pick as any;
+                const movieId = pick.movie?.id;
                 return {
-                  id: pick.movie?.id || `local_${index}`,
+                  id: String(movieId ?? `local_${index}`),
                   draft_id: localDraft.id,
-                  player_id: pick.playerId,
+                  player_id: typeof pick.playerId === 'number' ? pick.playerId : Number(pick.playerId) || 0,
                   player_name: pick.playerName,
-                  movie_id: pick.movie?.id || '',
+                  movie_id: typeof movieId === 'number' ? movieId : Number(movieId) || 0,
                   movie_title: pick.movie?.title || '',
-                  movie_year: pick.movie?.year || null,
+                  movie_year: pick.movie?.year ?? null,
                   movie_genre: pick.movie?.genre || 'Unknown',
                   category: pick.category,
                   pick_order: pick.pick_order || index + 1,
                   poster_path: pick.movie?.posterPath || pick.movie?.poster_path || null,
-                  // Preserve scoring data if available
                   calculated_score: pickWithScoring.calculated_score ?? null,
                   rt_critics_score: pickWithScoring.rt_critics_score ?? null,
                   rt_audience_score: pickWithScoring.rt_audience_score ?? null,
@@ -233,11 +231,11 @@ const FinalScores = () => {
                   movie_revenue: pickWithScoring.movie_revenue ?? null,
                   oscar_status: pickWithScoring.oscar_status ?? null,
                   scoring_data_complete: pickWithScoring.scoring_data_complete ?? false
-                };
+                } as DraftPick;
               });
               const localCacheMap = await fetchOscarCacheMap(
                 supabase,
-                formattedPicks.map((p) => p.movie_id)
+                formattedPicks.map((p: DraftPick) => p.movie_id)
               );
               const mergedLocalPicks = mergePicksOscarWithCache(formattedPicks, localCacheMap);
               setPicks(mergedLocalPicks);
@@ -331,7 +329,7 @@ const FinalScores = () => {
         supabase,
         (picksData || []).map((p) => p.movie_id)
       );
-      const mergedDbPicks = mergePicksOscarWithCache(picksData || [], dbCacheMap);
+      const mergedDbPicks = mergePicksOscarWithCache<DraftPick>((picksData || []) as DraftPick[], dbCacheMap);
 
       setDraft(draftData);
       setPicks(mergedDbPicks);
@@ -637,7 +635,7 @@ const FinalScores = () => {
         }
       }
 
-      const picksAfterCache = mergePicksOscarWithCache(enrichedPicks, cacheMap);
+      const picksAfterCache = mergePicksOscarWithCache<DraftPick>(enrichedPicks, cacheMap);
 
       // Update state with enriched picks (don't try to fetch from database for local drafts)
       setPicks(picksAfterCache);
@@ -675,26 +673,6 @@ const FinalScores = () => {
     });
     return map;
   }, [votes, draftParticipants, localVotesFromState]);
-
-  const myVote = useMemo(() => votes.find(
-    v => (user && v.voter_user_id === user.id) || (guestSession && v.voter_guest_session_id === guestSession.id)
-  ), [votes, user, guestSession]);
-
-  const handlePublicVote = async (participantId: string | null, playerName: string | null) => {
-    if (!draftId) return;
-    setSubmittingVote(true);
-    try {
-      await submitDraftVote(draftId, { participantId: participantId ?? undefined, playerName: playerName ?? undefined });
-      if (guestSession) await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
-      const { data, error } = await supabase.from('draft_votes').select('voted_participant_id, voted_player_name, voter_user_id, voter_guest_session_id').eq('draft_id', draftId);
-      if (!error) setVotes(data ?? []);
-      toast({ title: 'Vote recorded' });
-    } catch (e: any) {
-      toast({ title: 'Error', description: e?.message ?? 'Failed to submit vote', variant: 'destructive' });
-    } finally {
-      setSubmittingVote(false);
-    }
-  };
 
   const teamScoresWithVotes = useMemo(() => {
     const n = teamScores.length;
@@ -800,39 +778,6 @@ const FinalScores = () => {
 
     // Sort by average score (descending)
     return teams.sort((a, b) => b.averageScore - a.averageScore);
-  };
-
-  const getRankingBadgeStyle = (index: number) => {
-    const rank = index + 1;
-    
-    if (rank === 1) {
-      // Gold - 1st place with gradient border effect using wrapper approach
-      return {
-        background: 'linear-gradient(to bottom right, #FFF2B2, #F0AA11)',
-        padding: '2px',
-        color: 'var(--Greyscale-(Blue)-800, #2B2D2D)'
-      };
-    } else if (rank === 2) {
-      // Silver - 2nd place with gradient border effect using wrapper approach
-      return {
-        background: 'linear-gradient(to bottom right, #E5E5E5, #666666)',
-        padding: '2px',
-        color: 'var(--Greyscale-(Blue)-800, #2B2D2D)'
-      };
-    } else if (rank === 3) {
-      // Bronze - 3rd place with gradient border effect using wrapper approach
-      return {
-        background: 'linear-gradient(to bottom right, #FFAE78, #95430C)',
-        padding: '2px',
-        color: 'var(--Greyscale-(Blue)-50, #F8F8F8)'
-      };
-    } else {
-      // 4th place and beyond - plain dark
-      return {
-        background: 'var(--Greyscale-800, #4D4D4D)',
-        color: 'var(--UI-Primary, white)'
-      };
-    }
   };
 
   const handleAuthRedirect = async () => {
@@ -956,32 +901,30 @@ const FinalScores = () => {
     return null;
   }
 
-  // Count movies that need enrichment (incomplete OR score of 0)
-  const incompletePicks = picks.filter(pick => {
-    const pickWithScoring = pick as any;
-    return !pickWithScoring.scoring_data_complete || 
-           pickWithScoring.calculated_score === null || 
-           pickWithScoring.calculated_score === 0;
-  }).length;
-
   const pageTitle = draft?.title ? `Movie Drafter - ${draft.title} Final Scores` : 'Movie Drafter - Final Scores';
   const pageDescription = draft?.title 
-    ? `View the final scores for ${draft.title} movie draft. See who picked the best movies and compare your results.`
-    : 'View the final scores for your movie draft. See who picked the best movies and compare your results.';
+    ? `Final scores for the “${draft.title}” movie drafting game on Movie Drafter—see who won your fantasy movie draft.`
+    : 'Final scores for your movie drafting game on Movie Drafter—see who won your fantasy movie draft.';
+  const canonicalScores = `${SITE_ORIGIN}/final-scores/${draftId}`;
+  const scoresHeadline = draft?.title?.trim() || 'Movie draft';
+  const shareOgUrl = dynamicOgImageUrl({
+    title: `Final scores: ${scoresHeadline}`,
+    subtitle: 'See who won on Movie Drafter',
+  });
+  const shareOgAlt = `Final scores for the Movie Drafter draft “${scoresHeadline}”`.slice(0, 200);
 
   return (
     <>
       <Helmet>
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
-        <link rel="canonical" href={`https://moviedrafter.com/final-scores/${draftId}`} />
+        <link rel="canonical" href={canonicalScores} />
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDescription} />
-        <meta property="og:url" content={`https://moviedrafter.com/final-scores/${draftId}`} />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        <meta property="og:url" content={canonicalScores} />
+        {socialShareImageMetaNodes({ imageUrl: shareOgUrl, imageAlt: shareOgAlt || OG_IMAGE_ALT })}
         <meta name="twitter:title" content={pageTitle} />
         <meta name="twitter:description" content={pageDescription} />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
       </Helmet>
       <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <div className="container mx-auto px-4 py-8">
@@ -1062,8 +1005,13 @@ const FinalScores = () => {
               {teamScoresWithVotes.map((team, index) => {
                 const isSelected = selectedTeam === team.playerName;
                 const isHovered = hoveredTeam === team.playerName;
-                const isFirstPlace = index === 0;
-                
+                const topMovie = team.picks
+                  .filter(pick => (pick as any).calculated_score > 0)
+                  .sort((a, b) => (b as any).calculated_score - (a as any).calculated_score)[0];
+                const scoreSubtitle = topMovie
+                  ? `Top Movie: ${topMovie.movie_title}`
+                  : `${team.completedPicks}/${team.totalPicks} movies scored`;
+
                 return (
                   <div
                     key={team.playerName}
@@ -1085,23 +1033,24 @@ const FinalScores = () => {
                     }}
                   >
                     {/* Badge */}
-                    <RankBadge rank={index + 1} size={32} />
-                    <div className="flex-1 pb-0.5 flex flex-col gap-0.5">
-                      <div className="self-stretch flex flex-col text-greyscale-blue-100 text-base font-brockmann font-semibold leading-6 tracking-[0.32px]">
+                    <RankBadge rank={index + 1} size={32} className="shrink-0" />
+                    <div className="min-w-0 flex-1 pb-0.5 flex flex-col gap-0.5 overflow-hidden">
+                      <div
+                        className="truncate text-greyscale-blue-100 text-base font-brockmann font-semibold leading-6 tracking-[0.32px]"
+                        title={team.playerName}
+                      >
                         {team.playerName}
                       </div>
-                      <div className={`self-stretch flex flex-col text-sm font-brockmann font-normal leading-5 ${
-                        isSelected ? 'text-greyscale-blue-100' : 'text-greyscale-blue-300'
-                      }`}>
-                        {(() => {
-                          const topMovie = team.picks
-                            .filter(pick => (pick as any).calculated_score > 0)
-                            .sort((a, b) => (b as any).calculated_score - (a as any).calculated_score)[0];
-                          return topMovie ? `Top Movie: ${topMovie.movie_title}` : `${team.completedPicks}/${team.totalPicks} movies scored`;
-                        })()}
+                      <div
+                        className={`truncate text-sm font-brockmann font-normal leading-5 ${
+                          isSelected ? 'text-greyscale-blue-100' : 'text-greyscale-blue-300'
+                        }`}
+                        title={scoreSubtitle}
+                      >
+                        {scoreSubtitle}
                       </div>
                     </div>
-                    <div className="flex flex-col items-end">
+                    <div className="shrink-0 flex flex-col items-end">
                       <div className={`text-right flex flex-col items-end text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px] ${
                         isSelected ? 'text-greyscale-blue-100' : 'text-purple-300'
                       }`}>

@@ -1,7 +1,7 @@
 {
   "name": "Movie Drafter",
   "short_name": "Movie Drafter",
-  "description": "Draft your favorite movies and compete with friends",
+  "description": "Movie drafting game for friends — fantasy movie drafts and a cinema drafting tool.",
   "icons": [
     {
       "src": "/favicon-192x192.png",

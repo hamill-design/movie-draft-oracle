@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { syncMarketingAudience } from '@/lib/marketingAudienceSync';
@@ -540,10 +541,9 @@ const Profile = () => {
         <meta property="og:title" content="Movie Drafter - Your Profile" />
         <meta property="og:description" content="View and manage your Movie Drafter profile. See all your drafts, track your progress, and manage your account settings." />
         <meta property="og:url" content="https://moviedrafter.com/profile" />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        {socialShareImageMetaNodes()}
         <meta name="twitter:title" content="Movie Drafter - Your Profile" />
         <meta name="twitter:description" content="View and manage your Movie Drafter profile. See all your drafts, track your progress, and manage your account settings." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
       </Helmet>
       <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <div className="container mx-auto px-4 py-8">

@@ -43,16 +43,51 @@ async function launchBrowser() {
   });
 }
 
-/** Paths must match react-router (no trailing slash). */
-const ROUTES = [
+/** Default API (same fallbacks as `src/integrations/supabase/client.ts`) so local builds can prerender theme URLs. */
+const SUPABASE_URL = (process.env.VITE_SUPABASE_URL || "https://zduruulowyopdstihfwk.supabase.co").replace(/\/$/, "");
+const SUPABASE_ANON_KEY =
+  process.env.VITE_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkdXJ1dWxvd3lvcGRzdGloZndrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEzMTU1NTYsImV4cCI6MjA2Njg5MTU1Nn0.MzDpL-_nYR0jNEO-qcAf37tPz-b5DZpDCVrpy1F_saY";
+
+/** Paths must match react-router (no trailing slash). Theme detail routes appended after fetch. */
+const BASE_ROUTES = [
   "/",
   "/about",
   "/contact",
   "/learn-more",
+  "/how-to-draft",
+  "/special-draft",
   "/privacy-policy",
   "/terms-of-service",
   "/draft",
 ];
+
+async function fetchThemeSlugRoutes() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/spec_drafts?select=slug&is_hidden=eq.false`,
+      {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      }
+    );
+    if (!res.ok) {
+      console.warn("prerender: spec_drafts slug fetch HTTP", res.status);
+      return [];
+    }
+    const rows = await res.json();
+    if (!Array.isArray(rows)) return [];
+    return rows
+      .map((r) => (typeof r.slug === "string" ? r.slug.trim() : ""))
+      .filter(Boolean)
+      .map((slug) => `/special-draft/${slug}`);
+  } catch (e) {
+    console.warn("prerender: could not fetch theme slugs", e?.message || e);
+    return [];
+  }
+}
 
 function waitForServer(url, { maxMs = 120_000, intervalMs = 250 } = {}) {
   const start = Date.now();
@@ -102,6 +137,12 @@ async function main() {
 
   try {
     await waitForServer(BASE);
+
+    const themeRoutes = await fetchThemeSlugRoutes();
+    const ROUTES = [...BASE_ROUTES, ...themeRoutes];
+    if (themeRoutes.length) {
+      console.log("prerender: +", themeRoutes.length, "theme URLs");
+    }
 
     const browser = await launchBrowser();
     const page = await browser.newPage();

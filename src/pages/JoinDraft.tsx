@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
@@ -234,16 +235,15 @@ export const JoinDraft = () => {
   return (
     <>
       <Helmet>
-        <title>Movie Drafter - Join Draft</title>
-        <meta name="description" content="Join an existing movie draft by entering an invite code or following an invitation link. Compete with friends and see who picks the best movies." />
+        <title>Movie Drafter - Join a movie drafting game</title>
+        <meta name="description" content="Join a movie drafting game with an invite code or link—fantasy movie drafts and multiplayer picks on Movie Drafter." />
         <link rel="canonical" href={`https://moviedrafter.com/join-draft${draftId ? `/${draftId}` : ''}`} />
-        <meta property="og:title" content="Movie Drafter - Join Draft" />
-        <meta property="og:description" content="Join an existing movie draft by entering an invite code or following an invitation link. Compete with friends and see who picks the best movies." />
+        <meta property="og:title" content="Movie Drafter - Join a movie drafting game" />
+        <meta property="og:description" content="Join a movie drafting game with an invite code or link—fantasy movie drafts and multiplayer picks on Movie Drafter." />
         <meta property="og:url" content={`https://moviedrafter.com/join-draft${draftId ? `/${draftId}` : ''}`} />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
-        <meta name="twitter:title" content="Movie Drafter - Join Draft" />
-        <meta name="twitter:description" content="Join an existing movie draft by entering an invite code or following an invitation link. Compete with friends and see who picks the best movies." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        {socialShareImageMetaNodes()}
+        <meta name="twitter:title" content="Movie Drafter - Join a movie drafting game" />
+        <meta name="twitter:description" content="Join a movie drafting game with an invite code or link—fantasy movie drafts and multiplayer picks on Movie Drafter." />
       </Helmet>
       <div className="min-h-screen flex items-center justify-center p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <Card className="w-full max-w-md">

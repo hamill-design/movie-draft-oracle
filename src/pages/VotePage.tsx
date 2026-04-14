@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
-import { Vote, Check, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { useToast } from '@/hooks/use-toast';
@@ -10,14 +10,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { DraftPick } from '@/hooks/useDrafts';
 import DraftBoard from '@/components/DraftBoard';
 import { getCleanActorName } from '@/lib/utils';
+import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
+import { SITE_ORIGIN, dynamicOgImageUrl, OG_IMAGE_ALT } from '@/config/socialShareMeta';
 
 interface RosterRow {
   playerName: string;
   picks: DraftPick[];
 }
-
-const SITE_ORIGIN = 'https://moviedrafter.com';
-const OG_IMAGE = `${SITE_ORIGIN}/og-image.jpg?v=2`;
 
 const VotePage = () => {
   const { draftId } = useParams<{ draftId: string }>();
@@ -249,7 +248,7 @@ const VotePage = () => {
 
   if (loading) {
     const loadTitle = 'Movie Drafter - Loading vote';
-    const loadDesc = 'Loading public voting for a movie draft on Movie Drafter.';
+    const loadDesc = 'Loading public voting for a movie drafting game on Movie Drafter.';
     return (
       <>
         <Helmet>
@@ -259,10 +258,9 @@ const VotePage = () => {
           <meta property="og:title" content={loadTitle} />
           <meta property="og:description" content={loadDesc} />
           <meta property="og:url" content={voteCanonical} />
-          <meta property="og:image" content={OG_IMAGE} />
+          {socialShareImageMetaNodes()}
           <meta name="twitter:title" content={loadTitle} />
           <meta name="twitter:description" content={loadDesc} />
-          <meta name="twitter:image" content={OG_IMAGE} />
         </Helmet>
         <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
           <div className="text-greyscale-blue-300 font-brockmann">Loading...</div>
@@ -283,10 +281,9 @@ const VotePage = () => {
           <meta property="og:title" content={errTitle} />
           <meta property="og:description" content={errDesc} />
           <meta property="og:url" content={voteCanonical} />
-          <meta property="og:image" content={OG_IMAGE} />
+          {socialShareImageMetaNodes()}
           <meta name="twitter:title" content={errTitle} />
           <meta name="twitter:description" content={errDesc} />
-          <meta name="twitter:image" content={OG_IMAGE} />
         </Helmet>
         <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
           <p className="text-greyscale-blue-200 font-brockmann text-center">{error ?? 'Draft not found.'}</p>
@@ -303,8 +300,14 @@ const VotePage = () => {
     ? (myVote && participants.find((p) => p.id === myVote.voted_participant_id)?.participant_name) ?? myVote?.voted_player_name
     : myVote?.voted_player_name;
 
-  const pageTitle = `Movie Drafter - Vote on ${draft.title ?? 'Movie Draft'}`;
-  const pageDescription = `Cast your vote for “${draft.title ?? 'this movie draft'}” on Movie Drafter. Pick who had the best roster after the draft.`;
+  const pageTitle = `Movie Drafter - Vote on ${draft.title ?? 'movie drafting game'}`;
+  const pageDescription = `Cast your vote on the “${draft.title ?? 'movie drafting game'}” fantasy movie draft—pick the best roster on Movie Drafter.`;
+  const voteTitle = draft.title?.trim() || 'Movie drafting game';
+  const shareOgUrl = dynamicOgImageUrl({
+    title: `Vote: ${voteTitle}`,
+    subtitle: 'Public vote on Movie Drafter',
+  });
+  const shareOgAlt = `Vote on the Movie Drafter draft “${voteTitle}”`.slice(0, 200);
 
   return (
     <>
@@ -315,10 +318,9 @@ const VotePage = () => {
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDescription} />
         <meta property="og:url" content={voteCanonical} />
-        <meta property="og:image" content={OG_IMAGE} />
+        {socialShareImageMetaNodes({ imageUrl: shareOgUrl, imageAlt: shareOgAlt || OG_IMAGE_ALT })}
         <meta name="twitter:title" content={pageTitle} />
         <meta name="twitter:description" content={pageDescription} />
-        <meta name="twitter:image" content={OG_IMAGE} />
       </Helmet>
       <div className="min-h-screen text-foreground" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
         <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col gap-8">

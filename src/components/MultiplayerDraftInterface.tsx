@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAIPick } from '@/hooks/useAIPick';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Clock, Film, Trophy, Loader2, Vote } from 'lucide-react';
+import { Copy, Check, Clock, Film, Trophy, Loader2 } from 'lucide-react';
 import { MultiPersonIcon } from '@/components/icons/MultiPersonIcon';
 import { PersonIcon } from '@/components/icons/PersonIcon';
 import MovieSearch from '@/components/MovieSearch';
@@ -23,9 +23,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { mergeOscarStatusFromSources } from '@/utils/movieCategoryUtils';
 import { QRCodeSVG } from 'qrcode.react';
-
-const SITE_ORIGIN = 'https://moviedrafter.com';
-const OG_IMAGE = `${SITE_ORIGIN}/og-image.jpg?v=2`;
+import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
+import { SITE_ORIGIN, dynamicOgImageUrl, OG_IMAGE_ALT } from '@/config/socialShareMeta';
 
 interface MultiplayerDraftInterfaceProps {
   draftId?: string;
@@ -61,12 +60,10 @@ export const MultiplayerDraftInterface = ({
     picks,
     loading,
     isMyTurn,
-    isConnected,
     createMultiplayerDraft,
     makePick,
     loadDraft,
-    startDraft,
-    manualRefresh
+    startDraft
   } = useMultiplayerDraft(draftId, undefined, participantIdFromParent);
   // Use parent's participantId when available so we don't show "Authentication Required" while parent has session
   const effectiveParticipantId = participantIdFromParent ?? participantId;
@@ -585,9 +582,9 @@ export const MultiplayerDraftInterface = ({
               selectedMovie.year || new Date().getFullYear(),
               selectedMovie.genre || 'Unknown',
               currentCategory,
-              selectedMovie.poster_path,
+              selectedMovie.posterPath ?? undefined,
               aiParticipantId,
-              effectiveParticipantId
+              effectiveParticipantId ?? undefined
             );
             // Success: makePick shows "Pick Made!" toast; no error toast
           } catch (error: any) {
@@ -764,7 +761,7 @@ export const MultiplayerDraftInterface = ({
   const showDraftLoading = (loading || sessionLoading) || (draftId && !draft);
   if (showDraftLoading) {
     const loadTitle = 'Movie Drafter - Loading draft';
-    const loadDesc = 'Loading your multiplayer movie draft on Movie Drafter. Pick films across categories and compete with friends.';
+    const loadDesc = 'Loading your multiplayer movie drafting game on Movie Drafter: fantasy movie draft picks across categories with friends.';
     return (
       <>
         <Helmet>
@@ -774,10 +771,9 @@ export const MultiplayerDraftInterface = ({
           <meta property="og:title" content={loadTitle} />
           <meta property="og:description" content={loadDesc} />
           <meta property="og:url" content={canonicalDraftUrl} />
-          <meta property="og:image" content={OG_IMAGE} />
+          {socialShareImageMetaNodes()}
           <meta name="twitter:title" content={loadTitle} />
           <meta name="twitter:description" content={loadDesc} />
-          <meta name="twitter:image" content={OG_IMAGE} />
         </Helmet>
         <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
           <Loader2 className="h-8 w-8 animate-spin text-purple-300 mb-4" />
@@ -789,8 +785,8 @@ export const MultiplayerDraftInterface = ({
 
   // Only show "Authentication Required" if session is done loading but no participant id (from parent or child)
   if (!sessionLoading && !effectiveParticipantId) {
-    const authTitle = 'Movie Drafter - Join draft';
-    const authDesc = 'Sign in or continue as a guest to join this multiplayer movie draft on Movie Drafter.';
+    const authTitle = 'Movie Drafter - Join movie drafting game';
+    const authDesc = 'Sign in or continue as a guest to join this multiplayer movie drafting game on Movie Drafter.';
     return (
       <>
         <Helmet>
@@ -800,10 +796,9 @@ export const MultiplayerDraftInterface = ({
           <meta property="og:title" content={authTitle} />
           <meta property="og:description" content={authDesc} />
           <meta property="og:url" content={canonicalDraftUrl} />
-          <meta property="og:image" content={OG_IMAGE} />
+          {socialShareImageMetaNodes()}
           <meta name="twitter:title" content={authTitle} />
           <meta name="twitter:description" content={authDesc} />
-          <meta name="twitter:image" content={OG_IMAGE} />
         </Helmet>
         <div className="max-w-4xl mx-auto p-6">
           <Card>
@@ -822,7 +817,7 @@ export const MultiplayerDraftInterface = ({
   // Only show "Draft Not Found" if we don't have a draftId (user navigated directly to invalid URL)
   if (!draft) {
     const nfTitle = 'Movie Drafter - Draft not found';
-    const nfDesc = 'This draft does not exist or you do not have permission to view it. Start a new movie draft on Movie Drafter.';
+    const nfDesc = 'This draft does not exist or you do not have permission to view it. Start a new movie drafting game on Movie Drafter.';
     return (
       <>
         <Helmet>
@@ -832,10 +827,9 @@ export const MultiplayerDraftInterface = ({
           <meta property="og:title" content={nfTitle} />
           <meta property="og:description" content={nfDesc} />
           <meta property="og:url" content={canonicalDraftUrl} />
-          <meta property="og:image" content={OG_IMAGE} />
+          {socialShareImageMetaNodes()}
           <meta name="twitter:title" content={nfTitle} />
           <meta name="twitter:description" content={nfDesc} />
-          <meta name="twitter:image" content={OG_IMAGE} />
         </Helmet>
         <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
           <Card>
@@ -857,7 +851,12 @@ export const MultiplayerDraftInterface = ({
   const isComplete = draft.is_complete;
 
   const pageTitle = `Movie Drafter - ${draft.title}`;
-  const pageDescription = `“${draft.title}” — multiplayer movie draft on Movie Drafter. Pick films across categories and compete with friends.`;
+  const pageDescription = `“${draft.title}” — multiplayer movie drafting game on Movie Drafter. Fantasy movie draft picks across categories with friends.`;
+  const shareOgUrl = dynamicOgImageUrl({
+    title: draft.title,
+    subtitle: 'Multiplayer movie draft — join on Movie Drafter',
+  });
+  const shareOgAlt = `Movie Drafter draft: ${draft.title}`.slice(0, 200);
 
   return (
     <>
@@ -868,10 +867,9 @@ export const MultiplayerDraftInterface = ({
       <meta property="og:title" content={pageTitle} />
       <meta property="og:description" content={pageDescription} />
       <meta property="og:url" content={canonicalDraftUrl} />
-      <meta property="og:image" content={OG_IMAGE} />
+      {socialShareImageMetaNodes({ imageUrl: shareOgUrl, imageAlt: shareOgAlt || OG_IMAGE_ALT })}
       <meta name="twitter:title" content={pageTitle} />
       <meta name="twitter:description" content={pageDescription} />
-      <meta name="twitter:image" content={OG_IMAGE} />
     </Helmet>
     <div className="min-h-screen" style={{
       background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'
@@ -1048,8 +1046,8 @@ export const MultiplayerDraftInterface = ({
                       }}>{draft.current_pick_number}</div>
                     </div>
                   </div>
-                  <div style={{alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex'}}>
-                    <div style={{flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
+                  <div style={{alignSelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', display: 'inline-flex', gap: '12px', minWidth: 0}}>
+                    <div style={{flexShrink: 0, flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex'}}>
                       <div style={{
                         justifyContent: 'center', 
                         display: 'flex', 
@@ -1062,17 +1060,25 @@ export const MultiplayerDraftInterface = ({
                         wordWrap: 'break-word'
                       }}>Current Turn:</div>
                     </div>
-                    <div style={{
-                      justifyContent: 'center', 
-                      display: 'flex', 
-                      flexDirection: 'column', 
-                      color: 'var(--Text-Primary, #FCFFFF)', 
-                      fontSize: '14px', 
-                      fontFamily: 'Brockmann', 
-                      fontWeight: '500', 
-                      lineHeight: '20px', 
-                      wordWrap: 'break-word'
-                    }}>{currentTurnPlayer?.participant_name || 'Unknown'}</div>
+                    <div
+                      title={currentTurnPlayer?.participant_name || 'Unknown'}
+                      style={{
+                        flex: '1 1 0',
+                        minWidth: 0,
+                        justifyContent: 'center',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        color: 'var(--Text-Primary, #FCFFFF)',
+                        fontSize: '14px',
+                        fontFamily: 'Brockmann',
+                        fontWeight: '500',
+                        lineHeight: '20px',
+                        textAlign: 'right',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >{currentTurnPlayer?.participant_name || 'Unknown'}</div>
                   </div>
                 </div>
                 {!isMyTurn && draftHasStarted && (
@@ -1119,20 +1125,28 @@ export const MultiplayerDraftInterface = ({
                         gap: '4px', 
                         display: 'flex'
                       }}>
-                        <div style={{
-                          alignSelf: 'stretch', 
-                          textAlign: 'center', 
-                          justifyContent: 'center', 
-                          display: 'flex', 
-                          flexDirection: 'column', 
-                          color: 'var(--Text-Primary, #FCFFFF)', 
-                          fontSize: '16px', 
-                          fontFamily: 'Brockmann', 
-                          fontWeight: '600', 
-                          lineHeight: '24px', 
-                          letterSpacing: '0.32px', 
-                          wordWrap: 'break-word'
-                        }}>
+                        <div
+                          title={currentTurnPlayer?.participant_name ? `Waiting for ${currentTurnPlayer.participant_name}` : undefined}
+                          style={{
+                            alignSelf: 'stretch',
+                            textAlign: 'center',
+                            justifyContent: 'center',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            color: 'var(--Text-Primary, #FCFFFF)',
+                            fontSize: '16px',
+                            fontFamily: 'Brockmann',
+                            fontWeight: '600',
+                            lineHeight: '24px',
+                            letterSpacing: '0.32px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            minWidth: 0,
+                            paddingLeft: '8px',
+                            paddingRight: '8px',
+                          }}
+                        >
                           Waiting for {currentTurnPlayer?.participant_name}
                         </div>
                         <div style={{
@@ -1377,7 +1391,8 @@ export const MultiplayerDraftInterface = ({
                       display: 'inline-flex'
                     }}>
                       <div style={{
-                        flex: '1 1 0', 
+                        flex: '1 1 0',
+                        minWidth: 0,
                         paddingBottom: '2px', 
                         flexDirection: 'column', 
                         justifyContent: 'flex-start', 
@@ -1389,31 +1404,42 @@ export const MultiplayerDraftInterface = ({
                           alignSelf: 'stretch', 
                           justifyContent: 'space-between', 
                           alignItems: 'center', 
-                          display: 'inline-flex'
+                          display: 'inline-flex',
+                          gap: '8px',
+                          minWidth: 0,
                         }}>
                           <div style={{
-                            flex: '1 1 0', 
+                            flex: '1 1 0',
+                            minWidth: 0,
                             flexDirection: 'column', 
                             justifyContent: 'flex-start', 
                             alignItems: 'flex-start', 
                             display: 'inline-flex'
                           }}>
-                            <div style={{
-                              justifyContent: 'center', 
-                              display: 'flex', 
-                              flexDirection: 'column', 
-                              color: 'var(--Text-Primary, #FCFFFF)', 
-                              fontSize: '16px', 
-                              fontFamily: 'Brockmann', 
-                              fontWeight: '600', 
-                              lineHeight: '24px', 
-                              letterSpacing: '0.32px', 
-                              wordWrap: 'break-word'
-                            }}>
+                            <div
+                              title={participant.participant_name}
+                              style={{
+                                alignSelf: 'stretch',
+                                maxWidth: '100%',
+                                justifyContent: 'center', 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                color: 'var(--Text-Primary, #FCFFFF)', 
+                                fontSize: '16px', 
+                                fontFamily: 'Brockmann', 
+                                fontWeight: '600', 
+                                lineHeight: '24px', 
+                                letterSpacing: '0.32px', 
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
                               {participant.participant_name}
                             </div>
                           </div>
                           <div style={{
+                            flexShrink: 0,
                             justifyContent: 'flex-start', 
                             alignItems: 'center', 
                             gap: '4px', 
@@ -1853,8 +1879,8 @@ export const MultiplayerDraftInterface = ({
                             const pct = total > 0 ? Math.round((count / total) * 100) : 0;
                             return (
                               <div key={p.id} className="w-full flex flex-col justify-start items-start gap-2">
-                                <div className="w-full flex justify-between items-center">
-                                  <span className="text-xs font-brockmann font-normal leading-4 text-[var(--Text-Primary,#FCFFFF)]">{p.participant_name}</span>
+                                <div className="w-full flex justify-between items-center gap-2 min-w-0">
+                                  <span className="min-w-0 truncate text-xs font-brockmann font-normal leading-4 text-[var(--Text-Primary,#FCFFFF)]" title={p.participant_name}>{p.participant_name}</span>
                                   <span className="text-xs font-brockmann font-semibold leading-4 text-[var(--Text-Primary,#FCFFFF)]">{pct}%</span>
                                 </div>
                                 <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'var(--Greyscale-(Purp)-800, #2C2B2D)' }}>
@@ -1879,12 +1905,13 @@ export const MultiplayerDraftInterface = ({
                               type="button"
                               onClick={() => setSelectedVoteParticipantId((prev) => (prev === p.id ? null : p.id))}
                               disabled={submittingVote}
-                              className="w-full min-w-[294px] py-3 px-6 rounded text-center text-sm font-brockmann font-medium leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors"
+                              className="w-full min-w-[294px] max-w-full py-3 px-6 rounded text-center text-sm font-brockmann font-medium leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors truncate"
                               style={{
                                 background: selectedVoteParticipantId === p.id ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
                                 outline: '1px solid var(--Item-Stroke, #49474B)',
                                 outlineOffset: -1,
                               }}
+                              title={p.participant_name}
                             >
                               {p.participant_name}
                             </button>
@@ -1934,7 +1961,11 @@ export const MultiplayerDraftInterface = ({
               <div 
                 onClick={() => finalScoresClickable && navigate(`/final-scores/${draft.id}`)}
                 onMouseEnter={(e) => { if (finalScoresClickable) e.currentTarget.style.background = '#794DFF'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = finalScoresClickable ? 'var(--Purple-500, #680AFF)' : undefined; }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = finalScoresClickable
+                    ? 'var(--Purple-500, #680AFF)'
+                    : 'var(--greyscale-purp-800, #2a2a2e)';
+                }}
                 style={{
                   paddingLeft: '24px', 
                   paddingRight: '24px', 

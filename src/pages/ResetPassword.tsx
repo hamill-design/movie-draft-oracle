@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -183,10 +184,9 @@ const ResetPassword = () => {
         <meta property="og:title" content="Movie Drafter - Reset Password" />
         <meta property="og:description" content="Reset your Movie Drafter password to regain access to your account and continue creating movie drafts." />
         <meta property="og:url" content="https://moviedrafter.com/reset-password" />
-        <meta property="og:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
+        {socialShareImageMetaNodes()}
         <meta name="twitter:title" content="Movie Drafter - Reset Password" />
         <meta name="twitter:description" content="Reset your Movie Drafter password to regain access to your account and continue creating movie drafts." />
-        <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
     </Helmet>
   );
 

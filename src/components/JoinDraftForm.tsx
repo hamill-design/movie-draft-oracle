@@ -13,8 +13,13 @@ import { Hash, Users } from 'lucide-react';
 import { FilmReelIcon } from '@/components/icons';
 import { validateInviteCode, validateParticipantName, sanitizeHtml } from '@/utils/inputValidation';
 import { HeaderIcon3 } from '@/components/HeaderIcon3';
+import { cn } from '@/lib/utils';
 
-export const JoinDraftForm = () => {
+type JoinDraftFormProps = {
+  className?: string;
+};
+
+export const JoinDraftForm = ({ className }: JoinDraftFormProps) => {
   const navigate = useNavigate();
   const { user, guestSession } = useAuth();
   const { toast } = useToast();
@@ -95,14 +100,18 @@ export const JoinDraftForm = () => {
   const hasInviteCode = inviteCode.trim().length > 0;
 
   return (
-    <div className="w-full h-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col items-start gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+    <div
+      className={cn(
+        'flex h-full min-h-0 w-full flex-col items-start gap-6 p-6 bg-greyscale-purp-900 rounded-[8px]',
+        className
+      )}
+      style={{ boxShadow: '0px 0px 6px #3B0394' }}
+    >
       <div className="self-stretch flex flex-col items-start gap-1">
         <HeaderIcon3 
           title="Join A Draft" 
           icon={
-            <FilmReelIcon 
-              className="w-6 h-6 text-purple-300" 
-            />
+            <FilmReelIcon className="w-6 h-6 text-[#907AFF]" />
           } 
         />
         <div className="self-stretch flex flex-col items-start">
@@ -111,8 +120,11 @@ export const JoinDraftForm = () => {
           </p>
         </div>
       </div>
-      <form onSubmit={handleJoin} className="self-stretch flex flex-col items-start gap-6">
-        <div className="self-stretch flex flex-col items-start gap-5">
+      <form
+        onSubmit={handleJoin}
+        className="flex min-h-0 w-full flex-1 flex-col items-stretch gap-6"
+      >
+        <div className="flex flex-col items-start gap-5 self-stretch">
           <div className="self-stretch flex flex-col items-center">
             <div className="self-stretch px-4 py-3 bg-greyscale-purp-850 overflow-hidden rounded-[2px] flex items-center gap-3" style={{outline: '1px solid #666469', outlineOffset: '-1px'}}>
               <div className="flex-1 overflow-hidden flex flex-col items-center">
@@ -120,7 +132,7 @@ export const JoinDraftForm = () => {
                   id="invite-code"
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                  placeholder="Enter Invite Code"
+                  placeholder="Enter 8-digit Invite Code"
                   maxLength={8}
                   className="self-stretch text-center flex flex-col justify-center text-greyscale-blue-100 placeholder:text-greyscale-blue-500 text-lg font-normal leading-7 tracking-[1.08px] font-mono bg-transparent border-0 outline-none"
                 />
@@ -149,7 +161,7 @@ export const JoinDraftForm = () => {
         <button
           type="submit"
           disabled={isButtonDisabled}
-          className="self-stretch px-6 py-3 bg-brand-primary join-draft-button-hover disabled:bg-greyscale-purp-800 disabled:text-greyscale-blue-500 rounded-[2px] flex justify-center items-center"
+          className="mt-auto flex w-full justify-center self-stretch rounded-[2px] bg-brand-primary px-6 py-3 join-draft-button-hover disabled:bg-greyscale-purp-800 disabled:text-greyscale-blue-500"
         >
           <div className="text-center flex flex-col justify-center text-base font-semibold leading-6 tracking-[0.32px] font-brockmann" style={{color: 'var(--Text-Primary, #FCFFFF)'}}>
             {(loading || isJoining) ? 'Joining...' : 'Join Draft'}

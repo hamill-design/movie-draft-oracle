@@ -1,8 +1,18 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Film, ChevronDown, ChevronUp } from 'lucide-react';
+import { Film, ArrowRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const CAROUSEL_INTERVAL_MS = 6000;
+const POSTER_CROSSFADE_MS = 280;
+/** Homepage carousel only surfaces the top five (by display order, then recency). */
+const MAX_HOME_SPEC_DRAFTS = 5;
+
+function takeTopSpecDrafts(drafts: SpecDraft[]): SpecDraft[] {
+  return drafts.slice(0, MAX_HOME_SPEC_DRAFTS);
+}
 
 interface SpecDraft {
   id: string;
@@ -16,30 +26,45 @@ interface SpecDraft {
   updated_at: string;
 }
 
-export const SpecDraftSelector = () => {
+type SpecDraftSelectorProps = {
+  className?: string;
+};
+
+export const SpecDraftSelector = ({ className }: SpecDraftSelectorProps) => {
   const navigate = useNavigate();
   const [specDrafts, setSpecDrafts] = useState<SpecDraft[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  /** Bumps when user picks a slide so the auto-advance timer restarts */
+  const [timerNonce, setTimerNonce] = useState(0);
+
+  /** Dual poster buffers: load into inactive slot, decode, then crossfade (card never fades). */
+  const [posterSlotUrl, setPosterSlotUrl] = useState<[string | null, string | null]>([null, null]);
+  const [visiblePosterSlot, setVisiblePosterSlot] = useState<0 | 1>(0);
+  const posterInitRef = useRef(false);
+  /** Avoid duplicate work (e.g. Strict Mode) while still refreshing if the draft at this index changes. */
+  const lastPosterKeyRef = useRef<string | null>(null);
+  const visiblePosterSlotRef = useRef<0 | 1>(0);
+  const img0Ref = useRef<HTMLImageElement | null>(null);
+  const img1Ref = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     const fetchSpecDrafts = async () => {
       try {
-        // Try to fetch with all columns first
         const queryResult = await supabase
           .from('spec_drafts' as any)
           .select('id, name, slug, description, photo_url, display_order, is_hidden, created_at, updated_at')
           .eq('is_hidden', false)
           .order('display_order', { ascending: true, nullsFirst: false })
-          .order('created_at', { ascending: false });
-        
+          .order('created_at', { ascending: false })
+          .limit(MAX_HOME_SPEC_DRAFTS);
+
         const result = queryResult as { data: SpecDraft[] | null; error: any };
         const { data, error } = result;
 
         if (error) {
-          // If some columns don't exist, try without them
-          const isColumnError = 
-            error.message?.includes('photo_url') || 
+          const isColumnError =
+            error.message?.includes('photo_url') ||
             error.message?.includes('display_order') ||
             error.message?.includes('is_hidden') ||
             error.message?.includes('column') ||
@@ -52,24 +77,34 @@ export const SpecDraftSelector = () => {
               .from('spec_drafts' as any)
               .select('id, name, description, created_at, updated_at')
               .order('created_at', { ascending: false });
-            
-            const fallbackResult = fallbackQueryResult as { data: Omit<SpecDraft, 'photo_url' | 'display_order' | 'is_hidden'>[] | null; error: any };
+
+            const fallbackResult = fallbackQueryResult as {
+              data: Omit<SpecDraft, 'photo_url' | 'display_order' | 'is_hidden'>[] | null;
+              error: any;
+            };
             const { data: fallbackData, error: fallbackError } = fallbackResult;
-            
+
             if (fallbackError) throw fallbackError;
-            // Filter out any drafts that might be hidden (if is_hidden column doesn't exist, show all)
-            setSpecDrafts((fallbackData || []).map(draft => ({ 
-              ...draft, 
-              photo_url: null,
-              display_order: null,
-              is_hidden: false
-            } as SpecDraft)));
+            setSpecDrafts(
+              takeTopSpecDrafts(
+                (fallbackData || []).map(
+                  (draft) =>
+                    ({
+                      ...draft,
+                      photo_url: null,
+                      display_order: null,
+                      is_hidden: false,
+                    }) as SpecDraft
+                )
+              )
+            );
           } else {
             throw error;
           }
         } else {
-          // Filter out hidden drafts (in case the filter didn't work)
-          setSpecDrafts((data || []).filter(draft => !(draft.is_hidden ?? false)));
+          setSpecDrafts(
+            takeTopSpecDrafts((data || []).filter((draft) => !(draft.is_hidden ?? false)))
+          );
         }
       } catch (err) {
         console.error('Error fetching spec drafts:', err);
@@ -82,6 +117,29 @@ export const SpecDraftSelector = () => {
     fetchSpecDrafts();
   }, []);
 
+  const n = specDrafts.length;
+
+  useEffect(() => {
+    setCarouselIndex((i) => (n === 0 ? 0 : Math.min(i, n - 1)));
+  }, [n]);
+
+  useEffect(() => {
+    if (n <= 1) return;
+    const id = window.setInterval(() => {
+      setCarouselIndex((i) => (i + 1) % n);
+    }, CAROUSEL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [n, timerNonce]);
+
+  const goToSlide = useCallback(
+    (index: number) => {
+      if (n === 0) return;
+      setCarouselIndex(((index % n) + n) % n);
+      setTimerNonce((x) => x + 1);
+    },
+    [n]
+  );
+
   const handleBeginSetup = (draft: SpecDraft) => {
     const segment = (draft.slug && String(draft.slug).trim()) || draft.id;
     navigate(`/spec-draft/${segment}/setup`);
@@ -93,10 +151,99 @@ export const SpecDraftSelector = () => {
     return `https://image.tmdb.org/t/p/w500${posterPath}`;
   };
 
+  /** Load next poster into the inactive buffer, decode, then swap visible slot. */
+  useEffect(() => {
+    if (specDrafts.length === 0) {
+      posterInitRef.current = false;
+      lastPosterKeyRef.current = null;
+      return;
+    }
+
+    const draft = specDrafts[carouselIndex];
+    const url = getPosterUrl(draft.photo_url);
+    const posterKey = `${draft.id}:${carouselIndex}:${url ?? 'none'}`;
+    let cancelled = false;
+
+    const run = async () => {
+      if (!posterInitRef.current) {
+        posterInitRef.current = true;
+        setPosterSlotUrl([url, null]);
+        visiblePosterSlotRef.current = 0;
+        setVisiblePosterSlot(0);
+        lastPosterKeyRef.current = posterKey;
+        return;
+      }
+
+      if (lastPosterKeyRef.current === posterKey) {
+        return;
+      }
+      lastPosterKeyRef.current = posterKey;
+
+      const inactive = (1 - visiblePosterSlotRef.current) as 0 | 1;
+
+      if (!url) {
+        setPosterSlotUrl((prev) => {
+          const next: [string | null, string | null] = [...prev];
+          next[inactive] = null;
+          return next;
+        });
+        if (!cancelled) {
+          visiblePosterSlotRef.current = inactive;
+          setVisiblePosterSlot(inactive);
+        }
+        return;
+      }
+
+      setPosterSlotUrl((prev) => {
+        const next: [string | null, string | null] = [...prev];
+        next[inactive] = url;
+        return next;
+      });
+
+      await new Promise((r) => requestAnimationFrame(r));
+      await new Promise((r) => requestAnimationFrame(r));
+
+      const img = inactive === 0 ? img0Ref.current : img1Ref.current;
+      if (cancelled || !img) return;
+
+      try {
+        if (img.complete && img.naturalWidth > 0) {
+          await img.decode();
+        } else {
+          await new Promise<void>((resolve) => {
+            const finish = () => {
+              img.decode().then(resolve).catch(resolve);
+            };
+            img.onload = finish;
+            img.onerror = () => resolve();
+          });
+        }
+      } catch {
+        /* decode unsupported or failed — still swap */
+      }
+
+      if (!cancelled) {
+        visiblePosterSlotRef.current = inactive;
+        setVisiblePosterSlot(inactive);
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [carouselIndex, specDrafts]);
+
   if (loading) {
     return (
-      <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
-        <div className="text-center" style={{ color: 'var(--Text-Primary, #FCFFFF)', fontFamily: 'Brockmann', fontWeight: 400, fontSize: '14px' }}>
+      <div
+        className={cn(
+          'flex h-full min-h-0 w-full flex-col gap-6 p-6 bg-greyscale-purp-900 rounded-[8px]',
+          className
+        )}
+        style={{ boxShadow: '0px 0px 6px #3B0394' }}
+      >
+        <div className="text-center font-brockmann text-sm text-greyscale-blue-100">
           Loading special drafts...
         </div>
       </div>
@@ -104,146 +251,128 @@ export const SpecDraftSelector = () => {
   }
 
   if (specDrafts.length === 0) {
-    return null; // Don't show the section if there are no spec drafts
+    return null;
   }
 
-  // Determine how many items to show initially (2 per row = 2 items)
-  const INITIAL_ITEMS_TO_SHOW = 2;
-  const displayedDrafts = isExpanded 
-    ? specDrafts 
-    : specDrafts.slice(0, INITIAL_ITEMS_TO_SHOW);
-  const hasMoreItems = specDrafts.length > INITIAL_ITEMS_TO_SHOW;
+  const draft = specDrafts[carouselIndex];
 
   return (
-    <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
-      {/* Header */}
-      <div className="flex flex-col gap-2 items-center justify-center">
-        <h2
-          className="text-2xl text-greyscale-blue-100"
-          style={{ 
-            fontFamily: 'Brockmann', 
-            fontWeight: 700, 
-            fontSize: '24px', 
-            lineHeight: '32px',
-            letterSpacing: '0.96px'
-          }}
-        >
+    <div
+      className={cn(
+        'flex h-full min-h-0 w-full flex-col gap-6 p-6 bg-greyscale-purp-900 rounded-[8px]',
+        className
+      )}
+      style={{ boxShadow: '0px 0px 6px #3B0394' }}
+    >
+      <div className="flex flex-col items-center justify-center text-center">
+        <h2 className="m-0 text-xl font-medium leading-7 font-brockmann text-greyscale-blue-100">
           Start a Special Draft!
         </h2>
       </div>
 
-      {/* Spec Drafts Grid */}
-      <div className="flex flex-wrap gap-4 items-start">
-        {displayedDrafts.map((draft) => {
-          const posterUrl = getPosterUrl(draft.photo_url);
-          
-          return (
+      {/* 16px between spec draft card and dots / See All row */}
+      <div className="flex flex-col gap-4 w-full min-h-0 flex-1">
+        <div
+          className="flex flex-1 flex-col items-stretch min-h-0"
+          role="region"
+          aria-roledescription="carousel"
+          aria-label="Featured special drafts"
+        >
+          <div className="flex min-h-0 flex-1 flex-col" aria-live="polite">
             <div
-              key={draft.id}
-              className="bg-greyscale-purp-850 rounded-[6px] p-[18px] flex flex-col md:flex-row gap-4 items-center min-h-[218px] w-full md:basis-[calc(50%-0.5rem)] md:max-w-[calc(50%-0.5rem)]"
-              style={{outline: '1px solid #49474B', outlineOffset: '-1px'}}
+              className="bg-greyscale-purp-850 rounded-[6px] p-4 flex flex-col sm:flex-row gap-4 items-stretch w-full min-w-0 min-h-[192px] flex-1"
+              style={{ outline: '1px solid #49474B', outlineOffset: '-1px' }}
             >
-              {/* Poster/Image */}
-              <div className="h-[182px] min-h-[182px] min-w-[182px] w-full md:w-[182px] md:flex-shrink-0 relative rounded-[3px]">
-                {posterUrl ? (
-                  <img
-                    src={posterUrl}
-                    alt={draft.name}
-                    className="w-full h-full object-cover rounded-[3px]"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
+              {/* Poster: dual absolute layers — decode inactive layer, then crossfade opacity only on images */}
+              <div className="relative flex w-full min-h-[160px] min-w-0 sm:h-full sm:min-h-0 sm:w-[168px] sm:flex-shrink-0 sm:self-stretch overflow-hidden rounded-[3px] bg-greyscale-purp-800">
+                {[0, 1].map((slot) => (
+                  <div
+                    key={slot}
+                    className={cn(
+                      'absolute inset-0 motion-reduce:transition-none',
+                      'transition-opacity ease-out',
+                      visiblePosterSlot === slot ? 'opacity-100 z-[1]' : 'opacity-0 z-0 pointer-events-none'
+                    )}
+                    style={{
+                      transitionDuration: `${POSTER_CROSSFADE_MS}ms`,
                     }}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-greyscale-purp-800 rounded-[3px] flex items-center justify-center">
-                    <Film className="w-12 h-12 text-greyscale-blue-400" />
+                    aria-hidden={visiblePosterSlot !== slot}
+                  >
+                    {posterSlotUrl[slot] ? (
+                      <img
+                        ref={slot === 0 ? img0Ref : img1Ref}
+                        src={posterSlotUrl[slot]!}
+                        alt=""
+                        loading="eager"
+                        decoding="async"
+                        fetchPriority={visiblePosterSlot === slot ? 'high' : 'low'}
+                        className="h-full w-full min-h-[160px] sm:min-h-0 object-cover rounded-[3px]"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="flex h-full min-h-[160px] w-full items-center justify-center sm:min-h-0">
+                        <Film className="w-12 h-12 text-greyscale-blue-400" aria-hidden />
+                      </div>
+                    )}
                   </div>
-                )}
+                ))}
               </div>
 
-              {/* Content */}
-              <div className="flex flex-col gap-6 items-start flex-1 w-full min-w-0">
-                {/* Title and Description */}
+              <div className="flex flex-col gap-4 items-start justify-between flex-1 w-full min-w-0 self-stretch">
                 <div className="flex flex-col gap-2 items-start w-full">
-                  <h3
-                    className="text-2xl text-greyscale-blue-100"
-                    style={{ 
-                      fontFamily: 'Brockmann', 
-                      fontWeight: 600, 
-                      fontSize: '24px', 
-                      lineHeight: '30px',
-                      letterSpacing: '0.48px'
-                    }}
-                  >
+                  <h3 className="m-0 text-2xl font-semibold leading-[30px] tracking-wide font-brockmann text-greyscale-blue-100">
                     {draft.name}
                   </h3>
                   {draft.description && (
-                    <p
-                      className="text-sm text-greyscale-blue-100"
-                      style={{ 
-                        fontFamily: 'Brockmann', 
-                        fontWeight: 400, 
-                        fontSize: '14px', 
-                        lineHeight: '20px' 
-                      }}
-                    >
+                    <p className="m-0 text-sm font-normal leading-5 font-brockmann text-greyscale-blue-100">
                       {draft.description}
                     </p>
                   )}
                 </div>
 
-                {/* Begin Setup Button */}
                 <Button
                   onClick={() => handleBeginSetup(draft)}
-                  className="bg-brand-primary hover:bg-purple-300 text-greyscale-blue-100 h-9 px-4 py-2 rounded-[2px] w-full transition-colors"
-                  style={{ 
-                    fontFamily: 'Brockmann', 
-                    fontWeight: 500, 
-                    fontSize: '14px', 
-                    lineHeight: '20px' 
-                  }}
+                  className="w-full bg-brand-primary hover:bg-brand-primary/90 text-greyscale-blue-100 h-9 px-4 py-2 rounded-[2px] self-stretch font-brockmann font-medium text-sm transition-colors"
                 >
                   Begin Setup
                 </Button>
               </div>
             </div>
-          );
-        })}
-      </div>
-
-      {/* See More / See Less Button */}
-      {hasMoreItems && (
-        <div className="flex justify-center w-full">
-          <Button
-            onClick={() => setIsExpanded(!isExpanded)}
-            variant="outline"
-            className="bg-greyscale-purp-850 border-greyscale-purp-700 text-greyscale-blue-100 hover:bg-greyscale-purp-800 hover:text-greyscale-blue-50 h-10 px-6 rounded-[2px] transition-colors"
-            style={{ 
-              fontFamily: 'Brockmann', 
-              fontWeight: 500, 
-              fontSize: '14px', 
-              lineHeight: '20px' 
-            }}
-          >
-            {isExpanded ? (
-              <>
-                <ChevronUp className="w-4 h-4 mr-2" />
-                See Less
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-4 h-4 mr-2" />
-                See More
-              </>
-            )}
-          </Button>
+          </div>
         </div>
-      )}
+
+        <div className="flex flex-wrap justify-between items-center gap-3 w-full shrink-0">
+        <div
+          className="flex items-center gap-3 pl-3 flex-wrap"
+          role="tablist"
+          aria-label="Special draft slides"
+        >
+          {specDrafts.map((d, i) => (
+            <button
+              key={d.id}
+              type="button"
+              role="tab"
+              aria-selected={i === carouselIndex}
+              aria-label={`Show draft ${i + 1}: ${d.name}`}
+              onClick={() => goToSlide(i)}
+              className={cn(
+                'w-3 h-3 rounded-full border border-purple-200 shrink-0 transition-colors',
+                i === carouselIndex ? 'bg-purple-600' : 'bg-transparent hover:bg-purple-600/40'
+              )}
+            />
+          ))}
+        </div>
+        <Link
+          to="/special-draft"
+          className="inline-flex items-center gap-2 h-9 px-3 rounded-[2px] text-sm font-medium font-brockmann text-purple-200 hover:text-purple-100 transition-colors"
+        >
+          See All
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+        </div>
+      </div>
     </div>
   );
 };
-
-
-
-
-
