@@ -488,7 +488,7 @@ const VotePage = () => {
                           setSelectedVoteParticipantId(null);
                           setSelectedVotePlayerName(null);
                         }}
-                        className="px-6 py-3 rounded-sm font-brockmann font-semibold text-base leading-6 tracking-[0.32px] text-[var(--Greyscale-(Blue)-800,#2B2D2D)] disabled:opacity-50 transition-opacity"
+                        className="px-6 py-3 rounded-sm font-brockmann font-semibold text-base leading-6 tracking-[0.32px] text-greyscale-blue-800 disabled:opacity-50 transition-opacity"
                         style={{ background: 'var(--Yellow-500, #FFD60A)' }}
                       >
                         Confirm Choice

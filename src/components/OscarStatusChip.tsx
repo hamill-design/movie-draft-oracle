@@ -21,11 +21,11 @@ const statusConfig: Record<
   },
   none: {
     label: "None",
-    background: "var(--Greyscale-(Blue)-200, #D9E0DF)",
+    background: "hsl(var(--greyscale-blue-200))",
   },
   unknown: {
     label: "Unknown",
-    background: "var(--Greyscale-(Blue)-200, #D9E0DF)",
+    background: "hsl(var(--greyscale-blue-200))",
   },
 }
 

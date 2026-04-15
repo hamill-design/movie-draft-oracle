@@ -397,7 +397,7 @@ const Profile = () => {
                       paddingRight: 10,
                       paddingTop: 2,
                       paddingBottom: 2,
-                      background: 'var(--Greyscale-(Blue)-800, #2B2D2D)',
+                      background: 'hsl(var(--greyscale-blue-800))',
                       borderRadius: 9999,
                       outline: '0.50px var(--Text-Light-grey, #BDC3C2) solid',
                       outlineOffset: '-0.50px',
