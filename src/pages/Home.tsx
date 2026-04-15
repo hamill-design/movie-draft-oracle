@@ -13,6 +13,7 @@ import { JoinDraftForm } from '@/components/JoinDraftForm';
 import { SpecDraftSelector } from '@/components/SpecDraftSelector';
 import { HeaderIcon3 } from '@/components/HeaderIcon3';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
+import { graphJsonLd, webPageNode } from '@/components/seo/jsonLd';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
@@ -160,6 +161,18 @@ const Home = () => {
         {socialShareImageMetaNodes()}
         <meta name="twitter:title" content="Movie Drafter - Movie drafting game with friends" />
         <meta name="twitter:description" content="The movie drafting game for friends: fantasy movie drafts and a cinema drafting tool to pick films, compete, and see who knows movies best." />
+        <script type="application/ld+json">
+          {JSON.stringify(
+            graphJsonLd(
+              webPageNode({
+                path: '/',
+                name: 'Movie Drafter — movie drafting game with friends',
+                description:
+                  'The movie drafting game for friends: fantasy movie drafts and a cinema drafting tool to pick films, compete, and see who knows movies best.',
+              })
+            )
+          )}
+        </script>
       </Helmet>
       <div className="relative min-h-screen overflow-x-hidden">
         {/* Background Image - Absolutely Positioned to sit behind content */}

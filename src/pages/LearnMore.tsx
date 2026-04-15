@@ -3,20 +3,40 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
+import { breadcrumbListNode, graphJsonLd, webPageNode } from '@/components/seo/jsonLd';
 
 const LearnMore = () => {
+  const pageName = 'How the movie drafting game works';
+  const pageDesc =
+    'Learn how the movie drafting game works on Movie Drafter: fantasy movie drafts, multiplayer picks, and scoring with our cinema drafting tool.';
+
   return (
     <>
       <Helmet>
         <title>Movie Drafter - How the movie drafting game works</title>
-        <meta name="description" content="Learn how the movie drafting game works on Movie Drafter: fantasy movie drafts, multiplayer picks, and scoring with our cinema drafting tool." />
+        <meta name="description" content={pageDesc} />
         <link rel="canonical" href="https://moviedrafter.com/learn-more" />
         <meta property="og:title" content="Movie Drafter - How the movie drafting game works" />
-        <meta property="og:description" content="Learn how the movie drafting game works on Movie Drafter: fantasy movie drafts, multiplayer picks, and scoring with our cinema drafting tool." />
+        <meta property="og:description" content={pageDesc} />
         <meta property="og:url" content="https://moviedrafter.com/learn-more" />
         {socialShareImageMetaNodes()}
         <meta name="twitter:title" content="Movie Drafter - How the movie drafting game works" />
-        <meta name="twitter:description" content="Learn how the movie drafting game works on Movie Drafter: fantasy movie drafts, multiplayer picks, and scoring with our cinema drafting tool." />
+        <meta name="twitter:description" content={pageDesc} />
+        <script type="application/ld+json">
+          {JSON.stringify(
+            graphJsonLd(
+              webPageNode({
+                path: '/learn-more',
+                name: pageName,
+                description: pageDesc,
+              }),
+              breadcrumbListNode([
+                { name: 'Home', path: '/' },
+                { name: 'Learn more', path: '/learn-more' },
+              ])
+            )
+          )}
+        </script>
       </Helmet>
     <div style={{
       width: '100%',

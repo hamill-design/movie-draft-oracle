@@ -7,6 +7,7 @@ import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta
 import {
   fetchPublicSpecDraftBySlug,
   posterUrl,
+  themeMovieDisplayText,
   type PublicSpecDraftMovie,
   type PublicSpecDraftSummary,
 } from '@/services/publicSpecDrafts';
@@ -14,6 +15,12 @@ import {
 const SITE = 'https://moviedrafter.com';
 
 function truncateMeta(text: string, max = 158): string {
+  const t = text.replace(/\s+/g, ' ').trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max - 1).trim()}…`;
+}
+
+function truncateJsonLdDescription(text: string, max = 500): string {
   const t = text.replace(/\s+/g, ' ').trim();
   if (t.length <= max) return t;
   return `${t.slice(0, max - 1).trim()}…`;
@@ -63,15 +70,21 @@ const ThemeLandingPage = () => {
       name: `${payload.draft.name} — eligible films`,
       description: payload.draft.description || `Films in the ${payload.draft.name} movie drafting game pool.`,
       numberOfItems: sortedMovies.length,
-      itemListElement: sortedMovies.map((m, i) => ({
-        '@type': 'ListItem',
-        position: i + 1,
-        url: `${url}#movie-${m.id}`,
-        item: {
-          '@type': 'Movie',
-          name: m.movie_year != null ? `${m.movie_title} ${m.movie_year}` : m.movie_title,
-        },
-      })),
+      itemListElement: sortedMovies.map((m, i) => {
+        const poster = posterUrl(m.movie_poster_path);
+        const body = themeMovieDisplayText(m, payload.draft.name);
+        return {
+          '@type': 'ListItem',
+          position: i + 1,
+          url: `${url}#movie-${m.id}`,
+          item: {
+            '@type': 'Movie',
+            name: m.movie_year != null ? `${m.movie_title} ${m.movie_year}` : m.movie_title,
+            ...(poster ? { image: poster } : {}),
+            ...(body ? { description: truncateJsonLdDescription(body) } : {}),
+          },
+        };
+      }),
     };
   }, [payload, sortedMovies]);
 

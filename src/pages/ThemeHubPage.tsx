@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Film } from 'lucide-react';
@@ -8,6 +8,7 @@ import {
   type PublicSpecDraftSummary,
 } from '@/services/publicSpecDrafts';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
+import { graphJsonLd, themeHubItemListNode } from '@/components/seo/jsonLd';
 
 const SITE = 'https://moviedrafter.com';
 
@@ -36,6 +37,11 @@ const ThemeHubPage = () => {
   const pageDesc =
     'Browse public special drafts and see which films are in each pool, or start a fantasy movie draft on Movie Drafter.';
 
+  const hubJsonLd = useMemo(() => {
+    if (!drafts.length) return null;
+    return graphJsonLd(themeHubItemListNode(drafts, pageDesc));
+  }, [drafts, pageDesc]);
+
   return (
     <>
       <Helmet>
@@ -48,6 +54,9 @@ const ThemeHubPage = () => {
         {socialShareImageMetaNodes()}
         <meta name="twitter:title" content={pageTitle} />
         <meta name="twitter:description" content={pageDesc} />
+        {hubJsonLd ? (
+          <script type="application/ld+json">{JSON.stringify(hubJsonLd)}</script>
+        ) : null}
       </Helmet>
 
       <div

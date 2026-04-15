@@ -66,22 +66,46 @@
     <!-- Crazy Egg -->
     <script type="text/javascript" src="//script.crazyegg.com/pages/scripts/0131/8350.js" async="async"></script>
     
-    <!-- Structured Data for Rich Snippets -->
+    <!-- Structured data: Organization + WebSite + WebApplication (@graph); page routes extend via react-helmet -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Movie Drafter",
-      "url": "https://moviedrafter.com",
-      "description": "The movie drafting game for friends: fantasy movie drafts and a cinema drafting tool to pick films, compete, and see who knows movies best.",
-      "applicationCategory": "Game",
-      "applicationSubCategory": "Movie drafting game",
-      "operatingSystem": "Web Browser",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      }
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://moviedrafter.com/#organization",
+          "name": "Movie Drafter",
+          "url": "https://moviedrafter.com",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://moviedrafter.com/apple-touch-icon.png"
+          },
+          "sameAs": ["https://www.instagram.com/moviedrafter/"]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://moviedrafter.com/#website",
+          "name": "Movie Drafter",
+          "url": "https://moviedrafter.com",
+          "publisher": { "@id": "https://moviedrafter.com/#organization" }
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://moviedrafter.com/#webapp",
+          "name": "Movie Drafter",
+          "url": "https://moviedrafter.com",
+          "description": "The movie drafting game for friends: fantasy movie drafts and a cinema drafting tool to pick films, compete, and see who knows movies best.",
+          "applicationCategory": "Game",
+          "applicationSubCategory": "Movie drafting game",
+          "operatingSystem": "Web Browser",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "publisher": { "@id": "https://moviedrafter.com/#organization" }
+        }
+      ]
     }
     </script>
 

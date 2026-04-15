@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
+import { articleNode, breadcrumbListNode, graphJsonLd } from '@/components/seo/jsonLd';
 
 const SITE = 'https://moviedrafter.com';
 
@@ -9,6 +10,7 @@ const HowToDraftPage = () => {
   const pageTitle = 'Movie Drafter - How to draft movies (rules, scoring & tips)';
   const pageDesc =
     'Complete guide to the movie drafting game: how picks work, category rules, scoring ideas, multiplayer flow, and why fantasy movie drafts are fun with friends.';
+  const articleHeadline = 'How to draft movies (rules, scoring & tips)';
 
   return (
     <>
@@ -23,15 +25,19 @@ const HowToDraftPage = () => {
         <meta name="twitter:title" content={pageTitle} />
         <meta name="twitter:description" content={pageDesc} />
         <script type="application/ld+json">
-          {JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'Article',
-            headline: pageTitle,
-            description: pageDesc,
-            url: `${SITE}/how-to-draft`,
-            author: { '@type': 'Organization', name: 'Movie Drafter' },
-            publisher: { '@type': 'Organization', name: 'Movie Drafter' },
-          })}
+          {JSON.stringify(
+            graphJsonLd(
+              articleNode({
+                path: '/how-to-draft',
+                headline: articleHeadline,
+                description: pageDesc,
+              }),
+              breadcrumbListNode([
+                { name: 'Home', path: '/' },
+                { name: 'How to draft movies', path: '/how-to-draft' },
+              ])
+            )
+          )}
         </script>
       </Helmet>
 

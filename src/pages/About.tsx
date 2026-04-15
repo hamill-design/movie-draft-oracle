@@ -1,6 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
 import { socialShareImageMetaNodes } from "@/components/seo/SocialShareImageMeta";
+import { breadcrumbListNode, graphJsonLd, webPageNode } from "@/components/seo/jsonLd";
 
 const About = () => {
   const navigate = useNavigate();
@@ -9,14 +10,40 @@ const About = () => {
     <>
       <Helmet>
         <title>Movie Drafter - About the movie drafting game</title>
-        <meta name="description" content="Movie Drafter is a competitive movie drafting game and cinema drafting tool where fantasy movie drafts meet strategy and film taste." />
+        <meta
+          name="description"
+          content="Movie Drafter is a competitive movie drafting game and cinema drafting tool where fantasy movie drafts meet strategy and film taste."
+        />
         <link rel="canonical" href="https://moviedrafter.com/about" />
         <meta property="og:title" content="Movie Drafter - About the movie drafting game" />
-        <meta property="og:description" content="Movie Drafter is a competitive movie drafting game and cinema drafting tool where fantasy movie drafts meet strategy and film taste." />
+        <meta
+          property="og:description"
+          content="Movie Drafter is a competitive movie drafting game and cinema drafting tool where fantasy movie drafts meet strategy and film taste."
+        />
         <meta property="og:url" content="https://moviedrafter.com/about" />
         {socialShareImageMetaNodes()}
         <meta name="twitter:title" content="Movie Drafter - About the movie drafting game" />
-        <meta name="twitter:description" content="Movie Drafter is a competitive movie drafting game and cinema drafting tool where fantasy movie drafts meet strategy and film taste." />
+        <meta
+          name="twitter:description"
+          content="Movie Drafter is a competitive movie drafting game and cinema drafting tool where fantasy movie drafts meet strategy and film taste."
+        />
+        <script type="application/ld+json">
+          {JSON.stringify(
+            graphJsonLd(
+              webPageNode({
+                path: '/about',
+                name: 'About Movie Drafter',
+                description:
+                  'Movie Drafter is a competitive movie drafting game and cinema drafting tool where fantasy movie drafts meet strategy and film taste.',
+                type: 'AboutPage',
+              }),
+              breadcrumbListNode([
+                { name: 'Home', path: '/' },
+                { name: 'About', path: '/about' },
+              ])
+            )
+          )}
+        </script>
       </Helmet>
       <div 
         className="min-h-screen w-full flex flex-col items-center justify-start"

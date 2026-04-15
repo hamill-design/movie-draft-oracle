@@ -13,6 +13,7 @@ import {
 import { ArrowLeft } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { socialShareImageMetaNodes } from "@/components/seo/SocialShareImageMeta";
+import { breadcrumbListNode, graphJsonLd, webPageNode } from "@/components/seo/jsonLd";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
@@ -122,6 +123,23 @@ const Contact = () => {
         {socialShareImageMetaNodes()}
         <meta name="twitter:title" content="Movie Drafter - Contact Support" />
         <meta name="twitter:description" content="Contact Movie Drafter support for help with your account, fantasy movie drafts, or any questions about our movie drafting game." />
+        <script type="application/ld+json">
+          {JSON.stringify(
+            graphJsonLd(
+              webPageNode({
+                path: '/contact',
+                name: 'Contact Movie Drafter support',
+                description:
+                  'Contact Movie Drafter support for help with your account, fantasy movie drafts, or any questions about our movie drafting game.',
+                type: 'ContactPage',
+              }),
+              breadcrumbListNode([
+                { name: 'Home', path: '/' },
+                { name: 'Contact', path: '/contact' },
+              ])
+            )
+          )}
+        </script>
       </Helmet>
       <div className="min-h-screen p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <div className="max-w-2xl mx-auto">
