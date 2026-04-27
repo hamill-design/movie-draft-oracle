@@ -423,6 +423,7 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
           oscar_status: movie.oscarStatus ?? null,
           revenue: movie.revenue ?? null,
           is_sequel: movie.isSequel === true,
+          sequel_enriched_at: new Date().toISOString(),
         } as any)
         .select()
         .single();

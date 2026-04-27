@@ -7,6 +7,11 @@ const corsHeaders = {
 
 const RESEND_API = 'https://api.resend.com';
 
+/** Space out create/patch vs segment in one invocation to avoid sub-second bursts. */
+const RESEND_STEP_DELAY_MS = 150;
+
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
 function splitName(full: string | null | undefined): { first_name: string; last_name: string } {
   const t = (full || '').trim();
   if (!t) return { first_name: '', last_name: '' };
@@ -15,26 +20,56 @@ function splitName(full: string | null | undefined): { first_name: string; last_
   return { first_name: parts[0], last_name: parts.slice(1).join(' ') };
 }
 
+/**
+ * Low-level Resend HTTP with 429 retry (rate limit).
+ */
+async function resendFetch(
+  apiKey: string,
+  path: string,
+  init: RequestInit,
+): Promise<{ ok: boolean; status: number; data: unknown }> {
+  const maxAttempts = 6;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const headers = new Headers(init.headers as HeadersInit);
+    headers.set('Authorization', `Bearer ${apiKey}`);
+    if (init.body != null && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
+
+    const res = await fetch(`${RESEND_API}${path}`, { ...init, headers });
+    let data: unknown = null;
+    try {
+      data = await res.json();
+    } catch {
+      /* empty */
+    }
+
+    if (res.status === 429 && attempt < maxAttempts) {
+      const ra = res.headers.get('Retry-After');
+      let waitMs = ra ? parseInt(ra, 10) * 1000 : Math.min(4000, 300 * 2 ** (attempt - 1));
+      if (!Number.isFinite(waitMs) || waitMs < 0) waitMs = 400 * attempt;
+      console.warn(`sync-marketing-audience: Resend 429, retry in ${waitMs}ms (attempt ${attempt})`);
+      await delay(waitMs);
+      continue;
+    }
+
+    return { ok: res.ok, status: res.status, data };
+  }
+  return { ok: false, status: 429, data: { message: 'rate_limited_max_retries' } };
+}
+
 async function resendJson(
   apiKey: string,
   path: string,
   init: RequestInit,
 ): Promise<{ ok: boolean; status: number; data: unknown }> {
-  const res = await fetch(`${RESEND_API}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-      ...init.headers,
-    },
-  });
-  let data: unknown = null;
-  try {
-    data = await res.json();
-  } catch {
-    /* empty */
+  const headers: Record<string, string> = {
+    ...(init.headers as Record<string, string> | undefined),
+  };
+  if (init.body != null) {
+    headers['Content-Type'] = 'application/json';
   }
-  return { ok: res.ok, status: res.status, data };
+  return resendFetch(apiKey, path, { ...init, headers });
 }
 
 /** Resend: contacts are global; marketing list = segment (same UUID as Audiences in dashboard). */
@@ -44,20 +79,9 @@ async function addContactToSegment(
   segmentId: string,
 ): Promise<{ ok: boolean; status: number; data: unknown }> {
   const sid = segmentId.trim();
-  const res = await fetch(
-    `${RESEND_API}/contacts/${encodeURIComponent(email)}/segments/${encodeURIComponent(sid)}`,
-    {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}` },
-    },
-  );
-  let data: unknown = null;
-  try {
-    data = await res.json();
-  } catch {
-    /* empty */
-  }
-  return { ok: res.ok, status: res.status, data };
+  return resendFetch(apiKey, `/contacts/${encodeURIComponent(email)}/segments/${encodeURIComponent(sid)}`, {
+    method: 'POST',
+  });
 }
 
 function segmentAddIsOk(status: number, data: unknown): boolean {
@@ -203,6 +227,7 @@ Deno.serve(async (req) => {
           { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
         );
       }
+      await delay(RESEND_STEP_DELAY_MS);
       const seg = await addContactToSegment(resendApiKey, email, marketingSegmentId);
       if (!segmentAddIsOk(seg.status, seg.data)) {
         console.error('sync-marketing-audience: add to segment failed', seg.status, seg.data);
@@ -224,6 +249,7 @@ Deno.serve(async (req) => {
     );
   }
 
+  await delay(RESEND_STEP_DELAY_MS);
   const segAfterCreate = await addContactToSegment(resendApiKey, email, marketingSegmentId);
   if (!segmentAddIsOk(segAfterCreate.status, segAfterCreate.data)) {
     console.error('sync-marketing-audience: add to segment failed', segAfterCreate.status, segAfterCreate.data);

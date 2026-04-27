@@ -81,14 +81,27 @@ async function removeResendMarketingContact(email: string | undefined): Promise<
   const apiKey = Deno.env.get('RESEND_API_KEY');
   if (!apiKey) return;
   const encoded = encodeURIComponent(email);
+  const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+  const maxAttempts = 6;
   try {
-    const res = await fetch(`https://api.resend.com/contacts/${encoded}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${apiKey}` },
-    });
-    if (!res.ok && res.status !== 404) {
-      const body = await res.text();
-      console.warn('user-data-deletion: Resend contact delete', res.status, body);
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const res = await fetch(`https://api.resend.com/contacts/${encoded}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${apiKey}` },
+      });
+      if (res.status === 429 && attempt < maxAttempts) {
+        const ra = res.headers.get('Retry-After');
+        let waitMs = ra ? parseInt(ra, 10) * 1000 : Math.min(4000, 300 * 2 ** (attempt - 1));
+        if (!Number.isFinite(waitMs) || waitMs < 0) waitMs = 400 * attempt;
+        console.warn(`user-data-deletion: Resend 429 on contact delete, retry in ${waitMs}ms (attempt ${attempt})`);
+        await wait(waitMs);
+        continue;
+      }
+      if (!res.ok && res.status !== 404) {
+        const body = await res.text();
+        console.warn('user-data-deletion: Resend contact delete', res.status, body);
+      }
+      return;
     }
   } catch (e) {
     console.warn('user-data-deletion: Resend contact delete failed', e);

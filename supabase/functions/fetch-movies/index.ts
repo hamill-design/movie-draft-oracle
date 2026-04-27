@@ -10,6 +10,10 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // @ts-ignore - Deno ESM imports are resolved at runtime
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import {
+  computeIsSequelFromParts,
+  createCollectionPartGetter,
+} from '../_shared/sequelTmdb.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1426,34 +1430,6 @@ serve(async (req) => {
   }
 });
 
-/** Parse TMDB release_date (YYYY-MM-DD) for comparison; invalid → null */
-function parseReleaseDateMs(releaseDate: string | null | undefined): number | null {
-  if (!releaseDate || typeof releaseDate !== 'string') return null;
-  const t = Date.parse(releaseDate);
-  return Number.isNaN(t) ? null : t;
-}
-
-type CollectionPart = { id: number; release_date?: string };
-
-/**
- * True if another film in the same TMDB collection has a strictly earlier theatrical release date.
- */
-function computeIsSequelFromParts(
-  movieId: number,
-  thisReleaseDate: string | null | undefined,
-  parts: CollectionPart[]
-): boolean {
-  const selfMs = parseReleaseDateMs(thisReleaseDate ?? undefined);
-  if (selfMs === null) return false;
-  for (const p of parts) {
-    if (p.id === movieId) continue;
-    const otherMs = parseReleaseDateMs(p.release_date);
-    if (otherMs === null) continue;
-    if (otherMs < selfMs) return true;
-  }
-  return false;
-}
-
 // Process movie results function to handle common transformations
 async function processMovieResults(data: any, tmdbApiKey: string, opts: { preferFreshOscarStatus?: boolean } = {}) {
   console.log(`📊 Processing ${(data.results || []).length} movies...`);
@@ -1504,38 +1480,7 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
   const transformedMovies: any[] = [];
   const shouldBatch = data.results.length > 100; // Only batch if we have many movies
 
-  const collectionPartsCache = new Map<number, CollectionPart[]>();
-  const collectionInflight = new Map<number, Promise<CollectionPart[]>>();
-
-  async function getCachedCollectionParts(collectionId: number): Promise<CollectionPart[]> {
-    const hit = collectionPartsCache.get(collectionId);
-    if (hit) return hit;
-    let inflight = collectionInflight.get(collectionId);
-    if (!inflight) {
-      inflight = (async () => {
-        try {
-          const res = await fetch(
-            `https://api.themoviedb.org/3/collection/${collectionId}?api_key=${tmdbApiKey}`
-          );
-          if (!res.ok) {
-            console.log(`Collection fetch failed ${collectionId}: ${res.status}`);
-            return [];
-          }
-          const json = await res.json();
-          const parts: CollectionPart[] = Array.isArray(json.parts) ? json.parts : [];
-          collectionPartsCache.set(collectionId, parts);
-          return parts;
-        } catch (e) {
-          console.log(`Collection fetch error ${collectionId}:`, e);
-          return [];
-        } finally {
-          collectionInflight.delete(collectionId);
-        }
-      })();
-      collectionInflight.set(collectionId, inflight);
-    }
-    return inflight;
-  }
+  const { getCachedCollectionParts } = createCollectionPartGetter(tmdbApiKey);
   
   const processMovie = async (movie: any) => {
       let detailedMovie = movie;

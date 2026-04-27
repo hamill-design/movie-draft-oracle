@@ -38,15 +38,41 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
       
       // Handle spec-draft theme - fetch movies directly from spec_draft_movies table
       if (category === 'spec-draft' && themeOption) {
-        const { data: moviesData, error: moviesError } = await (supabase as any)
+        let { data: moviesData, error: moviesError } = await (supabase as any)
           .from('spec_draft_movies')
-          .select('movie_tmdb_id, movie_title, movie_year, movie_poster_path, movie_genres, is_sequel')
+          .select('movie_tmdb_id, movie_title, movie_year, movie_poster_path, movie_genres, is_sequel, sequel_enriched_at')
           .eq('spec_draft_id', themeOption)
           .order('movie_title', { ascending: true });
 
         if (moviesError) {
           console.error('useMovies - Error fetching spec draft movies:', moviesError);
           throw moviesError;
+        }
+
+        const { data: { session: enrichSession } } = await supabase.auth.getSession();
+        if (
+          enrichSession &&
+          (moviesData || []).length > 0 &&
+          (moviesData as { sequel_enriched_at?: string | null }[]).some(
+            (m) => m.sequel_enriched_at == null
+          )
+        ) {
+          const { error: enrichFnErr } = await supabase.functions.invoke(
+            'enrich-spec-draft-sequels',
+            { body: { spec_draft_id: themeOption, limit: 30 } }
+          );
+          if (enrichFnErr) {
+            console.warn('useMovies - enrich-spec-draft-sequels:', enrichFnErr);
+          } else {
+            const refetch = await (supabase as any)
+              .from('spec_draft_movies')
+              .select('movie_tmdb_id, movie_title, movie_year, movie_poster_path, movie_genres, is_sequel, sequel_enriched_at')
+              .eq('spec_draft_id', themeOption)
+              .order('movie_title', { ascending: true });
+            if (!refetch.error && refetch.data) {
+              moviesData = refetch.data;
+            }
+          }
         }
 
         // Transform spec draft movies to Movie format

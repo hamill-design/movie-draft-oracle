@@ -5,16 +5,30 @@ import { supabase } from '@/integrations/supabase/client';
 import { useGuestSession, GuestSession } from '@/hooks/useGuestSession';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { getPendingDraft, clearPendingDraft } from '@/utils/draftStorage';
-import { syncMarketingAudience } from '@/lib/marketingAudienceSync';
+import {
+  MARKETING_AUDIENCE_SYNC_LS_PREFIX,
+  syncMarketingAudience,
+} from '@/lib/marketingAudienceSync';
 
-const MARKETING_SYNC_STORAGE_PREFIX = 'md_ma_sync_';
+/** Legacy per-tab keys (no longer written; cleared on sign-out). */
+const MARKETING_SYNC_SESSION_LEGACY_PREFIX = 'md_ma_sync_';
 
 function clearMarketingSyncFlags() {
   try {
     for (let i = sessionStorage.length - 1; i >= 0; i--) {
       const k = sessionStorage.key(i);
-      if (k?.startsWith(MARKETING_SYNC_STORAGE_PREFIX)) {
+      if (k?.startsWith(MARKETING_SYNC_SESSION_LEGACY_PREFIX)) {
         sessionStorage.removeItem(k);
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k?.startsWith(MARKETING_AUDIENCE_SYNC_LS_PREFIX)) {
+        localStorage.removeItem(k);
       }
     }
   } catch {
@@ -123,23 +137,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const MarketingAudienceSync: React.FC<{ user: User | null }> = ({ user }) => {
     useEffect(() => {
       if (!user?.id || !user.email_confirmed_at) return;
-      const key = `${MARKETING_SYNC_STORAGE_PREFIX}${user.id}`;
-      try {
-        if (sessionStorage.getItem(key)) return;
-      } catch {
-        /* ignore */
-      }
 
       (async () => {
         try {
-          const { error } = await syncMarketingAudience();
-          if (!error) {
-            try {
-              sessionStorage.setItem(key, '1');
-            } catch {
-              /* ignore */
-            }
-          }
+          await syncMarketingAudience();
         } catch (e) {
           console.warn('Marketing audience sync failed:', e);
         }

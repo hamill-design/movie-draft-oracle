@@ -16,3 +16,7 @@ verify_jwt = false
 
 [functions.resend-marketing-webhook]
 verify_jwt = false
+
+# CORS + auth checked inside (service role, secret, or user JWT)
+[functions.enrich-spec-draft-sequels]
+verify_jwt = false

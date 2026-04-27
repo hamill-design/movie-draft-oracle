@@ -280,7 +280,7 @@ const Profile = () => {
 
       setProfile((prev: any) => (prev ? { ...prev, ...updates } : { ...updates }));
 
-      const { error: syncError } = await syncMarketingAudience();
+      const { error: syncError } = await syncMarketingAudience({ force: true });
       if (syncError) {
         toast({
           title: 'Preference saved',

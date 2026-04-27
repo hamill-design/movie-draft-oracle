@@ -31,6 +31,7 @@ export interface SpecDraftMovie {
   oscar_status: string | null;
   revenue: number | null;
   is_sequel?: boolean;
+  sequel_enriched_at?: string | null;
   created_at: string;
 }
 
@@ -559,6 +560,14 @@ export const useSpecDraftsAdmin = () => {
         .single() as any);
 
       if (insertError) throw insertError;
+
+      try {
+        await supabase.functions.invoke('enrich-spec-draft-sequels', {
+          body: { spec_draft_movie_id: (data as { id: string }).id },
+        });
+      } catch (enrichErr) {
+        console.warn('enrich-spec-draft-sequels after addMovieToSpecDraft:', enrichErr);
+      }
 
       toast({
         title: 'Success',

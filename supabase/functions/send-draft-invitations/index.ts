@@ -34,6 +34,13 @@ function siteBaseUrl(raw: string): string {
   }
 }
 
+const RESEND_BATCH_SIZE = 100;
+const RESEND_INTER_BATCH_DELAY_MS = 200;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")
@@ -353,74 +360,110 @@ const handler = async (req: Request): Promise<Response> => {
       console.error('📧 EDGE FUNCTION - Exception getting invite code:', error);
     }
 
-    // Send emails to each valid participant
-    const invitationResults = await Promise.all(
-      validEmails.map(async (email) => {
-        const inviteLink = `${origin}/join-draft/${draftId}?email=${encodeURIComponent(email)}&auto=true`;
-        
-        console.log('📧 EDGE FUNCTION - Processing email for:', email);
-        
-        try {
-          if (resend) {
-            console.log('📧 EDGE FUNCTION - Sending real email to:', email);
-            
-            const emailResponse = await resend.emails.send({
-              from: "Movie Draft <noreply@moviedrafter.com>",
-              to: [email],
-              subject: `🎬 You're invited to join "${draftTitle}"`,
-              html: buildDraftInvitationHtml({
-                baseUrl: origin,
-                inviteLink,
-                draftTitle,
-                hostName,
-                themeDisplay,
-                optionDisplay,
-                inviteCode,
-                recipientEmail: email,
-              }),
-            });
+    type InviteRow = {
+      email: string;
+      status: string;
+      inviteLink: string;
+      inviteCode: typeof inviteCode;
+      error?: string;
+      emailId?: string;
+      reason?: string;
+    };
 
-            if (emailResponse.error) {
-              console.error('📧 EDGE FUNCTION - Resend error for', email, ':', emailResponse.error);
-              return { 
-                email, 
-                status: 'failed', 
-                error: emailResponse.error.message, 
-                inviteLink,
-                inviteCode 
-              };
-            }
+    const invitationResults: InviteRow[] = [];
 
-            console.log('📧 EDGE FUNCTION - Email sent successfully to:', email, 'ID:', emailResponse.data?.id);
-            return { 
-              email, 
-              status: 'sent', 
-              inviteLink, 
-              inviteCode,
-              emailId: emailResponse.data?.id 
-            };
-          } else {
-            console.log('📧 EDGE FUNCTION - Simulating email to:', email, 'with link:', inviteLink);
-            return { 
-              email, 
-              status: 'simulated', 
+    if (resend && validEmails.length > 0) {
+      for (let i = 0; i < validEmails.length; i += RESEND_BATCH_SIZE) {
+        const chunk = validEmails.slice(i, i + RESEND_BATCH_SIZE);
+        const payloads = chunk.map((email) => {
+          const inviteLink = `${origin}/join-draft/${draftId}?email=${encodeURIComponent(email)}&auto=true`;
+          return {
+            from: "Movie Draft <noreply@moviedrafter.com>",
+            to: [email],
+            subject: `🎬 You're invited to join "${draftTitle}"`,
+            html: buildDraftInvitationHtml({
+              baseUrl: origin,
               inviteLink,
+              draftTitle,
+              hostName,
+              themeDisplay,
+              optionDisplay,
               inviteCode,
-              reason: 'No RESEND_API_KEY configured'
-            };
+              recipientEmail: email,
+            }),
+          };
+        });
+
+        try {
+          console.log('📧 EDGE FUNCTION - Batch send chunk', Math.floor(i / RESEND_BATCH_SIZE) + 1, 'size', chunk.length);
+          const batchResponse = await resend.batch.send(payloads);
+
+          if (batchResponse.error) {
+            const errMsg =
+              typeof batchResponse.error === 'object' &&
+                batchResponse.error !== null &&
+                'message' in batchResponse.error
+                ? String((batchResponse.error as { message: string }).message)
+                : 'Resend batch send failed';
+            console.error('📧 EDGE FUNCTION - Resend batch error:', batchResponse.error);
+            for (const email of chunk) {
+              invitationResults.push({
+                email,
+                status: 'failed',
+                error: errMsg,
+                inviteLink: `${origin}/join-draft/${draftId}?email=${encodeURIComponent(email)}&auto=true`,
+                inviteCode,
+              });
+            }
+          } else {
+            const raw = batchResponse.data as
+              | { data?: Array<{ id?: string }> }
+              | Array<{ id?: string }>
+              | undefined;
+            const ids = Array.isArray(raw) ? raw : raw?.data ?? [];
+            chunk.forEach((email, idx) => {
+              const inviteLink = `${origin}/join-draft/${draftId}?email=${encodeURIComponent(email)}&auto=true`;
+              console.log('📧 EDGE FUNCTION - Email sent (batch) to:', email, 'ID:', ids[idx]?.id);
+              invitationResults.push({
+                email,
+                status: 'sent',
+                inviteLink,
+                inviteCode,
+                emailId: ids[idx]?.id,
+              });
+            });
           }
         } catch (error) {
-          console.error('📧 EDGE FUNCTION - Exception sending email to:', email, ':', error);
-          return { 
-            email, 
-            status: 'failed', 
-            error: error.message, 
-            inviteLink,
-            inviteCode
-          };
+          const errMsg = error instanceof Error ? error.message : String(error);
+          console.error('📧 EDGE FUNCTION - Batch send exception:', error);
+          for (const email of chunk) {
+            invitationResults.push({
+              email,
+              status: 'failed',
+              error: errMsg,
+              inviteLink: `${origin}/join-draft/${draftId}?email=${encodeURIComponent(email)}&auto=true`,
+              inviteCode,
+            });
+          }
         }
-      })
-    );
+
+        if (i + RESEND_BATCH_SIZE < validEmails.length) {
+          await delay(RESEND_INTER_BATCH_DELAY_MS);
+        }
+      }
+    } else {
+      for (const email of validEmails) {
+        const inviteLink = `${origin}/join-draft/${draftId}?email=${encodeURIComponent(email)}&auto=true`;
+        console.log('📧 EDGE FUNCTION - Simulating email to:', email, 'with link:', inviteLink);
+        invitationResults.push({
+          email,
+          status: 'simulated',
+          inviteLink,
+          inviteCode,
+          reason: 'No RESEND_API_KEY configured',
+        });
+      }
+    }
 
     // Include results for invalid emails too
     const invalidEmailResults = participantEmails

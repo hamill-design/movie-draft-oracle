@@ -12,11 +12,34 @@ from letterboxdpy.user import User
 import json
 import sys
 import os
+import urllib.request
+import urllib.error
 from typing import List as TypingList, Dict, Any, Optional
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from scripts.letterboxd.utils import get_supabase_client, extract_tmdb_id_from_url, match_letterboxd_to_tmdb
+
+
+def _invoke_enrich_sequel_for_spec_draft_movie(supabase_url: str, service_key: str, spec_draft_movie_id: str) -> None:
+    """
+    Call Edge Function enrich-spec-draft-sequels (TMDB is_sequel + Sequel category row).
+    Uses service role; requires SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in env.
+    """
+    url = f"{supabase_url.rstrip('/')}/functions/v1/enrich-spec-draft-sequels"
+    body = json.dumps({"spec_draft_movie_id": spec_draft_movie_id}).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={
+            "Authorization": f"Bearer {service_key}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=90) as resp:
+        resp.read()
+
 
 def sync_list_to_spec_draft(username: str, list_slug: str, spec_draft_id: str, dry_run: bool = False):
     """
@@ -32,6 +55,9 @@ def sync_list_to_spec_draft(username: str, list_slug: str, spec_draft_id: str, d
     if not supabase:
         print("❌ Cannot connect to Supabase")
         return
+
+    supabase_url = os.getenv("SUPABASE_URL") or os.getenv("VITE_SUPABASE_URL")
+    service_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
     
     try:
         # Fetch list from Letterboxd
@@ -123,6 +149,21 @@ def sync_list_to_spec_draft(username: str, list_slug: str, spec_draft_id: str, d
                 if result.data:
                     print(f"✅ Added {film_title} ({film_year}) to spec draft")
                     synced_count += 1
+                    row = result.data[0] if isinstance(result.data, list) else result.data
+                    movie_row_id = row.get("id") if isinstance(row, dict) else None
+                    if movie_row_id and supabase_url and service_key and not dry_run:
+                        try:
+                            _invoke_enrich_sequel_for_spec_draft_movie(
+                                supabase_url, str(service_key), str(movie_row_id)
+                            )
+                        except urllib.error.HTTPError as he:
+                            print(
+                                f"⚠️  enrich-spec-draft-sequels HTTP {he.code} for {film_title} (id={movie_row_id})"
+                            )
+                        except Exception as ex:
+                            print(
+                                f"⚠️  enrich-spec-draft-sequels failed for {film_title}: {ex}"
+                            )
                 else:
                     print(f"⚠️  Failed to add {film_title}")
                     error_count += 1

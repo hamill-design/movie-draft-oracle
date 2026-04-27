@@ -1,0 +1,107 @@
+<!--
+  Movie Drafter — Marketing / Broadcast (Resend)
+
+  Use for: Resend Dashboard → Broadcasts (or API) → paste HTML body.
+
+  Recipients opt in from Profile (sign in → enable product updates). That flow calls
+  sync-marketing-audience and adds them to your Resend segment automatically — see
+  docs/marketing-opt-in-workflow.md
+
+  Suggested subject lines:
+    Want Movie Drafter updates?
+    Get occasional news from Movie Drafter
+
+  Placeholders (Resend Broadcasts):
+    {{{EMAIL}}}                    — recipient email (optional personalization)
+    {{{RESEND_UNSUBSCRIBE_URL}}}   — required for marketing; Resend replaces with one-click unsubscribe
+
+  CTA: https://moviedrafter.com/profile — user signs in and turns on “product updates”.
+
+  Assets (PNG): https://moviedrafter.com/wordmark-email.png, Instagram-Icon-white.png
+
+  Paste the FRAGMENT between FRAGMENT START and FRAGMENT END into Resend’s HTML editor.
+-->
+
+<!-- ========== FRAGMENT START — paste into Resend Broadcast ========== -->
+<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#100029;opacity:0;">
+  Get Movie Drafter product updates — open this email for a link to your profile.
+</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:0;padding:0;background-color:#100029;background-image:linear-gradient(140deg,#100029 16%,#160038 50%,#100029 83%);">
+  <tr>
+    <td align="center" style="padding:40px 16px 0 16px;">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto;border-collapse:separate;">
+        <tr>
+          <td align="center" style="padding:4px 32px;">
+            <a href="https://moviedrafter.com" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+              <img src="https://moviedrafter.com/wordmark-email.png" width="200" height="58" alt="Movie Drafter" border="0" style="display:block;margin:0 auto;width:200px;height:58px;max-width:100%;" />
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" style="padding:32px 16px 0 16px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;margin:0 auto;border-collapse:separate;">
+        <tr>
+          <td style="background-color:#0e0e0f;border-radius:4px;padding:32px 28px 28px 28px;border:1px solid #49474b;box-shadow:0 0 6px rgba(59,3,148,0.35);">
+            <p style="margin:0 0 8px 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;line-height:1.4;letter-spacing:0.06em;text-transform:uppercase;color:#907aff;">
+              Movie Drafter updates
+            </p>
+            <h1 style="margin:0 0 16px 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:22px;font-weight:600;line-height:1.3;letter-spacing:0.02em;color:#fcffff;">
+              Want the good stuff in your inbox?
+            </h1>
+            <p style="margin:0 0 20px 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.55;color:#bdc3c2;">
+              We send occasional notes on new features, draft ideas, and what we’re building next. Sign in and turn on product updates in your profile — we’ll only email you if you opt in.
+            </p>
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center" style="margin:0 auto 24px auto;">
+              <tr>
+                <td align="center" bgcolor="#7142ff" style="border-radius:2px;mso-padding-alt:14px 28px;">
+                  <a href="https://moviedrafter.com/profile" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:14px 28px;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:16px;font-weight:600;line-height:1.2;color:#fcffff;text-decoration:none;border-radius:2px;">
+                    Open profile &amp; opt in
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0 0 16px 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:13px;line-height:1.5;color:#9e9ca3;">
+              If the button doesn’t work, copy and paste this link into your browser:
+            </p>
+            <p style="margin:0 0 24px 0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;word-break:break-all;">
+              <a href="https://moviedrafter.com/profile" target="_blank" rel="noopener noreferrer" style="color:#907aff;text-decoration:underline;">https://moviedrafter.com/profile</a>
+            </p>
+            <p style="margin:0;font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;line-height:1.55;color:#666469;border-top:1px solid #2c2b2d;padding-top:20px;">
+              You’re receiving this because we have your address on file at Movie Drafter. Prefer not to get marketing email?
+              <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" target="_blank" rel="noopener noreferrer" style="color:#7142ff;text-decoration:underline;font-weight:600;">Unsubscribe</a>
+              — you’ll still get important account and draft emails when needed.
+              <br /><br />
+              <a href="https://moviedrafter.com" style="color:#7142ff;text-decoration:none;font-weight:600;">moviedrafter.com</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" style="padding:28px 16px 48px 16px;">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:560px;margin:0 auto;border-collapse:collapse;">
+        <tr>
+          <td style="border-top:1px solid #7142ff;padding:0;line-height:0;font-size:0;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:18px 12px 0 12px;">
+            <a href="https://www.instagram.com/moviedrafter/" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-block;">
+              <img src="https://moviedrafter.com/Instagram-Icon-white.png" width="28" height="28" alt="Follow Movie Drafter on Instagram" border="0" style="display:block;margin:0 auto 10px auto;width:28px;height:28px;" />
+            </a>
+            <a href="https://www.instagram.com/moviedrafter/" target="_blank" rel="noopener noreferrer" style="font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:14px;font-weight:500;line-height:20px;color:#d9e0df;text-decoration:underline;display:block;">
+              Follow us on Instagram
+            </a>
+            <a href="https://www.instagram.com/moviedrafter/" target="_blank" rel="noopener noreferrer" style="font-family:'Segoe UI',Roboto,'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#bdc3c2;text-decoration:underline;display:block;margin-top:4px;">
+              @moviedrafter
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+<!-- ========== FRAGMENT END ========== -->
