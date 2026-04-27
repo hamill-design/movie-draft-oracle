@@ -5,19 +5,23 @@
  * sequel_enriched_at IS NULL.
  *
  * Usage (from repo root, with env set):
- *   export SUPABASE_URL=...
- *   export SUPABASE_SERVICE_ROLE_KEY=...
+ *   export SUPABASE_URL=...   (or VITE_SUPABASE_URL from .env)
+ *   export SUPABASE_SERVICE_ROLE_KEY=...   (or VITE_SUPABASE_SERVICE_ROLE_KEY)
  *   node scripts/enrich-sequel-spec-drafts.mjs
  * Optional: SPEC_DRAFT_ID=<uuid> to scope to one spec draft
  */
 
-const url = process.env.SUPABASE_URL;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+const key =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
 const specDraftId = process.env.SPEC_DRAFT_ID || null;
 const limit = Math.min(100, Math.max(1, parseInt(process.env.BATCH_LIMIT || '40', 10) || 40));
 
 if (!url || !key) {
-  console.error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY');
+  console.error(
+    'Set SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY (or VITE_SUPABASE_SERVICE_ROLE_KEY)'
+  );
   process.exit(1);
 }
 

@@ -22,7 +22,10 @@
     "deploy:functions": "npx supabase functions deploy",
     "deploy:functions:use-api": "npx supabase functions deploy --use-api",
     "deploy:functions:analyze": "npx supabase functions deploy analyze-category-availability",
-    "deploy:functions:fetch-movies": "npx supabase functions deploy fetch-movies --use-api"
+    "deploy:functions:fetch-movies": "npx supabase functions deploy fetch-movies --use-api",
+    "deploy:functions:enrich-spec-draft-sequels": "npx supabase functions deploy enrich-spec-draft-sequels --use-api",
+    "deploy:functions:sequel": "npx supabase functions deploy fetch-movies --use-api && npx supabase functions deploy enrich-spec-draft-sequels --use-api",
+    "enrich:spec-sequel": "node scripts/enrich-sequel-spec-drafts.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
