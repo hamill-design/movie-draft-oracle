@@ -1,3 +1,4 @@
+import { isGlobalStandardCategory } from '@/config/categoryConfigs';
 
 interface Movie {
   id: number;
@@ -71,6 +72,7 @@ export const getEligibleCategories = (
     const movieId = movie.tmdbId || movie.id;
     
     specCategoriesMap.forEach((movieIds, categoryName) => {
+      if (isGlobalStandardCategory(categoryName)) return;
       // Only check if this category is in the draft's category list
       if (allCategories.includes(categoryName) && movieId && movieIds.includes(movieId)) {
         eligibleCategories.push(categoryName);

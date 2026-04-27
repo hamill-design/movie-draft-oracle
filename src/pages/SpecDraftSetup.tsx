@@ -322,18 +322,53 @@ const SpecDraftSetup = () => {
           setCustomCategories(customCats || []);
         }
 
-        // Fetch movies to get all unique categories and counts
+        // Fetch movies (include sequel flags; counts for "Sequel" use is_sequel, not only join table)
         const moviesResult = await (supabase
           .from('spec_draft_movies' as any)
-          .select('id')
-          .eq('spec_draft_id', resolvedId)) as { data: Array<{ id: string }> | null; error: any };
-        const { data: moviesData, error: moviesError } = moviesResult;
+          .select('id, is_sequel, sequel_enriched_at')
+          .eq('spec_draft_id', resolvedId)) as {
+          data: Array<{
+            id: string;
+            is_sequel?: boolean | null;
+            sequel_enriched_at?: string | null;
+          }> | null;
+          error: any;
+        };
+        const { data: initialMovies, error: moviesError } = moviesResult;
 
         if (moviesError) {
           console.error('Error fetching movies:', moviesError);
-        } else if (moviesData && moviesData.length > 0) {
-          // Fetch categories for all movies
-          const movieIds = moviesData.map(m => m.id);
+        } else if (initialMovies && initialMovies.length > 0) {
+          let poolRows = initialMovies;
+
+          // Optional: backfill is_sequel + Sequel category rows when logged in (matches useMovies)
+          const { data: { session: setupSession } } = await supabase.auth.getSession();
+          if (setupSession && poolRows.some((r) => r.sequel_enriched_at == null)) {
+            const { error: enrichErr } = await supabase.functions.invoke(
+              'enrich-spec-draft-sequels',
+              { body: { spec_draft_id: resolvedId, limit: 40 } }
+            );
+            if (enrichErr) {
+              console.warn('SpecDraftSetup enrich-spec-draft-sequels:', enrichErr);
+            } else {
+              const refetch = await (supabase
+                .from('spec_draft_movies' as any)
+                .select('id, is_sequel, sequel_enriched_at')
+                .eq('spec_draft_id', resolvedId)) as {
+                data: Array<{
+                  id: string;
+                  is_sequel?: boolean | null;
+                  sequel_enriched_at?: string | null;
+                }> | null;
+                error: any;
+              };
+              if (!refetch.error && refetch.data && refetch.data.length > 0) {
+                poolRows = refetch.data;
+              }
+            }
+          }
+
+          const movieIds = poolRows.map((m) => m.id);
           const categoriesResult = await (supabase
             .from('spec_draft_movie_categories' as any)
             .select('category_name')
@@ -342,36 +377,41 @@ const SpecDraftSetup = () => {
 
           if (categoriesError) {
             console.error('Error fetching movie categories:', categoriesError);
-          } else if (categoriesData) {
-            // Count movies per category
-            const counts: Record<string, number> = {};
-            categoriesData.forEach(cat => {
-              counts[cat.category_name] = (counts[cat.category_name] || 0) + 1;
-            });
-            setCategoryCounts(counts);
-
-            // Get unique categories
-            const uniqueCategories = new Set<string>();
-            categoriesData.forEach(cat => uniqueCategories.add(cat.category_name));
-            
-            // Combine standard, custom, and movie categories
-            const allCats = [
-              ...standardCategories,
-              ...(customCats || []).map(c => c.category_name),
-              ...Array.from(uniqueCategories),
-            ];
-            
-            // Remove duplicates and sort
-            const uniqueAllCats = Array.from(new Set(allCats));
-            setAllCategories(uniqueAllCats);
-
-            // Initialize all categories as unselected
-            const initialSelection: Record<string, boolean> = {};
-            uniqueAllCats.forEach(cat => {
-              initialSelection[cat] = false;
-            });
-            setSelectedCategories(initialSelection);
           }
+
+          const categoriesRows = categoriesData || [];
+
+          // Count movies per category from join table
+          const counts: Record<string, number> = {};
+          categoriesRows.forEach((cat) => {
+            counts[cat.category_name] = (counts[cat.category_name] || 0) + 1;
+          });
+          // Sequel: use TMDB-persisted column (can differ from join table if not synced)
+          counts['Sequel'] = poolRows.filter((m) => m.is_sequel === true).length;
+
+          setCategoryCounts(counts);
+
+          // Get unique category names from join table
+          const uniqueCategories = new Set<string>();
+          categoriesRows.forEach((cat) => uniqueCategories.add(cat.category_name));
+
+          // Combine standard, custom, and movie categories
+          const allCats = [
+            ...standardCategories,
+            ...(customCats || []).map((c) => c.category_name),
+            ...Array.from(uniqueCategories),
+          ];
+
+          // Remove duplicates and sort
+          const uniqueAllCats = Array.from(new Set(allCats));
+          setAllCategories(uniqueAllCats);
+
+          // Initialize all categories as unselected
+          const initialSelection: Record<string, boolean> = {};
+          uniqueAllCats.forEach((cat) => {
+            initialSelection[cat] = false;
+          });
+          setSelectedCategories(initialSelection);
         } else {
           // No movies, just use standard and custom categories
           const allCats = [

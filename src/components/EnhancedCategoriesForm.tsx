@@ -4,7 +4,12 @@ import { CheckboxIcon } from '@/components/icons';
 import { categoryValidationService } from '@/services/categoryValidationService';
 import { progressiveCategoryService } from '@/services/progressiveCategoryService';
 import { CategoryAnalysisResponse, CategoryAvailabilityResult } from '@/types/categoryTypes';
-import { getCategoryConfig, getCategoriesForTheme, getSpecCategoriesForActor } from '@/config/categoryConfigs';
+import {
+  getCategoryConfig,
+  getCategoriesForTheme,
+  getSpecCategoriesForActor,
+  isGlobalStandardCategory,
+} from '@/config/categoryConfigs';
 import { getCleanActorName } from '@/lib/utils';
 
 /**
@@ -690,8 +695,9 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
   };
 
   const getAvailabilityForCategory = (category: string) => {
-    // For spec categories, use the direct count from database
-    if (specCategories.includes(category)) {
+    // Custom spec categories: counts from actor_spec_categories.movie_tmdb_ids.
+    // Global categories (Sequel, genres, …) use analyze / progressive, not the whitelist.
+    if (specCategories.includes(category) && !isGlobalStandardCategory(category)) {
       const movieCount = specCategoryCounts.get(category) || 0;
       const requiredCount = playerCount;
       const status = movieCount >= requiredCount ? 'sufficient' : 
@@ -808,7 +814,8 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
       >
         {categoriesToRender.map((category, index) => {
           const categoryConfig = getCategoryConfig(category);
-          const isSpecCategory = specCategories.includes(category);
+          const isSpecCategory =
+            specCategories.includes(category) && !isGlobalStandardCategory(category);
           const availability = getAvailabilityForCategory(category);
           
           // Debug logging for all categories

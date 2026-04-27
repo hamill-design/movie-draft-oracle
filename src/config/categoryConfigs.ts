@@ -264,6 +264,11 @@ export const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
   }
 };
 
+/** True for built-in categories (genres, decades, Oscar, Blockbuster, Sequel). Actor `actor_spec_categories` whitelists apply only to custom names — not these. */
+export function isGlobalStandardCategory(categoryName: string): boolean {
+  return Object.prototype.hasOwnProperty.call(CATEGORY_CONFIGS, categoryName);
+}
+
 export const getCategoryConfig = (categoryName: string): CategoryConfig | undefined => {
   return CATEGORY_CONFIGS[categoryName];
 };

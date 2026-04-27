@@ -9,6 +9,7 @@ declare const Deno: {
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 // @ts-ignore - Deno ESM imports are resolved at runtime
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { isGlobalStandardCategory } from '../_shared/globalStandardCategories.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -502,17 +503,22 @@ function isMovieEligibleForCategory(
   option?: string, 
   specCategoriesMap?: Map<string, number[]>
 ): boolean {
-  // Check if this is a spec category for the current actor
-  if (theme === 'people' && option && specCategoriesMap && specCategoriesMap.has(category)) {
+  // Custom actor spec categories: whitelist by movie_tmdb_ids. Global categories (Sequel, genres, etc.)
+  // use fetch-movies / switch logic below, even if a stale row exists in actor_spec_categories.
+  if (
+    theme === 'people' &&
+    option &&
+    specCategoriesMap &&
+    specCategoriesMap.has(category) &&
+    !isGlobalStandardCategory(category)
+  ) {
     const allowedMovieIds = specCategoriesMap.get(category) || [];
     const movieId = movie.id || movie.tmdbId;
-    
+
     if (movieId && allowedMovieIds.includes(movieId)) {
       console.log(`✅ Spec category match: "${movie.title}" (ID: ${movieId}) matches ${category} for ${option}`);
       return true;
     }
-    // If it's a spec category but movie ID doesn't match, return false
-    // (don't fall through to standard category logic for spec categories)
     return false;
   }
   
