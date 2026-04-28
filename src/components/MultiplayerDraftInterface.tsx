@@ -1418,7 +1418,7 @@ export const MultiplayerDraftInterface = ({
                           }}>
                             <div
                               title={participant.participant_name}
-                              className="truncate md:line-clamp-2 md:whitespace-normal"
+                              className="truncate md:line-clamp-3 md:whitespace-normal"
                               style={{
                                 alignSelf: 'stretch',
                                 maxWidth: '100%',

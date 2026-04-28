@@ -174,7 +174,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
                 }}
               >
                 <div 
-                  className="w-full truncate md:line-clamp-2 md:whitespace-normal"
+                  className="w-full truncate md:line-clamp-3 md:whitespace-normal"
                   style={{
                     color: '#FCFFFF',
                     fontSize: '14px',

@@ -1036,7 +1036,7 @@ const FinalScores = () => {
                     <RankBadge rank={index + 1} size={32} className="shrink-0" />
                     <div className="min-w-0 flex-1 pb-0.5 flex flex-col gap-0.5 overflow-hidden">
                       <div
-                        className="truncate text-greyscale-blue-100 text-base font-brockmann font-semibold leading-6 tracking-[0.32px] md:line-clamp-2 md:whitespace-normal"
+                        className="truncate text-greyscale-blue-100 text-base font-brockmann font-semibold leading-6 tracking-[0.32px] md:line-clamp-3 md:whitespace-normal"
                         title={team.playerName}
                       >
                         {team.playerName}
