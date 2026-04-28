@@ -580,10 +580,9 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
       return;
     }
     
-    // Check if results contain errors
-    const hasErrors = analysisResult.results.some(result => 
-      result.reason?.includes('Analysis failed') || 
-      (result.movieCount === 0 && result.status === 'insufficient' && result.reason)
+    // Real edge failures only — insufficient category counts are not errors
+    const hasErrors = analysisResult.results.some((result) =>
+      result.reason?.includes('Analysis failed')
     );
     
     // If we have error results and it's from cache, clear cache and force refresh

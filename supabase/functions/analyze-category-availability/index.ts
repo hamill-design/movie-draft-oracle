@@ -233,10 +233,70 @@ serve(async (req) => {
       console.log('🔍 DEBUG: Analyzing Clark Gable + 50s combination - this will have enhanced logging');
     }
 
-    // Analyze all categories in parallel for better performance
-    const categoryPromises = categories.map(async (category) => {
+    const academyInSelection = categories.includes('Academy Award Nominee or Winner');
+    const preferOscarBody =
+      preferFreshOscarStatus === true || academyInSelection;
+
+    let specCategoriesMap = new Map<string, number[]>();
+    if (theme === 'people' && option) {
+      specCategoriesMap = await getActorSpecCategories(option);
+    }
+
+    let movies: any[] = [];
+    try {
+      movies = await loadMoviesForAnalysis(supabase, theme, option, preferOscarBody);
+    } catch (error) {
+      console.error('❌ Shared fetch-movies failed:', error);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      return new Response(
+        JSON.stringify({ error: errMsg }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+
+    if (theme === 'people' && option) {
+      const personLifespan = await getPersonLifespan(option);
+      if (personLifespan && personLifespan.death_date) {
+        console.log(`📅 LIFESPAN INFO: ${option} died on ${personLifespan.death_date}`);
+        const deathYear = new Date(personLifespan.death_date).getFullYear();
+        console.log(`🚫 Movies after ${deathYear + 1} should be filtered out (1-year grace period)`);
+      } else {
+        console.log(`💭 ${option} is not in our deceased actors database (assumed living)`);
+      }
+    }
+
+    if (categories.includes('Sequel') && movies.length > 0) {
+      const sequelRows = movies.filter((m: any) => m.isSequel === true);
+      console.log(
+        `🔢 Sequel verification: ${sequelRows.length} titles with isSequel===true in shared pool (${movies.length} credits total)`
+      );
+      if (sequelRows.length > 0) {
+        console.log(
+          '   Sample sequels (TMDB collection rule):',
+          sequelRows.slice(0, 10).map((m: any) => m.title)
+        );
+      }
+    }
+
+    if (academyInSelection && movies.length > 0) {
+      const dist = movies.reduce((acc: Record<string, number>, m: any) => {
+        const key = m.oscar_status || 'unknown';
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+      console.log('🏆 Oscar status coverage (shared pool, pre-filter):', dist);
+    }
+
+    const results: CategoryAvailabilityResult[] = categories.map((category) => {
       try {
-        return await analyzeCategoryMovies(supabase, category, theme, option, playerCount, preferFreshOscarStatus);
+        return buildCategoryAvailabilityResult(
+          movies,
+          category,
+          theme,
+          option,
+          playerCount,
+          specCategoriesMap
+        );
       } catch (error) {
         console.error(`❌ Error analyzing category "${category}":`, error);
         console.error(`   Error details:`, JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
@@ -248,11 +308,9 @@ serve(async (req) => {
           sampleMovies: [],
           reason: `Analysis failed: ${error instanceof Error ? error.message : String(error)}`,
           status: 'insufficient'
-        } as CategoryAvailabilityResult;
+        };
       }
     });
-
-    const results = await Promise.all(categoryPromises);
 
     return new Response(
       JSON.stringify({
@@ -311,54 +369,40 @@ async function getActorSpecCategories(actorName: string): Promise<Map<string, nu
   return specCategoriesMap;
 }
 
-async function analyzeCategoryMovies(
+/** Single shared filmography/year pool — all category counts derive from this (aligned isSequel, etc.). */
+async function loadMoviesForAnalysis(
   supabase: any,
-  category: string,
   theme: string,
   option: string,
-  playerCount: number,
-  preferFreshOscarStatus?: boolean
-): Promise<CategoryAvailabilityResult> {
-  // Academy and Blockbuster are validated like other categories (fetch + filter + count).
-
-  // Get spec categories if this is a person-based theme
-  let specCategoriesMap = new Map<string, number[]>();
-  if (theme === 'people' && option) {
-    specCategoriesMap = await getActorSpecCategories(option);
-  }
-  
-  // Map theme and option to proper fetch-movies parameters
-  let fetchParams: any = {
-    fetchAll: true, // Enable fetchAll to get complete movie counts for all themes including year
+  preferFreshOscarBody: boolean
+): Promise<any[]> {
+  const fetchParams: any = {
+    fetchAll: true,
     limit: 1000
   };
 
   if (theme === 'people' && option) {
     fetchParams.category = 'person';
     fetchParams.searchQuery = option;
-    console.log(`Analyzing for person: ${option}`);
+    console.log(`Shared fetch for person: ${option}`);
   } else if (theme === 'year' && option) {
     fetchParams.category = 'year';
     fetchParams.searchQuery = option;
-    console.log(`Analyzing for year: ${option}`);
+    console.log(`Shared fetch for year: ${option}`);
   } else {
-    // For 'all' theme or when no specific option, get all movies
     fetchParams.category = 'all';
-    console.log('Analyzing for all movies');
+    console.log('Shared fetch for all movies');
   }
 
-  console.log('🔍 DEBUG Before fetch-movies invoke:');
-  console.log('  - theme:', theme);
-  console.log('  - option:', option);
-  console.log('  - category being analyzed:', category);
-  console.log('  - fetchParams:', JSON.stringify(fetchParams));
+  console.log(
+    '🔍 Shared fetch-movies:',
+    JSON.stringify({ theme, option, fetchParams, preferFreshOscarBody })
+  );
 
-  // Call the existing fetch-movies function to get comprehensive movie data
-  // Pass preferFreshOscarStatus for the Academy category to bypass negative cache once per call
   const { data: movieData, error } = await supabase.functions.invoke('fetch-movies', {
-    body: { 
+    body: {
       ...fetchParams,
-      preferFreshOscarStatus: preferFreshOscarStatus === true || category === 'Academy Award Nominee or Winner'
+      preferFreshOscarStatus: preferFreshOscarBody
     }
   });
 
@@ -368,49 +412,39 @@ async function analyzeCategoryMovies(
   }
 
   const movies = movieData?.results || [];
-  console.log(`Fetched ${movies.length} movies for analysis`);
-  // If analyzing Academy Award category, log oscar status coverage
-  if (category === 'Academy Award Nominee or Winner' && movies.length > 0) {
-    const dist = movies.reduce((acc: any, m: any) => {
-      const key = (m.oscar_status || 'unknown');
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-    console.log('🏆 Oscar status coverage (pre-filter):', dist);
-  }
-
-  // Enhanced logging for person-based analysis with lifespan information
-  if (theme === 'people' && option) {
-    const personLifespan = await getPersonLifespan(option);
-    if (personLifespan && personLifespan.death_date) {
-      console.log(`📅 LIFESPAN INFO: ${option} died on ${personLifespan.death_date}`);
-      const deathYear = new Date(personLifespan.death_date).getFullYear();
-      console.log(`🚫 Movies after ${deathYear + 1} should be filtered out (1-year grace period)`);
-    } else {
-      console.log(`💭 ${option} is not in our deceased actors database (assumed living)`);
-    }
-  }
-
-  // Log a few sample movies to understand the data structure
+  console.log(`Fetched ${movies.length} movies (single pool for category filters)`);
   if (movies.length > 0) {
     console.log('Sample movie data structure:', JSON.stringify(movies[0], null, 2));
   }
 
-  // Filter movies that match the category
-  const eligibleMovies = movies.filter((movie: any) => 
+  return movies;
+}
+
+function buildCategoryAvailabilityResult(
+  movies: any[],
+  category: string,
+  theme: string,
+  option: string,
+  playerCount: number,
+  specCategoriesMap: Map<string, number[]>
+): CategoryAvailabilityResult {
+  const eligibleMovies = movies.filter((movie: any) =>
     isMovieEligibleForCategory(movie, category, theme, option, specCategoriesMap)
   );
 
-  // Log decade coverage post-filter for decade categories
   if (category.includes("'s")) {
     const decadeDist = eligibleMovies.reduce((acc: any, m: any) => {
       let y = 0;
-      if (m.year && m.year > 1900) y = m.year; else {
-        const fields = ['release_date','primary_release_date','first_air_date'];
+      if (m.year && m.year > 1900) y = m.year;
+      else {
+        const fields = ['release_date', 'primary_release_date', 'first_air_date'];
         for (const f of fields) {
           if (m[f]) {
             const match = m[f].toString().match(/(\d{4})/);
-            if (match) { y = parseInt(match[1]); break; }
+            if (match) {
+              y = parseInt(match[1]);
+              break;
+            }
           }
         }
       }
@@ -425,26 +459,20 @@ async function analyzeCategoryMovies(
 
   const movieCount = eligibleMovies.length;
   const requiredCount = calculateRequiredMovies(category, playerCount);
-  
-  // Get sample movies (up to 5)
-  const sampleMovies = eligibleMovies
-    .slice(0, 5)
-    .map((movie: any) => movie.title);
+
+  const sampleMovies = eligibleMovies.slice(0, 5).map((movie: any) => movie.title);
 
   const status = getStatusFromCount(movieCount, playerCount);
   const available = movieCount >= requiredCount;
 
   console.log(`Category ${category}: ${movieCount} movies found, ${requiredCount} required`);
-  
-  // Enhanced logging for specific actor + decade combinations
+
   if (theme === 'people' && category.includes("'s")) {
     console.log(`🔍 ACTOR + DECADE: ${option} + ${category} = ${movieCount} movies`);
     if (movieCount > 0) {
       console.log(`Sample movies: ${sampleMovies.join(', ')}`);
-      // Log year distribution for decade categories
-      const yearCounts = {};
-      eligibleMovies.forEach(movie => {
-        // Use the same enhanced year extraction logic as in isMovieEligibleForCategory
+      const yearCounts: Record<number, number> = {};
+      eligibleMovies.forEach((movie) => {
         let year = 0;
         if (movie.year && movie.year > 1900) {
           year = movie.year;
@@ -461,7 +489,7 @@ async function analyzeCategoryMovies(
                     break;
                   }
                 }
-              } catch (error) {
+              } catch (_e) {
                 const yearMatch = movie[field].toString().match(/(\d{4})/);
                 if (yearMatch) {
                   const parsedYear = parseInt(yearMatch[1]);
@@ -474,7 +502,7 @@ async function analyzeCategoryMovies(
             }
           }
         }
-        
+
         if (year > 0) {
           const decade = Math.floor(year / 10) * 10;
           yearCounts[decade] = (yearCounts[decade] || 0) + 1;

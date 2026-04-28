@@ -39,29 +39,23 @@ export class CategoryValidationService {
     return Date.now() - timestamp < duration;
   }
 
+  /** True when the edge function reported a thrown/catch failure for a category (not “0 movies” business rules). */
+  private isAnalysisFailureResult(result: CategoryAvailabilityResult): boolean {
+    return result.reason?.includes('Analysis failed') === true;
+  }
+
   /**
-   * Check if results contain error responses (Analysis failed)
+   * True if the batch is mostly/entirely real analysis failures (should not cache, may clear cache).
+   * Insufficient counts (e.g. empty decades, Sequel: 0) are not errors.
    */
   private hasErrorResults(results: CategoryAvailabilityResult[]): boolean {
     if (!results || results.length === 0) return false;
 
-    const resultsToCheck = results;
-    
-    if (resultsToCheck.length === 0) return false;
-    
-    // Check if all results have error indicators
-    const allHaveErrors = resultsToCheck.every(result => 
-      result.reason?.includes('Analysis failed') || 
-      (result.movieCount === 0 && result.status === 'insufficient' && result.reason)
+    const failures = results.filter((r) => this.isAnalysisFailureResult(r));
+    if (failures.length === 0) return false;
+    return (
+      failures.length === results.length || failures.length > results.length * 0.5
     );
-    
-    // Also check if most results have errors (more than 50%)
-    const errorCount = resultsToCheck.filter(result => 
-      result.reason?.includes('Analysis failed') || 
-      (result.movieCount === 0 && result.status === 'insufficient' && result.reason)
-    ).length;
-    
-    return allHaveErrors || (errorCount > resultsToCheck.length * 0.5);
   }
 
   private getFromLocalStorage(cacheKey: string, theme: string): CategoryAnalysisResponse | null {
