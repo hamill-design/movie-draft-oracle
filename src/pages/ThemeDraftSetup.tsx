@@ -3,7 +3,9 @@ import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Users, User, Mail, Bot } from 'lucide-react';
 import { MultiPersonIcon, EmailIcon, TrashIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
@@ -46,6 +48,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
 
   const [draftMode, setDraftMode] = useState<'local' | 'multiplayer'>('local');
   const [participants, setParticipants] = useState<Participant[]>([]);
+  const [forceNewDraft, setForceNewDraft] = useState(false);
   const [newParticipant, setNewParticipant] = useState('');
   const [isAddButtonHovered, setIsAddButtonHovered] = useState(false);
   const [hoveredRemoveButton, setHoveredRemoveButton] = useState<string | null>(null);
@@ -173,6 +176,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
         participants,
         categories: data.categories,
         isMultiplayer: false,
+        ...(forceNewDraft ? { forceNewDraft: true } : {}),
       },
     });
   });
@@ -385,6 +389,21 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                   draftMode={draftMode === 'local' ? 'single' : 'multiplayer'}
                   participants={participants}
                 />
+                {draftMode === 'local' && (
+                  <div className="flex justify-center px-4">
+                    <div className="flex max-w-xl items-start gap-3 rounded-[8px] border border-greyscale-purp-850 bg-greyscale-purp-900 p-4" style={{ boxShadow: '0px 0px 6px #3B0394' }}>
+                      <Checkbox
+                        id="theme-force-new-draft"
+                        checked={forceNewDraft}
+                        onCheckedChange={(v) => setForceNewDraft(v === true)}
+                        className="mt-1 border-purple-300 data-[state=checked]:bg-brand-primary data-[state=checked]:border-brand-primary"
+                      />
+                      <Label htmlFor="theme-force-new-draft" className="cursor-pointer font-normal leading-5 text-greyscale-blue-300">
+                        Start a new draft with this setup instead of continuing an unfinished one that matches the same categories and players.
+                      </Label>
+                    </div>
+                  </div>
+                )}
                 <div className="text-center">
                   <Button
                     type="submit"

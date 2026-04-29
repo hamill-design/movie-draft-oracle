@@ -4,6 +4,8 @@ import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Users, User, Mail, Trash2, Bot } from 'lucide-react';
 import { CheckboxIcon, MultiPersonIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
@@ -220,6 +222,8 @@ const SpecDraftSetup = () => {
   const [isAddButtonHovered, setIsAddButtonHovered] = useState(false);
   const [hoveredRemoveButton, setHoveredRemoveButton] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<Record<string, boolean>>({});
+  /** When checked, bypass resume of an unfinished draft that matches this setup */
+  const [forceNewDraft, setForceNewDraft] = useState(false);
 
   // Multiplayer create requires a session (participantId); block until ready
   const canCreateMultiplayer = !!participantId;
@@ -588,6 +592,7 @@ const SpecDraftSetup = () => {
             categories: selectedCats,
             participants: participants.length > 0 ? participants : [{ name: 'Player 1', isAI: false }],
             draftMode: 'local',
+            ...(forceNewDraft ? { forceNewDraft: true } : {}),
           },
         });
       }
@@ -984,6 +989,24 @@ const SpecDraftSetup = () => {
           </div>
 
           {/* Create Draft Button */}
+          {draftMode === 'local' && (
+            <div
+              className="flex justify-center px-4"
+              style={{ width: '100%' }}
+            >
+              <div className="flex max-w-xl items-start gap-3 rounded-[8px] p-4" style={{ background: 'var(--Section-Container, #0E0E0F)', boxShadow: '0px 0px 6px #3B0394' }}>
+                <Checkbox
+                  id="spec-force-new-draft"
+                  checked={forceNewDraft}
+                  onCheckedChange={(v) => setForceNewDraft(v === true)}
+                  className="mt-1 border-purple-300 data-[state=checked]:bg-brand-primary data-[state=checked]:border-brand-primary"
+                />
+                <Label htmlFor="spec-force-new-draft" className="cursor-pointer text-greyscale-blue-300 text-sm font-normal font-brockmann leading-5">
+                  Start a new draft with this setup instead of continuing an unfinished one that matches the same categories and players.
+                </Label>
+              </div>
+            </div>
+          )}
           <div className="flex justify-center">
             <Button
               onClick={handleCreateDraft}

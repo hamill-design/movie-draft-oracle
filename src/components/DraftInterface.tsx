@@ -26,6 +26,7 @@ interface DraftInterfaceProps {
     existingDraftId?: string;
     isMultiplayer?: boolean;
     inviteCode?: string;
+    forceNewDraft?: boolean;
   };
   existingPicks?: any[];
 }
@@ -55,6 +56,8 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     participants: draftState?.participants || [],
     categories: draftState?.categories || [],
   };
+  const skipResumeSameSetup =
+    !!draftState?.forceNewDraft && !safeDraftState.isMultiplayer;
   
   // Show success message for multiplayer draft creation
   useEffect(() => {
@@ -144,6 +147,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   // Check localStorage for existing draftId on mount
   const hasCheckedLocalStorage = useRef(false);
   useEffect(() => {
+    if (skipResumeSameSetup) return;
     if (!currentDraftId && !hasInitialized.current && !hasCheckedLocalStorage.current) {
       hasCheckedLocalStorage.current = true;
       const storageKey = `draft_${safeDraftState.theme}_${safeDraftState.option}_${JSON.stringify(safeDraftState.participants)}_${JSON.stringify(safeDraftState.categories)}`;
@@ -154,7 +158,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
         return;
       }
     }
-  }, [currentDraftId, safeDraftState, navigate]);
+  }, [currentDraftId, safeDraftState, navigate, skipResumeSameSetup]);
 
   // Create draft immediately on mount if it doesn't exist
   // This applies to ALL local drafts: spec-draft, year, people, etc.
@@ -167,13 +171,15 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
       hasInitialized.current = true;
       
       try {
-        // First, check if a draft already exists with these parameters
-        const existingDraftId = await findExistingDraft({
-          theme: safeDraftState.theme,
-          option: safeDraftState.option,
-          participants: normalizedParticipants,
-          categories: safeDraftState.categories,
-        });
+        // Optionally skip resume so identical setup creates a new draft row
+        const existingDraftId = skipResumeSameSetup
+          ? null
+          : await findExistingDraft({
+              theme: safeDraftState.theme,
+              option: safeDraftState.option,
+              participants: normalizedParticipants,
+              categories: safeDraftState.categories,
+            });
 
         if (existingDraftId) {
           console.log('Found existing draft with ID:', existingDraftId);
@@ -227,7 +233,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     };
     
     initializeDraft();
-  }, [currentDraftId, existingPicks, safeDraftState, autoSaveDraft, findExistingDraft, getDraftWithPicks, loadExistingPicks, navigate]);
+  }, [currentDraftId, existingPicks, safeDraftState, skipResumeSameSetup, autoSaveDraft, findExistingDraft, getDraftWithPicks, loadExistingPicks, navigate]);
 
   // Auto-save function (defined early so it can be used in useEffect hooks)
   const performAutoSave = useCallback(async (updatedPicks: any[], isComplete: boolean) => {

@@ -1,7 +1,10 @@
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Users, User, Mail } from 'lucide-react';
 import { PersonIcon, CalendarIcon, EmailIcon, MultiPersonIcon, TrashIcon } from '@/components/icons';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
@@ -48,6 +51,8 @@ const Home = () => {
       categories: []
     }
   });
+
+  const [forceNewDraft, setForceNewDraft] = useState(false);
 
   // No auth redirect needed - guests can use the app
 
@@ -116,7 +121,8 @@ const Home = () => {
       option: selectedOption,
       participants: participants,
       categories: data.categories,
-      isMultiplayer: draftMode === 'multiplayer'
+      isMultiplayer: draftMode === 'multiplayer',
+      ...(draftMode === 'single' && forceNewDraft ? { forceNewDraft: true } : {}),
     };
 
     navigate('/draft', {
@@ -590,6 +596,22 @@ const Home = () => {
                   draftMode={draftMode}
                   participants={participants}
                 />
+
+                {draftMode === 'single' && (
+                  <div className="flex justify-center px-4">
+                    <div className="flex max-w-xl items-start gap-3 rounded-[8px] border border-greyscale-purp-850 bg-greyscale-purp-900 p-4" style={{ boxShadow: '0px 0px 6px #3B0394' }}>
+                      <Checkbox
+                        id="home-force-new-draft"
+                        checked={forceNewDraft}
+                        onCheckedChange={(v) => setForceNewDraft(v === true)}
+                        className="mt-1 border-purple-300 data-[state=checked]:bg-brand-primary data-[state=checked]:border-brand-primary"
+                      />
+                      <Label htmlFor="home-force-new-draft" className="cursor-pointer font-normal leading-5 text-greyscale-blue-300">
+                        Start a new draft with this setup instead of continuing an unfinished one that matches the same categories and players.
+                      </Label>
+                    </div>
+                  </div>
+                )}
 
                 {/* Start Draft Button */}
                 <div className="text-center">

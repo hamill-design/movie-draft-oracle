@@ -20,6 +20,8 @@ interface DraftState {
   existingDraftId?: string;
   isMultiplayer?: boolean;
   inviteCode?: string;
+  /** When true, local draft initialization skips DB + localStorage resume with the same setup. */
+  forceNewDraft?: boolean;
 }
 
 const Index = () => {
