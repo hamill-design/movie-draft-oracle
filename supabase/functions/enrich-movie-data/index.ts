@@ -368,14 +368,18 @@ Deno.serve(async (req) => {
   }
 })
 
+const BOX_OFFICE_FLOP_PENALTY = 5
+
 function calculateScore(data: any): number {
   // Box Office Score - Hybrid ROI-based formula
   // Linear scaling for 0-100% ROI (0-60 points), logarithmic for >100% ROI (60-100 points)
   let boxOfficeScore = 0
+  let boxOfficeFlop = false
   if (data.budget && data.revenue && data.budget > 0) {
     const profit = data.revenue - data.budget
     if (profit <= 0) {
-      boxOfficeScore = 0 // Flops get 0
+      boxOfficeScore = 0 // Flops get 0; final score also penalized below
+      boxOfficeFlop = true
     } else {
       const roiPercent = (profit / data.budget) * 100
       if (roiPercent <= 100) {
@@ -469,8 +473,8 @@ function calculateScore(data: any): number {
     oscarBonus = 3
   }
 
-  // Final score is the average plus Oscar bonus
-  const finalScore = averageScore + oscarBonus
+  const finalScore =
+    averageScore + oscarBonus - (boxOfficeFlop ? BOX_OFFICE_FLOP_PENALTY : 0)
   return Math.round(finalScore * 100) / 100
 }
 

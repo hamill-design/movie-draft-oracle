@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { DraftPick } from '@/hooks/useDrafts';
 import TeamRoster from '@/components/TeamRoster';
 import ShareResultsButton from '@/components/ShareResultsButton';
-import { calculateDetailedScore } from '@/utils/scoreCalculator';
+import { calculateDetailedScore, BOX_OFFICE_FLOP_PENALTY } from '@/utils/scoreCalculator';
 import RankBadge from '@/components/RankBadge';
 import { storePendingDraft } from '@/utils/draftStorage';
 import { fetchOscarCacheMap, mergePicksOscarWithCache } from '@/utils/oscarPickSync';
@@ -520,10 +520,12 @@ const FinalScores = () => {
               
               // Box Office - Hybrid ROI-based formula
               let boxOfficeScore = 0;
+              let boxOfficeFlop = false;
               if (enrichedPick.movie_budget && enrichedPick.movie_revenue && enrichedPick.movie_budget > 0) {
                 const profit = enrichedPick.movie_revenue - enrichedPick.movie_budget;
                 if (profit <= 0) {
-                  boxOfficeScore = 0; // Flops get 0
+                  boxOfficeScore = 0; // Flops get 0; penalized below
+                  boxOfficeFlop = true;
                 } else {
                   const roiPercent = (profit / enrichedPick.movie_budget) * 100;
                   if (roiPercent <= 100) {
@@ -617,7 +619,10 @@ const FinalScores = () => {
                 oscarBonus = 3;
               }
               
-              calculatedScore = Math.round((averageScore + oscarBonus) * 100) / 100;
+              calculatedScore =
+                Math.round(
+                  (averageScore + oscarBonus - (boxOfficeFlop ? BOX_OFFICE_FLOP_PENALTY : 0)) * 100
+                ) / 100;
             }
             
             enrichedPick.calculated_score = calculatedScore || null;
