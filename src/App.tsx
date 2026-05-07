@@ -30,6 +30,9 @@ import ThemeDraftSetup from "./pages/ThemeDraftSetup";
 import ThemeHubPage from "./pages/ThemeHubPage";
 import ThemeLandingPage from "./pages/ThemeLandingPage";
 import HowToDraftPage from "./pages/HowToDraftPage";
+import FAQ from "./pages/FAQ";
+import DraftByFilmography from "./pages/DraftByFilmography";
+import DraftByYear from "./pages/DraftByYear";
 
 function LegacyThemesSlugRedirect() {
   const { slug } = useParams<{ slug: string }>();
@@ -75,6 +78,9 @@ const App = () => (
               <Route path="/join-draft" element={<JoinDraft />} />
               <Route path="/learn-more" element={<LearnMore />} />
               <Route path="/how-to-draft" element={<HowToDraftPage />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/draft-by-filmography" element={<DraftByFilmography />} />
+              <Route path="/draft-by-year" element={<DraftByYear />} />
               <Route path="/special-draft" element={<ThemeHubPage />} />
               <Route path="/special-draft/:slug" element={<ThemeLandingPage />} />
               <Route path="/themes" element={<Navigate to="/special-draft" replace />} />

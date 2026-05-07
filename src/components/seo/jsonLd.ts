@@ -129,6 +129,21 @@ export function themeHubItemListNode(drafts: PublicSpecDraftSummary[], pageDescr
   };
 }
 
+/** FAQPage node — accepts Q&A pairs; wraps in a @graph-compatible node. */
+export function faqPageNode(items: { question: string; answer: string }[]) {
+  return {
+    '@type': 'FAQPage',
+    mainEntity: items.map(({ question, answer }) => ({
+      '@type': 'Question',
+      name: question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: answer,
+      },
+    })),
+  };
+}
+
 export function articleNode(opts: {
   path: string;
   headline: string;
