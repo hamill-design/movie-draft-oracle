@@ -1,9 +1,74 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/atoms';
 import { HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { getInitials } from '@/utils/avatarUpload';
+
+const useHeaderProfile = (userId: string | undefined) => {
+  const [profile, setProfile] = useState<{ name: string | null; avatar_url: string | null } | null>(null);
+
+  useEffect(() => {
+    if (!userId) { setProfile(null); return; }
+    supabase
+      .from('profiles')
+      .select('name, avatar_url')
+      .eq('id', userId)
+      .single()
+      .then(({ data }) => setProfile(data ?? null));
+  }, [userId]);
+
+  return profile;
+};
+
+interface UserAvatarProps {
+  name: string | null;
+  email: string | null;
+  avatarUrl: string | null;
+  size?: number;
+  onClick: () => void;
+}
+
+const UserAvatar = ({ name, email, avatarUrl, size = 32, onClick }: UserAvatarProps) => {
+  const initials = getInitials(name, email);
+  return (
+    <button
+      onClick={onClick}
+      title="My Profile"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        background: avatarUrl ? 'transparent' : '#3B0394',
+        border: '2px solid var(--Brand-Primary, #7142FF)',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0,
+        padding: 0,
+      }}
+    >
+      {avatarUrl ? (
+        <img src={avatarUrl} alt={name ?? 'Profile'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      ) : (
+        <span style={{
+          color: '#FCFFFF',
+          fontSize: size * 0.375,
+          fontFamily: 'Brockmann',
+          fontWeight: '600',
+          lineHeight: 1,
+          userSelect: 'none',
+        }}>
+          {initials}
+        </span>
+      )}
+    </button>
+  );
+};
 
 // Logo Components
 const LogoLong = ({ className }: { className?: string }) => (
@@ -48,6 +113,7 @@ const LogoDefault = ({ className }: { className?: string }) => (
 const AppHeader = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const profile = useHeaderProfile(user?.id);
 
   return (
     <>
@@ -78,15 +144,13 @@ const AppHeader = () => {
 
             {/* Profile/Login Button */}
             {user ? (
-              <Button
+              <UserAvatar
+                name={profile?.name ?? null}
+                email={user.email ?? null}
+                avatarUrl={profile?.avatar_url ?? null}
+                size={36}
                 onClick={() => navigate('/profile')}
-                variant="default"
-                size="sm"
-                font="brockmann-medium"
-                className="bg-brand-primary hover:bg-brand-primary/90 text-brand-primary-foreground px-4 py-2 text-sm rounded-sm"
-              >
-                My Profile
-              </Button>
+              />
             ) : (
               <Button
                 onClick={() => navigate('/auth')}
@@ -115,15 +179,13 @@ const AppHeader = () => {
           <div className="flex flex-col items-end gap-3">
             {/* Profile/Login Button */}
             {user ? (
-              <Button
+              <UserAvatar
+                name={profile?.name ?? null}
+                email={user.email ?? null}
+                avatarUrl={profile?.avatar_url ?? null}
+                size={36}
                 onClick={() => navigate('/profile')}
-                variant="default"
-                size="sm"
-                font="brockmann-medium"
-                className="bg-brand-primary hover:bg-brand-primary/90 text-brand-primary-foreground px-4 py-2 text-sm rounded-sm"
-              >
-                My Profile
-              </Button>
+              />
             ) : (
               <Button
                 onClick={() => navigate('/auth')}
@@ -161,11 +223,11 @@ const AppHeader = () => {
           </button>
 
           {/* Right side buttons */}
-          <div className="self-stretch flex justify-end items-start gap-3">
+          <div className="self-stretch flex justify-end items-center gap-3">
             {/* Learn More Button */}
-            <Button 
+            <Button
               onClick={() => navigate('/learn-more')}
-              variant="ghost" 
+              variant="ghost"
               size="sm"
               font="brockmann-medium"
               className="text-purple-150 hover:text-purple-200 hover:bg-transparent px-3 py-2 text-sm"
@@ -176,15 +238,13 @@ const AppHeader = () => {
 
             {/* Profile/Login Button */}
             {user ? (
-              <Button
+              <UserAvatar
+                name={profile?.name ?? null}
+                email={user.email ?? null}
+                avatarUrl={profile?.avatar_url ?? null}
+                size={36}
                 onClick={() => navigate('/profile')}
-                variant="default"
-                size="sm"
-                font="brockmann-medium"
-                className="bg-brand-primary hover:bg-brand-primary/90 text-brand-primary-foreground px-4 py-2 text-sm rounded-sm"
-              >
-                My Profile
-              </Button>
+              />
             ) : (
               <Button
                 onClick={() => navigate('/auth')}

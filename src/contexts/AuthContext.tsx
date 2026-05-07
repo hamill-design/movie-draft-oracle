@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useGuestSession, GuestSession } from '@/hooks/useGuestSession';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { getPendingDraft, clearPendingDraft } from '@/utils/draftStorage';
+import { uploadPendingAvatar } from '@/utils/avatarUpload';
 import {
   MARKETING_AUDIENCE_SYNC_LS_PREFIX,
   syncMarketingAudience,
@@ -81,6 +82,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Only include guest loading if user is not authenticated
   const loading = authLoading || (!user && guestLoading);
   const isGuest = !user && !!guestSession;
+
+  const PendingAvatarProcessor: React.FC = () => {
+    const [hasProcessed, setHasProcessed] = useState(false);
+
+    useEffect(() => {
+      if (!user || hasProcessed) return;
+      setHasProcessed(true);
+      uploadPendingAvatar(user.id).catch(() => {});
+    }, [user, hasProcessed]);
+
+    return null;
+  };
 
   // Component to handle pending draft processing after login
   const PendingDraftProcessor: React.FC = () => {
@@ -207,6 +220,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={value}>
+      <PendingAvatarProcessor />
       <PendingDraftProcessor />
       <MarketingAudienceSync user={user} />
       {children}

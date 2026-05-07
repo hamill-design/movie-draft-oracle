@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Camera } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getPendingDraft, clearPendingDraft } from '@/utils/draftStorage';
+import { savePendingAvatar, validateAvatarFile, fileToPreviewDataUrl, getInitials } from '@/utils/avatarUpload';
 
 /** Origin for Supabase auth email links (signup confirm, password reset). Override with VITE_APP_URL for local testing. */
 const PUBLIC_SITE_URL = (import.meta.env.VITE_APP_URL || 'https://moviedrafter.com').replace(
@@ -25,6 +26,12 @@ const Auth = () => {
   const [isButtonHovered, setIsButtonHovered] = useState(false);
   const [isTextButtonHovered, setIsTextButtonHovered] = useState(false);
   const [isForgotPasswordHovered, setIsForgotPasswordHovered] = useState(false);
+  const [isSignupStep2, setIsSignupStep2] = useState(false);
+  const [signupName, setSignupName] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState('');
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -106,11 +113,8 @@ const Auth = () => {
             setError(error.message);
           }
         } else {
-          toast({
-            title: "Account created!",
-            description: "Please check your email to confirm your account.",
-          });
-          setIsLogin(true);
+          setSignupName(name.trim());
+          setIsSignupStep2(true);
         }
       }
     } catch (err) {
@@ -155,6 +159,32 @@ const Auth = () => {
     setName('');
     setMarketingEmailsOptIn(false);
     setIsResetMode(false);
+  };
+
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const err = validateAvatarFile(file);
+    if (err) { setAvatarError(err); return; }
+    setAvatarError('');
+    setAvatarFile(file);
+    const preview = await fileToPreviewDataUrl(file);
+    setAvatarPreview(preview);
+  };
+
+  const finishSignup = async (withAvatar: boolean) => {
+    if (withAvatar && avatarFile) {
+      await savePendingAvatar(avatarFile);
+    }
+    toast({
+      title: "Account created!",
+      description: "Please check your email to confirm your account.",
+    });
+    setIsSignupStep2(false);
+    setAvatarFile(null);
+    setAvatarPreview(null);
+    setSignupName('');
+    setIsLogin(true);
   };
 
   const handlePostLoginDraftSave = async () => {
@@ -286,7 +316,7 @@ const Auth = () => {
       }}>
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={{ paddingTop: '6px' }}>
-            <h1 style={{ 
+            <h1 style={{
               textAlign: 'center',
               color: 'var(--Text-Primary, #FCFFFF)',
               fontSize: '20px',
@@ -295,12 +325,155 @@ const Auth = () => {
               lineHeight: '28px',
               margin: 0
             }}>
-              {isResetMode ? 'Reset password' : isLogin ? 'Sign in' : 'Create account'}
+              {isSignupStep2 ? 'Add a profile photo' : isResetMode ? 'Reset password' : isLogin ? 'Sign in' : 'Create account'}
             </h1>
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {isResetMode ? (
+            {isSignupStep2 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', alignItems: 'center' }}>
+                <p style={{
+                  textAlign: 'center',
+                  color: 'var(--Text-Light-grey, #BDC3C2)',
+                  fontSize: '14px',
+                  fontFamily: 'Brockmann',
+                  fontWeight: '400',
+                  lineHeight: '20px',
+                  margin: 0
+                }}>
+                  You can add a photo now or do it later from your profile.
+                </p>
+
+                {/* Avatar preview circle */}
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  style={{
+                    width: '96px',
+                    height: '96px',
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    background: avatarPreview ? 'transparent' : 'var(--UI-Primary, #1D1D1F)',
+                    border: '2px dashed var(--Button-Stroke, #666469)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    position: 'relative',
+                    flexShrink: 0,
+                    padding: 0,
+                  }}
+                >
+                  {avatarPreview ? (
+                    <img
+                      src={avatarPreview}
+                      alt="Preview"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                      <Camera size={20} color="var(--Text-Light-grey, #BDC3C2)" />
+                      <span style={{
+                        color: 'var(--Text-Light-grey, #BDC3C2)',
+                        fontSize: '11px',
+                        fontFamily: 'Brockmann',
+                        fontWeight: '400',
+                      }}>
+                        {getInitials(signupName, null)}
+                      </span>
+                    </div>
+                  )}
+                </button>
+
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,image/webp"
+                  onChange={handleAvatarFileChange}
+                  style={{ display: 'none' }}
+                />
+
+                {avatarError && (
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 12px',
+                    background: '#FEE2E2',
+                    border: '1px solid #EF4444',
+                    borderRadius: '4px',
+                    color: '#DC2626',
+                    fontSize: '13px',
+                    width: '100%'
+                  }}>
+                    <AlertCircle size={14} />
+                    {avatarError}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  style={{
+                    padding: '8px 20px',
+                    background: 'transparent',
+                    border: '1px solid var(--Button-Stroke, #666469)',
+                    borderRadius: '2px',
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {avatarFile ? 'Change photo' : 'Choose photo'}
+                </button>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+                  <button
+                    type="button"
+                    onClick={() => finishSignup(true)}
+                    disabled={!avatarFile}
+                    style={{
+                      padding: '12px 24px',
+                      background: avatarFile ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
+                      borderRadius: '2px',
+                      border: 'none',
+                      color: 'var(--Text-Primary, #FCFFFF)',
+                      fontSize: '16px',
+                      fontFamily: 'Brockmann',
+                      fontWeight: '600',
+                      lineHeight: '24px',
+                      letterSpacing: '0.32px',
+                      cursor: avatarFile ? 'pointer' : 'not-allowed',
+                      opacity: avatarFile ? 1 : 0.4,
+                      width: '100%',
+                      transition: 'background-color 0.2s ease'
+                    }}
+                  >
+                    Continue
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => finishSignup(false)}
+                    style={{
+                      padding: '8px 16px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--Text-Light-grey, #BDC3C2)',
+                      fontSize: '14px',
+                      fontFamily: 'Brockmann',
+                      fontWeight: '400',
+                      cursor: 'pointer',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    Skip for now
+                  </button>
+                </div>
+              </div>
+            ) : isResetMode ? (
               <form onSubmit={handlePasswordReset} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {error && (
                   <div style={{
@@ -624,7 +797,7 @@ const Auth = () => {
               </form>
             )}
 
-            {!isResetMode && (
+            {!isResetMode && !isSignupStep2 && (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                  <div style={{ 
                    textAlign: 'center',

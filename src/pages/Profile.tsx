@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
@@ -9,7 +9,8 @@ import { syncMarketingAudience } from '@/lib/marketingAudienceSync';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Calendar, Users, Trophy, Trash2, User, Edit3, Save, X } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Trophy, Trash2, User, Edit3, Save, X, Camera } from 'lucide-react';
+import { uploadAvatarAndUpdateProfile, validateAvatarFile, getInitials } from '@/utils/avatarUpload';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDrafts } from '@/hooks/useDrafts';
@@ -47,6 +48,8 @@ const Profile = () => {
   const [draftToDelete, setDraftToDelete] = useState<string | null>(null);
   const [specDraftData, setSpecDraftData] = useState<Map<string, { name: string; photo_url: string | null }>>(new Map());
   const [marketingPrefUpdating, setMarketingPrefUpdating] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -243,6 +246,27 @@ const Profile = () => {
   const handleCancelEdit = () => {
     setNewName(profile?.name || '');
     setIsEditingName(false);
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    const err = validateAvatarFile(file);
+    if (err) {
+      toast({ title: 'Invalid file', description: err, variant: 'destructive' });
+      return;
+    }
+    setIsUploadingAvatar(true);
+    try {
+      const avatarUrl = await uploadAvatarAndUpdateProfile(user.id, file);
+      setProfile((prev: any) => prev ? { ...prev, avatar_url: avatarUrl } : prev);
+      toast({ title: 'Photo updated', description: 'Your profile photo has been saved.' });
+    } catch {
+      toast({ title: 'Upload failed', description: 'Could not save your photo. Please try again.', variant: 'destructive' });
+    } finally {
+      setIsUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
   };
 
   const handleMarketingPrefChange = async (checked: boolean) => {
@@ -578,6 +602,63 @@ const Profile = () => {
               </Button>
             )}
           </div>
+          {/* Avatar */}
+          <div className="flex items-center gap-4 pb-2">
+            <div style={{ position: 'relative', width: 80, height: 80, flexShrink: 0 }}>
+              <div style={{
+                width: 80,
+                height: 80,
+                borderRadius: '50%',
+                overflow: 'hidden',
+                background: profile?.avatar_url ? 'transparent' : '#3B0394',
+                border: '2px solid var(--Brand-Primary, #7142FF)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                {profile?.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt="Profile"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  <span style={{
+                    color: '#FCFFFF',
+                    fontSize: 30,
+                    fontFamily: 'Brockmann',
+                    fontWeight: '600',
+                    userSelect: 'none',
+                  }}>
+                    {getInitials(profile?.name, user?.email)}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Button
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                variant="outline"
+                size="sm"
+                className="border-greyscale-purp-600 text-greyscale-blue-300 hover:bg-greyscale-purp-800 flex items-center gap-2"
+              >
+                <Camera size={14} />
+                {isUploadingAvatar ? 'Uploading...' : 'Edit photo'}
+              </Button>
+              <p className="text-greyscale-blue-500 text-xs font-brockmann">
+                PNG, JPEG or WebP · Max 5MB
+              </p>
+            </div>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp"
+              onChange={handleAvatarChange}
+              style={{ display: 'none' }}
+            />
+          </div>
+
           <div className="self-stretch justify-start items-center gap-4 inline-flex flex-wrap content-center">
             <div className="flex-1 min-w-[300px] justify-start items-center gap-1.5 flex">
               <div className="justify-center flex flex-col text-greyscale-blue-300 text-base font-brockmann font-semibold leading-6 tracking-[0.32px]">
