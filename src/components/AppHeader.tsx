@@ -33,39 +33,99 @@ interface UserAvatarProps {
 
 const UserAvatar = ({ name, email, avatarUrl, size = 32, onClick }: UserAvatarProps) => {
   const initials = getInitials(name, email);
+  const [hover, setHover] = useState(false);
+  const [pressed, setPressed] = useState(false);
+
+  const showRing = hover || pressed;
+  /** Design tokens use space-separated HSL channels; must use hsl() — see index.css & Auth.tsx */
+  const ringColor = pressed
+    ? 'hsl(var(--brand-primary))'
+    : 'hsl(var(--Hover))';
+
+  const mediaBase: React.CSSProperties = {
+    width: '100%',
+    height: '100%',
+    borderRadius: '50%',
+    boxSizing: 'border-box',
+  };
+
   return (
     <button
+      type="button"
       onClick={onClick}
       title="My Profile"
+      onPointerEnter={() => setHover(true)}
+      onPointerLeave={() => {
+        setHover(false);
+        setPressed(false);
+      }}
+      onPointerDown={() => setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onBlur={() => {
+        setHover(false);
+        setPressed(false);
+      }}
       style={{
         width: size,
         height: size,
-        borderRadius: '50%',
-        overflow: 'hidden',
-        background: avatarUrl ? 'transparent' : '#3B0394',
-        border: '2px solid var(--Brand-Primary, #7142FF)',
         cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
         flexShrink: 0,
         padding: 0,
+        border: 'none',
+        background: 'transparent',
+        display: 'block',
       }}
     >
-      {avatarUrl ? (
-        <img src={avatarUrl} alt={name ?? 'Profile'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      ) : (
-        <span style={{
-          color: '#FCFFFF',
-          fontSize: size * 0.375,
-          fontFamily: 'Brockmann',
-          fontWeight: '600',
-          lineHeight: 1,
-          userSelect: 'none',
-        }}>
-          {initials}
-        </span>
-      )}
+      <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', borderRadius: '50%' }}>
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={name ?? 'Profile'}
+            style={{
+              ...mediaBase,
+              objectFit: 'cover',
+              display: 'block',
+            }}
+          />
+        ) : (
+          <div
+            style={{
+              ...mediaBase,
+              background: '#3B0394',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <span
+              style={{
+                color: '#FCFFFF',
+                fontSize: size * 0.375,
+                fontFamily: 'Brockmann',
+                fontWeight: '600',
+                lineHeight: 1,
+                userSelect: 'none',
+              }}
+            >
+              {initials}
+            </span>
+          </div>
+        )}
+        {showRing && (
+          <span
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: '50%',
+              border: `2px solid ${ringColor}`,
+              boxSizing: 'border-box',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          />
+        )}
+      </div>
     </button>
   );
 };

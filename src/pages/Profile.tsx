@@ -639,11 +639,11 @@ const Profile = () => {
               <Button
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={isUploadingAvatar}
-                variant="outline"
+                variant="ghost"
                 size="sm"
-                className="border-greyscale-purp-600 text-greyscale-blue-300 hover:bg-greyscale-purp-800 flex items-center gap-2"
+                className="group border border-greyscale-purp-600 bg-greyscale-purp-850 text-greyscale-blue-300 shadow-none transition-colors hover:border-greyscale-purp-500 hover:bg-greyscale-purp-800 hover:text-greyscale-blue-100 focus-visible:text-greyscale-blue-100 flex items-center gap-2"
               >
-                <Camera size={14} />
+                <Camera size={14} className="shrink-0 text-greyscale-blue-300 transition-colors group-hover:text-greyscale-blue-100" />
                 {isUploadingAvatar ? 'Uploading...' : 'Edit photo'}
               </Button>
               <p className="text-greyscale-blue-500 text-xs font-brockmann">
@@ -659,68 +659,64 @@ const Profile = () => {
             />
           </div>
 
-          <div className="self-stretch justify-start items-center gap-4 inline-flex flex-wrap content-center">
-            <div className="flex-1 min-w-[300px] justify-start items-center gap-1.5 flex">
-              <div className="justify-center flex flex-col text-greyscale-blue-300 text-base font-brockmann font-semibold leading-6 tracking-[0.32px]">
+          <div className="self-stretch flex flex-wrap items-stretch gap-4">
+            <div className="flex min-h-12 flex-1 min-w-[300px] items-center gap-1.5">
+              <div className="flex shrink-0 flex-col justify-center text-greyscale-blue-300 text-base font-brockmann font-semibold leading-6 tracking-[0.32px]">
                 Name:
               </div>
-              <div className="flex-col justify-start items-start inline-flex">
+              <div className="inline-flex min-h-12 min-w-0 flex-1 flex-col justify-center items-start">
                 {isEditingName ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex w-full min-w-0 items-center gap-2">
                     <Input
                       value={newName}
                       onChange={(e) => setNewName(e.target.value)}
-                      className="bg-greyscale-purp-850 border-greyscale-purp-600 text-greyscale-blue-100"
+                      className="min-h-12 flex-1 bg-greyscale-purp-850 border-greyscale-purp-600 text-greyscale-blue-100"
                       placeholder="Enter your name"
                     />
                     <Button
                       onClick={handleSaveName}
                       size="sm"
-                      className="bg-positive-green-500 hover:bg-positive-green-600"
+                      className="size-12 shrink-0 bg-positive-green-500 hover:bg-positive-green-600 p-0"
                     >
                       <Save size={16} />
                     </Button>
                     <Button
                       onClick={handleCancelEdit}
                       size="sm"
-                      variant="outline"
-                      className="border-greyscale-purp-600 text-greyscale-blue-300 hover:bg-greyscale-purp-800"
+                      variant="ghost"
+                      className="group size-12 shrink-0 border border-greyscale-purp-600 bg-greyscale-purp-850 text-greyscale-blue-300 shadow-none transition-colors hover:border-greyscale-purp-500 hover:bg-greyscale-purp-800 hover:text-greyscale-blue-100 focus-visible:text-greyscale-blue-100 p-0"
                     >
-                      <X size={16} />
+                      <X size={16} className="text-greyscale-blue-300 transition-colors group-hover:text-greyscale-blue-100" />
                     </Button>
                   </div>
                 ) : (
-                  <div className="justify-center flex flex-col text-greyscale-blue-300 text-base font-brockmann font-normal leading-6">
+                  <div className="flex min-h-12 flex-col justify-center text-greyscale-blue-300 text-base font-brockmann font-normal leading-6">
                     {profile?.name || 'No name set'}
                   </div>
                 )}
               </div>
               {!isEditingName && (
-                <div 
+                <div
                   onClick={() => setIsEditingName(true)}
-                  className="p-1 rounded-md justify-center items-center flex cursor-pointer hover:bg-greyscale-purp-800"
+                  className="flex size-12 shrink-0 cursor-pointer items-center justify-center rounded-md hover:bg-greyscale-purp-800"
                 >
-                  <div className="w-4 h-4 relative">
-                    <Edit3 size={16} className="text-greyscale-blue-300" />
-                  </div>
+                  <Edit3 size={16} className="text-greyscale-blue-300" />
                 </div>
               )}
             </div>
-            <div className="flex-1 min-w-[300px] justify-start items-center gap-1.5 flex">
-              <div className="justify-center flex flex-col">
-                <span className="text-greyscale-blue-300 text-base font-brockmann font-bold leading-6">Email:</span>
-                <span className="text-greyscale-blue-300 text-base font-brockmann font-normal leading-6"> </span>
+            <div className="flex min-h-12 flex-1 min-w-[300px] items-center gap-1.5">
+              <div className="shrink-0 text-greyscale-blue-300 text-base font-brockmann font-semibold leading-6 tracking-[0.32px]">
+                Email:
               </div>
-              <div className="justify-center flex flex-col text-greyscale-blue-300 text-base font-brockmann font-normal leading-6">
+              <div className="min-w-0 flex-1 truncate text-greyscale-blue-300 text-base font-brockmann font-normal leading-6">
                 {user.email}
               </div>
             </div>
-            <div className="flex-1 min-w-[300px] justify-start items-start gap-1.5 flex">
-              <div className="justify-center flex flex-col">
-                <span className="text-greyscale-blue-300 text-base font-brockmann font-bold leading-6">Total Drafts:</span>
-                <span className="text-greyscale-blue-300 text-base font-brockmann font-normal leading-6"> </span>
+            <div className="flex min-h-12 flex-1 min-w-[300px] items-center gap-1.5">
+              <div className="shrink-0 text-greyscale-blue-300 text-base font-brockmann font-semibold leading-6 tracking-[0.32px]">
+                Total Drafts:
               </div>
-              <div className="justify-center flex flex-col text-greyscale-blue-300 text-base font-brockmann font-normal leading-6">
+              <div className="text-greyscale-blue-300 text-base font-brockmann font-normal leading-6 tabular-nums">
                 {drafts.length}
               </div>
             </div>
