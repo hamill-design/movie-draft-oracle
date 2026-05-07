@@ -90,33 +90,36 @@ export const useDraftGame = (participants: string[] | Participant[], categories:
 
   const loadExistingPicks = useCallback((existingPicks: any[], originalParticipants?: string[] | Participant[]) => {
     if (existingPicks && existingPicks.length > 0) {
-      // Use original participants list if provided, otherwise fall back to extracting from picks
-      let playerOrder: Player[];
-      
-      if (originalParticipants && originalParticipants.length > 0) {
-        // Normalize participants to Participant[] format
-        const normalized = normalizeParticipants(originalParticipants);
-        // Preserve the original participants list to maintain all players
-        playerOrder = normalized.map((participant, index) => ({
-          id: index,
-          name: participant.name,
-          isAI: participant.isAI
-        }));
-      } else {
-        // Fallback: Extract player order from existing picks (old behavior)
-        // Default to isAI: false for backward compatibility
-        const playerNames = new Set<string>();
-        existingPicks.forEach(pick => playerNames.add(pick.player_name));
-        playerOrder = Array.from(playerNames).map((name, index) => ({
-          id: index,
-          name,
-          isAI: false // Default for old picks
-        }));
-      }
-      
+      // Derive the true draft order from the picks themselves (sorted by pick_order).
+      // This is reliable because the picks record who actually went in what slot —
+      // unlike the participants field in the DB, which may store the original input order
+      // rather than the shuffled draft order.
+      const sortedPicks = [...existingPicks].sort((a, b) => (a.pick_order || 0) - (b.pick_order || 0));
+
+      // Extract player names in first-appearance order — that IS the round-0 draft order.
+      const seenNames = new Set<string>();
+      const orderedNames: string[] = [];
+      sortedPicks.forEach(pick => {
+        if (!seenNames.has(pick.player_name)) {
+          seenNames.add(pick.player_name);
+          orderedNames.push(pick.player_name);
+        }
+      });
+
+      // Add any players who haven't picked yet (they won't appear in picks).
+      const allParticipants = normalizeParticipants(originalParticipants || []);
+      allParticipants.forEach(p => {
+        if (!seenNames.has(p.name)) orderedNames.push(p.name);
+      });
+
+      const playerOrder: Player[] = orderedNames.map((name, index) => {
+        const participant = allParticipants.find(p => p.name === name);
+        return { id: index, name, isAI: participant?.isAI ?? false };
+      });
+
       setInitialPlayerOrder(playerOrder);
-      
-      const convertedPicks: Pick[] = existingPicks.map((pick) => ({
+
+      const convertedPicks: Pick[] = sortedPicks.map((pick) => ({
         playerId: playerOrder.find(p => p.name === pick.player_name)?.id || 0,
         playerName: pick.player_name,
         movie: {
@@ -127,7 +130,7 @@ export const useDraftGame = (participants: string[] | Participant[], categories:
         },
         category: pick.category
       }));
-      
+
       setPicks(convertedPicks);
       setCurrentPickIndex(convertedPicks.length);
     }
