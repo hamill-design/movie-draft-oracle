@@ -126,16 +126,16 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const normalizedParticipants = useMemo(() => normalizeParticipants(safeDraftState.participants), [safeDraftState.participants]);
 
   // Compute the draft pick order ONCE and keep it stable across re-renders.
-  // For new drafts we shuffle so no player always picks first.
-  // For resumed drafts (existingPicks present) we use the DB order as-is — the DB
-  // already holds the shuffled order from when the draft was first created.
+  // If the draft already has an ID it exists in the database — use the order
+  // stored there (which was the original shuffled order from creation).
+  // Only shuffle for genuinely brand-new drafts that have no ID yet.
   const effectiveParticipantsRef = useRef<Participant[] | null>(null);
   if (effectiveParticipantsRef.current === null && normalizedParticipants.length > 0) {
-    if (existingPicks && existingPicks.length > 0) {
-      // Resuming: honour saved order from DB
+    if (safeDraftState?.existingDraftId) {
+      // Resuming an existing draft — use the DB order as-is
       effectiveParticipantsRef.current = normalizedParticipants;
     } else {
-      // New draft: shuffle once so pick order is random
+      // Brand-new draft — shuffle once so pick order is random
       effectiveParticipantsRef.current = [...normalizedParticipants].sort(() => Math.random() - 0.5);
     }
   }
