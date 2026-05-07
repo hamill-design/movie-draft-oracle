@@ -22,7 +22,9 @@ import { Participant, normalizeParticipants } from '@/types/participant';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { mergeOscarStatusFromSources } from '@/utils/movieCategoryUtils';
-import { QRCodeSVG } from 'qrcode.react';
+import { PublicVoteShareCard } from '@/components/PublicVoteShareCard';
+import { VotingSetupWizard } from '@/components/VotingSetupWizard';
+import { CastVotePanel, VotingSessionCard } from '@/components/CastVotePanel';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { SITE_ORIGIN, dynamicOgImageUrl, OG_IMAGE_ALT } from '@/config/socialShareMeta';
 
@@ -125,7 +127,11 @@ export const MultiplayerDraftInterface = ({
     }
   }, [draft?.theme, draft?.option]);
 
-  const DURATION_OPTIONS = [{ label: '5 min', value: 5 }, { label: '1 hr', value: 60 }, { label: '24 hr', value: 1440 }] as const;
+  const DURATION_OPTIONS = [
+    { label: '5 min', value: 5 },
+    { label: '1 hour', value: 60 },
+    { label: '24 hours', value: 1440 }
+  ] as const;
 
   // Fetch voting meta when draft is complete; also sync from realtime draft updates so other players see voting without refetch
   useEffect(() => {
@@ -152,7 +158,9 @@ export const MultiplayerDraftInterface = ({
   }, [draft?.id, draft?.is_complete, (draft as any)?.voting_ends_at, (draft as any)?.allow_public_voting, guestSession]);
 
   useEffect(() => {
-    if (!draft?.id || !votingMeta?.voting_ends_at) return;
+    if (!draft?.id) return;
+    if (!votingMeta) return;
+    if (!votingMeta.allow_public_voting && !votingMeta.voting_ends_at) return;
     const fetchVotes = async () => {
       try {
         if (guestSession) await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
@@ -163,11 +171,13 @@ export const MultiplayerDraftInterface = ({
       }
     };
     fetchVotes();
-  }, [draft?.id, votingMeta?.voting_ends_at, guestSession]);
+  }, [draft?.id, votingMeta?.voting_ends_at, votingMeta?.allow_public_voting, guestSession]);
 
   const votingEndsAt = votingMeta?.voting_ends_at ? new Date(votingMeta.voting_ends_at).getTime() : null;
-  const votingOpen = votingEndsAt != null && now < votingEndsAt;
-  const votingConfigured = votingEndsAt != null;
+  const votingOpen =
+    Boolean(votingMeta?.allow_public_voting && votingEndsAt == null) ||
+    (votingEndsAt != null && now < votingEndsAt);
+  const votingConfigured = votingEndsAt != null || votingMeta?.allow_public_voting === true;
 
   const votingTimeRemaining = votingEndsAt != null && now < votingEndsAt ? votingEndsAt - now : 0;
   const formatVotingCountdown = (ms: number) => {
@@ -1646,143 +1656,35 @@ export const MultiplayerDraftInterface = ({
 
           {/* Voting setup (host) and voting UI - when draft is complete */}
           {isComplete && draft?.id && (
-            <div className="flex flex-col gap-3 w-full max-w-md mx-auto px-4">
+            <div className="flex flex-col gap-3 w-full max-w-[680px] mx-auto px-4">
               {!votingConfigured && (
                 <>
                   {isHost ? (
-                    <div
-                      className="w-full rounded-lg flex flex-wrap justify-center align-content-start"
-                      style={{
-                        background: 'var(--Section-Container, #0E0E0F)',
-                        boxShadow: '0px 0px 6px #3B0394',
-                        borderRadius: 8,
-                      }}
-                    >
-                      <div className="flex-1 min-w-0 p-6 flex flex-col gap-6 items-center text-center" style={{ minWidth: 295 }}>
-                        <div className="flex flex-col justify-center items-center gap-2">
-                          <div className="text-center font-brockmann font-medium text-[20px] leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">Enable Voting?</div>
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-4 w-full min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => setAddVoting(true)}
-                            className="flex-1 min-w-0 py-3 px-6 rounded font-brockmann font-medium text-sm leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors"
-                            style={{
-                              background: addVoting === true ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                              outline: '1px solid var(--Item-Stroke, #49474B)',
-                              outlineOffset: -1,
-                            }}
-                          >
-                            Yes
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setAddVoting(false)}
-                            className="flex-1 min-w-0 py-3 px-6 rounded font-brockmann font-medium text-sm leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors"
-                            style={{
-                              background: addVoting === false ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                              outline: '1px solid var(--Item-Stroke, #49474B)',
-                              outlineOffset: -1,
-                            }}
-                          >
-                            No
-                          </button>
-                        </div>
-                        {addVoting === true && (
-                          <>
-                            <div className="flex flex-col justify-center items-center gap-2">
-                              <div className="text-center font-brockmann font-medium text-[20px] leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">Gather Public Votes?</div>
-                            </div>
-                            <div className="flex flex-col sm:flex-row gap-4 w-full min-w-0">
-                              <button
-                                type="button"
-                                onClick={() => setVotingPublic(true)}
-                                className="flex-1 min-w-0 py-3 px-6 rounded font-brockmann font-medium text-sm leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors"
-                                style={{
-                                  background: votingPublic === true ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                                  outline: '1px solid var(--Item-Stroke, #49474B)',
-                                  outlineOffset: -1,
-                                }}
-                              >
-                                Yes
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setVotingPublic(false)}
-                                className="flex-1 min-w-0 py-3 px-6 rounded font-brockmann font-medium text-sm leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors"
-                                style={{
-                                  background: votingPublic === false ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                                  outline: '1px solid var(--Item-Stroke, #49474B)',
-                                  outlineOffset: -1,
-                                }}
-                              >
-                                No
-                              </button>
-                            </div>
-                            {votingPublic && draft?.id && (
-                              <div className="flex flex-wrap justify-center items-center gap-2.5 w-full">
-                                <input
-                                  readOnly
-                                  value={typeof window !== 'undefined' ? `${window.location.origin}/vote/${draft.id}` : ''}
-                                  className="flex-1 min-w-0 py-1 px-3.5 rounded-full font-mono text-sm leading-7 tracking-[1.08px] text-[var(--Text-Primary,#FCFFFF)] truncate"
-                                  style={{
-                                    background: 'var(--UI-Primary, #1D1D1F)',
-                                    outline: '1px solid var(--Text-Primary, #FCFFFF)',
-                                    outlineOffset: -1,
-                                  }}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const url = `${window.location.origin}/vote/${draft.id}`;
-                                    navigator.clipboard.writeText(url);
-                                    toast({ title: 'Link copied', description: 'Share link copied to clipboard.' });
-                                  }}
-                                  className="py-2 px-3 rounded-sm font-brockmann font-medium text-sm leading-5 text-[var(--Text-Primary,#FCFFFF)] flex items-center gap-2 shrink-0"
-                                  style={{
-                                    background: 'var(--UI-Primary, #1D1D1F)',
-                                    outline: '1px solid var(--Text-Primary, #FCFFFF)',
-                                    outlineOffset: -1,
-                                  }}
-                                >
-                                  <Copy className="w-4 h-4" />
-                                  Copy
-                                </button>
-                              </div>
-                            )}
-                            <div className="flex flex-col justify-center items-center gap-2">
-                              <div className="text-center font-brockmann font-medium text-[20px] leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">Set A Time Limit</div>
-                            </div>
-                            <div className="flex flex-col sm:flex-row gap-4 w-full min-w-0">
-                              {DURATION_OPTIONS.map(opt => (
-                                <button
-                                  key={opt.value}
-                                  type="button"
-                                  onClick={() => setVotingDuration(opt.value)}
-                                  className="flex-1 min-w-0 py-3 px-6 rounded font-brockmann font-medium text-sm leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors"
-                                  style={{
-                                    background: votingDuration === opt.value ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                                    outline: '1px solid var(--Item-Stroke, #49474B)',
-                                    outlineOffset: -1,
-                                  }}
-                                >
-                                  {opt.label}
-                                </button>
-                              ))}
-                            </div>
-                            <button
-                              type="button"
-                              disabled={submittingSetup}
-                              onClick={handleVotingSetupSubmit}
-                              className="w-fit py-3 px-6 rounded-sm font-brockmann font-semibold text-base leading-6 tracking-[0.32px] text-[var(--Text-Primary,#FCFFFF)] disabled:opacity-50 transition-opacity"
-                              style={{ background: 'var(--Brand-Primary, #7142FF)' }}
-                            >
-                              {submittingSetup ? 'Enabling...' : 'Begin Voting'}
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </div>
+                    <VotingSetupWizard
+                      variant="full"
+                      addVoting={addVoting}
+                      votingPublic={votingPublic}
+                      votingDuration={votingDuration}
+                      durationOptions={DURATION_OPTIONS}
+                      submittingSetup={submittingSetup}
+                      sharePillText={
+                        draft.invite_code
+                          ? String(draft.invite_code)
+                          : draft.id.replace(/-/g, '').slice(0, 8).toUpperCase()
+                      }
+                      shareCopyValue={
+                        typeof window !== 'undefined' ? `${window.location.origin}/vote/${draft.id}` : ''
+                      }
+                      toastCopySuccess={() =>
+                        toast({ title: 'Link copied', description: 'Share link copied to clipboard.' })
+                      }
+                      onEnableYes={() => setAddVoting(true)}
+                      onEnableNo={() => setAddVoting(false)}
+                      onGatherPublicYes={() => setVotingPublic(true)}
+                      onGatherPublicNo={() => setVotingPublic(false)}
+                      onDurationChange={setVotingDuration}
+                      onBeginVoting={handleVotingSetupSubmit}
+                    />
                   ) : (
                     <div className="text-greyscale-blue-300 text-sm font-brockmann text-center py-2">Waiting for host to set up voting...</div>
                   )}
@@ -1790,84 +1692,29 @@ export const MultiplayerDraftInterface = ({
               )}
               {/* Share vote link + QR: show for host when just enabled, and for everyone (including non-host) when voting is open and public */}
               {votingConfigured && votingMeta?.allow_public_voting && draft?.id && (votingJustEnabled && isHost || votingOpen) && (
-                <div
-                  className="w-full flex flex-wrap justify-center align-content-start rounded-lg"
-                  style={{
-                    background: 'var(--Section-Container, #0E0E0F)',
-                    boxShadow: '0px 0px 6px #3B0394',
-                    borderRadius: 8,
+                <PublicVoteShareCard
+                  voteUrl={typeof window !== 'undefined' ? `${window.location.origin}/vote/${draft.id}` : ''}
+                  onCopy={() => {
+                    const url = `${window.location.origin}/vote/${draft.id}`;
+                    void navigator.clipboard.writeText(url).then(() =>
+                      toast({ title: 'Link copied', description: 'Share link copied to clipboard.' })
+                    );
                   }}
-                >
-                  <div className="flex-1 min-w-0 p-6 flex flex-col justify-start items-center gap-6">
-                    <div className="w-full flex flex-col justify-start items-start gap-2">
-                      <div className="w-full flex flex-col justify-start items-center">
-                        <div className="w-full text-center text-[20px] font-brockmann font-medium leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">
-                          Voting is Open
-                        </div>
-                      </div>
-                      <div className="w-full flex flex-col justify-start items-center">
-                        <p className="w-full text-center text-sm font-brockmann font-normal leading-5 text-[var(--Text-Primary,#FCFFFF)]">
-                          Other participants will see the voting option on this page. Share the link or scan the QR code below so anyone can vote.
-                        </p>
-                      </div>
-                    </div>
-                    {votingMeta?.allow_public_voting && draft?.id && (
-                      <>
-                        <div className="w-full min-w-[295px] flex flex-nowrap justify-center items-center gap-2.5">
-                          <div
-                            className="flex-1 min-w-0 py-1 px-3.5 rounded-full flex justify-start items-center font-mono text-lg leading-7 tracking-[1.08px] text-[var(--Text-Primary,#FCFFFF)] truncate"
-                            style={{
-                              background: 'var(--UI-Primary, #1D1D1F)',
-                              outline: '1px solid var(--Text-Primary, #FCFFFF)',
-                              outlineOffset: -1,
-                            }}
-                          >
-                            {typeof window !== 'undefined' ? `${window.location.origin}/vote/${draft.id}` : ''}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const url = `${window.location.origin}/vote/${draft.id}`;
-                              navigator.clipboard.writeText(url);
-                              toast({ title: 'Link copied', description: 'Share link copied to clipboard.' });
-                            }}
-                            className="py-2 px-3 rounded-sm flex justify-center items-center gap-2 shrink-0 font-brockmann font-medium text-sm leading-5 text-[var(--Text-Primary,#FCFFFF)]"
-                            style={{
-                              background: 'var(--UI-Primary, #1D1D1F)',
-                              outline: '1px solid var(--Text-Primary, #FCFFFF)',
-                              outlineOffset: -1,
-                            }}
-                          >
-                            <Copy className="w-4 h-4" />
-                            Copy
-                          </button>
-                        </div>
-                        <QRCodeSVG
-                          value={typeof window !== 'undefined' ? `${window.location.origin}/vote/${draft.id}` : ''}
-                          size={120}
-                          className="bg-white rounded p-1"
-                        />
-                      </>
-                    )}
-                  </div>
-                </div>
+                />
               )}
               {votingConfigured && votingOpen && participants.length > 0 && (
-                <div
-                  className="w-full flex flex-wrap justify-center align-content-start rounded-lg"
-                  style={{
-                    background: 'var(--Section-Container, #0E0E0F)',
-                    boxShadow: '0px 0px 6px #3B0394',
-                    borderRadius: 8,
-                  }}
-                >
-                  <div className="flex-1 min-w-0 p-6 flex flex-col justify-start items-center gap-6">
-                    {participants.find((p: any) => p.id === myParticipantId)?.is_ai ? (
-                      <div className="w-full max-w-[617px] text-center text-sm font-brockmann text-[var(--Text-Primary,#FCFFFF)]">AI players cannot vote.</div>
-                    ) : myVote ? (
+                <>
+                  {participants.find((p: any) => p.id === myParticipantId)?.is_ai ? (
+                    <VotingSessionCard>
+                      <div className="w-full max-w-[617px] text-center text-sm font-brockmann text-[var(--Text-Primary,#FCFFFF)]">
+                        AI players cannot vote.
+                      </div>
+                    </VotingSessionCard>
+                  ) : myVote ? (
+                    <VotingSessionCard>
                       <div className="w-full max-w-[617px] flex flex-col justify-start items-start gap-6">
                         <div className="w-full flex flex-col justify-start items-center">
-                          <div className="w-full text-center text-[20px] font-brockmann font-medium leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">
+                          <div className="w-full text-center text-xl font-brockmann font-medium leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">
                             You Voted For {participants.find((p: any) => p.id === myVote.voted_participant_id)?.participant_name ?? 'Unknown'}
                           </div>
                         </div>
@@ -1890,56 +1737,41 @@ export const MultiplayerDraftInterface = ({
                           })}
                         </div>
                       </div>
-                    ) : (
-                      <>
-                        <div className="w-full max-w-[617px] flex flex-col justify-center items-center gap-2">
-                          <div className="w-full text-center text-[20px] font-brockmann font-medium leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">
-                            Cast Your Vote For Who Won
+                    </VotingSessionCard>
+                  ) : (
+                    <CastVotePanel
+                      options={participants
+                        .filter((p: any) => p.id !== myParticipantId)
+                        .map((p: any) => ({ key: String(p.id), label: p.participant_name }))}
+                      selectedKey={selectedVoteParticipantId != null ? String(selectedVoteParticipantId) : null}
+                      onOptionClick={key =>
+                        setSelectedVoteParticipantId(prev =>
+                          prev != null && String(prev) === key ? null : key
+                        )
+                      }
+                      submitting={submittingVote}
+                      onConfirm={async () => {
+                        if (!selectedVoteParticipantId) return;
+                        await handleVote(selectedVoteParticipantId);
+                        setSelectedVoteParticipantId(null);
+                      }}
+                      footer={
+                        voteCountsByParticipantId.size > 0 ? (
+                          <div className="w-full max-w-[617px] text-center text-xs font-brockmann text-[var(--Text-Primary,#FCFFFF)] opacity-80">
+                            {participants
+                              .map((p: any) =>
+                                voteCountsByParticipantId.get(p.id) != null
+                                  ? `${p.participant_name}: ${voteCountsByParticipantId.get(p.id)}`
+                                  : null
+                              )
+                              .filter(Boolean)
+                              .join(' · ')}
                           </div>
-                        </div>
-                        <div className="w-full max-w-[617px] flex flex-col justify-start items-start gap-4">
-                          {participants.filter((p: any) => p.id !== myParticipantId).map((p: any) => (
-                            <button
-                              key={p.id}
-                              type="button"
-                              onClick={() => setSelectedVoteParticipantId((prev) => (prev === p.id ? null : p.id))}
-                              disabled={submittingVote}
-                              className="w-full min-w-[294px] max-w-full py-3 px-6 rounded text-center text-sm font-brockmann font-medium leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors truncate"
-                              style={{
-                                background: selectedVoteParticipantId === p.id ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                                outline: '1px solid var(--Item-Stroke, #49474B)',
-                                outlineOffset: -1,
-                              }}
-                              title={p.participant_name}
-                            >
-                              {p.participant_name}
-                            </button>
-                          ))}
-                        </div>
-                        {selectedVoteParticipantId && (
-                          <button
-                            type="button"
-                            disabled={submittingVote}
-                            onClick={async () => {
-                              if (!selectedVoteParticipantId) return;
-                              await handleVote(selectedVoteParticipantId);
-                              setSelectedVoteParticipantId(null);
-                            }}
-                            className="px-6 py-3 rounded-sm font-brockmann font-semibold text-base leading-6 tracking-[0.32px] text-greyscale-blue-800 disabled:opacity-50 transition-opacity"
-                            style={{ background: 'var(--Yellow-500, #FFD60A)' }}
-                          >
-                            Confirm Choice
-                          </button>
-                        )}
-                      </>
-                    )}
-                    {!myVote && voteCountsByParticipantId.size > 0 && (
-                      <div className="w-full max-w-[617px] text-center text-xs font-brockmann text-[var(--Text-Primary,#FCFFFF)] opacity-80">
-                        {participants.map((p: any) => voteCountsByParticipantId.get(p.id) != null ? `${p.participant_name}: ${voteCountsByParticipantId.get(p.id)}` : null).filter(Boolean).join(' · ')}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                        ) : undefined
+                      }
+                    />
+                  )}
+                </>
               )}
               {votingConfigured && !votingOpen && <div className="text-greyscale-blue-300 text-sm font-brockmann text-center py-2">Voting closed</div>}
             </div>

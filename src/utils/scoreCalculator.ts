@@ -26,6 +26,8 @@ export interface ScoreBreakdown {
   adjustedBoxOfficeWeight: number;
   adjustedCriticalWeight: number;
   oscarBonus: number;
+  /** Present only when revenue ≤ budget; points subtracted from final score. */
+  boxOfficeFlopPenalty?: number;
   finalScore: number;
   availableComponents: string[];
   missingComponents: string[];
@@ -172,8 +174,8 @@ export const calculateDetailedScore = (data: MovieScoringData): ScoreBreakdown =
   availableComponents.push('Oscar Status');
 
   // Final score: average + Oscar bonus − flop penalty (flops no longer look like “critics-only” wins)
-  const finalScore =
-    averageScore + oscarBonus - (boxOfficeFlop ? BOX_OFFICE_FLOP_PENALTY : 0);
+  const flopDeduction = boxOfficeFlop ? BOX_OFFICE_FLOP_PENALTY : 0;
+  const finalScore = averageScore + oscarBonus - flopDeduction;
 
   return {
     boxOfficeScore: Math.round(boxOfficeScore * 100) / 100,
@@ -189,6 +191,7 @@ export const calculateDetailedScore = (data: MovieScoringData): ScoreBreakdown =
     adjustedBoxOfficeWeight: Math.round(boxOfficeWeight * 1000) / 1000,
     adjustedCriticalWeight: Math.round(criticalWeight * 1000) / 1000,
     oscarBonus,
+    ...(boxOfficeFlop ? { boxOfficeFlopPenalty: BOX_OFFICE_FLOP_PENALTY } : {}),
     finalScore: Math.round(finalScore * 100) / 100,
     availableComponents,
     missingComponents

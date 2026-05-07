@@ -17,6 +17,37 @@ import { fetchOscarCacheMap, mergePicksOscarWithCache } from '@/utils/oscarPickS
 import { mergeOscarStatusFromSources } from '@/utils/movieCategoryUtils';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { dynamicOgImageUrl, OG_IMAGE_ALT, SITE_ORIGIN } from '@/config/socialShareMeta';
+import DraftBoard from '@/components/DraftBoard';
+import { FinalScoresPickOrder } from '@/components/FinalScoresPickOrder';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getCleanActorName } from '@/lib/utils';
+import {
+  buildDraftBoardModel,
+  type DraftBoardParticipant,
+} from '@/utils/finalScoresBoardModel';
+
+type DetailView = 'roster' | 'board' | 'picks';
+
+function parseDetailView(search: string): DetailView {
+  const v = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('view');
+  if (v === 'board' || v === 'picks') return v;
+  return 'roster';
+}
+
+function buildSearchWithView(prevSearch: string, view: DetailView): string {
+  const raw = prevSearch.startsWith('?') ? prevSearch.slice(1) : prevSearch;
+  const p = new URLSearchParams(raw);
+  if (view === 'roster') p.delete('view');
+  else p.set('view', view);
+  const q = p.toString();
+  return q ? `?${q}` : '';
+}
+
+const FINAL_SCORES_VIEW_TAB_SEGMENT_CLASS =
+  'min-w-[127px] w-[127px] max-w-[127px] shrink-0 grow-0 basis-[127px]';
+
+const FINAL_SCORES_VIEW_TAB_TRIGGER_CLASS =
+  'min-h-0 rounded-none border-0 px-6 py-3 font-brockmann text-sm font-medium leading-5 text-[var(--Text-Primary,#FCFFFF)] shadow-none bg-[var(--UI-Primary,#1D1D1F)] ring-0 ring-offset-0 data-[state=active]:bg-[var(--Brand-Primary,#7142FF)] data-[state=active]:text-[var(--Text-Primary,#FCFFFF)] focus-visible:ring-2 focus-visible:ring-[#7142FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0E0E0F]';
 
 interface TeamScore {
   playerName: string;
@@ -46,14 +77,24 @@ const FinalScores = () => {
   const [hoveredTeam, setHoveredTeam] = useState<string>('');
   const [isPublicView, setIsPublicView] = useState(false);
   const [votes, setVotes] = useState<{ voted_participant_id: string | null; voted_player_name: string | null; voter_user_id: string | null; voter_guest_session_id: string | null }[]>([]);
-  const [draftParticipants, setDraftParticipants] = useState<{ id: string; participant_name: string; is_ai?: boolean }[]>([]);
+  const [draftParticipants, setDraftParticipants] = useState<DraftBoardParticipant[]>([]);
   const [localVotesFromState, setLocalVotesFromState] = useState<Record<string, string> | null>(null);
 
-  const votingMeta = useMemo(() => (
-    draft?.voting_ends_at != null
-      ? { voting_ends_at: draft.voting_ends_at as string, allow_public_voting: draft.allow_public_voting as boolean, is_multiplayer: draft.is_multiplayer as boolean }
-      : null
-  ), [draft?.voting_ends_at, draft?.allow_public_voting, draft?.is_multiplayer]);
+  const votingMeta = useMemo(() => {
+    if (!draft) return null;
+    const ends = draft.voting_ends_at as string | null | undefined;
+    const allowPub = Boolean(draft.allow_public_voting);
+    if (ends == null && !allowPub) return null;
+    return {
+      voting_ends_at: ends ?? null,
+      allow_public_voting: allowPub,
+      is_multiplayer: Boolean(draft.is_multiplayer),
+    };
+  }, [draft?.voting_ends_at, draft?.allow_public_voting, draft?.is_multiplayer]);
+
+  const votingOpen =
+    votingMeta != null &&
+    (votingMeta.voting_ends_at == null || Date.now() < new Date(votingMeta.voting_ends_at).getTime());
 
   useEffect(() => {
     if (!draftId) {
@@ -67,7 +108,7 @@ const FinalScores = () => {
   }, [draftId]);
 
   useEffect(() => {
-    if (!draftId || !votingMeta?.voting_ends_at) return;
+    if (!draftId || !votingMeta) return;
     const load = async () => {
       try {
         if (guestSession) await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
@@ -78,14 +119,19 @@ const FinalScores = () => {
       }
     };
     load();
-  }, [draftId, votingMeta?.voting_ends_at, guestSession]);
+  }, [draftId, votingMeta, guestSession]);
 
   useEffect(() => {
     if (!draftId || !draft?.is_multiplayer) return;
     const load = async () => {
       try {
         if (guestSession) await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
-        const { data, error } = await supabase.from('draft_participants').select('id, participant_name, is_ai').eq('draft_id', draftId);
+        const { data, error } = await supabase
+          .from('draft_participants')
+          .select('id, participant_name, is_ai, user_id, guest_participant_id, created_at')
+          .eq('draft_id', draftId)
+          .order('created_at', { ascending: true })
+          .order('id', { ascending: true });
         if (!error) setDraftParticipants(data ?? []);
         else setDraftParticipants([]);
       } catch {
@@ -96,13 +142,12 @@ const FinalScores = () => {
   }, [draftId, draft?.is_multiplayer, guestSession]);
 
   useEffect(() => {
-    if (isPublicView && !user && votingMeta?.allow_public_voting && votingMeta?.voting_ends_at && Date.now() < new Date(votingMeta.voting_ends_at).getTime()) {
+    if (isPublicView && !user && votingMeta?.allow_public_voting && votingOpen) {
       getOrCreateGuestSession();
     }
-  }, [isPublicView, user, votingMeta?.allow_public_voting, votingMeta?.voting_ends_at, getOrCreateGuestSession]);
+  }, [isPublicView, user, votingMeta?.allow_public_voting, votingOpen, getOrCreateGuestSession]);
 
   // Redirect old public vote link to dedicated vote page when voting is still open
-  const votingOpen = votingMeta?.voting_ends_at != null && Date.now() < new Date(votingMeta.voting_ends_at).getTime();
   useEffect(() => {
     if (draftId && isPublicView && votingMeta?.allow_public_voting && votingOpen) {
       navigate(`/vote/${draftId}`, { replace: true });
@@ -718,6 +763,21 @@ const FinalScores = () => {
       .sort((a, b) => (b.combinedScore ?? b.averageScore) - (a.combinedScore ?? a.averageScore));
   }, [teamScores, voteCountByPlayerName]);
 
+  const draftBoardModel = useMemo(
+    () => buildDraftBoardModel(draft, picks, draftParticipants, { includeMovieYear: false }),
+    [draft, picks, draftParticipants]
+  );
+
+  const detailView = parseDetailView(location.search);
+
+  const handleDetailViewChange = (v: string) => {
+    const next: DetailView = v === 'board' || v === 'picks' ? v : 'roster';
+    navigate(
+      { pathname: location.pathname, search: buildSearchWithView(location.search, next) },
+      { replace: true }
+    );
+  };
+
   const processTeamScores = (picksData: DraftPick[]): TeamScore[] => {
     const teamMap = new Map<string, DraftPick[]>();
 
@@ -1075,14 +1135,61 @@ const FinalScores = () => {
             </div>
           </div>
 
-          {/* Selected Team Roster */}
-          {selectedTeam && teamScoresWithVotes.find(t => t.playerName === selectedTeam) && (
-            <TeamRoster
-              playerName={selectedTeam}
-              picks={teamScoresWithVotes.find(t => t.playerName === selectedTeam)!.picks}
-              teamRank={teamScoresWithVotes.findIndex(t => t.playerName === selectedTeam) + 1}
-            />
-          )}
+          <Tabs value={detailView} onValueChange={handleDetailViewChange} className="flex w-full flex-col items-center justify-start">
+            <TabsList
+              className="flex h-auto w-fit items-start justify-start gap-px overflow-hidden rounded-full border border-solid border-[var(--Item-Stroke,#49474B)] bg-[var(--Item-Stroke,#49474B)] p-0 text-[rgb(125,133,140)] shadow-none"
+            >
+              <TabsTrigger
+                value="roster"
+                className={`${FINAL_SCORES_VIEW_TAB_TRIGGER_CLASS} ${FINAL_SCORES_VIEW_TAB_SEGMENT_CLASS}`}
+              >
+                Roster
+              </TabsTrigger>
+              <TabsTrigger
+                value="board"
+                className={`${FINAL_SCORES_VIEW_TAB_TRIGGER_CLASS} ${FINAL_SCORES_VIEW_TAB_SEGMENT_CLASS}`}
+              >
+                Draft Board
+              </TabsTrigger>
+              <TabsTrigger
+                value="picks"
+                className={`${FINAL_SCORES_VIEW_TAB_TRIGGER_CLASS} ${FINAL_SCORES_VIEW_TAB_SEGMENT_CLASS}`}
+              >
+                Pick Order
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="roster" className="mt-4 w-full max-w-full outline-none focus-visible:ring-0">
+              {selectedTeam && teamScoresWithVotes.find(t => t.playerName === selectedTeam) ? (
+                <TeamRoster
+                  playerName={selectedTeam}
+                  picks={teamScoresWithVotes.find(t => t.playerName === selectedTeam)!.picks}
+                  teamRank={teamScoresWithVotes.findIndex(t => t.playerName === selectedTeam) + 1}
+                />
+              ) : (
+                <p className="text-greyscale-blue-300 text-sm font-brockmann text-center py-6 m-0">
+                  Select a player from the leaderboard to view their roster.
+                </p>
+              )}
+            </TabsContent>
+
+            <TabsContent value="board" className="mt-4 w-full max-w-full outline-none focus-visible:ring-0">
+              <DraftBoard
+                players={draftBoardModel.boardPlayers}
+                categories={draftBoardModel.boardCategories}
+                picks={draftBoardModel.boardPicks}
+                theme={draft.theme ?? ''}
+                draftOption={
+                  draft.theme === 'people' ? getCleanActorName(draft.option ?? '') : (draft.option ?? '')
+                }
+                showScores
+              />
+            </TabsContent>
+
+            <TabsContent value="picks" className="mt-4 w-full max-w-full outline-none focus-visible:ring-0">
+              <FinalScoresPickOrder picks={picks} enrichingScores={enrichingScores} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
