@@ -80,11 +80,21 @@ const FinalScores = () => {
   const [draftParticipants, setDraftParticipants] = useState<DraftBoardParticipant[]>([]);
   const [localVotesFromState, setLocalVotesFromState] = useState<Record<string, string> | null>(null);
 
-  const votingMeta = useMemo(() => (
-    draft?.voting_ends_at != null
-      ? { voting_ends_at: draft.voting_ends_at as string, allow_public_voting: draft.allow_public_voting as boolean, is_multiplayer: draft.is_multiplayer as boolean }
-      : null
-  ), [draft?.voting_ends_at, draft?.allow_public_voting, draft?.is_multiplayer]);
+  const votingMeta = useMemo(() => {
+    if (!draft) return null;
+    const ends = draft.voting_ends_at as string | null | undefined;
+    const allowPub = Boolean(draft.allow_public_voting);
+    if (ends == null && !allowPub) return null;
+    return {
+      voting_ends_at: ends ?? null,
+      allow_public_voting: allowPub,
+      is_multiplayer: Boolean(draft.is_multiplayer),
+    };
+  }, [draft?.voting_ends_at, draft?.allow_public_voting, draft?.is_multiplayer]);
+
+  const votingOpen =
+    votingMeta != null &&
+    (votingMeta.voting_ends_at == null || Date.now() < new Date(votingMeta.voting_ends_at).getTime());
 
   useEffect(() => {
     if (!draftId) {
@@ -98,7 +108,7 @@ const FinalScores = () => {
   }, [draftId]);
 
   useEffect(() => {
-    if (!draftId || !votingMeta?.voting_ends_at) return;
+    if (!draftId || !votingMeta) return;
     const load = async () => {
       try {
         if (guestSession) await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
@@ -109,7 +119,7 @@ const FinalScores = () => {
       }
     };
     load();
-  }, [draftId, votingMeta?.voting_ends_at, guestSession]);
+  }, [draftId, votingMeta, guestSession]);
 
   useEffect(() => {
     if (!draftId || !draft?.is_multiplayer) return;
@@ -132,13 +142,12 @@ const FinalScores = () => {
   }, [draftId, draft?.is_multiplayer, guestSession]);
 
   useEffect(() => {
-    if (isPublicView && !user && votingMeta?.allow_public_voting && votingMeta?.voting_ends_at && Date.now() < new Date(votingMeta.voting_ends_at).getTime()) {
+    if (isPublicView && !user && votingMeta?.allow_public_voting && votingOpen) {
       getOrCreateGuestSession();
     }
-  }, [isPublicView, user, votingMeta?.allow_public_voting, votingMeta?.voting_ends_at, getOrCreateGuestSession]);
+  }, [isPublicView, user, votingMeta?.allow_public_voting, votingOpen, getOrCreateGuestSession]);
 
   // Redirect old public vote link to dedicated vote page when voting is still open
-  const votingOpen = votingMeta?.voting_ends_at != null && Date.now() < new Date(votingMeta.voting_ends_at).getTime();
   useEffect(() => {
     if (draftId && isPublicView && votingMeta?.allow_public_voting && votingOpen) {
       navigate(`/vote/${draftId}`, { replace: true });

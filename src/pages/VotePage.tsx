@@ -43,20 +43,21 @@ const VotePage = () => {
     return () => clearInterval(id);
   }, []);
 
+  /** Public vote page only loads drafts with allow_public_voting; voting_ends_at may be null (open-ended — server allows votes until an end is set). */
   const votingMeta = useMemo(
     () =>
-      draft?.voting_ends_at != null
+      draft?.allow_public_voting
         ? {
-            voting_ends_at: draft.voting_ends_at as string,
-            allow_public_voting: draft.allow_public_voting as boolean,
-            is_multiplayer: draft.is_multiplayer as boolean,
+            voting_ends_at: (draft.voting_ends_at as string | null | undefined) ?? null,
+            allow_public_voting: true as const,
+            is_multiplayer: Boolean(draft.is_multiplayer),
           }
         : null,
     [draft?.voting_ends_at, draft?.allow_public_voting, draft?.is_multiplayer]
   );
 
   const votingEndsAt = votingMeta?.voting_ends_at ? new Date(votingMeta.voting_ends_at).getTime() : null;
-  const votingOpen = votingEndsAt != null && now < votingEndsAt;
+  const votingOpen = votingEndsAt === null || now < votingEndsAt;
 
   const votingTimeRemaining = votingEndsAt != null && now < votingEndsAt ? votingEndsAt - now : 0;
   const formatVotingCountdown = (ms: number) => {
@@ -174,7 +175,7 @@ const VotePage = () => {
   }, [draftId, navigate]);
 
   useEffect(() => {
-    if (!draftId || !votingMeta?.voting_ends_at) return;
+    if (!draftId || !votingMeta?.allow_public_voting) return;
     const loadVotes = async () => {
       try {
         if (guestSession) await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
@@ -188,13 +189,13 @@ const VotePage = () => {
       }
     };
     loadVotes();
-  }, [draftId, votingMeta?.voting_ends_at, guestSession]);
+  }, [draftId, votingMeta?.allow_public_voting, guestSession]);
 
   useEffect(() => {
-    if (!user && votingMeta?.allow_public_voting && votingMeta?.voting_ends_at && votingOpen) {
+    if (!user && votingMeta?.allow_public_voting && votingOpen) {
       getOrCreateGuestSession();
     }
-  }, [user, votingMeta?.allow_public_voting, votingMeta?.voting_ends_at, votingOpen, getOrCreateGuestSession]);
+  }, [user, votingMeta?.allow_public_voting, votingOpen, getOrCreateGuestSession]);
 
   const handleVote = async (participantId: string | null, playerName: string | null) => {
     if (!draftId) return;

@@ -158,7 +158,9 @@ export const MultiplayerDraftInterface = ({
   }, [draft?.id, draft?.is_complete, (draft as any)?.voting_ends_at, (draft as any)?.allow_public_voting, guestSession]);
 
   useEffect(() => {
-    if (!draft?.id || !votingMeta?.voting_ends_at) return;
+    if (!draft?.id) return;
+    if (!votingMeta) return;
+    if (!votingMeta.allow_public_voting && !votingMeta.voting_ends_at) return;
     const fetchVotes = async () => {
       try {
         if (guestSession) await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
@@ -169,11 +171,13 @@ export const MultiplayerDraftInterface = ({
       }
     };
     fetchVotes();
-  }, [draft?.id, votingMeta?.voting_ends_at, guestSession]);
+  }, [draft?.id, votingMeta?.voting_ends_at, votingMeta?.allow_public_voting, guestSession]);
 
   const votingEndsAt = votingMeta?.voting_ends_at ? new Date(votingMeta.voting_ends_at).getTime() : null;
-  const votingOpen = votingEndsAt != null && now < votingEndsAt;
-  const votingConfigured = votingEndsAt != null;
+  const votingOpen =
+    Boolean(votingMeta?.allow_public_voting && votingEndsAt == null) ||
+    (votingEndsAt != null && now < votingEndsAt);
+  const votingConfigured = votingEndsAt != null || votingMeta?.allow_public_voting === true;
 
   const votingTimeRemaining = votingEndsAt != null && now < votingEndsAt ? votingEndsAt - now : 0;
   const formatVotingCountdown = (ms: number) => {
