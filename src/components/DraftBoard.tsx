@@ -25,9 +25,11 @@ interface DraftBoardProps {
     id: number;
     name: string;
   };
+  /** When true, show per-cell score from pick.movie.calculated_score (Final Scores). */
+  showScores?: boolean;
 }
 
-const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPlayer }: DraftBoardProps) => {
+const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPlayer, showScores }: DraftBoardProps) => {
   // Debug logging
   console.log('DraftBoard - Current player:', currentPlayer);
   console.log('DraftBoard - Players:', players);
@@ -205,7 +207,7 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
                           }}
                         >
                           {pick ? (
-                            <div className="w-full overflow-hidden flex flex-col justify-start items-center">
+                            <div className="w-full overflow-hidden flex flex-col justify-start items-center gap-0.5">
                               <div 
                                 className="w-full text-center"
                                 style={{
@@ -218,6 +220,24 @@ const DraftBoard = ({ players, categories, picks, theme, draftOption, currentPla
                               >
                                 {pick.movie.title}
                               </div>
+                              {showScores ? (
+                                <div
+                                  className="w-full text-center tabular-nums"
+                                  style={{
+                                    color: '#B794FF',
+                                    fontSize: '13px',
+                                    fontFamily: 'Brockmann',
+                                    fontWeight: 600,
+                                    lineHeight: '18px',
+                                  }}
+                                >
+                                  {pick.movie.calculated_score != null &&
+                                  pick.movie.calculated_score !== undefined &&
+                                  !Number.isNaN(Number(pick.movie.calculated_score))
+                                    ? Number(pick.movie.calculated_score).toFixed(2)
+                                    : '—'}
+                                </div>
+                              ) : null}
                             </div>
                           ) : (
                             <div 

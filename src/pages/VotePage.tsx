@@ -12,6 +12,8 @@ import DraftBoard from '@/components/DraftBoard';
 import { getCleanActorName } from '@/lib/utils';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { SITE_ORIGIN, dynamicOgImageUrl, OG_IMAGE_ALT } from '@/config/socialShareMeta';
+import { buildDraftBoardModel, type DraftBoardParticipant } from '@/utils/finalScoresBoardModel';
+import { CastVotePanel, VotingSessionCard } from '@/components/CastVotePanel';
 
 interface RosterRow {
   playerName: string;
@@ -27,7 +29,7 @@ const VotePage = () => {
 
   const [draft, setDraft] = useState<any>(null);
   const [picks, setPicks] = useState<DraftPick[]>([]);
-  const [participants, setParticipants] = useState<{ id: string; participant_name: string; is_ai?: boolean }[]>([]);
+  const [participants, setParticipants] = useState<DraftBoardParticipant[]>([]);
   const [votes, setVotes] = useState<{ voted_participant_id: string | null; voted_player_name: string | null; voter_user_id: string | null; voter_guest_session_id: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [submittingVote, setSubmittingVote] = useState(false);
@@ -107,42 +109,9 @@ const VotePage = () => {
   // Unique player names for single-player voting
   const playerNames = useMemo(() => rosters.map((r) => r.playerName), [rosters]);
 
-  // Draft board: categories (draft order or from picks)
-  const boardCategories = useMemo(() => {
-    if (draft?.categories?.length) return draft.categories;
-    const ordered: string[] = [];
-    const seen = new Set<string>();
-    [...picks].sort((a, b) => a.pick_order - b.pick_order).forEach((p) => {
-      if (!seen.has(p.category)) {
-        seen.add(p.category);
-        ordered.push(p.category);
-      }
-    });
-    return ordered;
-  }, [draft?.categories, picks]);
-
-  // Draft board: players in display order (participants for multiplayer, else rosters)
-  const boardPlayers = useMemo(() => {
-    if (draft?.is_multiplayer && participants?.length) {
-      return participants.map((p, i) => ({ id: i + 1, name: p.participant_name }));
-    }
-    return rosters.map((r, i) => ({ id: i + 1, name: r.playerName }));
-  }, [draft?.is_multiplayer, participants, rosters]);
-
-  const playerNameToId = useMemo(() => new Map(boardPlayers.map((p) => [p.name, p.id])), [boardPlayers]);
-
-  // Draft board: picks in DraftBoard shape
-  const boardPicks = useMemo(
-    () =>
-      picks.map((p) => ({
-        playerId: playerNameToId.get(p.player_name) ?? 1,
-        playerName: p.player_name,
-        movie: {
-          title: p.movie_year ? `${p.movie_title} (${p.movie_year})` : p.movie_title,
-        },
-        category: p.category,
-      })),
-    [picks, playerNameToId]
+  const { boardCategories, boardPlayers, boardPicks } = useMemo(
+    () => buildDraftBoardModel(draft, picks, participants),
+    [draft, picks, participants]
   );
 
   useEffect(() => {
@@ -188,8 +157,10 @@ const VotePage = () => {
         if (draftData.is_multiplayer) {
           const { data: partData, error: partError } = await supabase
             .from('draft_participants')
-            .select('id, participant_name, is_ai')
-            .eq('draft_id', draftId);
+            .select('id, participant_name, is_ai, user_id, guest_participant_id, created_at')
+            .eq('draft_id', draftId)
+            .order('created_at', { ascending: true })
+            .order('id', { ascending: true });
           if (!partError) setParticipants(partData ?? []);
         }
       } catch (e) {
@@ -377,21 +348,18 @@ const VotePage = () => {
           )}
 
           {votingMeta?.allow_public_voting && (
-            <div
-              className="w-full max-w-[617px] mx-auto flex flex-wrap justify-center align-content-start rounded-lg"
-              style={{
-                background: 'var(--Section-Container, #0E0E0F)',
-                boxShadow: '0px 0px 6px #3B0394',
-                borderRadius: 8,
-              }}
-            >
-              <div className="w-full min-w-0 p-6 flex flex-col justify-start items-center gap-6">
-                {!votingOpen ? (
-                  <div className="w-full max-w-[617px] text-center text-sm font-brockmann text-[var(--Text-Primary,#FCFFFF)]">Voting closed</div>
-                ) : myVote ? (
+            <>
+              {!votingOpen ? (
+                <VotingSessionCard>
+                  <div className="w-full max-w-[617px] text-center text-sm font-brockmann text-[var(--Text-Primary,#FCFFFF)]">
+                    Voting closed
+                  </div>
+                </VotingSessionCard>
+              ) : myVote ? (
+                <VotingSessionCard>
                   <div className="w-full max-w-[617px] flex flex-col justify-start items-start gap-6">
                     <div className="w-full flex flex-col justify-start items-center">
-                      <div className="w-full text-center text-[20px] font-brockmann font-medium leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">
+                      <div className="w-full text-center text-xl font-brockmann font-medium leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">
                         You Voted For {voteTargetName ?? 'Unknown'}
                       </div>
                     </div>
@@ -431,73 +399,41 @@ const VotePage = () => {
                           })}
                     </div>
                   </div>
-                ) : (
-                  <>
-                    <div className="w-full max-w-[617px] flex flex-col justify-center items-center gap-2">
-                      <div className="w-full text-center text-[20px] font-brockmann font-medium leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">
-                        Cast Your Vote For Who Won
-                      </div>
-                    </div>
-                    <div className="w-full max-w-[617px] flex flex-col justify-start items-start gap-4">
-                      {votingMeta.is_multiplayer
-                        ? participants.map((p) => (
-                            <button
-                              key={p.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedVoteParticipantId((prev) => (prev === p.id ? null : p.id));
-                                setSelectedVotePlayerName(null);
-                              }}
-                              disabled={submittingVote}
-                              className="w-full min-w-[294px] py-3 px-6 rounded text-center text-sm font-brockmann font-medium leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors"
-                              style={{
-                                background: selectedVoteParticipantId === p.id ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                                outline: '1px solid var(--Item-Stroke, #49474B)',
-                                outlineOffset: -1,
-                              }}
-                            >
-                              {p.participant_name}
-                            </button>
-                          ))
-                        : playerNames.map((name) => (
-                            <button
-                              key={name}
-                              type="button"
-                              onClick={() => {
-                                setSelectedVotePlayerName((prev) => (prev === name ? null : name));
-                                setSelectedVoteParticipantId(null);
-                              }}
-                              disabled={submittingVote}
-                              className="w-full min-w-[294px] py-3 px-6 rounded text-center text-sm font-brockmann font-medium leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors"
-                              style={{
-                                background: selectedVotePlayerName === name ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                                outline: '1px solid var(--Item-Stroke, #49474B)',
-                                outlineOffset: -1,
-                              }}
-                            >
-                              {name}
-                            </button>
-                          ))}
-                    </div>
-                    {(selectedVoteParticipantId != null || selectedVotePlayerName != null) && (
-                      <button
-                        type="button"
-                        disabled={submittingVote}
-                        onClick={async () => {
-                          await handleVote(selectedVoteParticipantId, selectedVotePlayerName);
-                          setSelectedVoteParticipantId(null);
-                          setSelectedVotePlayerName(null);
-                        }}
-                        className="px-6 py-3 rounded-sm font-brockmann font-semibold text-base leading-6 tracking-[0.32px] text-greyscale-blue-800 disabled:opacity-50 transition-opacity"
-                        style={{ background: 'var(--Yellow-500, #FFD60A)' }}
-                      >
-                        Confirm Choice
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
+                </VotingSessionCard>
+              ) : votingMeta.is_multiplayer ? (
+                <CastVotePanel
+                  title="Cast Your Vote For Who Won"
+                  options={participants.map((p) => ({ key: String(p.id), label: p.participant_name }))}
+                  selectedKey={selectedVoteParticipantId != null ? String(selectedVoteParticipantId) : null}
+                  onOptionClick={(key) => {
+                    setSelectedVoteParticipantId((prev) => (prev !== null && String(prev) === key ? null : key));
+                    setSelectedVotePlayerName(null);
+                  }}
+                  submitting={submittingVote}
+                  onConfirm={async () => {
+                    await handleVote(selectedVoteParticipantId, null);
+                    setSelectedVoteParticipantId(null);
+                    setSelectedVotePlayerName(null);
+                  }}
+                />
+              ) : (
+                <CastVotePanel
+                  title="Cast Your Vote For Who Won"
+                  options={playerNames.map((name) => ({ key: name, label: name }))}
+                  selectedKey={selectedVotePlayerName}
+                  onOptionClick={(key) => {
+                    setSelectedVotePlayerName((prev) => (prev === key ? null : key));
+                    setSelectedVoteParticipantId(null);
+                  }}
+                  submitting={submittingVote}
+                  onConfirm={async () => {
+                    await handleVote(null, selectedVotePlayerName);
+                    setSelectedVoteParticipantId(null);
+                    setSelectedVotePlayerName(null);
+                  }}
+                />
+              )}
+            </>
           )}
         </div>
       </div>

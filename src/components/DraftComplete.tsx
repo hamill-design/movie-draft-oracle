@@ -1,13 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Trophy, Vote, Copy } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { supabase } from '@/integrations/supabase/client';
-import { QRCodeSVG } from 'qrcode.react';
+import { VotingSetupWizard } from '@/components/VotingSetupWizard';
+import { CastVotePanel, VotingSessionCard } from '@/components/CastVotePanel';
+import { PublicVoteShareCard } from '@/components/PublicVoteShareCard';
 import { normalizeParticipants } from '@/types/participant';
+import {
+  getInitialLocalVotingUiState,
+  getLocalDraftVotingPersisted,
+  resolveHydratedLocalVoting,
+  setLocalDraftVotingPersisted
+} from '@/utils/localDraftVotingStorage';
 
 interface DraftCompleteProps {
   draftId?: string;
@@ -18,9 +26,24 @@ interface DraftCompleteProps {
 
 const DURATION_OPTIONS = [
   { label: '5 min', value: 5 },
-  { label: '1 hr', value: 60 },
-  { label: '24 hr', value: 1440 }
+  { label: '1 hour', value: 60 },
+  { label: '24 hours', value: 1440 }
 ] as const;
+
+function computeParticipantNames(draftData: any, picks: any[] | undefined): string[] {
+  if (draftData?.participants?.length) {
+    return normalizeParticipants(draftData.participants).map(p => p.name);
+  }
+  if (picks?.length) {
+    const names = new Set<string>();
+    picks.forEach((p: any) => {
+      const n = p.player_name ?? p.playerName;
+      if (n) names.add(String(n));
+    });
+    return Array.from(names);
+  }
+  return [];
+}
 
 const DraftComplete = ({ draftId: propDraftId, draftData: propDraftData, picks: propPicks, isEnriching }: DraftCompleteProps) => {
   const navigate = useNavigate();
@@ -33,32 +56,85 @@ const DraftComplete = ({ draftId: propDraftId, draftData: propDraftData, picks: 
   const draftData = propDraftData || (location.state as any)?.draftData;
   const picks = propPicks || (location.state as any)?.picks;
 
-  const [draft, setDraft] = useState<{ voting_ends_at: string | null; allow_public_voting?: boolean } | null>(null);
-  const [addVoting, setAddVoting] = useState<boolean | null>(null);
+  const isLocal = !!draftData;
+
+  const rosterDep = useMemo(() => {
+    if (draftData?.participants?.length) {
+      return normalizeParticipants(draftData.participants)
+        .map(p => p.name)
+        .slice()
+        .sort()
+        .join('\0');
+    }
+    if (picks?.length) {
+      return [
+        ...new Set(
+          (picks as any[]).map((p: any) => p.player_name ?? p.playerName).filter(Boolean)
+        )
+      ]
+        .sort()
+        .join('\0');
+    }
+    return '';
+  }, [draftData?.participants, picks]);
+
+  const participantNames = useMemo(() => computeParticipantNames(draftData, picks), [rosterDep]);
+
+  const [draft, setDraft] = useState<{
+    voting_ends_at: string | null;
+    allow_public_voting?: boolean;
+    invite_code?: string | null;
+  } | null>(null);
+  const [addVoting, setAddVoting] = useState<boolean | null>(() =>
+    getInitialLocalVotingUiState(draftId, isLocal, computeParticipantNames(draftData, picks)).addVoting
+  );
   const [votingPublic, setVotingPublic] = useState(false);
   const [votingDuration, setVotingDuration] = useState<number>(60);
   const [votes, setVotes] = useState<{ voted_participant_id: string | null; voted_player_name: string | null; voter_user_id: string | null; voter_guest_session_id: string | null }[]>([]);
   const [loadingVotes, setLoadingVotes] = useState(false);
   const [submittingVote, setSubmittingVote] = useState(false);
   const [submittingSetup, setSubmittingSetup] = useState(false);
-  const [localVoteStep, setLocalVoteStep] = useState(0);
-  const [localVotes, setLocalVotes] = useState<Record<string, string>>({});
+  const [selectedPlayerForVote, setSelectedPlayerForVote] = useState<string | null>(null);
+  const [localVoteStep, setLocalVoteStep] = useState(() =>
+    getInitialLocalVotingUiState(draftId, isLocal, computeParticipantNames(draftData, picks)).localVoteStep
+  );
+  const [localVotes, setLocalVotes] = useState<Record<string, string>>(() =>
+    getInitialLocalVotingUiState(draftId, isLocal, computeParticipantNames(draftData, picks)).localVotes
+  );
+  const [localStepPick, setLocalStepPick] = useState<string | null>(null);
+  /** After enable succeeds, stepped UI must show even if refetch misses voting_ends_at (guest/RLS/timing). */
+  const [localVoteGatheringActive, setLocalVoteGatheringActive] = useState(false);
 
   const votingEndsAt = draft?.voting_ends_at ? new Date(draft.voting_ends_at).getTime() : null;
   const votingOpen = votingEndsAt != null && Date.now() < votingEndsAt;
   const votingConfigured = votingEndsAt != null;
 
-  const participantNames = (() => {
-    if (draftData?.participants?.length) {
-      return normalizeParticipants(draftData.participants).map(p => p.name);
-    }
-    if (picks?.length) {
-      const names = new Set<string>();
-      picks.forEach((p: any) => p.player_name && names.add(p.player_name));
-      return Array.from(names);
-    }
-    return [];
-  })();
+  /** Re-hydrate from sessionStorage when draft or roster identity changes, or when roster loads — only if storage exists (avoids clobbering in-session choices). */
+  useEffect(() => {
+    if (!isLocal || !draftId) return;
+    const names = computeParticipantNames(draftData, picks);
+    if (names.length === 0) return;
+    const stored = getLocalDraftVotingPersisted(draftId);
+    if (!stored) return;
+    const resolved = resolveHydratedLocalVoting(draftId, names, stored);
+    if (!resolved) return;
+    setAddVoting(resolved.addVoting);
+    setLocalVotes(resolved.localVotes);
+    setLocalVoteStep(resolved.localVoteStep);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- rosterDep is the stable roster signature; draftData/picks refs change often
+  }, [draftId, rosterDep, isLocal]);
+
+  useEffect(() => {
+    setLocalStepPick(null);
+  }, [localVoteStep]);
+
+  useEffect(() => {
+    if (votingConfigured) setLocalVoteGatheringActive(false);
+  }, [votingConfigured]);
+
+  useEffect(() => {
+    if (addVoting === false) setLocalVoteGatheringActive(false);
+  }, [addVoting]);
 
   const fetchDraft = useCallback(async () => {
     if (!draftId) return;
@@ -67,7 +143,14 @@ const DraftComplete = ({ draftId: propDraftId, draftData: propDraftData, picks: 
         await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
       }
       const { draft: d } = await getDraftWithPicks(draftId);
-      if (d) setDraft({ voting_ends_at: (d as any).voting_ends_at ?? null, allow_public_voting: (d as any).allow_public_voting });
+      if (d) {
+        const row = d as any;
+        setDraft({
+          voting_ends_at: row.voting_ends_at ?? null,
+          allow_public_voting: row.allow_public_voting,
+          invite_code: row.invite_code ?? null
+        });
+      }
     } catch {
       setDraft(null);
     }
@@ -115,9 +198,12 @@ const DraftComplete = ({ draftId: propDraftId, draftData: propDraftData, picks: 
     setSubmittingSetup(true);
     try {
       await enableVoting(draftId, votingPublic, votingDuration);
+      setLocalVoteGatheringActive(true);
+      if (isLocal && draftId) setLocalDraftVotingPersisted(draftId, { enabledWizard: true });
       await fetchDraft();
       toast({ title: 'Voting enabled', description: votingPublic ? 'Share the link so others can vote.' : 'Only participants can vote.' });
     } catch (e: any) {
+      setLocalVoteGatheringActive(false);
       toast({ title: 'Error', description: e?.message ?? 'Failed to enable voting', variant: 'destructive' });
     } finally {
       setSubmittingSetup(false);
@@ -150,17 +236,40 @@ const DraftComplete = ({ draftId: propDraftId, draftData: propDraftData, picks: 
     const finalDraftData = draftData || { id: draftId, is_complete: true };
     const finalPicks = picks || [];
     const state: { draftData: any; picks: any[]; localVotes?: Record<string, string> } = { draftData: finalDraftData, picks: finalPicks };
-    if (Object.keys(localVotes).length > 0) state.localVotes = localVotes;
+    if (Object.keys(localVotes).length > 0) {
+      state.localVotes = localVotes;
+      if (draftId) setLocalDraftVotingPersisted(draftId, { votes: { ...localVotes } });
+    }
     navigate(`/final-scores/${draftId}`, { state });
   };
 
-  const isLocal = !!draftData;
-  const showSetupForm = (draftId || draftData) && !votingConfigured && (addVoting === null || (addVoting === true && !isLocal));
-  const localSteppedVoting = isLocal && addVoting === true && participantNames.length > 0;
+  /** Use server end time when available; fall back on post-enable flag so stepped UI isn't blank. */
+  const effectiveVotingStarted = votingConfigured || localVoteGatheringActive;
+
+  /** Keep wizard visible until voting has begun (tracked locally or confirmed from draft row). */
+  const showSetupForm =
+    (draftId || draftData) &&
+    !effectiveVotingStarted &&
+    (addVoting === null || addVoting === true);
+  /** Persisted "Yes" or open server window; avoids blank UI after StrictMode remount / refresh (addVoting was only in memory). */
+  const localBallotCollectionActive =
+    addVoting === true || (isLocal && effectiveVotingStarted && addVoting !== false);
+
+  const localSteppedVoting =
+    isLocal &&
+    effectiveVotingStarted &&
+    localBallotCollectionActive &&
+    participantNames.length > 0;
   const localVotingInProgress = localSteppedVoting && localVoteStep < participantNames.length;
   const localVotingComplete = localSteppedVoting && localVoteStep >= participantNames.length;
   const showVotingUI = !isLocal && draftId && votingConfigured && votingOpen && participantNames.length > 0;
   const showVotingClosed = draftId && votingConfigured && !votingOpen;
+
+  const shareVoteUrl =
+    draftId && typeof window !== 'undefined' ? `${window.location.origin}/vote/${draftId}` : '';
+  const voteSharePillText =
+    (draft?.invite_code && String(draft.invite_code)) ||
+    (draftId ? draftId.replace(/-/g, '').slice(0, 8).toUpperCase() : null);
 
   return (
     <div className="p-6 rounded-lg">
@@ -171,132 +280,57 @@ const DraftComplete = ({ draftId: propDraftId, draftData: propDraftData, picks: 
         </div>
 
         {showSetupForm && (
-          <div
-            className="w-full rounded-lg flex flex-wrap justify-center align-content-start"
-            style={{
-              background: 'var(--Section-Container, #0E0E0F)',
-              boxShadow: '0px 0px 6px #3B0394',
-              borderRadius: 8,
+          <VotingSetupWizard
+            variant="full"
+            addVoting={addVoting}
+            votingPublic={votingPublic}
+            votingDuration={votingDuration}
+            durationOptions={DURATION_OPTIONS}
+            submittingSetup={submittingSetup}
+            sharePillText={voteSharePillText}
+            shareCopyValue={shareVoteUrl}
+            toastCopySuccess={() =>
+              toast({ title: 'Link copied', description: 'Share link copied to clipboard.' })
+            }
+            onEnableYes={() => {
+              setAddVoting(true);
+              if (draftId) setLocalDraftVotingPersisted(draftId, { enabledWizard: true });
             }}
-          >
-            <div className="flex-1 min-w-0 p-6 flex flex-col gap-6 items-center text-center" style={{ minWidth: 295 }}>
-              <div className="flex flex-col justify-center items-center gap-2">
-                <div className="text-center font-brockmann font-medium text-[20px] leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">Enable Voting?</div>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-4 w-full min-w-0">
-                <button
-                  type="button"
-                  onClick={() => setAddVoting(true)}
-                  className="flex-1 min-w-0 py-3 px-6 rounded font-brockmann font-medium text-sm leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors"
-                  style={{
-                    background: addVoting === true ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                    outline: '1px solid var(--Item-Stroke, #49474B)',
-                    outlineOffset: -1,
-                  }}
-                >
-                  Yes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAddVoting(false)}
-                  className="flex-1 min-w-0 py-3 px-6 rounded font-brockmann font-medium text-sm leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors"
-                  style={{
-                    background: addVoting === false ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                    outline: '1px solid var(--Item-Stroke, #49474B)',
-                    outlineOffset: -1,
-                  }}
-                >
-                  No
-                </button>
-              </div>
-              {addVoting === true && !isLocal && (
-                <>
-                  <div className="flex flex-col justify-center items-center gap-2">
-                    <div className="text-center font-brockmann font-medium text-[20px] leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">Gather Public Votes?</div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-4 w-full min-w-0">
-                    <button
-                      type="button"
-                      onClick={() => setVotingPublic(true)}
-                      className="flex-1 min-w-0 py-3 px-6 rounded font-brockmann font-medium text-sm leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors"
-                      style={{
-                        background: votingPublic === true ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                        outline: '1px solid var(--Item-Stroke, #49474B)',
-                        outlineOffset: -1,
-                      }}
-                    >
-                      Yes
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setVotingPublic(false)}
-                      className="flex-1 min-w-0 py-3 px-6 rounded font-brockmann font-medium text-sm leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors"
-                      style={{
-                        background: votingPublic === false ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                        outline: '1px solid var(--Item-Stroke, #49474B)',
-                        outlineOffset: -1,
-                      }}
-                    >
-                      No
-                    </button>
-                  </div>
-                  <div className="flex flex-col justify-center items-center gap-2">
-                    <div className="text-center font-brockmann font-medium text-[20px] leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">Set A Time Limit</div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-4 w-full min-w-0">
-                    {DURATION_OPTIONS.map(opt => (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        onClick={() => setVotingDuration(opt.value)}
-                        className="flex-1 min-w-0 py-3 px-6 rounded font-brockmann font-medium text-sm leading-5 text-[var(--Text-Primary,#FCFFFF)] transition-colors"
-                        style={{
-                          background: votingDuration === opt.value ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                          outline: '1px solid var(--Item-Stroke, #49474B)',
-                          outlineOffset: -1,
-                        }}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    type="button"
-                    disabled={submittingSetup}
-                    onClick={handleSetupSubmit}
-                    className="w-fit py-3 px-6 rounded-sm font-brockmann font-semibold text-base leading-6 tracking-[0.32px] text-[var(--Text-Primary,#FCFFFF)] disabled:opacity-50 transition-opacity"
-                    style={{ background: 'var(--Brand-Primary, #7142FF)' }}
-                  >
-                    {submittingSetup ? 'Enabling...' : 'Begin Voting'}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
+            onEnableNo={() => {
+              setAddVoting(false);
+              if (draftId) setLocalDraftVotingPersisted(draftId, { skipped: true });
+            }}
+            onGatherPublicYes={() => setVotingPublic(true)}
+            onGatherPublicNo={() => setVotingPublic(false)}
+            onDurationChange={setVotingDuration}
+            onBeginVoting={handleSetupSubmit}
+          />
         )}
 
         {localVotingInProgress && (
-          <div className="flex flex-col gap-3 p-4 rounded-lg bg-greyscale-purp-900 border border-greyscale-purp-800">
-            <div className="text-greyscale-blue-100 font-brockmann font-semibold flex items-center gap-2">
-              <Vote className="w-4 h-4" /> Step {localVoteStep + 1} of {participantNames.length}: As <span className="text-greyscale-blue-50">{participantNames[localVoteStep]}</span>, who do you vote for?
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {participantNames.filter(name => name !== participantNames[localVoteStep]).map(name => (
-                <Button
-                  key={name}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const currentVoter = participantNames[localVoteStep];
-                    setLocalVotes(prev => ({ ...prev, [currentVoter]: name }));
-                    setLocalVoteStep(prev => prev + 1);
-                  }}
-                >
-                  {name}
-                </Button>
-              ))}
-            </div>
-          </div>
+          <CastVotePanel
+            voteAsPlayerName={participantNames[localVoteStep]}
+            options={participantNames
+              .filter(name => name !== participantNames[localVoteStep])
+              .map(name => ({ key: name, label: name }))}
+            selectedKey={localStepPick}
+            onOptionClick={key => setLocalStepPick(prev => (prev === key ? null : key))}
+            onConfirm={() => {
+              if (!localStepPick) return;
+              const currentVoter = participantNames[localVoteStep];
+              setLocalVotes(prev => {
+                const next = { ...prev, [currentVoter]: localStepPick };
+                if (draftId) setLocalDraftVotingPersisted(draftId, { votes: next });
+                return next;
+              });
+              setLocalVoteStep(prev => prev + 1);
+            }}
+            footer={
+              <div className="w-full max-w-[617px] text-center text-xs font-brockmann text-[var(--Text-Primary,#FCFFFF)] opacity-80">
+                Step {localVoteStep + 1} of {participantNames.length}
+              </div>
+            }
+          />
         )}
 
         {localVotingComplete && (
@@ -304,38 +338,48 @@ const DraftComplete = ({ draftId: propDraftId, draftData: propDraftData, picks: 
         )}
 
         {showVotingUI && (
-          <div className="flex flex-col gap-3 p-4 rounded-lg bg-greyscale-purp-900 border border-greyscale-purp-800">
-            <div className="text-greyscale-blue-100 font-brockmann font-semibold flex items-center gap-2">
-              <Vote className="w-4 h-4" /> Who do you think won?
-            </div>
+          <>
             {myVote ? (
-              <div className="p-3 rounded-lg bg-greyscale-purp-800 border border-greyscale-purp-700 flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-amber-400 shrink-0" />
-                <span className="text-greyscale-blue-200 font-brockmann">
-                  You voted for <span className="font-semibold text-greyscale-blue-100">{myVote.voted_player_name}</span>
-                </span>
-              </div>
+              <VotingSessionCard>
+                <div className="w-full max-w-[617px] flex flex-col items-center gap-3">
+                  <div className="flex items-center gap-2 justify-center flex-wrap">
+                    <Trophy className="w-5 h-5 text-amber-400 shrink-0" />
+                    <span className="text-center font-brockmann font-medium text-xl leading-[28px] text-[var(--Text-Primary,#FCFFFF)]">
+                      You voted for{' '}
+                      <span className="font-semibold">{myVote.voted_player_name}</span>
+                    </span>
+                  </div>
+                  {!loadingVotes && voteCounts.some(v => v.count > 0) && (
+                    <div className="text-[var(--Text-Primary,#FCFFFF)] text-xs font-brockmann opacity-80 text-center w-full">
+                      {voteCounts.filter(v => v.count > 0).map(v => `${v.name}: ${v.count}`).join(' · ')}
+                    </div>
+                  )}
+                </div>
+              </VotingSessionCard>
             ) : (
-              <div className="flex flex-wrap gap-2">
-                {participantNames.map(name => (
-                  <Button
-                    key={name}
-                    variant="outline"
-                    size="sm"
-                    disabled={submittingVote}
-                    onClick={() => handleVote(name)}
-                  >
-                    {name}
-                  </Button>
-                ))}
-              </div>
+              <CastVotePanel
+                title="Cast Your Vote For Who Won"
+                options={participantNames.map(name => ({ key: name, label: name }))}
+                selectedKey={selectedPlayerForVote}
+                onOptionClick={key =>
+                  setSelectedPlayerForVote(prev => (prev === key ? null : key))
+                }
+                submitting={submittingVote}
+                onConfirm={async () => {
+                  if (!selectedPlayerForVote) return;
+                  await handleVote(selectedPlayerForVote);
+                  setSelectedPlayerForVote(null);
+                }}
+                footer={
+                  !loadingVotes && voteCounts.some(v => v.count > 0) ? (
+                    <div className="w-full max-w-[617px] text-center text-xs font-brockmann text-[var(--Text-Primary,#FCFFFF)] opacity-80">
+                      {voteCounts.filter(v => v.count > 0).map(v => `${v.name}: ${v.count}`).join(' · ')}
+                    </div>
+                  ) : undefined
+                }
+              />
             )}
-            {!loadingVotes && voteCounts.some(v => v.count > 0) && (
-              <div className="text-greyscale-blue-300 text-xs font-brockmann pt-1">
-                {voteCounts.filter(v => v.count > 0).map(v => `${v.name}: ${v.count}`).join(' · ')}
-              </div>
-            )}
-          </div>
+          </>
         )}
 
         {showVotingClosed && (
@@ -351,27 +395,14 @@ const DraftComplete = ({ draftId: propDraftId, draftData: propDraftData, picks: 
         )}
 
         {votingConfigured && draft?.allow_public_voting && draftId && (
-          <div className="flex flex-col items-center gap-2 pt-2">
-            <div className="flex items-center gap-2 flex-wrap justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-[2px] flex items-center gap-2 text-greyscale-blue-200 border-greyscale-purp-700"
-                onClick={() => {
-                  const url = `${window.location.origin}/vote/${draftId}`;
-                  navigator.clipboard.writeText(url);
-                  toast({ title: 'Link copied', description: 'Share link copied to clipboard.' });
-                }}
-              >
-                <Copy className="w-4 h-4" />
-                Copy share link
-              </Button>
-              <div className="flex items-center gap-2">
-                <QRCodeSVG value={`${typeof window !== 'undefined' ? window.location.origin : ''}/vote/${draftId}`} size={96} className="rounded border border-greyscale-purp-700 bg-white p-1" />
-                <span className="text-greyscale-blue-300 text-xs font-brockmann">QR code</span>
-              </div>
-            </div>
-          </div>
+          <PublicVoteShareCard
+            voteUrl={shareVoteUrl}
+            onCopy={() => {
+              void navigator.clipboard.writeText(shareVoteUrl).then(() =>
+                toast({ title: 'Link copied', description: 'Share link copied to clipboard.' })
+              );
+            }}
+          />
         )}
 
         <div className="flex justify-center pt-2">

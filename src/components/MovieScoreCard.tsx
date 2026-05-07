@@ -245,10 +245,15 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                         </div>
                       </div>
                     </div>
-                    <div style={{ flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-start', display: 'inline-flex' }}>
+                    <div style={{ justifyContent: 'flex-start', alignItems: 'center', gap: '10px', display: 'flex', flexWrap: 'wrap' }}>
                       <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '16px', wordWrap: 'break-word' }}>
                         {((scoringData.revenue && scoringData.budget) ? ((scoringData.revenue - scoringData.budget) / scoringData.revenue * 100).toFixed(2) : 0)}%
                       </div>
+                      {scoreBreakdown.boxOfficeFlopPenalty != null && (
+                        <div style={{ justifyContent: 'center', display: 'flex', flexDirection: 'column', color: '#E85D5D', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 600, lineHeight: '16px', wordWrap: 'break-word' }}>
+                          −{scoreBreakdown.boxOfficeFlopPenalty} pts
+                        </div>
+                      )}
                     </div>
                   </div>
                    <div style={{ alignSelf: 'stretch', height: '8px', position: 'relative', background: '#2C2B2D', overflow: 'hidden', borderRadius: '9999px' }}>
@@ -369,8 +374,11 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
                   <OscarStatusChip status={scoringData.oscarStatus} />
                 </div>
               </div>
+
+
             </div>
           </div>
+        </div>
 
           {/* Box Office Data */}
           {(scoringData.budget || scoringData.revenue) && (
@@ -416,7 +424,6 @@ const MovieScoreCard: React.FC<MovieScoreCardProps> = ({
               </div>
             </div>
           )}
-        </div>
       </div>
     </div>
   );
