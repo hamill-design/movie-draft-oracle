@@ -22,13 +22,13 @@ export const useDraftGame = (participants: string[] | Participant[], categories:
   const [currentPickIndex, setCurrentPickIndex] = useState(0);
   const [initialPlayerOrder, setInitialPlayerOrder] = useState<Player[]>([]);
 
-  // Initialize player order once when participants change and we don't have an order yet
+  // Set player order once from the participants passed in.
+  // The caller (DraftInterface) is responsible for shuffling new drafts and passing
+  // the saved (already-shuffled) order when resuming — so we never re-shuffle here.
   useEffect(() => {
     if (initialPlayerOrder.length === 0 && normalizedParticipants && normalizedParticipants.length > 0) {
-      // Create new randomized order, preserving isAI flag
-      const shuffled = [...normalizedParticipants].sort(() => Math.random() - 0.5);
-      const newOrder = shuffled.map((participant, index) => ({ 
-        id: index, 
+      const newOrder = normalizedParticipants.map((participant, index) => ({
+        id: index,
         name: participant.name,
         isAI: participant.isAI
       }));

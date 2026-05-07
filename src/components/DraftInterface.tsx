@@ -121,10 +121,26 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   }, [currentDraftId, safeDraftState.theme, safeDraftState.option, safeDraftState.participants, safeDraftState.categories]);
   
   const { autoSaveDraft, findExistingDraft, getDraftWithPicks } = useDraftOperations();
-  
+
   // Normalize participants to Participant[] format
   const normalizedParticipants = useMemo(() => normalizeParticipants(safeDraftState.participants), [safeDraftState.participants]);
-  
+
+  // Compute the draft pick order ONCE and keep it stable across re-renders.
+  // For new drafts we shuffle so no player always picks first.
+  // For resumed drafts (existingPicks present) we use the DB order as-is — the DB
+  // already holds the shuffled order from when the draft was first created.
+  const effectiveParticipantsRef = useRef<Participant[] | null>(null);
+  if (effectiveParticipantsRef.current === null && normalizedParticipants.length > 0) {
+    if (existingPicks && existingPicks.length > 0) {
+      // Resuming: honour saved order from DB
+      effectiveParticipantsRef.current = normalizedParticipants;
+    } else {
+      // New draft: shuffle once so pick order is random
+      effectiveParticipantsRef.current = [...normalizedParticipants].sort(() => Math.random() - 0.5);
+    }
+  }
+  const effectiveParticipants = effectiveParticipantsRef.current ?? normalizedParticipants;
+
   const {
     picks,
     currentPlayer,
@@ -132,7 +148,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
     randomizedPlayers,
     addPick,
     loadExistingPicks
-  } = useDraftGame(normalizedParticipants, safeDraftState.categories);
+  } = useDraftGame(effectiveParticipants, safeDraftState.categories);
 
   const { pickMovie: aiPickMovie, loading: aiPicking } = useAIPick();
   const [isAITurn, setIsAITurn] = useState(false);
@@ -202,11 +218,11 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
           return;
         }
 
-        // No existing draft found, create a new one
+        // No existing draft found, create a new one — save the shuffled order
         const draftId = await autoSaveDraft({
           theme: safeDraftState.theme, // Can be 'spec-draft', 'year', 'people', etc.
           option: safeDraftState.option,
-          participants: normalizedParticipants,
+          participants: effectiveParticipants,
           categories: safeDraftState.categories,
           picks: [], // Empty picks initially
           isComplete: false // Always start as incomplete - completion will be saved separately
@@ -240,12 +256,12 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const performAutoSave = useCallback(async (updatedPicks: any[], isComplete: boolean) => {
     // Ensure we have a draftId (either from DB or local)
     let draftId = currentDraftId || draftIdRef.current;
-    
+
     try {
       const savedDraftId = await autoSaveDraft({
         theme: safeDraftState.theme,
         option: safeDraftState.option,
-        participants: normalizedParticipants,
+        participants: effectiveParticipants,
         categories: safeDraftState.categories,
         picks: updatedPicks,
         isComplete
@@ -285,7 +301,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
               const newDraftId = await autoSaveDraft({
                 theme: safeDraftState.theme,
                 option: safeDraftState.option,
-                participants: normalizedParticipants,
+                participants: effectiveParticipants,
                 categories: safeDraftState.categories,
                 picks: updatedPicks,
                 isComplete: false
@@ -318,7 +334,7 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
           id: draftId,
           theme: safeDraftState.theme,
           option: safeDraftState.option,
-          participants: normalizedParticipants,
+          participants: effectiveParticipants,
           categories: safeDraftState.categories,
           picks: updatedPicks,
           isComplete,
@@ -330,14 +346,14 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
         console.error('Failed to save draft locally:', error);
       }
     }
-  }, [currentDraftId, safeDraftState, normalizedParticipants, autoSaveDraft, toast]);
+  }, [currentDraftId, safeDraftState, effectiveParticipants, autoSaveDraft, toast]);
 
   // Load existing picks when component mounts
   useEffect(() => {
     if (existingPicks) {
-      loadExistingPicks(existingPicks, normalizedParticipants);
+      loadExistingPicks(existingPicks, effectiveParticipants);
     }
-  }, [existingPicks, normalizedParticipants, loadExistingPicks]);
+  }, [existingPicks, effectiveParticipants, loadExistingPicks]);
 
   // Detect AI turn and handle auto-pick
   useEffect(() => {

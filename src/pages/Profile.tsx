@@ -145,20 +145,11 @@ const Profile = () => {
   };
 
   const handleViewDraft = useCallback(async (draft: any) => {
-    // Validate that participants and categories are arrays
-    const participants = Array.isArray(draft.participants) ? draft.participants : [];
-    const categories = Array.isArray(draft.categories) ? draft.categories : [];
-    
-    navigate('/draft', {
-      state: {
-        theme: draft.theme,
-        option: draft.option,
-        participants,
-        categories,
-        existingDraftId: draft.id,
-        isMultiplayer: draft.is_multiplayer
-      }
-    });
+    if (draft.is_complete) {
+      navigate(`/final-scores/${draft.id}`);
+    } else {
+      navigate(`/draft/${draft.id}`);
+    }
   }, [navigate]);
 
   const handleDeleteDraft = async () => {
