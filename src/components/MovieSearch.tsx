@@ -73,6 +73,7 @@ const MovieSearch = ({
   if (theme === 'year' && option) {
     const requestedYear = parseInt(option);
     if (!isNaN(requestedYear)) {
+      console.log('MovieSearch - Year filter check, requestedYear:', requestedYear, 'movies:', movies.map(m => ({ title: m.title, year: m.year })));
       filteredMoviesByTheme = filteredMoviesByTheme.filter(movie => movie.year === requestedYear);
     }
   }

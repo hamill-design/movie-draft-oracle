@@ -19,8 +19,11 @@ const CustomTooltip = ({ active, payload }: any) => {
     <div className="rounded-md border border-border bg-popover px-3 py-2 shadow-md text-sm font-brockmann">
       <p className="font-semibold text-foreground">{d.display_name ?? 'Unknown'}</p>
       <p className="text-muted-foreground">
-        {d.total_score.toFixed(1)} pts · {d.draft_count} draft{d.draft_count !== 1 ? 's' : ''}
+        {d.total_score} league pts · {d.draft_count} draft{d.draft_count !== 1 ? 's' : ''}
       </p>
+      {d.raw_score > 0 && (
+        <p className="text-muted-foreground text-xs">{d.raw_score.toFixed(1)} movie score</p>
+      )}
     </div>
   );
 };

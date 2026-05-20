@@ -49,7 +49,10 @@ export interface LeagueStanding {
   display_name: string | null;
   photo_url: string | null;
   draft_count: number;
+  /** F1-style position points (10/7/5/3/2/1 per draft finish) */
   total_score: number;
+  /** Raw movie score sum — used as tiebreaker, shown as secondary info */
+  raw_score: number;
   rank: number;
 }
 

@@ -65,9 +65,10 @@ const LEAGUE_MAIN_TAB_BUTTON_CLASS =
 // ── Standing row (dashboard spec) ─────────────────────────────────────────────
 const StandingRow: React.FC<{ s: LeagueStanding; isYou?: boolean }> = ({ s, isYou }) => {
   const r = s.rank;
-  const scoreStr = s.total_score.toFixed(1);
+  // total_score = F1 position points (integer); raw_score = movie score tiebreaker
+  const scoreStr = String(s.total_score);
   const subline =
-    `${s.draft_count} ${s.draft_count === 1 ? 'draft' : 'drafts'} in league`;
+    `${s.draft_count} ${s.draft_count === 1 ? 'draft' : 'drafts'} · ${s.raw_score.toFixed(1)} movie score`;
 
   let rowClass = '';
   let rankBadge: React.ReactNode;
@@ -142,6 +143,9 @@ const StandingRow: React.FC<{ s: LeagueStanding; isYou?: boolean }> = ({ s, isYo
       </div>
       <div className="shrink-0 text-right">
         <p className={scoreClass}>{scoreStr}</p>
+        <p className={cn('text-xs font-brockmann m-0', r === 1 ? 'text-greyscale-blue-200' : 'text-greyscale-blue-400')}>
+          pts
+        </p>
       </div>
     </div>
   );
