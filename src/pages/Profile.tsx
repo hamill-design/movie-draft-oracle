@@ -9,7 +9,7 @@ import { syncMarketingAudience } from '@/lib/marketingAudienceSync';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Calendar, Users, Trophy, Trash2, User, Edit3, Save, X, Camera } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Trophy, Trash2, User, Edit3, Save, X, Camera, Plus, ChevronRight } from 'lucide-react';
 import { uploadAvatarAndUpdateProfile, validateAvatarFile, getInitials } from '@/utils/avatarUpload';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +17,7 @@ import { useDrafts } from '@/hooks/useDrafts';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
+import { useUserLeagues, usePendingLeagueInvites, useLeagueActions } from '@/hooks/useLeagues';
 import { Settings } from 'lucide-react';
 import BannerAd from '@/components/ads/BannerAd';
 import InlineAd from '@/components/ads/InlineAd';
@@ -39,6 +40,9 @@ const Profile = () => {
   const { drafts, loading: draftsLoading, error: draftsError, refetch, deleteDraft } = useDrafts();
   const { toast } = useToast();
   const { isAdmin } = useAdminAccess();
+  const { leagues, loading: leaguesLoading } = useUserLeagues();
+  const { invites: pendingInvites, loading: invitesLoading, refetch: refetchInvites } = usePendingLeagueInvites();
+  const { acceptInvite, declineInvite } = useLeagueActions();
   const [profile, setProfile] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -749,6 +753,113 @@ const Profile = () => {
                   aria-label="Receive product updates by email"
                 />
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Pending league invites */}
+        {!invitesLoading && pendingInvites.length > 0 && (
+          <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex-col justify-start items-start gap-4 inline-flex mb-8" style={{boxShadow: '0px 0px 6px #3B0394', borderLeft: '3px solid #7142FF'}}>
+            <h2 className="text-greyscale-blue-100 text-xl font-brockmann font-bold leading-7 tracking-[0.8px] m-0">
+              League Invites
+            </h2>
+            {pendingInvites.map((invite) => (
+              <div key={invite.id} className="w-full flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <p className="text-greyscale-blue-100 text-sm font-brockmann font-medium m-0">
+                    {invite.league?.name ?? 'A league'}
+                  </p>
+                  <p className="text-greyscale-blue-300 text-xs font-brockmann m-0">
+                    Invited by {invite.inviter?.name ?? 'someone'}
+                  </p>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    className="bg-brand-primary text-greyscale-blue-100 hover:bg-purple-300 font-brockmann text-xs"
+                    onClick={async () => {
+                      const leagueId = await acceptInvite(invite.id);
+                      if (leagueId) { refetchInvites(); navigate(`/league/${leagueId}`); }
+                    }}
+                  >
+                    Accept
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="border-greyscale-purp-500 text-greyscale-blue-300 hover:border-greyscale-blue-300 hover:text-greyscale-blue-100 hover:bg-transparent font-brockmann text-xs"
+                    onClick={async () => { await declineInvite(invite.id); refetchInvites(); }}
+                  >
+                    Decline
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* My Leagues */}
+        <div
+          className="w-full inline-flex flex-col items-start justify-start gap-6 p-6 rounded-lg mb-8"
+          style={{
+            boxShadow: '0px 0px 6px #3B0394',
+            background: 'var(--Section-Container, #0E0E0F)',
+          }}
+        >
+          <div className="self-stretch inline-flex justify-between items-center gap-4">
+            <div className="flex flex-1 min-w-0 items-center gap-2">
+              <h2 className="m-0 text-greyscale-blue-100 text-xl font-brockmann font-medium leading-7">
+                My Leagues
+              </h2>
+            </div>
+            <Button
+              type="button"
+              className="shrink-0 h-auto gap-2 rounded-[2px] px-3 py-2 bg-[#7142FF] text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5 shadow-none hover:bg-[#6338e0]"
+              onClick={() => navigate('/league/create')}
+            >
+              <Plus className="size-4 shrink-0" strokeWidth={2} aria-hidden />
+              Create League
+            </Button>
+          </div>
+
+          {leaguesLoading ? (
+            <p className="m-0 text-greyscale-blue-300 text-sm font-brockmann">Loading leagues…</p>
+          ) : leagues.length === 0 ? (
+            <p className="m-0 text-greyscale-blue-300 text-sm font-brockmann leading-5">
+              No leagues yet. Create one to compete with friends across multiple drafts.
+            </p>
+          ) : (
+            <div className="self-stretch flex flex-col gap-3">
+              {leagues.map((league) => (
+                <button
+                  key={league.id}
+                  type="button"
+                  className="self-stretch inline-flex cursor-pointer items-center gap-4 rounded-lg py-4 pl-[18px] pr-[18px] text-left outline outline-1 outline-offset-[-1px] outline-[#49474B] transition-colors hover:outline-[#5c5a5e]"
+                  style={{ background: 'var(--UI-Primary, #1D1D1F)' }}
+                  onClick={() => navigate(`/league/${league.id}`)}
+                >
+                  <div className="inline-flex min-w-0 flex-1 flex-col items-start justify-start gap-0.5">
+                    <div className="flex w-full flex-col items-start justify-start">
+                      <span className="w-full text-greyscale-blue-100 font-brockmann text-lg font-medium leading-[26px]">
+                        {league.name}
+                      </span>
+                    </div>
+                    <div className="flex w-full flex-col items-start justify-start">
+                      <p className="m-0 font-brockmann text-sm leading-5 text-[#BDC3C2]">
+                        <span className="font-bold tabular-nums">{league.member_count ?? 0}</span>
+                        <span className="font-normal"> members | </span>
+                        <span className="font-bold tabular-nums">{league.draft_count ?? 0}</span>
+                        <span className="font-normal"> drafts</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="inline-flex shrink-0 items-start justify-start gap-2">
+                    <span className="inline-flex items-center justify-center rounded-[2px] p-3 text-greyscale-blue-100">
+                      <ChevronRight className="size-6 shrink-0" strokeWidth={2} aria-hidden />
+                    </span>
+                  </div>
+                </button>
+              ))}
             </div>
           )}
         </div>

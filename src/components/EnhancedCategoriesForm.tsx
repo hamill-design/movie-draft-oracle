@@ -46,7 +46,8 @@ const sortCategoriesForDisplay = (specCategories: string[], regularCategories: s
   const endCategories = [
     'Academy Award Nominee or Winner',
     'Blockbuster (minimum of $50 Mil)',
-    'Sequel'
+    'Sequel',
+    'Wild Card'
   ];
   
   // Separate regular categories into groups
@@ -213,6 +214,10 @@ const CustomCheckbox = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const config = getCategoryConfig(category);
+
+  /** Eligibility counts aren't meaningful — any film in the pool qualifies. */
+  const hideEligibilityBadge =
+    config?.id === 'wild-card' || /^wild\s*card$/i.test(category.trim());
   
   // Always allow categories marked as alwaysAvailable (Oscar/Blockbuster)
   const isDisabled = config?.alwaysAvailable ? false : (availability?.status === 'insufficient');
@@ -370,7 +375,7 @@ const CustomCheckbox = ({
         </div>
       </div>
       
-      {theme !== 'year' && (
+      {theme !== 'year' && !hideEligibilityBadge && (
         <>
           {isAnalyzing ? (
             <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-brand-primary ml-2"></div>

@@ -363,3 +363,19 @@ All colors MUST be HSL.
 .join-draft-button-hover:hover:not(:disabled) {
   background-color: hsl(var(--purple-300)) !important;
 }
+
+@layer utilities {
+  /**
+   * Native `<input type="date">` calendar glyph (WebKit/Blink): invert to read as white on dark fields.
+   */
+  .date-input-icon-light::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.08);
+    opacity: 1;
+    cursor: pointer;
+  }
+  .date-input-icon-light::-moz-calendar-picker-indicator {
+    filter: invert(1) brightness(1.08);
+    opacity: 1;
+    cursor: pointer;
+  }
+}

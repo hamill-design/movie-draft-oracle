@@ -261,6 +261,19 @@ export const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
     popularity: 'medium',
     icon: '🔢',
     alwaysAvailable: false
+  },
+  'Wild Card': {
+    id: 'wild-card',
+    name: 'Wild Card',
+    description: 'Pick any movie from the pool — no category restrictions apply',
+    minMoviesRequired: () => 1,
+    validationRules: [
+      { type: 'themeCompatible', config: { themes: ['year', 'people'] } }
+    ],
+    themes: ['year', 'people'],
+    popularity: 'high',
+    icon: '🃏',
+    alwaysAvailable: true
   }
 };
 

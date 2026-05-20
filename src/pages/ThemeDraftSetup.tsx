@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Users, User, Mail, Bot } from 'lucide-react';
+import { Users, User, Mail, Bot, Trophy } from 'lucide-react';
 import { MultiPersonIcon, EmailIcon, TrashIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -17,6 +17,10 @@ import { useForm } from 'react-hook-form';
 import { DraftSetupForm } from '@/hooks/useDraftForm';
 import { Participant } from '@/types/participant';
 import { getRandomAIName } from '@/data/aiNames';
+import { useLeague, useLeagueActions, useLeagueSeasons } from '@/hooks/useLeagues';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 
 const isEmailValid = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -26,11 +30,23 @@ interface ThemeDraftSetupProps {
 
 const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
   const params = useParams<{ name?: string; year?: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { participantId, loading: sessionLoading } = useCurrentUser();
   const { createMultiplayerDraft, loading: creatingDraft } = useMultiplayerDraft();
   const { getDisplayName, loading: profileLoading } = useProfile();
+  const leagueIdParam = searchParams.get('league') ?? undefined;
+  const { league: assignedLeague } = useLeague(leagueIdParam);
+  const { addDraftToLeague } = useLeagueActions();
+  const { seasons, activeSeason } = useLeagueSeasons(leagueIdParam);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('none');
+
+  useEffect(() => {
+    if (activeSeason && selectedSeasonId === 'none') {
+      setSelectedSeasonId(activeSeason.id);
+    }
+  }, [activeSeason?.id]);
 
   const option = useMemo(() => {
     if (theme === 'people' && params.name) {
@@ -162,6 +178,9 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
         participantEmails: humanParticipants,
         aiParticipantNames: aiParticipants,
       });
+      if (leagueIdParam && draftId) {
+        await addDraftToLeague(leagueIdParam, draftId, selectedSeasonId !== 'none' ? selectedSeasonId : undefined);
+      }
       navigate(`/draft/${draftId}`);
       return;
     }
@@ -218,6 +237,39 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                 ← Change {theme === 'people' ? 'person' : 'year'}
               </Link>
             </div>
+
+            {assignedLeague && (
+              <div
+                className="flex flex-col gap-3 rounded-[8px] border border-purple-500/35 bg-greyscale-purp-900 px-4 py-3 text-sm text-greyscale-blue-100 font-brockmann"
+                style={{ boxShadow: '0px 0px 6px #3B0394' }}
+              >
+                <div className="flex items-start gap-3">
+                  <Trophy className="w-5 h-5 shrink-0 text-brand-primary mt-0.5" aria-hidden />
+                  <p className="m-0 leading-snug">
+                    This draft will be added to{' '}
+                    <strong className="font-semibold text-greyscale-blue-50">{assignedLeague.name}</strong>.
+                  </p>
+                </div>
+                {seasons.length > 0 && (
+                  <div className="flex items-center gap-3 pl-8">
+                    <label className="text-greyscale-blue-300 text-xs font-medium shrink-0">Season</label>
+                    <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
+                      <SelectTrigger className="h-8 rounded-[2px] bg-greyscale-purp-850 text-greyscale-blue-100 border-0 text-xs font-brockmann font-medium focus:ring-0 focus:ring-offset-0 w-[200px]" style={{ outline: '1px solid #49474B', outlineOffset: '-1px' }}>
+                        <SelectValue placeholder="No season" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none" className="font-brockmann text-xs">No season</SelectItem>
+                        {seasons.map(s => (
+                          <SelectItem key={s.id} value={s.id} className="font-brockmann text-xs">
+                            {s.name}{s.id === activeSeason?.id && <span className="ml-1 text-purple-400">· active</span>}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="w-full flex flex-col gap-4 items-center justify-center py-6">
               <p className="uppercase m-0" style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '32px', lineHeight: '36px', letterSpacing: '1.28px', color: 'var(--Text-Primary, #FCFFFF)' }}>

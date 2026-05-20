@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Users, User, Mail, Trash2, Bot } from 'lucide-react';
+import { Users, User, Mail, Trash2, Bot, Trophy } from 'lucide-react';
 import { CheckboxIcon, MultiPersonIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -14,24 +14,30 @@ import { getCategoryConfig } from '@/config/categoryConfigs';
 import { Participant } from '@/types/participant';
 import { getRandomAIName } from '@/data/aiNames';
 import { isUuidParam } from '@/utils/specDraftSlug';
+import { useLeague, useLeagueActions, useLeagueSeasons } from '@/hooks/useLeagues';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 // Simple checkbox component for category selection with live counter
-const CategoryCheckbox = ({ 
-  category, 
-  isChecked, 
+const CategoryCheckbox = ({
+  category,
+  isChecked,
   onToggle,
   movieCount,
-  playerCount = 2
-}: { 
-  category: string; 
-  isChecked: boolean; 
+  playerCount = 2,
+  alwaysAvailable = false
+}: {
+  category: string;
+  isChecked: boolean;
   onToggle: (checked: boolean) => void;
   movieCount: number;
   playerCount?: number;
+  alwaysAvailable?: boolean;
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   // Determine if category is disabled (insufficient movies)
-  const isDisabled = movieCount < playerCount;
+  const isDisabled = !alwaysAvailable && movieCount < playerCount;
 
   const getCheckboxStyle = () => {
     const baseStyle: React.CSSProperties = {
@@ -152,34 +158,36 @@ const CategoryCheckbox = ({
           {category}
         </div>
       </div>
-      <div style={{
-        paddingLeft: '4px',
-        paddingRight: '4px',
-        paddingTop: '2px',
-        paddingBottom: '2px',
-        background: badgeInfo.backgroundColor,
-        borderRadius: '4px',
-        outline: `1px ${badgeInfo.borderColor} solid`,
-        outlineOffset: '-1px',
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-        display: 'flex'
-      }}>
+      {!alwaysAvailable && (
         <div style={{
-          textAlign: 'center',
-          justifyContent: 'center',
-          display: 'flex',
-          flexDirection: 'column',
-          color: badgeInfo.textColor,
-          fontSize: '12px',
-          fontFamily: 'Brockmann',
-          fontWeight: '400',
-          lineHeight: '16px',
-          wordWrap: 'break-word'
+          paddingLeft: '4px',
+          paddingRight: '4px',
+          paddingTop: '2px',
+          paddingBottom: '2px',
+          background: badgeInfo.backgroundColor,
+          borderRadius: '4px',
+          outline: `1px ${badgeInfo.borderColor} solid`,
+          outlineOffset: '-1px',
+          justifyContent: 'flex-start',
+          alignItems: 'center',
+          display: 'flex'
         }}>
-          {movieCount.toString().padStart(2, '0')}
+          <div style={{
+            textAlign: 'center',
+            justifyContent: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            color: badgeInfo.textColor,
+            fontSize: '12px',
+            fontFamily: 'Brockmann',
+            fontWeight: '400',
+            lineHeight: '16px',
+            wordWrap: 'break-word'
+          }}>
+            {movieCount.toString().padStart(2, '0')}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -202,11 +210,24 @@ interface SpecDraftCategory {
 
 const SpecDraftSetup = () => {
   const { specDraftSlug } = useParams<{ specDraftSlug: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { participantId, loading: sessionLoading } = useCurrentUser();
   const { createMultiplayerDraft, loading: creatingDraft } = useMultiplayerDraft();
   const { getDisplayName, loading: profileLoading } = useProfile();
+  const leagueIdParam = searchParams.get('league') ?? undefined;
+  const { league: assignedLeague } = useLeague(leagueIdParam);
+  const { addDraftToLeague } = useLeagueActions();
+  const { seasons, activeSeason } = useLeagueSeasons(leagueIdParam);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('none');
+
+  // Auto-select the active season when seasons load
+  useEffect(() => {
+    if (activeSeason && selectedSeasonId === 'none') {
+      setSelectedSeasonId(activeSeason.id);
+    }
+  }, [activeSeason?.id]);
 
   const [specDraft, setSpecDraft] = useState<SpecDraft | null>(null);
   const [, setCustomCategories] = useState<SpecDraftCategory[]>([]);
@@ -265,6 +286,7 @@ const SpecDraftSetup = () => {
     'Academy Award Nominee or Winner',
     'Blockbuster (minimum of $50 Mil)',
     'Sequel',
+    'Wild Card',
   ];
 
   useEffect(() => {
@@ -578,6 +600,9 @@ const SpecDraftSetup = () => {
           aiParticipantNames: aiParticipants, // Send AI participant names
         });
 
+        if (leagueIdParam && draftId) {
+          await addDraftToLeague(leagueIdParam, draftId, selectedSeasonId !== 'none' ? selectedSeasonId : undefined);
+        }
         navigate(`/draft/${draftId}`);
       } else {
         // Create local draft - navigate to draft page with state
@@ -639,6 +664,39 @@ const SpecDraftSetup = () => {
       `}</style>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-6">
+          {assignedLeague && (
+            <div
+              className="flex flex-col gap-3 rounded-[8px] border border-purple-500/35 bg-greyscale-purp-900 px-4 py-3 text-sm text-greyscale-blue-100 font-brockmann"
+              style={{ boxShadow: '0px 0px 6px #3B0394' }}
+            >
+              <div className="flex items-start gap-3">
+                <Trophy className="w-5 h-5 shrink-0 text-brand-primary mt-0.5" aria-hidden />
+                <p className="m-0 leading-snug">
+                  This draft will be added to{' '}
+                  <strong className="font-semibold text-greyscale-blue-50">{assignedLeague.name}</strong>.
+                </p>
+              </div>
+              {seasons.length > 0 && (
+                <div className="flex items-center gap-3 pl-8">
+                  <label className="text-greyscale-blue-300 text-xs font-medium shrink-0">Season</label>
+                  <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
+                    <SelectTrigger className="h-8 rounded-[2px] bg-greyscale-purp-850 text-greyscale-blue-100 border-0 text-xs font-brockmann font-medium focus:ring-0 focus:ring-offset-0 w-[200px]" style={{ outline: '1px solid #49474B', outlineOffset: '-1px' }}>
+                      <SelectValue placeholder="No season" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none" className="font-brockmann text-xs">No season</SelectItem>
+                      {seasons.map(s => (
+                        <SelectItem key={s.id} value={s.id} className="font-brockmann text-xs">
+                          {s.name}{s.id === activeSeason?.id && <span className="ml-1 text-purple-400">· active</span>}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Draft Title - No background container */}
           <div className="w-full flex flex-col gap-4 items-center justify-center py-6">
             <p className="uppercase m-0" style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '32px', lineHeight: '36px', letterSpacing: '1.28px', color: 'var(--Text-Primary, #FCFFFF)' }}>
@@ -970,6 +1028,7 @@ const SpecDraftSetup = () => {
                 const isChecked = selectedCategories[category] || false;
                 const movieCount = categoryCounts[category] || 0;
                 const playerCount = Math.max(participants.length, draftMode === 'multiplayer' ? 2 : 2);
+                const config = getCategoryConfig(category);
                 return (
                   <CategoryCheckbox
                     key={category}
@@ -978,6 +1037,7 @@ const SpecDraftSetup = () => {
                     onToggle={(checked) => handleCategoryToggle(category, checked)}
                     movieCount={movieCount}
                     playerCount={playerCount}
+                    alwaysAvailable={config?.alwaysAvailable ?? false}
                   />
                 );
               })}

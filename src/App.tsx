@@ -33,6 +33,10 @@ import HowToDraftPage from "./pages/HowToDraftPage";
 import FAQ from "./pages/FAQ";
 import DraftByFilmography from "./pages/DraftByFilmography";
 import DraftByYear from "./pages/DraftByYear";
+import LeagueCreate from "./pages/LeagueCreate";
+import LeaguePage from "./pages/LeaguePage";
+import LeagueSettings from "./pages/LeagueSettings";
+import LeagueJoin from "./pages/LeagueJoin";
 
 function LegacyThemesSlugRedirect() {
   const { slug } = useParams<{ slug: string }>();
@@ -90,6 +94,10 @@ const App = () => (
               <Route path="/contact" element={<Contact />} />
               <Route path="/about" element={<About />} />
               <Route path="/spec-draft/:specDraftSlug/setup" element={<SpecDraftSetup />} />
+              <Route path="/league/create" element={<LeagueCreate />} />
+              <Route path="/league/join" element={<LeagueJoin />} />
+              <Route path="/league/:leagueId/settings" element={<LeagueSettings />} />
+              <Route path="/league/:leagueId" element={<LeaguePage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
