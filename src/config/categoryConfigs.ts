@@ -79,6 +79,19 @@ export const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
     popularity: 'medium',
     icon: '👻'
   },
+  'Documentary': {
+    id: 'documentary',
+    name: 'Documentary',
+    description: 'Documentary films',
+    minMoviesRequired: (playerCount) => Math.max(playerCount * 1.5, 8),
+    validationRules: [
+      { type: 'minMovies', config: { minimum: 8 } },
+      { type: 'themeCompatible', config: { themes: ['year', 'people'] } }
+    ],
+    themes: ['year', 'people'],
+    popularity: 'medium',
+    icon: '🎥'
+  },
   "30's": {
     id: '30s',
     name: "30's",

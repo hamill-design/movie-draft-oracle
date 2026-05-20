@@ -166,6 +166,12 @@ export const getEligibleCategories = (
     debugLog('Horror/Thriller', true, `matched: ${hasGenre('horror') ? 'horror' : 'thriller'}`);
   }
 
+  // Documentary: matches "documentary" as a whole word
+  if (hasGenre('documentary')) {
+    eligibleCategories.push('Documentary');
+    debugLog('Documentary', true, 'matched: documentary');
+  }
+
   // Academy Award category - using actual Oscar data
   // Check both hasOscar flag and oscar_status directly for better reliability
   if (allCategories.includes('Academy Award Nominee or Winner')) {

@@ -37,6 +37,8 @@ export type LeagueDraftCardProps = {
   /** Positive = moved up in league standings */
   rankDelta?: number | null;
   viewLabel: string;
+  /** Scheduled rows only: when false, primary action is disabled (non-admins). Defaults to true. */
+  canEditSchedule?: boolean;
 };
 
 const cardShell =
@@ -61,8 +63,21 @@ export const LeagueDraftCard: React.FC<LeagueDraftCardProps> = ({
   placementRank,
   rankDelta,
   viewLabel,
+  canEditSchedule = true,
 }) => {
   const theme = entry.draft?.theme ?? '';
+  const scheduleType = entry.draft_type;
+  const hasLinkedDraft = !!entry.draft;
+  /** Scheduled league rows store filmography on draft_type + theme; linked drafts use draft.theme === 'people'. */
+  const showSpecPortrait =
+    theme === 'spec-draft' || (!hasLinkedDraft && scheduleType === 'spec-draft');
+  const showActorPortrait =
+    theme === 'people' ||
+    (!hasLinkedDraft && (scheduleType === 'filmography' || scheduleType === 'people'));
+  const showYearPlaceholder =
+    theme === 'year' || (!hasLinkedDraft && scheduleType === 'year');
+  const actorNameForPortrait = getCleanActorName(entry.draft?.option ?? entry.theme ?? '');
+
   const title = headline ?? themeTitle(entry, specInfo);
 
   const showPlacement =
@@ -70,34 +85,37 @@ export const LeagueDraftCard: React.FC<LeagueDraftCardProps> = ({
   const showDelta =
     showPlacement && isComplete && rankDelta != null && rankDelta !== 0;
 
+  const showSchedulePrimary = !isScheduled || canEditSchedule;
+  const showRightColumn = showPlacement || showSchedulePrimary;
+
   const deltaText = rankDelta == null || rankDelta === 0 ? null : rankDelta > 0 ? `+${rankDelta}` : `${rankDelta}`;
 
   return (
     <div className={cardShell} style={{ boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', outline: '1px solid #49474B', outlineOffset: '-1px' }}>
       <div className="flex min-w-[240px] flex-1 flex-col items-start justify-start gap-4">
         <div className="inline-flex items-start justify-start gap-3">
-          <div className="h-14 w-14 shrink-0 overflow-hidden rounded">
-            {theme === 'spec-draft' ? (
+          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[4px]">
+            {showSpecPortrait ? (
               specInfo?.photo_url ? (
                 <img
                   src={specInfo.photo_url}
                   alt={specInfo.name || 'Spec draft'}
-                  className="h-14 w-14 rounded object-cover"
+                  className="h-14 w-14 rounded-[4px] object-cover"
                 />
               ) : (
-                <div className="flex h-14 w-14 items-center justify-center rounded bg-greyscale-purp-800">
+                <div className="flex h-14 w-14 items-center justify-center rounded-[4px] bg-greyscale-purp-800">
                   <User size={24} className="text-greyscale-blue-300" />
                 </div>
               )
-            ) : theme === 'people' ? (
+            ) : showActorPortrait ? (
               <DraftActorPortrait
-                actorName={getCleanActorName(entry.draft?.option ?? '')}
+                actorName={actorNameForPortrait}
                 size="lg"
-                className="h-14 w-14 rounded object-cover"
+                className="h-14 w-14 rounded-[4px] object-cover"
               />
             ) : (
-              <div className="flex h-14 w-14 items-center justify-center rounded bg-greyscale-purp-800">
-                {theme === 'year' ? (
+              <div className="flex h-14 w-14 items-center justify-center rounded-[4px] bg-greyscale-purp-800">
+                {showYearPlaceholder ? (
                   <Calendar size={24} className="text-greyscale-blue-300" />
                 ) : (
                   <User size={24} className="text-greyscale-blue-300" />
@@ -194,6 +212,7 @@ export const LeagueDraftCard: React.FC<LeagueDraftCardProps> = ({
         )}
       </div>
 
+      {showRightColumn && (
       <div
         className={cn(
           'inline-flex min-w-[240px] max-w-[360px] flex-1 flex-col items-end',
@@ -225,6 +244,7 @@ export const LeagueDraftCard: React.FC<LeagueDraftCardProps> = ({
           </div>
         )}
 
+        {showSchedulePrimary && (
         <Button
           type="button"
           onClick={onView}
@@ -234,7 +254,9 @@ export const LeagueDraftCard: React.FC<LeagueDraftCardProps> = ({
         >
           {viewLabel}
         </Button>
+        )}
       </div>
+      )}
     </div>
   );
 };

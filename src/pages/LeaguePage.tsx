@@ -18,7 +18,7 @@ import LeagueMessageBoard from '@/components/league/LeagueMessageBoard';
 import { LeagueDraftCard } from '@/components/league/LeagueDraftCard';
 import { LeagueUpcomingDraftCard } from '@/components/league/LeagueUpcomingDraftCard';
 import { MOVIE_DRAFTER_PURPLE_SHELL } from '@/lib/pageGradients';
-import { cn } from '@/lib/utils';
+import { cn, getCleanActorName } from '@/lib/utils';
 import leagueTrophyIllustration from '@/assets/illustrations/illus/league-trophy.svg';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -34,6 +34,25 @@ const DRAFT_TYPE_LABELS: Record<string, string> = {
   classic: 'Classic', year: 'By Year', people: 'By Filmmaker',
   'spec-draft': 'Special Draft', filmography: 'By Filmography',
 };
+
+/** Schedule tab card title — matches Profile drafts: name/theme only, no "By Filmography ·" prefix. */
+function upcomingScheduledHeadline(
+  entry: LeagueDraftEntry,
+  specMeta: { name: string; photo_url: string | null } | undefined,
+): string {
+  const t = entry.draft_type;
+  if (t === 'spec-draft') return specMeta?.name ?? 'Special draft';
+  if (t === 'filmography' || t === 'people') {
+    const name = getCleanActorName(entry.theme ?? '');
+    return name || entry.theme?.trim() || 'Draft';
+  }
+  if (t === 'year') {
+    const y = entry.theme?.trim();
+    return y || 'Draft';
+  }
+  if (entry.theme?.trim()) return entry.theme.trim();
+  return DRAFT_TYPE_LABELS[t ?? ''] ?? 'Draft';
+}
 
 type MainTab = 'standings' | 'drafts' | 'schedule';
 
@@ -508,21 +527,28 @@ const LeaguePage = () => {
                     <p className="m-0 text-xs font-semibold uppercase tracking-widest text-greyscale-blue-400 font-brockmann">
                       Upcoming
                     </p>
-                    {scheduled.map(entry => (
-                      <LeagueDraftCard
-                        key={entry.id}
-                        entry={entry}
-                        headline={`${DRAFT_TYPE_LABELS[entry.draft_type ?? ''] ?? 'Draft'}${entry.theme ? ` · ${entry.theme}` : ''}`}
-                        participantCount={0}
-                        categoriesCount={entry.categories?.length ?? 0}
-                        displayDate={entry.scheduled_at ? new Date(entry.scheduled_at) : null}
-                        isScheduled
-                        isComplete={false}
-                        isMultiplayer={false}
-                        viewLabel="Schedule"
-                        onView={() => navigate(`/league/${leagueId}/settings`)}
-                      />
-                    ))}
+                    {scheduled.map((entry) => {
+                      const specId =
+                        entry.draft_type === 'spec-draft' && entry.theme ? entry.theme : null;
+                      const specMeta = specId ? specDraftData.get(specId) : undefined;
+                      return (
+                        <LeagueDraftCard
+                          key={entry.id}
+                          entry={entry}
+                          headline={upcomingScheduledHeadline(entry, specMeta)}
+                          specInfo={entry.draft_type === 'spec-draft' ? specMeta : undefined}
+                          participantCount={0}
+                          categoriesCount={entry.categories?.length ?? 0}
+                          displayDate={entry.scheduled_at ? new Date(entry.scheduled_at) : null}
+                          isScheduled
+                          isComplete={false}
+                          isMultiplayer={false}
+                          canEditSchedule={!!isAdmin}
+                          viewLabel="Edit"
+                          onView={() => navigate(`/league/${leagueId}/settings`)}
+                        />
+                      );
+                    })}
                   </div>
                 )}
 
@@ -636,16 +662,14 @@ const LeaguePage = () => {
                     const specId =
                       entry.draft_type === 'spec-draft' && entry.theme ? entry.theme : null;
                     const specMeta = specId ? specDraftData.get(specId) : undefined;
-                    const headline =
-                      entry.draft_type === 'spec-draft' && specMeta
-                        ? specMeta.name
-                        : `${DRAFT_TYPE_LABELS[entry.draft_type ?? ''] ?? 'Draft'}${entry.theme ? ` · ${entry.theme}` : ''}`;
+                    const headline = upcomingScheduledHeadline(entry, specMeta);
                     return (
                       <LeagueUpcomingDraftCard
                         key={entry.id}
                         entry={entry}
                         headline={headline}
                         specInfo={entry.draft_type === 'spec-draft' ? specMeta : undefined}
+                        canEdit={!!isAdmin}
                         onEdit={() => navigate(`/league/${leagueId}/settings`)}
                       />
                     );

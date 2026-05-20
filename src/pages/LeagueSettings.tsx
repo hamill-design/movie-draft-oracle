@@ -1257,7 +1257,7 @@ const LeagueSettings = () => {
                       Add emails, then send a batch. Invitees receive a league link — they&apos;ll join after signing in or creating an account.
                     </p>
 
-                    <div className="flex gap-3 flex-col sm:flex-row max-w-xl">
+                    <div className="flex max-w-xl flex-col gap-3 sm:flex-row sm:items-stretch">
                       <Input
                         type="email"
                         placeholder="name@example.com"
@@ -1269,12 +1269,11 @@ const LeagueSettings = () => {
                             handleAddEmail();
                           }
                         }}
-                        className={cn('flex-1', inputDark)}
+                        className={cn('w-full min-h-12 flex-1 rounded-[2px]', inputDark)}
                       />
                       <Button
                         type="button"
-                        variant="outline"
-                        className="sm:w-28 shrink-0 border-purple-500/60 text-purple-200 hover:bg-purple-950/50"
+                        className="h-12 min-h-12 w-full shrink-0 rounded-[2px] bg-[#7142FF] px-4 font-brockmann font-medium text-greyscale-blue-100 hover:bg-[#6338e0] focus-visible:ring-2 focus-visible:ring-purple-400/40 focus-visible:ring-offset-0 focus-visible:ring-offset-transparent sm:w-28"
                         onClick={handleAddEmail}
                         disabled={!emailInput.trim()}
                       >

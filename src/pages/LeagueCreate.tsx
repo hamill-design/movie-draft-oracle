@@ -219,8 +219,8 @@ const LeagueCreate = () => {
                           title={email}
                           className="inline-flex items-center gap-2 rounded bg-[#7142FF] py-2 pl-4 pr-2.5"
                         >
-                          <span className="text-sm font-medium leading-5 text-greyscale-blue-100">
-                            {email.includes('@') ? email.split('@')[0] : email}
+                          <span className="text-sm font-medium leading-5 text-greyscale-blue-100 break-all">
+                            {email}
                           </span>
                           <button
                             type="button"

@@ -13,6 +13,8 @@ export type LeagueUpcomingDraftCardProps = {
   headline: string;
   specInfo?: SpecInfo;
   onEdit: () => void;
+  /** When false, edit control is hidden (e.g. non-admin). Defaults to true. */
+  canEdit?: boolean;
 };
 
 const cardShell =
@@ -23,6 +25,7 @@ export const LeagueUpcomingDraftCard: React.FC<LeagueUpcomingDraftCardProps> = (
   headline,
   specInfo,
   onEdit,
+  canEdit = true,
 }) => {
   const dt = entry.scheduled_at ? new Date(entry.scheduled_at) : null;
   const datetimeStr = dt
@@ -38,31 +41,31 @@ export const LeagueUpcomingDraftCard: React.FC<LeagueUpcomingDraftCardProps> = (
     >
       <div className="flex min-w-[240px] flex-1 flex-col items-start justify-start gap-4">
         <div className="inline-flex items-start justify-start gap-3 self-stretch">
-          <div className="h-[52px] w-[52px] shrink-0 overflow-hidden rounded">
+          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[4px]">
             {draftType === 'spec-draft' ? (
               specInfo?.photo_url ? (
                 <img
                   src={specInfo.photo_url}
                   alt={specInfo.name || 'Special draft'}
-                  className="h-[52px] w-[52px] rounded object-cover"
+                  className="h-14 w-14 rounded-[4px] object-cover"
                 />
               ) : (
-                <div className="flex h-[52px] w-[52px] items-center justify-center rounded bg-greyscale-purp-800">
-                  <User size={22} className="text-greyscale-blue-300" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-[4px] bg-greyscale-purp-800">
+                  <User size={24} className="text-greyscale-blue-300" />
                 </div>
               )
-            ) : draftType === 'people' ? (
+            ) : draftType === 'people' || draftType === 'filmography' ? (
               <DraftActorPortrait
-                actorName={getCleanActorName(entry.theme ?? '')}
+                actorName={getCleanActorName(entry.draft?.option ?? entry.theme ?? '')}
                 size="lg"
-                className="h-[52px] w-[52px] rounded object-cover"
+                className="h-14 w-14 rounded-[4px] object-cover"
               />
             ) : (
-              <div className="flex h-[52px] w-[52px] items-center justify-center rounded bg-greyscale-purp-800">
+              <div className="flex h-14 w-14 items-center justify-center rounded-[4px] bg-greyscale-purp-800">
                 {draftType === 'year' ? (
-                  <Calendar size={22} className="text-greyscale-blue-300" />
+                  <Calendar size={24} className="text-greyscale-blue-300" />
                 ) : (
-                  <User size={22} className="text-greyscale-blue-300" />
+                  <User size={24} className="text-greyscale-blue-300" />
                 )}
               </div>
             )}
@@ -94,11 +97,25 @@ export const LeagueUpcomingDraftCard: React.FC<LeagueUpcomingDraftCardProps> = (
           </div>
         </div>
 
+        {entry.categories && entry.categories.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 self-start">
+            {entry.categories.map((cat) => (
+              <span
+                key={cat}
+                className="rounded-full border border-white/15 bg-white/8 px-2 py-0.5 text-[10px] font-brockmann text-greyscale-blue-300"
+              >
+                {cat}
+              </span>
+            ))}
+          </div>
+        )}
+
         {entry.notes && (
           <p className="m-0 max-w-full text-xs italic text-greyscale-blue-500 font-brockmann">{entry.notes}</p>
         )}
       </div>
 
+      {canEdit && (
       <div className="flex max-w-[360px] min-w-[240px] flex-col items-end justify-start gap-[18px]">
         <Button
           type="button"
@@ -109,6 +126,7 @@ export const LeagueUpcomingDraftCard: React.FC<LeagueUpcomingDraftCardProps> = (
           Edit Draft
         </Button>
       </div>
+      )}
     </div>
   );
 };
