@@ -69,14 +69,8 @@ const MovieSearch = ({
   let filteredMoviesByTheme = movies;
   // For spec-draft, movies are already filtered by spec_draft_id in useMovies, so no additional filtering needed
 
-  // For year theme, ensure exact year match (backend may use tolerance, so filter client-side as safety)
-  if (theme === 'year' && option) {
-    const requestedYear = parseInt(option);
-    if (!isNaN(requestedYear)) {
-      console.log('MovieSearch - Year filter check, requestedYear:', requestedYear, 'movies:', movies.map(m => ({ title: m.title, year: m.year })));
-      filteredMoviesByTheme = filteredMoviesByTheme.filter(movie => movie.year === requestedYear);
-    }
-  }
+  // For year theme, trust backend year filtering — the edge function already filters by year
+  // (with ±1 tolerance for search results). Client-side re-filtering causes false negatives.
 
   // For theme-based categories (person, year, spec-draft), movies are cached and filtered client-side
   // This provides instant search results without API calls. The useMovies hook handles caching.
