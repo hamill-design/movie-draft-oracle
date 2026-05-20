@@ -228,14 +228,14 @@ async function getPersonLifespanByName(personName: string): Promise<{birth_date:
 
 // Enhanced function to detect documentaries and archive footage - now used universally
 function isDocumentaryOrArchiveContent(movie: any, movieGenres: any[]): boolean {
-  // Check genre IDs - expanded documentary detection
+  // Check genre IDs - TV Movie should be filtered, but Documentary (99) is allowed
   if (movieGenres && Array.isArray(movieGenres)) {
-    const documentaryGenreIds = [99, 10770]; // Documentary, TV Movie
-    const hasDocumentaryGenre = movieGenres.some(genre => 
-      genre && documentaryGenreIds.includes(genre.id)
+    const tvMovieGenreIds = [10770]; // TV Movie only — Documentary (99) is a valid draftable genre
+    const hasTvMovieGenre = movieGenres.some(genre =>
+      genre && tvMovieGenreIds.includes(genre.id)
     );
-    if (hasDocumentaryGenre) {
-      console.log(`Documentary detected via genre: ${movieGenres.map(g => g.name || g.id).join(', ')}`);
+    if (hasTvMovieGenre) {
+      console.log(`TV Movie detected via genre: ${movieGenres.map(g => g.name || g.id).join(', ')}`);
       return true;
     }
   }
@@ -243,8 +243,8 @@ function isDocumentaryOrArchiveContent(movie: any, movieGenres: any[]): boolean 
   // Check title keywords for documentary/compilation/tribute content
   const title = (movie.title || '').toLowerCase();
   const documentaryKeywords = [
-    // Documentary keywords
-    'documentary', 'making of', 'behind the scenes', 'retrospective',
+    // Archive/making-of keywords (not actual films)
+    'making of', 'behind the scenes', 'retrospective',
     // Tribute/memorial keywords  
     'tribute', 'tribute to', 'legacy', 'remembering', 'in memoriam', 
     'celebrating', 'honoring', 'remembers',
