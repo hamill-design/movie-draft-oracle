@@ -266,8 +266,7 @@ function isDocumentaryOrArchiveContent(movie: any, movieGenres: any[]): boolean 
   // Check overview for archive footage indicators
   const overview = (movie.overview || '').toLowerCase();
   const archiveKeywords = [
-    'archive footage', 'archival footage', 'rare footage', 'unseen footage',
-    'behind the scenes', 'documentary about', 'tribute to'
+    'archive footage', 'archival footage', 'rare footage', 'unseen footage'
   ];
   
   const hasArchiveKeywords = archiveKeywords.some(keyword => overview.includes(keyword));
