@@ -238,11 +238,10 @@ const EnhancedCategorySelection = ({
   const actorName = theme === 'people' && option ? getCleanActorName(option) : null;
   const { specCategories } = useActorSpecCategories(actorName);
 
-  // Reset house override when movie changes, then auto-enable if year mismatches
+  // Reset house override when movie changes
   useEffect(() => {
-    const isYearMismatch = theme === 'year' && option && selectedMovie?.year !== parseInt(option);
-    setHouseOverrideEnabled(!!isYearMismatch);
-  }, [selectedMovie?.id, theme, option]);
+    setHouseOverrideEnabled(false);
+  }, [selectedMovie?.id]);
 
   // Fetch spec draft movie categories when theme is spec-draft
   useEffect(() => {
@@ -623,7 +622,8 @@ const EnhancedCategorySelection = ({
         {sortedCategories.map((category) => {
           const isAlreadyPicked = picks.some(p => p.playerId === currentPlayerId && p.category === category);
           const isEligible = eligibleCategories.includes(category);
-          const isDisabled = isAlreadyPicked || (!isEligible && !houseOverrideEnabled);
+          const isYearMismatch = theme === 'year' && option && selectedMovie?.year !== parseInt(option);
+          const isDisabled = isAlreadyPicked || (!isEligible && !houseOverrideEnabled) || (!!isYearMismatch && !houseOverrideEnabled);
           const isSelected = selectedCategory === category;
           const isAcademyAward = category === 'Academy Award Nominee or Winner';
           const isLoading = isAcademyAward && checkingOscarStatus && !isEligible;
