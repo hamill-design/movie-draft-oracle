@@ -238,10 +238,11 @@ const EnhancedCategorySelection = ({
   const actorName = theme === 'people' && option ? getCleanActorName(option) : null;
   const { specCategories } = useActorSpecCategories(actorName);
 
-  // Reset house override when movie changes
+  // Reset house override when movie changes, then auto-enable if year mismatches
   useEffect(() => {
-    setHouseOverrideEnabled(false);
-  }, [selectedMovie?.id]);
+    const isYearMismatch = theme === 'year' && option && selectedMovie?.year !== parseInt(option);
+    setHouseOverrideEnabled(!!isYearMismatch);
+  }, [selectedMovie?.id, theme, option]);
 
   // Fetch spec draft movie categories when theme is spec-draft
   useEffect(() => {
@@ -525,6 +526,33 @@ const EnhancedCategorySelection = ({
                 </div>
               );
             })()}
+            {theme === 'year' && option && selectedMovie?.year !== parseInt(option) && (
+              <div
+                style={{
+                  alignSelf: 'stretch',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  alignItems: 'flex-start',
+                  display: 'flex'
+                }}
+              >
+                <div
+                  style={{
+                    alignSelf: 'stretch',
+                    justifyContent: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    color: '#ef4444',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: 400,
+                    lineHeight: '20px'
+                  }}
+                >
+                  Year mismatch ({selectedMovie.year} vs {option}) — House Override enabled
+                </div>
+              </div>
+            )}
             {selectedMovie.isBlockbuster && (
               <div 
                 style={{

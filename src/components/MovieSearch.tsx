@@ -425,9 +425,6 @@ const MovieSearch = ({
                         }}
                       >
                         {getGenreText(movie)}
-                        {theme === 'year' && movie.year !== parseInt(option) && (
-                          <span style={{ color: '#ef4444', marginLeft: '8px' }}>[YEAR MISMATCH: {movie.year}]</span>
-                        )}
                       </div>
                     </div>
                   </div>
