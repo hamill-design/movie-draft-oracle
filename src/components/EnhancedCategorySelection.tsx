@@ -622,8 +622,9 @@ const EnhancedCategorySelection = ({
         {sortedCategories.map((category) => {
           const isAlreadyPicked = picks.some(p => p.playerId === currentPlayerId && p.category === category);
           const isEligible = eligibleCategories.includes(category);
+          const isWildCard = category === 'Wild Card';
           const isYearMismatch = theme === 'year' && option && selectedMovie?.year !== parseInt(option);
-          const isDisabled = isAlreadyPicked || (!isEligible && !houseOverrideEnabled) || (!!isYearMismatch && !houseOverrideEnabled);
+          const isDisabled = isAlreadyPicked || (!isWildCard && ((!isEligible && !houseOverrideEnabled) || (!!isYearMismatch && !houseOverrideEnabled)));
           const isSelected = selectedCategory === category;
           const isAcademyAward = category === 'Academy Award Nominee or Winner';
           const isLoading = isAcademyAward && checkingOscarStatus && !isEligible;

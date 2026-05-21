@@ -631,9 +631,34 @@ function getYearFromDate(dateString: string): number {
 
 // Enhanced function to extract year from movie with multiple fallbacks
 function extractMovieYear(movie: any): number {
-  // Try multiple date fields in order of preference
+  // Prefer the origin-country theatrical release date when available.
+  // This corrects films like Daguerréotypes where the primary_release_date
+  // reflects a re-release rather than the original theatrical run.
+  if (movie.release_dates?.results && Array.isArray(movie.release_dates.results)) {
+    const originCountries: string[] = [
+      ...(movie.origin_country || []),
+      ...(movie.production_countries || []).map((c: any) => c.iso_3166_1)
+    ];
+
+    for (const country of originCountries) {
+      const entry = movie.release_dates.results.find(
+        (r: any) => r.iso_3166_1 === country
+      );
+      if (entry?.release_dates) {
+        // Type 3 = theatrical release
+        const theatrical = entry.release_dates
+          .filter((d: any) => d.type === 3 && d.release_date)
+          .map((d: any) => getYearFromDate(d.release_date))
+          .filter((y: number) => y > 1900);
+        if (theatrical.length > 0) {
+          return Math.min(...theatrical);
+        }
+      }
+    }
+  }
+
+  // Fall back to standard date fields
   const dateFields = ['release_date', 'primary_release_date', 'first_air_date'];
-  
   for (const field of dateFields) {
     if (movie[field]) {
       const year = getYearFromDate(movie[field]);
@@ -642,12 +667,11 @@ function extractMovieYear(movie: any): number {
       }
     }
   }
-  
-  // Try direct year field
+
   if (movie.year && movie.year > 1900) {
     return movie.year;
   }
-  
+
   return 0;
 }
 
@@ -1514,7 +1538,7 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
       
       try {
         // Get detailed movie information including budget and revenue
-        const detailResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${tmdbApiKey}`);
+        const detailResponse = await fetch(`https://api.themoviedb.org/3/movie/${movie.id}?api_key=${tmdbApiKey}&append_to_response=release_dates`);
         if (detailResponse.ok) {
           detailedMovie = await detailResponse.json();
           
