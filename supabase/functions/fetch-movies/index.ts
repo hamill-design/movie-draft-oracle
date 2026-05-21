@@ -631,24 +631,33 @@ function getYearFromDate(dateString: string): number {
 
 // Enhanced function to extract year from movie with multiple fallbacks
 function extractMovieYear(movie: any): number {
-  // Prioritise Theatrical (3) → Limited Theatrical (2) → Premiere (1) across ALL countries.
-  // Taking the raw minimum across all three could pick a festival premiere year (type 1) that
-  // predates the actual theatrical release year (type 3), misclassifying the film's year.
+  // Use the EARLIEST Premiere (1), Limited Theatrical (2), or Theatrical (3) release date
+  // across ALL countries. This catches the original release year even when TMDB's
+  // primary_release_date reflects a later re-release, restoration, or non-theatrical entry.
   if (movie.release_dates?.results && Array.isArray(movie.release_dates.results)) {
-    const byType: Record<number, number[]> = { 3: [], 2: [], 1: [] };
+    const theatricalTypes = new Set([1, 2, 3]);
+    const years: number[] = [];
 
     for (const countryEntry of movie.release_dates.results) {
       for (const rd of (countryEntry.release_dates || [])) {
-        if (rd.type in byType && rd.release_date) {
+        if (theatricalTypes.has(rd.type) && rd.release_date) {
           const y = getYearFromDate(rd.release_date);
-          if (y > 1900) byType[rd.type].push(y);
+          if (y > 1900) years.push(y);
         }
       }
     }
 
-    // Return earliest year for the highest-priority type that has data
-    for (const t of [3, 2, 1]) {
-      if (byType[t].length > 0) return Math.min(...byType[t]);
+    if (years.length > 0) {
+      const earliest = Math.min(...years);
+      // Debug logging for problem films — keep tight to avoid log spam
+      const title = (movie.title || '').toLowerCase();
+      if (title.includes('daguerr') || title.includes('dagmar') || title.includes('harlan')) {
+        const flat = movie.release_dates.results.flatMap((c: any) =>
+          (c.release_dates || []).map((rd: any) => ({ country: c.iso_3166_1, type: rd.type, date: rd.release_date }))
+        );
+        console.log(`📅 extractMovieYear "${movie.title}" → ${earliest}. type1|2|3 entries:`, flat.filter((e: any) => theatricalTypes.has(e.type)));
+      }
+      return earliest;
     }
   }
 
@@ -1343,25 +1352,16 @@ serve(async (req) => {
       const requestedYear = parseInt(searchQuery);
       const originalCount = (data.results || []).length;
       
-      // For discover results (fetchAll or no search query), the TMDB discover URL already
-      // filters by release_date range + with_release_type=1|2|3, so no post-API year filter
-      // needed. Applying one here would reject foreign films whose primary_release_date differs
-      // from their actual theatrical release year (e.g. a 1976 film with a 2018 re-release as
-      // primary date) because release_dates aren't appended until the detail fetch below.
-      //
-      // For search results (movieSearchQuery provided, not fetchAll), TMDB's &year= param can
-      // return adjacent years, so apply ±1 tolerance filter.
-      const isSearchResult = !!movieSearchQuery && !fetchAll;
-
-      if (isSearchResult) {
-        data.results = (data.results || []).filter((movie: any) => {
-          const movieYear = extractMovieYear(movie);
-          return movieYear >= requestedYear - 1 && movieYear <= requestedYear + 1;
-        });
-        console.log(`Year filtering (±1 search tolerance): ${originalCount} → ${data.results.length} movies`);
-      } else {
-        console.log(`Year filtering: skipped for discover path — TMDB URL already constrains to ${requestedYear}`);
-      }
+      // Skip post-API year filtering entirely. Both paths already constrain by year at TMDB:
+      //   - Discover: with_release_type=1|2|3 + release_date.gte/lte
+      //   - Search:   &year=<yearNum>
+      // Re-filtering here uses movie.release_date (the primary date) because release_dates
+      // aren't appended until the per-movie detail fetch in processMovieResults. That drops
+      // films whose primary_release_date reflects a much later re-release/restoration
+      // (e.g. Daguerréotypes shows primary_release_date=2018 despite a 1976 theatrical release).
+      // The correct year is resolved later in processMovieResults via extractMovieYear on the
+      // detailed response with release_dates appended.
+      console.log(`Year filtering: skipped — trusting TMDB year constraint for ${requestedYear} (${originalCount} movies returned)`);
 
       const filteredCount = data.results.length;
       
@@ -1371,21 +1371,6 @@ serve(async (req) => {
         year: extractMovieYear(m),
         release_date: m.release_date
       })));
-      
-      // Check if "Reds" is still in results after year filtering
-      if (isSearchResult) {
-        const redsAfterYearFilter = data.results.find((m: any) => 
-          m.title && (m.title.toLowerCase().includes('reds') || m.title.toLowerCase() === 'reds')
-        );
-        if (redsAfterYearFilter) {
-          console.log('✅ REDS still present after year filtering:', {
-            title: redsAfterYearFilter.title,
-            year: extractMovieYear(redsAfterYearFilter)
-          });
-        } else {
-          console.log('❌ REDS removed by year filtering');
-        }
-      }
       
       // Update pagination info after filtering
       data.total_results = filteredCount;
