@@ -525,7 +525,7 @@ const EnhancedCategorySelection = ({
                 </div>
               );
             })()}
-            {theme === 'year' && option && selectedMovie?.year !== parseInt(option) && (
+            {theme === 'year' && option && selectedMovie?.year !== parseInt(option, 10) && (
               <div
                 style={{
                   alignSelf: 'stretch',
@@ -548,7 +548,7 @@ const EnhancedCategorySelection = ({
                     lineHeight: '20px'
                   }}
                 >
-                  Year mismatch ({selectedMovie.year} vs {option}) — House Override enabled
+                  Year mismatch ({selectedMovie.year} vs {option}) — Use House Override to select
                 </div>
               </div>
             )}
@@ -623,8 +623,12 @@ const EnhancedCategorySelection = ({
           const isAlreadyPicked = picks.some(p => p.playerId === currentPlayerId && p.category === category);
           const isEligible = eligibleCategories.includes(category);
           const isWildCard = category === 'Wild Card';
-          const isYearMismatch = theme === 'year' && option && selectedMovie?.year !== parseInt(option);
-          const isDisabled = isAlreadyPicked || (!isWildCard && ((!isEligible && !houseOverrideEnabled) || (!!isYearMismatch && !houseOverrideEnabled)));
+          const isYearMismatch = theme === 'year' && option && selectedMovie?.year !== parseInt(option, 10);
+          const yearMismatchBlocks = !!isYearMismatch && !houseOverrideEnabled;
+          const isDisabled =
+            isAlreadyPicked
+            || yearMismatchBlocks
+            || (!isWildCard && !isEligible && !houseOverrideEnabled);
           const isSelected = selectedCategory === category;
           const isAcademyAward = category === 'Academy Award Nominee or Winner';
           const isLoading = isAcademyAward && checkingOscarStatus && !isEligible;
