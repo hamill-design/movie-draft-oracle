@@ -99,23 +99,21 @@ export function FinalScoresPickOrder({ picks, enrichingScores }: FinalScoresPick
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      <div className="flex items-center gap-1.5">
-                        <div className="inline-flex h-7 min-w-7 shrink-0 flex-col items-center justify-center rounded-full bg-[var(--Brand-Primary,#7142FF)] px-2 py-1">
-                          <span className="font-brockmann text-lg font-normal leading-[18px] text-[var(--Text-Primary,#FCFFFF)] tabular-nums">
-                            {pick.pick_order}
-                          </span>
-                        </div>
-                        <div className="inline-flex flex-col items-start justify-start rounded px-2 py-1 outline outline-1 outline-[var(--Hover,#907AFF)] outline-offset-[-1px] bg-[var(--UI-Primary-Pressed,#25015E)]">
-                          <span className="font-brockmann text-xs font-normal leading-4 tracking-[0.72px] text-[var(--Text-Primary,#FCFFFF)]">
-                            {categoryLabel(pick.category)}
-                          </span>
-                        </div>
+                      <div className="inline-flex h-7 min-w-7 shrink-0 flex-col items-center justify-center rounded-full bg-[var(--Brand-Primary,#7142FF)] px-2 py-1">
+                        <span className="font-brockmann text-lg font-normal leading-[18px] text-[var(--Text-Primary,#FCFFFF)] tabular-nums">
+                          {pick.pick_order}
+                        </span>
                       </div>
-                      <div
-                        className="min-w-0 flex-1 font-brockmann text-lg font-medium leading-[26px] text-[var(--Text-Primary,#FCFFFF)] break-words sm:min-w-[200px]"
+                      <span
+                        className="min-w-0 font-brockmann text-lg font-medium leading-[26px] text-[var(--Text-Primary,#FCFFFF)] break-words"
                         title={pick.player_name}
                       >
-                        {pick.player_name}
+                        <span className="font-bold">{pick.player_name}</span> picks in
+                      </span>
+                      <div className="inline-flex flex-col items-start justify-start rounded px-2 py-1 outline outline-1 outline-[var(--Hover,#907AFF)] outline-offset-[-1px] bg-[var(--UI-Primary-Pressed,#25015E)]">
+                        <span className="font-brockmann text-xs font-normal leading-4 tracking-[0.72px] text-[var(--Text-Primary,#FCFFFF)]">
+                          {categoryLabel(pick.category)}
+                        </span>
                       </div>
                     </div>
                     <div className="w-full">

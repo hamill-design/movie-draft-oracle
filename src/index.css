@@ -364,6 +364,25 @@ All colors MUST be HSL.
   background-color: hsl(var(--purple-300)) !important;
 }
 
+/* Hide Spline "Built with Spline" branding badge */
+a[href*="spline.design"] {
+  display: none !important;
+}
+
+/** How It Works Spline — fixed 800px stage; no clip on wrapper or canvas during animation */
+.how-it-works-spline,
+.how-it-works-spline > div {
+  overflow: visible !important;
+}
+
+.how-it-works-spline canvas {
+  display: block;
+  width: 800px !important;
+  max-width: 100% !important;
+  height: 100% !important;
+  overflow: visible !important;
+}
+
 @layer utilities {
   /**
    * Native `<input type="date">` calendar glyph (WebKit/Blink): invert to read as white on dark fields.
