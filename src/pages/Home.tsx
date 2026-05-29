@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
@@ -15,6 +15,7 @@ const Home = () => {
   const { loading } = useAuth();
   const location = useLocation();
   const splineWrapperRef = useRef<HTMLDivElement>(null);
+  const [splineLoaded, setSplineLoaded] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -85,12 +86,14 @@ const Home = () => {
               width: '100vw',
               height: '100vh',
               zIndex: 0,
-              opacity: 0.6,
+              opacity: splineLoaded ? 0.6 : 0,
+              transition: 'opacity 0.8s ease',
             }}
           >
             <Spline
               scene="https://prod.spline.design/K4NCn3QQ5YqLqGGU/scene.splinecode"
               style={{ width: '100%', height: '100%' }}
+              onLoad={() => setSplineLoaded(true)}
             />
           </div>
           <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 flex flex-col items-center gap-6" style={{ pointerEvents: 'none' }}>
