@@ -51,12 +51,14 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const navigate = useNavigate();
   const hasShownToast = useRef(false);
   
-  // Ensure draftState has required properties with defaults
-  const safeDraftState = {
+  // Ensure draftState has required properties with defaults.
+  // Must be memoized — an inline object literal would get a new reference on every render,
+  // which would cause performAutoSave and the AI-turn effect to re-run on every render.
+  const safeDraftState = useMemo(() => ({
     ...(draftState || {}),
     participants: draftState?.participants || [],
     categories: draftState?.categories || [],
-  };
+  }), [draftState]);
   const skipResumeSameSetup =
     !!draftState?.forceNewDraft && !safeDraftState.isMultiplayer;
   

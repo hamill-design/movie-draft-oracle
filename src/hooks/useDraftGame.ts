@@ -81,12 +81,12 @@ export const useDraftGame = (participants: string[] | Participant[], categories:
   // to persist is_complete with zero picks.
   const isComplete = draftOrder.length > 0 && currentPickIndex >= draftOrder.length;
 
-  const addPick = (pick: Pick) => {
+  const addPick = useCallback((pick: Pick) => {
     const updatedPicks = [...picks, pick];
     setPicks(updatedPicks);
     setCurrentPickIndex(currentPickIndex + 1);
     return updatedPicks;
-  };
+  }, [picks, currentPickIndex]);
 
   const loadExistingPicks = useCallback((existingPicks: any[], originalParticipants?: string[] | Participant[]) => {
     if (existingPicks && existingPicks.length > 0) {
