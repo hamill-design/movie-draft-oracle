@@ -16,7 +16,7 @@ const Footer = () => {
         <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-start sm:gap-x-6">
           <div className="min-w-0 flex flex-col items-start justify-start">
             <p className="text-sm font-brockmann font-normal text-greyscale-blue-200 leading-5">
-              © 2024 Movie Drafter. All rights reserved.
+              © 2026 Movie Drafter. All rights reserved.
             </p>
             {/* TMDB Attribution */}
             <p className="text-xs font-brockmann font-normal text-greyscale-blue-300 leading-4 mt-2">
