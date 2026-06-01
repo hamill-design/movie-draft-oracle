@@ -47,6 +47,7 @@ export function LeagueFeatureSection() {
 
   return (
     <section
+      aria-label="Play in a Movie Drafter League"
       className="w-full h-full py-6 px-6"
       style={{ background: 'linear-gradient(160deg, #0d0020 0%, #160038 50%, #0d0020 100%)' }}
     >

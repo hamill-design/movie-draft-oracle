@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
-import { graphJsonLd, webPageNode } from '@/components/seo/jsonLd';
+import { graphJsonLd, webPageNode, siteWebAppId } from '@/components/seo/jsonLd';
 import { HomeDraftSection } from '@/components/home/HomeDraftSection';
 import { LeagueFeatureSection } from '@/components/home/LeagueFeatureSection';
 import { HowItWorksSection } from '@/components/home/HowItWorksSection';
@@ -60,20 +60,21 @@ const Home = () => {
         <meta name="twitter:description" content="Movie Drafter is the free movie draft game where you and your friends pick films, compete on taste, and settle who knows cinema best. Start a draft in minutes." />
         <script type="application/ld+json">
           {JSON.stringify(
-            graphJsonLd(
-              webPageNode({
+            graphJsonLd({
+              ...webPageNode({
                 path: '/',
                 name: 'Movie Drafter – The Movie Draft Game for Friends',
                 description:
                   'Movie Drafter is the free movie draft game where you and your friends pick films, compete on taste, and settle who knows cinema best. Start a draft in minutes.',
-              })
-            )
+              }),
+              mainEntity: { '@id': siteWebAppId },
+            })
           )}
         </script>
       </Helmet>
 
       {/* ── 1. Hero ── */}
-      <div className="relative w-full min-h-screen">
+      <div className="relative w-full min-h-screen overflow-hidden">
         {/* pointer-events: none on the text section so hover passes through to Spline */}
         <section className="w-full px-6 py-16 md:py-20 relative z-10 overflow-visible">
           <div
@@ -121,8 +122,8 @@ const Home = () => {
         <HomeDraftSection draftSetupAnchorId="draft-setup" />
 
         {/* Scroll indicator */}
-        <div className="flex flex-col items-center gap-2 py-8 opacity-60">
-          <span className="font-brockmann text-[11px] font-medium tracking-[0.2em] text-[#BDC3C2] uppercase">
+        <div className="relative z-20 flex flex-col items-center gap-2 py-8">
+          <span className="font-brockmann text-[11px] font-medium tracking-[0.2em] text-white uppercase">
             Scroll to learn more
           </span>
           <svg
@@ -130,7 +131,7 @@ const Home = () => {
             width="18" height="18" viewBox="0 0 18 18" fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <path d="M4 6.5L9 11.5L14 6.5" stroke="#BDC3C2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M4 6.5L9 11.5L14 6.5" stroke="#ffffff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
       </div>

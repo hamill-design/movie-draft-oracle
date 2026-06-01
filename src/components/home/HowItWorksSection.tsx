@@ -47,7 +47,7 @@ export function HowItWorksSection() {
   const step = STEPS[active];
 
   return (
-    <section className="w-full px-6 md:px-12 py-12 md:py-16">
+    <section aria-label="How Movie Drafter works" className="w-full px-6 md:px-12 py-12 md:py-16">
       <div className="max-w-[1200px] mx-auto flex flex-row items-start gap-12 lg:gap-16">
 
         {/* ── Left: text + carousel ── */}
@@ -64,9 +64,9 @@ export function HowItWorksSection() {
                 transition: `opacity ${FADE_DURATION}ms ease`,
               }}
             >
-              <p className="font-brockmann font-bold text-2xl lg:text-[32px] leading-9 tracking-widest text-[#907AFF]">
+              <h3 className="font-brockmann font-bold text-2xl lg:text-[32px] leading-9 tracking-widest text-[#907AFF]">
                 {step.title}
-              </p>
+              </h3>
               <p className="font-brockmann font-medium text-lg leading-7 text-[#BDC3C2]">
                 {step.body}
               </p>
@@ -94,8 +94,9 @@ export function HowItWorksSection() {
           reaches the right viewport edge and gets 80px of buffer on the
           other three sides. Content scale stays tied to the wrapper width.
         */}
-        <div className="w-full lg:flex-1 relative" style={{ height: '580px' }}>
+        <div className="w-full lg:flex-1 relative pointer-events-none" style={{ height: '580px' }}>
           <div
+            className="pointer-events-none"
             style={{
               position: 'absolute',
               top: '-80px',
@@ -115,10 +116,10 @@ export function HowItWorksSection() {
       </div>
 
       {/* CTA */}
-      <div className="flex justify-center mt-10">
+      <div className="relative z-10 flex justify-center mt-10">
         <button
           onClick={() => navigate('/how-to-draft')}
-          className="px-[18px] py-3 bg-[#7142FF] hover:bg-[#5e32e0] rounded-[2px] font-brockmann font-semibold text-base text-white tracking-wide transition-colors"
+          className="cursor-pointer px-[18px] py-3 bg-[#7142FF] hover:bg-[#5e32e0] rounded-[2px] font-brockmann font-semibold text-base text-white tracking-wide transition-colors"
         >
           Go to Complete Guide
         </button>
