@@ -51,13 +51,17 @@ interface FeedResult {
 // ── XML helpers ───────────────────────────────────────────────────────────────
 
 function extractTagText(xml: string, tag: string): string {
-  const re = new RegExp(
-    `<${tag}[^>]*>(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*?))<\\/${tag}>`,
-    'i'
-  );
+  // Capture everything between the opening and closing tag
+  const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i');
   const m = xml.match(re);
   if (!m) return '';
-  return (m[1] ?? m[2] ?? '').trim();
+  const raw = m[1];
+  // Prefer CDATA content — some feeds (e.g. Reverse Shot) prepend a plain-text
+  // section label before the CDATA block; grabbing only the text would lose the
+  // actual article body that lives inside the CDATA.
+  const cdata = raw.match(/<!\[CDATA\[([\s\S]*?)\]\]>/i);
+  if (cdata) return cdata[1].trim();
+  return raw.trim();
 }
 
 function extractAttr(xml: string, tag: string, attr: string): string {
