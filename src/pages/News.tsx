@@ -135,7 +135,7 @@ function NewsCard({ item }: { item: NewsItem }) {
           className="font-brockmann font-semibold text-[15px] leading-snug"
           style={{ color: '#FAFEFF' }}
         >
-          {item.title}
+          {decodeEntities(item.title)}
         </h2>
 
         {/* Preview text */}
