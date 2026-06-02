@@ -10,7 +10,7 @@
  * in Vercel's Lambda runtime, which keeps the function alive as long as
  * there are open network connections, regardless of Promise.race resolving.
  */
-export const config = { runtime: 'nodejs' };
+export const config = { runtime: 'edge' };
 
 // ── Feed list ─────────────────────────────────────────────────────────────────
 
