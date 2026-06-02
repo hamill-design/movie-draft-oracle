@@ -53,11 +53,18 @@ const Footer = () => {
           
           <div className="flex min-w-0 flex-col items-end justify-end gap-3 sm:justify-self-end">
             <div className="flex w-full max-w-lg flex-wrap items-center justify-end gap-x-3 gap-y-2">
-              <Link 
-                to="/about" 
+              <Link
+                to="/about"
                 className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
               >
                 About
+              </Link>
+              <Separator orientation="vertical" className="hidden md:block h-4 bg-greyscale-blue-200" />
+              <Link
+                to="/news"
+                className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
+              >
+                News
               </Link>
               <Separator orientation="vertical" className="hidden md:block h-4 bg-greyscale-blue-200" />
               <Link
