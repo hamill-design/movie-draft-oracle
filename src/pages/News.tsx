@@ -18,17 +18,32 @@ interface NewsItem {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
+function decodeEntities(str: string): string {
+  return str
+    // Numeric decimal entities: &#8216; &#8217; &#8212; etc.
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    // Numeric hex entities: &#x2019; etc.
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCharCode(parseInt(code, 16)))
+    // Common named entities
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–')
+    .replace(/&hellip;/g, '…')
+    .replace(/&lsquo;/g, '‘')
+    .replace(/&rsquo;/g, '’')
+    .replace(/&ldquo;/g, '“')
+    .replace(/&rdquo;/g, '”');
+}
+
+function stripHtml(html: string): string {
+  return decodeEntities(
+    html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+  );
 }
 
 function relativeDate(dateStr: string): string {
@@ -80,33 +95,24 @@ function NewsCard({ item }: { item: NewsItem }) {
       href={item.link}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex flex-col rounded-lg overflow-hidden transition-all duration-200 hover:scale-[1.015]"
+      className="flex flex-col overflow-hidden transition-colors duration-200 hover:[border-color:rgba(131,122,255,0.3)] hover:bg-purple-950/10"
       style={{
-        background: 'rgba(255,255,255,0.04)',
+        background: 'rgba(13,10,30,0.6)',
         border: '1px solid rgba(255,255,255,0.07)',
+        borderRadius: '4px',
         textDecoration: 'none',
-        boxShadow: '0 0 0 0 rgba(131,122,255,0)',
-        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.boxShadow =
-          '0 0 0 1px rgba(131,122,255,0.35), 0 4px 20px rgba(131,122,255,0.12)';
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.boxShadow =
-          '0 0 0 0 rgba(131,122,255,0)';
       }}
     >
       {/* Thumbnail */}
       {item.image && (
         <div
-          className="w-full overflow-hidden shrink-0"
-          style={{ height: '176px', background: 'rgba(255,255,255,0.06)' }}
+          className="w-full shrink-0 overflow-hidden"
+          style={{ height: '168px', background: 'rgba(255,255,255,0.05)' }}
         >
           <img
             src={item.image}
             alt=""
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            className="w-full h-full object-cover"
             onError={(e) => {
               (e.currentTarget.parentElement as HTMLDivElement).style.display = 'none';
             }}
@@ -116,12 +122,10 @@ function NewsCard({ item }: { item: NewsItem }) {
 
       {/* Body */}
       <div className="flex flex-col gap-2 p-4 flex-1">
-        {/* Source badge */}
+
+        {/* Source pill — matches project's "New Feature" badge pattern */}
         {sourceName && (
-          <span
-            className="font-brockmann text-[11px] font-semibold uppercase tracking-widest truncate"
-            style={{ color: '#837AFF' }}
-          >
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-purple-500/30 bg-purple-900/20 font-brockmann text-[10px] font-semibold uppercase tracking-widest text-purple-300 w-fit truncate max-w-full">
             {sourceName}
           </span>
         )}
@@ -136,10 +140,7 @@ function NewsCard({ item }: { item: NewsItem }) {
 
         {/* Preview text */}
         {preview && (
-          <p
-            className="font-brockmann text-sm leading-relaxed"
-            style={{ color: '#BBC3BF' }}
-          >
+          <p className="font-brockmann text-sm leading-relaxed" style={{ color: '#BBC3BF' }}>
             {preview}
           </p>
         )}
@@ -147,18 +148,11 @@ function NewsCard({ item }: { item: NewsItem }) {
         {/* Footer row */}
         <div className="mt-auto pt-3 flex items-center justify-between gap-2">
           {date && (
-            <span
-              className="font-brockmann text-xs"
-              style={{ color: 'rgba(255,255,255,0.3)' }}
-            >
+            <span className="font-brockmann text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
               {date}
             </span>
           )}
-          <ExternalLink
-            size={13}
-            className="shrink-0 ml-auto"
-            style={{ color: 'rgba(131,122,255,0.6)' }}
-          />
+          <ExternalLink size={13} className="shrink-0 ml-auto" style={{ color: 'rgba(131,122,255,0.5)' }} />
         </div>
       </div>
     </a>
