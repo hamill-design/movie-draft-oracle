@@ -4,6 +4,11 @@
  *
  * Fetches all configured feeds in parallel server-side (no CORS issues),
  * merges the results, and sorts newest-first.
+ *
+ * IMPORTANT: Each feed gets its own AbortController. The global timeout
+ * explicitly aborts ALL controllers before returning — this is required
+ * in Vercel's Lambda runtime, which keeps the function alive as long as
+ * there are open network connections, regardless of Promise.race resolving.
  */
 export const config = { runtime: 'nodejs' };
 
@@ -21,9 +26,10 @@ const FEEDS: { url: string; label: string }[] = [
   { url: 'https://wp.theringer.com/topic/movies/feed/',  label: 'The Ringer'       },
 ];
 
-const CACHE_SECONDS = 15 * 60; // 15 min edge cache
-const MAX_ITEMS     = 60;       // total items returned after merge
-const FETCH_TIMEOUT = 5_000;    // ms per feed (hard-kill via AbortController)
+const CACHE_SECONDS  = 15 * 60; // 15 min edge cache
+const MAX_ITEMS      = 60;      // total items returned after merge
+const FEED_TIMEOUT   = 7_000;   // ms before an individual feed is aborted
+const GLOBAL_TIMEOUT = 8_500;   // ms before ALL remaining connections are force-killed
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -31,15 +37,19 @@ export interface NewsItem {
   title: string;
   link: string;
   description: string;
-  pubDate: string;       // raw RFC-822 string from feed
-  pubTimestamp: number;  // parsed ms-since-epoch for sorting
-  source: string;        // human-readable label, e.g. "MUBI Notebook"
+  pubDate: string;
+  pubTimestamp: number;
+  source: string;
   image: string | null;
+}
+
+interface FeedResult {
+  items: NewsItem[];
+  error?: string;
 }
 
 // ── XML helpers ───────────────────────────────────────────────────────────────
 
-/** Extract text/CDATA content of the first matching tag. */
 function extractTagText(xml: string, tag: string): string {
   const re = new RegExp(
     `<${tag}[^>]*>(?:<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>|([^<]*?))<\\/${tag}>`,
@@ -50,64 +60,47 @@ function extractTagText(xml: string, tag: string): string {
   return (m[1] ?? m[2] ?? '').trim();
 }
 
-/** Extract an attribute value from the first matching tag. */
 function extractAttr(xml: string, tag: string, attr: string): string {
   const re = new RegExp(`<${tag}[^>]*\\s${attr}=["']([^"']*)["']`, 'i');
   const m = xml.match(re);
   return m ? m[1].trim() : '';
 }
 
-/** Try to find an image URL in a single <item> block. */
 function extractImage(item: string): string | null {
-  // 1. media:content url attribute
   const mc = extractAttr(item, 'media:content', 'url');
   if (mc) return mc;
-
-  // 2. enclosure url attribute
   const enc = extractAttr(item, 'enclosure', 'url');
   if (enc) return enc;
-
-  // 3. First <img src="..."> inside description HTML
   const m = item.match(/<img[^>]+src=["']([^"']+)["']/i);
   if (m) return m[1];
-
   return null;
 }
 
-/** Parse a full RSS/Atom XML string into NewsItems, tagging each with the feed label. */
 function parseRSS(xml: string, label: string): NewsItem[] {
   const items: NewsItem[] = [];
-  const matches = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)];
-
-  for (const m of matches) {
+  for (const m of xml.matchAll(/<item>([\s\S]*?)<\/item>/g)) {
     const raw = m[1];
-
     const title = extractTagText(raw, 'title');
     if (!title) continue;
-
     const link = extractTagText(raw, 'link') || extractAttr(raw, 'link', 'href');
     if (!link) continue;
-
-    const description = extractTagText(raw, 'description');
-    const pubDate     = extractTagText(raw, 'pubDate') || extractTagText(raw, 'published') || extractTagText(raw, 'dc:date');
+    const description  = extractTagText(raw, 'description');
+    const pubDate      = extractTagText(raw, 'pubDate') || extractTagText(raw, 'published') || extractTagText(raw, 'dc:date');
     const pubTimestamp = pubDate ? Date.parse(pubDate) || 0 : 0;
-    const image       = extractImage(raw);
-
+    const image        = extractImage(raw);
     items.push({ title, link, description, pubDate, pubTimestamp, source: label, image });
   }
-
   return items;
 }
 
 // ── Feed fetcher ──────────────────────────────────────────────────────────────
 
-async function fetchFeed(feedUrl: string, label: string): Promise<{ items: NewsItem[]; error?: string }> {
-  // Use an explicit AbortController so the setTimeout reliably kills the
-  // Undici socket — AbortSignal.timeout() can lose to Undici's internal
-  // headersTimeout (30 s default) and leave the function hanging.
-  const ac = new AbortController();
-  const timer = setTimeout(() => ac.abort(new Error(`Timeout after ${FETCH_TIMEOUT}ms`)), FETCH_TIMEOUT);
-
+async function fetchFeed(
+  feedUrl: string,
+  label: string,
+  ac: AbortController
+): Promise<FeedResult> {
+  const timer = setTimeout(() => ac.abort(), FEED_TIMEOUT);
   try {
     const res = await fetch(feedUrl, {
       headers: {
@@ -116,11 +109,7 @@ async function fetchFeed(feedUrl: string, label: string): Promise<{ items: NewsI
       },
       signal: ac.signal,
     });
-
-    if (!res.ok) {
-      return { items: [], error: `${label}: HTTP ${res.status}` };
-    }
-
+    if (!res.ok) return { items: [], error: `${label}: HTTP ${res.status}` };
     const xml = await res.text();
     return { items: parseRSS(xml, label) };
   } catch (err) {
@@ -139,19 +128,32 @@ export default async function handler(_req: Request): Promise<Response> {
     'Content-Type': 'application/json',
   };
 
-  // Fetch all feeds in parallel; partial failures are tolerated.
-  // The global race ensures the function always returns even if individual
-  // AbortControllers are delayed by the runtime (e.g. vercel dev proxy).
-  type FeedResult = { items: NewsItem[]; error?: string };
-  const feedsPromise = Promise.all(FEEDS.map((f) => fetchFeed(f.url, f.label)));
-  const globalTimeoutMs = 9_000;
-  const globalTimeout = new Promise<FeedResult[]>((resolve) =>
-    setTimeout(
-      () => resolve(FEEDS.map((f) => ({ items: [], error: `${f.label}: global timeout` }))),
-      globalTimeoutMs
-    )
+  // One AbortController per feed so we can force-close ALL connections
+  // before returning — Lambda/Vercel will not release the execution context
+  // while network connections remain open, even after Promise.race resolves.
+  const controllers = FEEDS.map(() => new AbortController());
+
+  const abortAll = () => controllers.forEach((ac) => ac.abort());
+
+  // Global hard deadline: abort every connection and resolve with whatever
+  // partial results exist. This guarantees the function exits cleanly.
+  let globalTimer: ReturnType<typeof setTimeout>;
+  const globalDeadline = new Promise<FeedResult[]>((resolve) => {
+    globalTimer = setTimeout(() => {
+      abortAll();
+      resolve(FEEDS.map((f) => ({ items: [], error: `${f.label}: deadline` })));
+    }, GLOBAL_TIMEOUT);
+  });
+
+  const feedsPromise = Promise.all(
+    FEEDS.map((f, i) => fetchFeed(f.url, f.label, controllers[i]))
   );
-  const results = await Promise.race([feedsPromise, globalTimeout]);
+
+  const results = await Promise.race([feedsPromise, globalDeadline]);
+
+  // If feeds finished before deadline, abort any stragglers and clear timer
+  abortAll();
+  clearTimeout(globalTimer!);
 
   const allItems: NewsItem[] = [];
   const errors: string[] = [];
@@ -161,7 +163,6 @@ export default async function handler(_req: Request): Promise<Response> {
     if (result.error) errors.push(result.error);
   }
 
-  // Sort newest-first, cap total
   allItems.sort((a, b) => b.pubTimestamp - a.pubTimestamp);
   const items = allItems.slice(0, MAX_ITEMS);
 
