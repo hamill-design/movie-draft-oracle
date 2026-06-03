@@ -79,14 +79,9 @@ const Home = () => {
         <section className="w-full px-6 py-16 md:py-20 relative z-10 overflow-visible">
           <div
             ref={splineWrapperRef}
+            className="absolute left-1/2 top-[calc(50%+180px)] md:top-[calc(50%+260px)] lg:top-[calc(50%+300px)] z-0 h-screen w-screen"
             style={{
-              position: 'absolute',
-              top: 'calc(50% + 300px)',
-              left: '50%',
               transform: 'translateX(-50%) translateY(-50%)',
-              width: '100vw',
-              height: '100vh',
-              zIndex: 0,
               opacity: splineLoaded ? 0.6 : 0,
               transition: 'opacity 0.8s ease',
             }}

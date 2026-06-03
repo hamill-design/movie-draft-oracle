@@ -44,30 +44,40 @@ export function HowItWorksSection() {
     return () => clearTimeout(id);
   }, [active]);
 
+  const [showSpline, setShowSpline] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(min-width: 1024px)');
+    const sync = () => setShowSpline(mql.matches);
+    sync();
+    mql.addEventListener('change', sync);
+    return () => mql.removeEventListener('change', sync);
+  }, []);
+
   const step = STEPS[active];
 
   return (
-    <section aria-label="How Movie Drafter works" className="w-full px-6 md:px-12 py-12 md:py-16">
-      <div className="max-w-[1200px] mx-auto flex flex-row items-start gap-12 lg:gap-16">
+    <section aria-label="How Movie Drafter works" className="w-full overflow-x-hidden px-6 md:px-12 py-12 md:py-16">
+      <div className="max-w-[1200px] mx-auto flex flex-col lg:flex-row items-start gap-8 lg:gap-16">
 
         {/* ── Left: text + carousel ── */}
-        <div className="flex flex-col gap-8 lg:w-[520px] shrink-0 pt-8">
-          <h2 className="font-chaney font-normal text-5xl lg:text-[64px] leading-tight lg:leading-[64px] text-[#FAFEFF]">
+        <div className="flex w-full min-w-0 flex-col gap-6 lg:gap-8 lg:w-[520px] shrink-0 pt-0 lg:pt-8">
+          <h2 className="font-chaney font-normal text-4xl sm:text-5xl lg:text-[64px] leading-tight lg:leading-[64px] text-[#FAFEFF]">
             DRAFT Your<br />PERFECT Movie<br />Roster
           </h2>
 
           <div className="flex flex-col gap-6">
             <div
-              className="flex flex-col gap-3 min-h-[160px]"
+              className="flex flex-col gap-3 min-h-0 lg:min-h-[160px]"
               style={{
                 opacity: visible ? 1 : 0,
                 transition: `opacity ${FADE_DURATION}ms ease`,
               }}
             >
-              <h3 className="font-brockmann font-bold text-2xl lg:text-[32px] leading-9 tracking-widest text-[#907AFF]">
+              <h3 className="font-brockmann font-bold text-xl sm:text-2xl lg:text-[32px] leading-8 lg:leading-9 tracking-wide lg:tracking-widest text-[#907AFF]">
                 {step.title}
               </h3>
-              <p className="font-brockmann font-medium text-lg leading-7 text-[#BDC3C2]">
+              <p className="font-brockmann font-medium text-base sm:text-lg leading-7 text-[#BDC3C2]">
                 {step.body}
               </p>
             </div>
@@ -86,36 +96,23 @@ export function HowItWorksSection() {
           </div>
         </div>
 
-        {/* ── Right: Spline ── */}
-        {/*
-          Wrapper defines the layout footprint (flex child).
-          Inner absolute div expands the canvas beyond the wrapper with NO
-          overflow:hidden — so nothing CSS-clips the animation. The canvas
-          reaches the right viewport edge and gets 80px of buffer on the
-          other three sides. Content scale stays tied to the wrapper width.
-        */}
-        <div className="w-full lg:flex-1 relative" style={{ height: '580px' }}>
-          <div
-            style={{
-              position: 'absolute',
-              top: '-80px',
-              bottom: '-80px',
-              left: '-80px',
-              right: '-48px',
-            }}
-          >
-            <Spline
-              className="how-it-works-spline"
-              scene="https://prod.spline.design/RowT8ilLMPFhNznc/scene.splinecode"
-              style={{ width: '100%', height: '100%', overflow: 'visible' }}
-            />
+        {/* ── Right: Spline (desktop only) ── */}
+        {showSpline && (
+          <div className="relative w-full min-w-0 lg:flex-1 h-[580px]">
+            <div className="absolute inset-0 lg:-top-20 lg:-bottom-20 lg:-left-20 lg:-right-12">
+              <Spline
+                className="how-it-works-spline"
+                scene="https://prod.spline.design/RowT8ilLMPFhNznc/scene.splinecode"
+                style={{ width: '100%', height: '100%', overflow: 'visible' }}
+              />
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
 
       {/* CTA */}
-      <div className="relative z-10 flex justify-center mt-10">
+      <div className="relative z-10 flex justify-center mt-8 lg:mt-10">
         <button
           onClick={() => navigate('/how-to-draft')}
           className="cursor-pointer px-[18px] py-3 bg-[#7142FF] hover:bg-[#5e32e0] rounded-[2px] font-brockmann font-semibold text-base text-white tracking-wide transition-colors"

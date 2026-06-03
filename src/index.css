@@ -377,10 +377,16 @@ a[href*="spline.design"] {
 
 .how-it-works-spline canvas {
   display: block;
-  width: 800px !important;
+  width: 100% !important;
   max-width: 100% !important;
   height: 100% !important;
   overflow: visible !important;
+}
+
+@media (min-width: 1024px) {
+  .how-it-works-spline canvas {
+    width: 800px !important;
+  }
 }
 
 @layer utilities {

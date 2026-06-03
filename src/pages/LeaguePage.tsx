@@ -58,7 +58,7 @@ type MainTab = 'standings' | 'drafts' | 'schedule';
 
 /** Matches FinalScores pill tabs: gap-px separators, single outer border — avoids uneven inner outlines on rounded hull. */
 const LEAGUE_MAIN_TAB_SEGMENT_CLASS =
-  'min-w-[127px] w-[127px] max-w-[127px] shrink-0 grow-0 basis-[127px]';
+  'min-w-0 flex-1 shrink basis-0 md:min-w-[127px] md:w-[127px] md:max-w-[127px] md:shrink-0 md:grow-0 md:basis-[127px]';
 const LEAGUE_MAIN_TAB_BUTTON_CLASS =
   'min-h-0 rounded-none border-0 px-6 py-3 font-brockmann text-sm font-medium leading-5 text-[var(--Text-Primary,#FCFFFF)] shadow-none ring-0 ring-offset-0 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#7142FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0E0E0F]';
 
@@ -369,14 +369,14 @@ const LeaguePage = () => {
       </Helmet>
 
       <div
-        className="min-h-screen w-full inline-flex flex-col items-center px-6 pt-5 pb-12 font-brockmann"
+        className="min-h-screen w-full inline-flex flex-col items-center px-3 pt-6 pb-12 font-brockmann md:px-6 md:pt-5"
         style={{ background: MOVIE_DRAFTER_PURPLE_SHELL }}
       >
         <div className="flex w-full max-w-[1200px] flex-col items-center gap-6">
-          {/* Hero — gap can't be negative in CSS; -ml-10 pulls copy toward the trophy (replaces prior gap-6) */}
-          <div className="flex w-full flex-nowrap items-center gap-0 px-6 py-6">
+          {/* Hero — mobile: trophy absolute left; copy + settings align bottom */}
+          <div className="relative w-full px-3 py-6 md:flex md:flex-nowrap md:items-center md:gap-0 md:px-6">
             <div
-              className="relative flex h-[118px] w-[124px] shrink-0 items-center justify-center opacity-70 mix-blend-screen"
+              className="pointer-events-none absolute -left-8 top-0 h-[118px] w-[124px] opacity-70 mix-blend-screen md:relative md:left-auto md:top-auto md:shrink-0"
               aria-hidden
             >
               <img
@@ -388,8 +388,8 @@ const LeaguePage = () => {
                 className="h-full w-full object-contain object-center"
               />
             </div>
-            <div className="-ml-10 flex min-w-0 flex-1 items-start gap-6">
-              <div className="flex min-h-[94px] min-w-0 flex-1 flex-col gap-4">
+            <div className="relative flex w-full flex-1 flex-wrap items-end justify-end gap-6 md:-ml-10 md:flex-nowrap md:items-start md:justify-start">
+              <div className="flex min-w-0 flex-1 flex-col gap-4 md:min-h-[94px]">
                 <h1 className="m-0 font-chaney text-[48px] font-normal leading-[50px] tracking-wide text-greyscale-blue-100">
                   {league.name}
                 </h1>
@@ -402,7 +402,7 @@ const LeaguePage = () => {
                 <button
                   type="button"
                   onClick={() => navigate(`/league/${leagueId}/settings`)}
-                  className="inline-flex shrink-0 items-center gap-2 rounded-[2px] bg-[#1D1D1F] px-3 py-2 outline outline-1 -outline-offset-1 outline-[#666469] transition-colors hover:bg-[#252528]"
+                  className="inline-flex shrink-0 items-center gap-2 self-end rounded-[2px] bg-[#1D1D1F] px-3 py-2 outline outline-1 -outline-offset-1 outline-[#666469] transition-colors hover:bg-[#252528] md:self-auto"
                 >
                   <Settings className="size-4 text-[#BDC3C2]" aria-hidden />
                   <span className="text-center text-sm font-medium leading-5 text-[#BDC3C2]">
@@ -414,11 +414,11 @@ const LeaguePage = () => {
           </div>
 
           {/* Pill tabs + season */}
-          <div className="flex w-full flex-wrap items-center justify-between gap-4 px-6">
+          <div className="flex w-full flex-col gap-4 px-3 md:flex-row md:flex-wrap md:items-center md:justify-between md:px-6">
             <div
               role="tablist"
               aria-label="League sections"
-              className="flex h-auto w-fit items-start justify-start gap-px overflow-hidden rounded-full border border-solid border-[var(--Item-Stroke,#49474B)] bg-[var(--Item-Stroke,#49474B)] p-0 shadow-none"
+              className="flex h-auto w-full min-w-0 items-start justify-start gap-px overflow-hidden rounded-full border border-solid border-[var(--Item-Stroke,#49474B)] bg-[var(--Item-Stroke,#49474B)] p-0 shadow-none md:w-fit"
             >
               {([
                 ['standings', 'Standings'],
@@ -447,9 +447,9 @@ const LeaguePage = () => {
 
             <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
               <SelectTrigger
-                className="h-auto w-[min(100%,229px)] rounded-[2px] border-0 bg-[#1D1D1F] px-4 py-3 text-sm font-brockmann text-[#BDC3C2] outline outline-1 -outline-offset-1 outline-[#BDC3C2] focus:ring-0 focus:ring-offset-0"
+                className="h-auto w-full rounded-[2px] border-0 bg-[#1D1D1F] px-4 py-3 text-sm font-brockmann text-[#BDC3C2] outline outline-1 -outline-offset-1 outline-[#BDC3C2] focus:ring-0 focus:ring-offset-0 md:w-[min(100%,229px)]"
               >
-                <SelectValue placeholder="Season scope" />
+                <SelectValue placeholder="Previous Seasons" />
               </SelectTrigger>
               <SelectContent>
                 {seasons.map(s => (
@@ -650,14 +650,13 @@ const LeaguePage = () => {
                   <CalendarClock className="mx-auto h-8 w-8 text-greyscale-blue-400" />
                   <p className="m-0 text-sm text-greyscale-blue-300 font-brockmann">Nothing on the calendar yet.</p>
                   {isAdmin && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2 border-white/20 text-greyscale-blue-200 font-brockmann"
+                    <button
+                      type="button"
                       onClick={() => navigate(`/league/${leagueId}/settings`)}
+                      className="mt-2 inline-flex items-center justify-center rounded-[2px] bg-[#1D1D1F] px-3 py-2 text-sm font-medium leading-5 text-[#BDC3C2] outline outline-1 -outline-offset-1 outline-[#666469] transition-colors hover:bg-[#252528] font-brockmann"
                     >
                       Schedule in settings
-                    </Button>
+                    </button>
                   )}
                 </div>
               ) : (
