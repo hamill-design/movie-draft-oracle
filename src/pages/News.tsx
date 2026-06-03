@@ -49,7 +49,7 @@ function stripHtml(html: string): string {
 function relativeDate(dateStr: string): string {
   if (!dateStr) return '';
   try {
-    return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
+    return formatDistanceToNow(new Date(dateStr), { addSuffix: true }).replace(/^about /, '');
   } catch {
     return '';
   }
