@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import { formatDistanceToNow } from 'date-fns';
+import { ExternalLink } from 'lucide-react';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { breadcrumbListNode, graphJsonLd, webPageNode } from '@/components/seo/jsonLd';
 
@@ -54,17 +55,6 @@ function relativeDate(dateStr: string): string {
   }
 }
 
-// ── Icon ──────────────────────────────────────────────────────────────────────
-
-function ExternalLinkIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
-      <rect x="8.13" y="1.63" width="3.25" height="3.25" stroke="#7142FF" strokeWidth="1.08" />
-      <rect x="5.42" y="1.63" width="5.96" height="5.96" stroke="#7142FF" strokeWidth="1.08" />
-      <rect x="1.63" y="3.25" width="8.13" height="8.13" stroke="#7142FF" strokeWidth="1.08" />
-    </svg>
-  );
-}
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
@@ -118,13 +108,17 @@ function NewsCard({ item }: { item: NewsItem }) {
         outline: '1px solid #49474B',
         outlineOffset: '-1px',
         textDecoration: 'none',
-        transition: 'outline-color 200ms ease',
+        transition: 'outline-color 200ms ease, background 200ms ease',
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.outlineColor = '#7142FF';
+        const el = e.currentTarget as HTMLAnchorElement;
+        el.style.outlineColor = '#7142FF';
+        el.style.background = '#1C1A1E';
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.outlineColor = '#49474B';
+        const el = e.currentTarget as HTMLAnchorElement;
+        el.style.outlineColor = '#49474B';
+        el.style.background = '#0E0E0F';
       }}
     >
       {/* Thumbnail — only rendered when an image exists */}
@@ -186,7 +180,7 @@ function NewsCard({ item }: { item: NewsItem }) {
               </span>
             )}
           </div>
-          <ExternalLinkIcon />
+          <ExternalLink size={13} style={{ color: '#7142FF', flexShrink: 0 }} />
         </div>
       </div>
     </a>
