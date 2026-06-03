@@ -127,20 +127,19 @@ function NewsCard({ item }: { item: NewsItem }) {
         (e.currentTarget as HTMLAnchorElement).style.outlineColor = '#49474B';
       }}
     >
-      {/* Thumbnail */}
-      <div style={{ alignSelf: 'stretch', height: '168px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', flexShrink: 0 }}>
-        {item.image ? (
+      {/* Thumbnail — only rendered when an image exists */}
+      {item.image && (
+        <div style={{ alignSelf: 'stretch', height: '168px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', flexShrink: 0 }}>
           <img
             src={item.image}
             alt=""
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             onError={(e) => {
-              (e.currentTarget.parentElement as HTMLDivElement).style.background = 'rgba(255,255,255,0.05)';
-              e.currentTarget.style.display = 'none';
+              (e.currentTarget.parentElement as HTMLDivElement).style.display = 'none';
             }}
           />
-        ) : null}
-      </div>
+        </div>
+      )}
 
       {/* Body */}
       <div style={{ alignSelf: 'stretch', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, gap: '16px' }}>
