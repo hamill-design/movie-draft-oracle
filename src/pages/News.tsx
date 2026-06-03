@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import { formatDistanceToNow } from 'date-fns';
-import { ExternalLink } from 'lucide-react';
+import { LinkOutIcon } from '@/components/icons';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { breadcrumbListNode, graphJsonLd, webPageNode } from '@/components/seo/jsonLd';
 
@@ -180,7 +180,7 @@ function NewsCard({ item }: { item: NewsItem }) {
               </span>
             )}
           </div>
-          <ExternalLink size={13} style={{ color: '#7142FF', flexShrink: 0 }} />
+          <LinkOutIcon className="size-4 shrink-0 text-[#7142FF]" />
         </div>
       </div>
     </a>

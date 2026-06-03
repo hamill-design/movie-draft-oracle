@@ -17,6 +17,7 @@ export { SearchIcon } from './SearchIcon';
 export { ShareIcon } from './ShareIcon';
 export { StarIcon } from './StarIcon';
 export { LetterboxdIcon } from './LetterboxdIcon';
+export { LinkOutIcon } from './LinkOutIcon';
 export { TrashIcon } from './TrashIcon';
 export { TrophyIcon } from './TrophyIcon';
 export { UnderscoreIcon } from './UnderscoreIcon';
