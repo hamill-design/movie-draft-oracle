@@ -94,9 +94,8 @@ export function HowItWorksSection() {
           reaches the right viewport edge and gets 80px of buffer on the
           other three sides. Content scale stays tied to the wrapper width.
         */}
-        <div className="w-full lg:flex-1 relative pointer-events-none" style={{ height: '580px' }}>
+        <div className="w-full lg:flex-1 relative" style={{ height: '580px' }}>
           <div
-            className="pointer-events-none"
             style={{
               position: 'absolute',
               top: '-80px',
