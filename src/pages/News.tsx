@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import { formatDistanceToNow } from 'date-fns';
-import { ExternalLink } from 'lucide-react';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { breadcrumbListNode, graphJsonLd, webPageNode } from '@/components/seo/jsonLd';
 
@@ -55,24 +54,38 @@ function relativeDate(dateStr: string): string {
   }
 }
 
+// ── Icon ──────────────────────────────────────────────────────────────────────
+
+function ExternalLinkIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0 }}>
+      <rect x="8.13" y="1.63" width="3.25" height="3.25" stroke="#7142FF" strokeWidth="1.08" />
+      <rect x="5.42" y="1.63" width="5.96" height="5.96" stroke="#7142FF" strokeWidth="1.08" />
+      <rect x="1.63" y="3.25" width="8.13" height="8.13" stroke="#7142FF" strokeWidth="1.08" />
+    </svg>
+  );
+}
+
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
 function NewsCardSkeleton() {
   return (
     <div
-      className="rounded-lg overflow-hidden animate-pulse flex flex-col"
-      style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.07)',
-      }}
+      className="animate-pulse flex flex-col overflow-hidden"
+      style={{ background: '#0E0E0F', borderRadius: '4px', outline: '1px solid #49474B', outlineOffset: '-1px' }}
     >
-      <div className="w-full h-44" style={{ background: 'rgba(255,255,255,0.06)' }} />
-      <div className="p-4 flex flex-col gap-3">
-        <div className="h-3 rounded w-20" style={{ background: 'rgba(131,122,255,0.25)' }} />
-        <div className="h-4 rounded w-full" style={{ background: 'rgba(255,255,255,0.08)' }} />
-        <div className="h-4 rounded w-3/4" style={{ background: 'rgba(255,255,255,0.08)' }} />
-        <div className="h-3 rounded w-full mt-1" style={{ background: 'rgba(255,255,255,0.05)' }} />
-        <div className="h-3 rounded w-5/6" style={{ background: 'rgba(255,255,255,0.05)' }} />
+      <div style={{ height: '168px', background: 'rgba(255,255,255,0.05)', flexShrink: 0 }} />
+      <div className="flex flex-col justify-between flex-1 gap-4" style={{ padding: '16px' }}>
+        <div className="flex flex-col gap-2">
+          <div className="rounded h-5 w-4/5" style={{ background: 'rgba(255,255,255,0.08)' }} />
+          <div className="rounded h-5 w-3/5" style={{ background: 'rgba(255,255,255,0.08)' }} />
+          <div className="rounded h-4 w-full mt-1" style={{ background: 'rgba(255,255,255,0.05)' }} />
+          <div className="rounded h-4 w-11/12" style={{ background: 'rgba(255,255,255,0.05)' }} />
+          <div className="rounded h-4 w-4/5" style={{ background: 'rgba(255,255,255,0.05)' }} />
+        </div>
+        <div className="flex items-center justify-between mt-4">
+          <div className="rounded-full h-6 w-24" style={{ background: 'rgba(41,34,0,0.8)' }} />
+        </div>
       </div>
     </div>
   );
@@ -95,64 +108,86 @@ function NewsCard({ item }: { item: NewsItem }) {
       href={item.link}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex flex-col overflow-hidden transition-colors duration-200 hover:[border-color:rgba(131,122,255,0.3)] hover:bg-purple-950/10"
       style={{
-        background: 'rgba(13,10,30,0.6)',
-        border: '1px solid rgba(255,255,255,0.07)',
+        display: 'inline-flex',
+        flexDirection: 'column',
+        width: '100%',
+        background: '#0E0E0F',
+        overflow: 'hidden',
         borderRadius: '4px',
+        outline: '1px solid #49474B',
+        outlineOffset: '-1px',
         textDecoration: 'none',
+        transition: 'outline-color 200ms ease',
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLAnchorElement).style.outlineColor = '#7142FF';
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLAnchorElement).style.outlineColor = '#49474B';
       }}
     >
       {/* Thumbnail */}
-      {item.image && (
-        <div
-          className="w-full shrink-0 overflow-hidden"
-          style={{ height: '168px', background: 'rgba(255,255,255,0.05)' }}
-        >
+      <div style={{ alignSelf: 'stretch', height: '168px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', flexShrink: 0 }}>
+        {item.image ? (
           <img
             src={item.image}
             alt=""
-            className="w-full h-full object-cover"
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             onError={(e) => {
-              (e.currentTarget.parentElement as HTMLDivElement).style.display = 'none';
+              (e.currentTarget.parentElement as HTMLDivElement).style.background = 'rgba(255,255,255,0.05)';
+              e.currentTarget.style.display = 'none';
             }}
           />
-        </div>
-      )}
+        ) : null}
+      </div>
 
       {/* Body */}
-      <div className="flex flex-col gap-2 p-4 flex-1">
+      <div style={{ alignSelf: 'stretch', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', flex: 1, gap: '16px' }}>
 
-        {/* Source pill — matches project's "New Feature" badge pattern */}
-        {sourceName && (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full border border-purple-500/30 bg-purple-900/20 font-brockmann text-[10px] font-semibold uppercase tracking-widest text-purple-300 w-fit truncate max-w-full">
-            {sourceName}
-          </span>
-        )}
-
-        {/* Headline */}
-        <h2
-          className="font-brockmann font-semibold text-[15px] leading-snug"
-          style={{ color: '#FAFEFF' }}
-        >
-          {decodeEntities(item.title)}
-        </h2>
-
-        {/* Preview text */}
-        {preview && (
-          <p className="font-brockmann text-sm leading-relaxed" style={{ color: '#BBC3BF' }}>
-            {preview}
-          </p>
-        )}
-
-        {/* Footer row */}
-        <div className="mt-auto pt-3 flex items-center justify-between gap-2">
-          {date && (
-            <span className="font-brockmann text-xs" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              {date}
-            </span>
+        {/* Content */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <h2 style={{ margin: 0, color: '#FCFFFF', fontSize: '20px', fontFamily: 'Brockmann', fontWeight: 500, lineHeight: '28px', wordWrap: 'break-word' }}>
+            {decodeEntities(item.title)}
+          </h2>
+          {preview && (
+            <p style={{ margin: 0, color: '#BDC3C2', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '20px' }}>
+              {preview}
+            </p>
           )}
-          <ExternalLink size={13} className="shrink-0 ml-auto" style={{ color: 'rgba(131,122,255,0.5)' }} />
+        </div>
+
+        {/* Footer */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+            {sourceName && (
+              <span style={{
+                padding: '4px 12px',
+                background: '#292200',
+                borderRadius: '9999px',
+                color: '#FFE97A',
+                fontSize: '12px',
+                fontFamily: 'Brockmann',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                lineHeight: '16px',
+                letterSpacing: '0.96px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '160px',
+                flexShrink: 0,
+              }}>
+                {sourceName}
+              </span>
+            )}
+            {date && (
+              <span style={{ color: '#BDC3C2', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '16px', letterSpacing: '0.36px', whiteSpace: 'nowrap' }}>
+                {date}
+              </span>
+            )}
+          </div>
+          <ExternalLinkIcon />
         </div>
       </div>
     </a>
