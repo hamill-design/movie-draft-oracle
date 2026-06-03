@@ -144,7 +144,7 @@ function NewsCard({ item }: { item: NewsItem }) {
             {decodeEntities(item.title)}
           </h2>
           {preview && (
-            <p style={{ margin: 0, color: '#BDC3C2', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '20px' }}>
+            <p style={{ margin: 0, color: '#BDC3C2', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: 400, lineHeight: '22px' }}>
               {preview}
             </p>
           )}
