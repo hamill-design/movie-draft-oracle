@@ -12,6 +12,8 @@ import {
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { ActorPortrait } from '@/components/ActorPortrait';
 import { useDraftCategories } from '@/hooks/useDraftCategories';
+import { useLeagueMembers } from '@/hooks/useLeagues';
+import { useAuth } from '@/contexts/AuthContext';
 import EnhancedCategoriesForm from '@/components/EnhancedCategoriesForm';
 import { JoinDraftForm } from '@/components/JoinDraftForm';
 import { SpecDraftSelector } from '@/components/SpecDraftSelector';
@@ -71,6 +73,9 @@ export function HomeDraftSection({
   const form = useForm<DraftSetupForm>({
     defaultValues: { participants: [], categories: [] },
   });
+
+  const { user } = useAuth();
+  const { members: leagueMembers } = useLeagueMembers(leagueId ?? undefined);
 
   const { people, loading: peopleLoading } = usePeopleSearch(
     theme === 'people' ? searchQuery : '',
@@ -450,6 +455,45 @@ export function HomeDraftSection({
               Add AI
             </button>
           </div>
+
+          {/* League member quick-add — only shown when launched from a league page */}
+          {leagueId && leagueMembers.length > 0 && (() => {
+            const addedValues = new Set(participants.map(p => p.name.toLowerCase()));
+            const available = leagueMembers.filter(m => {
+              if (m.user_id === user?.id) return false; // skip self
+              const val = draftMode === 'multiplayer'
+                ? m.profile?.email ?? ''
+                : m.profile?.name ?? m.profile?.email ?? '';
+              return val && !addedValues.has(val.toLowerCase());
+            });
+            if (available.length === 0) return null;
+            return (
+              <div className="flex flex-col gap-2">
+                <p className="text-greyscale-blue-400 text-xs font-brockmann font-medium m-0 uppercase tracking-widest">
+                  League members
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {available.map(m => {
+                    const val = draftMode === 'multiplayer'
+                      ? m.profile?.email ?? ''
+                      : m.profile?.name ?? m.profile?.email ?? '';
+                    const label = m.profile?.name ?? m.profile?.email ?? 'Member';
+                    return (
+                      <button
+                        key={m.user_id}
+                        type="button"
+                        onClick={() => addParticipant({ name: val, isAI: false })}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-greyscale-purp-800 border border-purple-500/40 text-sm text-greyscale-blue-200 font-brockmann hover:bg-purple-900/50 hover:border-purple-400 transition-colors"
+                      >
+                        <Users size={13} className="text-purple-400 shrink-0" />
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {draftMode === 'multiplayer' && (
             <div className="p-4 bg-teal-900 rounded flex items-center gap-2" style={{outline: '1px solid #B2FFEA', outlineOffset: '-1px'}}>

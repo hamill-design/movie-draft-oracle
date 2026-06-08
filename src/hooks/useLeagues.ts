@@ -79,7 +79,6 @@ export interface LeagueDraftEntry {
     theme: string;
     is_complete: boolean;
     created_at: string;
-    calculated_score: number | null;
     user_id: string;
     option?: string;
     is_multiplayer?: boolean | null;
@@ -348,6 +347,11 @@ export const useLeagueDrafts = (leagueId: string | undefined) => {
   const [drafts, setDrafts] = useState<LeagueDraftEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const linkedDraftsChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  // Which draft IDs are currently linked to this league — lets the `drafts`
+  // subscription below ignore unrelated drafts elsewhere in the app and only
+  // refetch when one of *our* linked drafts actually changes.
+  const linkedDraftIdsRef = useRef<string[]>([]);
 
   const fetchDrafts = useCallback(async () => {
     if (!leagueId) { setLoading(false); return; }
@@ -366,12 +370,13 @@ export const useLeagueDrafts = (leagueId: string | undefined) => {
     const draftIds = entries
       .filter((e: any) => e.draft_id)
       .map((e: any) => e.draft_id as string);
+    linkedDraftIdsRef.current = draftIds;
 
     let draftMap: Record<string, any> = {};
     if (draftIds.length > 0) {
       const { data: draftData } = await supabase
         .from('drafts')
-        .select('id, title, theme, is_complete, created_at, calculated_score, user_id, option, is_multiplayer, categories')
+        .select('id, title, theme, is_complete, created_at, user_id, option, is_multiplayer, categories')
         .in('id', draftIds);
       if (draftData) {
         draftMap = Object.fromEntries((draftData as any[]).map((d) => [d.id, d]));
@@ -403,7 +408,32 @@ export const useLeagueDrafts = (leagueId: string | undefined) => {
       }, () => { fetchDrafts(); })
       .subscribe();
 
-    return () => { channelRef.current?.unsubscribe(); };
+    // The enriched `entry.draft` fields (is_complete, is_multiplayer, ...) live
+    // on the `drafts` table, not `league_drafts`. A draft finishing is an UPDATE
+    // on `drafts` — it never touches `league_drafts`, so the subscription above
+    // never fires, and cards keep showing stale data ("In progress" / "Continue
+    // Draft" forever, even after the draft is actually complete). Listen for
+    // `drafts` UPDATEs too, and refetch only when one of *this league's* linked
+    // drafts is the one that changed (avoid refetching for unrelated drafts
+    // elsewhere in the app — e.g. every pick made in someone else's game).
+    linkedDraftsChannelRef.current = supabase
+      .channel(`league_drafts_linked:${leagueId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'drafts',
+      }, (payload) => {
+        const updatedId = (payload.new as { id?: string } | null)?.id;
+        if (updatedId && linkedDraftIdsRef.current.includes(updatedId)) {
+          fetchDrafts();
+        }
+      })
+      .subscribe();
+
+    return () => {
+      channelRef.current?.unsubscribe();
+      linkedDraftsChannelRef.current?.unsubscribe();
+    };
   }, [leagueId, fetchDrafts]);
 
   return { drafts, loading, refetch: fetchDrafts };

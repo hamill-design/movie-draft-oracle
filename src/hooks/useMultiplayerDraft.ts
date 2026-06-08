@@ -386,6 +386,19 @@ export const useMultiplayerDraft = (
         } catch (emailError) {
           console.error('Email exception:', emailError);
         }
+
+        // For any invited email that belongs to a registered user, add them to
+        // draft_participants so the notify_draft_invite trigger fires and they
+        // see the bell notification — not just the Resend email.
+        try {
+          await supabase.rpc('invite_users_to_draft_by_email', {
+            p_draft_id: newDraft.id,
+            p_emails: draftData.participantEmails,
+          });
+        } catch (participantErr) {
+          // Non-fatal — email invite already sent; in-app notification is best-effort.
+          console.warn('invite_users_to_draft_by_email:', participantErr);
+        }
       }
 
       return newDraft.id;

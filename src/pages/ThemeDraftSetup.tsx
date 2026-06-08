@@ -17,7 +17,7 @@ import { useForm } from 'react-hook-form';
 import { DraftSetupForm } from '@/hooks/useDraftForm';
 import { Participant } from '@/types/participant';
 import { getRandomAIName } from '@/data/aiNames';
-import { useLeague, useLeagueActions, useLeagueSeasons } from '@/hooks/useLeagues';
+import { useLeague, useLeagueActions, useLeagueSeasons, useLeagueMembers } from '@/hooks/useLeagues';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -40,6 +40,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
   const { league: assignedLeague } = useLeague(leagueIdParam);
   const { addDraftToLeague } = useLeagueActions();
   const { seasons, activeSeason } = useLeagueSeasons(leagueIdParam);
+  const { members: leagueMembers } = useLeagueMembers(leagueIdParam);
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>('none');
 
   useEffect(() => {
@@ -365,6 +366,48 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                   Add AI
                 </button>
               </div>
+              {leagueIdParam && leagueMembers.length > 0 && (() => {
+                const addedValues = new Set(participants.map(p => p.name.toLowerCase()));
+                const available = leagueMembers.filter(m => {
+                  if (m.user_id === participantId) return false; // skip self
+                  const val = draftMode === 'multiplayer'
+                    ? m.profile?.email ?? ''
+                    : m.profile?.name ?? m.profile?.email ?? '';
+                  return val && !addedValues.has(val.toLowerCase());
+                });
+                if (available.length === 0) return null;
+                return (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-greyscale-blue-400 text-xs font-brockmann font-medium m-0 uppercase tracking-widest">
+                      League members
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {available.map(m => {
+                        const val = draftMode === 'multiplayer'
+                          ? m.profile?.email ?? ''
+                          : m.profile?.name ?? m.profile?.email ?? '';
+                        const label = m.profile?.name ?? m.profile?.email ?? 'Member';
+                        return (
+                          <button
+                            key={m.user_id}
+                            type="button"
+                            onClick={() => {
+                              const trimmed = val.trim();
+                              if (trimmed && !participants.some(p => p.name === trimmed)) {
+                                setParticipants(prev => [...prev, { name: trimmed, isAI: false }]);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-greyscale-purp-800 border border-purple-500/40 text-sm text-greyscale-blue-200 font-brockmann hover:bg-purple-900/50 hover:border-purple-400 transition-colors"
+                          >
+                            <Users size={13} className="text-purple-400 shrink-0" />
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
               {draftMode === 'multiplayer' && (
                 <div className="p-4 bg-teal-900 rounded flex items-center gap-2" style={{ outline: '1px solid #B2FFEA', outlineOffset: '-1px' }}>
                   <EmailIcon className="w-6 h-6 shrink-0 text-teal-200 max-md:hidden" />
