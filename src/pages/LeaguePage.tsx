@@ -9,14 +9,21 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import {
   useLeague, useLeagueMembers, useLeagueStandings, useLeagueSeasonStandings,
-  useLeagueDrafts, useLeagueSeasons, type LeagueStanding, type LeagueDraftEntry,
+  useLeagueDrafts, useLeagueSeasons, useLeagueActions,
+  type LeagueStanding, type LeagueDraftEntry,
 } from '@/hooks/useLeagues';
 import LeagueStandingsChart from '@/components/league/LeagueStandingsChart';
 import LeagueMessageBoard from '@/components/league/LeagueMessageBoard';
 import { LeagueDraftCard } from '@/components/league/LeagueDraftCard';
 import { LeagueUpcomingDraftCard } from '@/components/league/LeagueUpcomingDraftCard';
+import { ScheduledDraftDetailModal } from '@/components/league/ScheduledDraftDetailModal';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { MOVIE_DRAFTER_PURPLE_SHELL } from '@/lib/pageGradients';
 import { cn, getCleanActorName } from '@/lib/utils';
 import leagueTrophyIllustration from '@/assets/illustrations/illus/league-trophy.svg';
@@ -180,15 +187,30 @@ const LeaguePage = () => {
   const { leagueId } = useParams<{ leagueId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const { league, loading: leagueLoading } = useLeague(leagueId);
   const { members } = useLeagueMembers(leagueId);
   const { seasons, activeSeason } = useLeagueSeasons(leagueId);
   const { drafts, loading: draftsLoading } = useLeagueDrafts(leagueId);
+  const { removeScheduledDraft } = useLeagueActions();
 
   const [mainTab, setMainTab] = useState<MainTab>('standings');
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>('all-time');
   const [showNewDraftFlow, setShowNewDraftFlow] = useState(false);
+
+  // ── Scheduled draft detail modal ──────────────────────────────────────────
+  const [detailModalEntry, setDetailModalEntry] = useState<LeagueDraftEntry | null>(null);
+
+  /** Entry ID currently being opened as a draft room (shows loading state on button) */
+  const [openingDraftId, setOpeningDraftId] = useState<string | null>(null);
+
+  /** Entry pending admin delete confirmation */
+  const [entryToDelete, setEntryToDelete] = useState<LeagueDraftEntry | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  /** One hour threshold — within this window admins can open the draft room */
+  const ONE_HOUR_MS = 60 * 60 * 1000;
 
   useEffect(() => {
     setShowNewDraftFlow(false);
@@ -224,6 +246,64 @@ const LeaguePage = () => {
   const standingsLoading = effectiveSeasonId ? seasonLoading : allTimeLoading;
 
   const isAdmin = league?.admin_id === user?.id;
+
+  // ── Open draft room (admin only, within 1hr of scheduled time) ────────────
+  // Calls the RPC which creates the draft and pre-joins ALL selected members
+  // into draft_participants. Admin then navigates to /draft/:id (the lobby).
+  // Members on the league page get a realtime refresh via useLeagueDrafts and
+  // see the card change to "Join Draft" → /draft/:id.
+  const handleOpenDraftRoom = useCallback(
+    async (entry: LeagueDraftEntry) => {
+      if (openingDraftId) return;
+      setOpeningDraftId(entry.id);
+      try {
+        const { data: draftId, error } = await (supabase as any).rpc(
+          'start_league_scheduled_draft',
+          { p_entry_id: entry.id },
+        );
+        if (error || !draftId) {
+          toast({
+            title: 'Could not open draft room',
+            description: error?.message ?? 'Something went wrong. Please try again.',
+            variant: 'destructive',
+          });
+          setOpeningDraftId(null);
+          return;
+        }
+        navigate(`/draft/${draftId}`);
+      } catch (err: any) {
+        toast({
+          title: 'Could not open draft room',
+          description: err?.message ?? 'Unexpected error.',
+          variant: 'destructive',
+        });
+        setOpeningDraftId(null);
+      }
+    },
+    [openingDraftId, navigate, toast],
+  );
+
+  // ── Scheduled draft click handler ─────────────────────────────────────────
+  const handleScheduledDraftClick = useCallback(
+    (entry: LeagueDraftEntry) => {
+      if (!entry.scheduled_at) return;
+      const msUntil = new Date(entry.scheduled_at).getTime() - Date.now();
+      if (msUntil <= ONE_HOUR_MS) {
+        if (isAdmin) {
+          handleOpenDraftRoom(entry);
+        } else {
+          toast({
+            title: 'Waiting for the admin',
+            description: "The admin will open the draft room. You'll see a \"Join Draft\" button as soon as it's ready.",
+          });
+        }
+      } else {
+        // More than an hour away — show detail modal
+        setDetailModalEntry(entry);
+      }
+    },
+    [isAdmin, handleOpenDraftRoom, toast],
+  );
 
   const draftInSelectedScope = useCallback(
     (d: LeagueDraftEntry) => {
@@ -335,6 +415,17 @@ const LeaguePage = () => {
     },
     [navigate],
   );
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!entryToDelete || deleting) return;
+    setDeleting(true);
+    const ok = await removeScheduledDraft(entryToDelete.id);
+    setDeleting(false);
+    setEntryToDelete(null);
+    if (!ok) {
+      toast({ title: 'Could not remove draft', description: 'Something went wrong. Please try again.', variant: 'destructive' });
+    }
+  }, [entryToDelete, deleting, removeScheduledDraft, toast]);
 
   if (leagueLoading) {
     return (
@@ -535,6 +626,17 @@ const LeaguePage = () => {
                       const specId =
                         entry.draft_type === 'spec-draft' && entry.theme ? entry.theme : null;
                       const specMeta = specId ? specDraftData.get(specId) : undefined;
+                      const withinHour = entry.scheduled_at
+                        ? new Date(entry.scheduled_at).getTime() - Date.now() <= ONE_HOUR_MS
+                        : false;
+                      const isOpening = openingDraftId === entry.id;
+                      // Admin within 1hr: "Open Draft Room". Admin otherwise: "Edit".
+                      const adminLabel = withinHour
+                        ? (isOpening ? 'Opening…' : 'Open Draft Room')
+                        : 'Edit';
+                      const adminHandler = withinHour
+                        ? () => handleOpenDraftRoom(entry)
+                        : () => navigate(`/league/${leagueId}/settings?tab=schedule&edit=${entry.id}`);
                       return (
                         <LeagueDraftCard
                           key={entry.id}
@@ -546,10 +648,12 @@ const LeaguePage = () => {
                           displayDate={entry.scheduled_at ? new Date(entry.scheduled_at) : null}
                           isScheduled
                           isComplete={false}
-                          isMultiplayer={false}
+                          isMultiplayer={!!entry.is_multiplayer}
                           canEditSchedule={!!isAdmin}
-                          viewLabel="Edit"
-                          onView={() => navigate(`/league/${leagueId}/settings`)}
+                          viewLabel={isAdmin ? adminLabel : 'View Details'}
+                          viewDisabled={isAdmin && isOpening}
+                          onView={isAdmin ? adminHandler : () => handleScheduledDraftClick(entry)}
+                          onDetails={!isAdmin ? () => handleScheduledDraftClick(entry) : undefined}
                         />
                       );
                     })}
@@ -569,6 +673,9 @@ const LeaguePage = () => {
                         user && m
                           ? draftPlacementRank(user.id, participants, id, m.byParticipantName)
                           : null;
+                      // League members are pre-joined into draft_participants when the
+                      // admin opens the draft room — never send them through the
+                      // invite-code join flow. Always navigate directly to /draft/:id.
                       return (
                         <LeagueDraftCard
                           key={entry.id}
@@ -579,11 +686,18 @@ const LeaguePage = () => {
                           displayDate={entry.draft?.created_at ? new Date(entry.draft.created_at) : null}
                           isScheduled={false}
                           isComplete={false}
-                          isMultiplayer={!!entry.draft?.is_multiplayer}
+                          // Prefer the live drafts.is_multiplayer when the secondary join
+                          // succeeded; fall back to league_drafts.is_multiplayer (always
+                          // readable by members via is_league_member RLS) so the badge
+                          // doesn't flip to "Local" just because the drafts-table fetch
+                          // was blocked (e.g. member not yet in draft_participants).
+                          // start_league_scheduled_draft always keeps these two in sync.
+                          isMultiplayer={entry.draft ? !!entry.draft.is_multiplayer : !!entry.is_multiplayer}
                           placementRank={placement}
                           rankDelta={null}
                           viewLabel="Continue Draft"
                           onView={() => handleViewLeagueDraft(entry)}
+                          onDelete={isAdmin ? () => setEntryToDelete(entry) : undefined}
                         />
                       );
                     })}
@@ -617,11 +731,14 @@ const LeaguePage = () => {
                           displayDate={entry.draft?.created_at ? new Date(entry.draft.created_at) : null}
                           isScheduled={false}
                           isComplete
-                          isMultiplayer={!!entry.draft?.is_multiplayer}
+                          // See "In progress" card above: fall back to league_drafts.is_multiplayer
+                          // when the secondary drafts-table join didn't return a row.
+                          isMultiplayer={entry.draft ? !!entry.draft.is_multiplayer : !!entry.is_multiplayer}
                           placementRank={placement}
                           rankDelta={rankDelta}
                           viewLabel="View Draft"
                           onView={() => handleViewLeagueDraft(entry)}
+                          onDelete={isAdmin ? () => setEntryToDelete(entry) : undefined}
                         />
                       );
                     })}
@@ -666,6 +783,16 @@ const LeaguePage = () => {
                       entry.draft_type === 'spec-draft' && entry.theme ? entry.theme : null;
                     const specMeta = specId ? specDraftData.get(specId) : undefined;
                     const headline = upcomingScheduledHeadline(entry, specMeta);
+                    const withinHour = entry.scheduled_at
+                      ? new Date(entry.scheduled_at).getTime() - Date.now() <= ONE_HOUR_MS
+                      : false;
+                    const isOpening = openingDraftId === entry.id;
+                    const adminLabel = withinHour
+                      ? (isOpening ? 'Opening…' : 'Open Draft Room')
+                      : 'Edit Draft';
+                    const adminHandler = withinHour
+                      ? () => handleOpenDraftRoom(entry)
+                      : () => navigate(`/league/${leagueId}/settings?tab=schedule&edit=${entry.id}`);
                     return (
                       <LeagueUpcomingDraftCard
                         key={entry.id}
@@ -673,7 +800,10 @@ const LeaguePage = () => {
                         headline={headline}
                         specInfo={entry.draft_type === 'spec-draft' ? specMeta : undefined}
                         canEdit={!!isAdmin}
-                        onEdit={() => navigate(`/league/${leagueId}/settings`)}
+                        editLabel={adminLabel}
+                        editDisabled={isAdmin && isOpening}
+                        onEdit={adminHandler}
+                        onDetails={() => handleScheduledDraftClick(entry)}
                       />
                     );
                   })}
@@ -719,6 +849,51 @@ const LeaguePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Scheduled draft detail modal (>1 hour before draft) */}
+      <ScheduledDraftDetailModal
+        entry={detailModalEntry}
+        specName={
+          detailModalEntry?.draft_type === 'spec-draft' && detailModalEntry.theme
+            ? specDraftData.get(detailModalEntry.theme)?.name
+            : undefined
+        }
+        isAdmin={isAdmin}
+        leagueId={leagueId ?? ''}
+        open={!!detailModalEntry}
+        onClose={() => setDetailModalEntry(null)}
+        onEditSettings={() => {
+          setDetailModalEntry(null);
+          navigate(`/league/${leagueId}/settings`);
+        }}
+      />
+
+      {/* Delete draft confirmation (admin only) */}
+      <AlertDialog open={!!entryToDelete} onOpenChange={(open) => { if (!open) setEntryToDelete(null); }}>
+        <AlertDialogContent className="font-brockmann bg-[#0E0E0F] border border-[#49474B]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-greyscale-blue-100">Remove from league history?</AlertDialogTitle>
+            <AlertDialogDescription className="text-greyscale-blue-400">
+              This removes the draft entry from this league's history. The draft itself is not deleted — it will still be accessible via its direct link. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              className="rounded-[2px] border-[#49474B] bg-transparent text-greyscale-blue-300 hover:bg-[#1D1D1F] hover:text-greyscale-blue-100"
+              disabled={deleting}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleting}
+              className="rounded-[2px] bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+            >
+              {deleting ? 'Removing…' : 'Remove'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };

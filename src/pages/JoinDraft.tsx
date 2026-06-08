@@ -31,6 +31,23 @@ export const JoinDraft = () => {
   const invitedEmail = searchParams.get('email');
   const autoJoin = searchParams.get('auto') === 'true';
 
+  // ── Safety net: if user is already a participant (e.g. pre-joined via league
+  // draft), skip the invite-code flow and go straight to the draft. ──────────
+  useEffect(() => {
+    if (!user || !draftId || authLoading) return;
+    (async () => {
+      const { data } = await supabase
+        .from('draft_participants')
+        .select('id')
+        .eq('draft_id', draftId)
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data) {
+        navigate(`/draft/${draftId}`, { replace: true });
+      }
+    })();
+  }, [user, draftId, authLoading, navigate]);
+
   useEffect(() => {
     // Check if this is an email invitation
     if (draftId && invitedEmail) {

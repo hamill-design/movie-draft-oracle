@@ -70,6 +70,8 @@ export interface LeagueDraftEntry {
   theme: string | null;
   categories: string[];
   notes: string | null;
+  is_multiplayer: boolean;
+  player_ids: string[];
   added_at: string;
   draft?: {
     id: string;
@@ -586,6 +588,8 @@ export const useLeagueActions = () => {
     notes?: string,
     theme?: string,
     categories?: string[],
+    isMultiplayer?: boolean,
+    playerIds?: string[],
   ): Promise<boolean> => {
     const { error } = await supabase.from('league_drafts').insert({
       league_id: leagueId,
@@ -596,12 +600,31 @@ export const useLeagueActions = () => {
       notes: notes ?? null,
       theme: theme ?? null,
       categories: categories ?? [],
+      is_multiplayer: isMultiplayer ?? false,
+      player_ids: playerIds ?? [],
     });
     return !error;
   };
 
   const removeScheduledDraft = async (entryId: string): Promise<boolean> => {
     const { error } = await supabase.from('league_drafts').delete().eq('id', entryId);
+    return !error;
+  };
+
+  const updateScheduledDraft = async (
+    entryId: string,
+    updates: {
+      scheduled_at?: string;
+      draft_type?: string;
+      theme?: string | null;
+      categories?: string[];
+      notes?: string | null;
+      is_multiplayer?: boolean;
+      player_ids?: string[];
+      season_id?: string | null;
+    },
+  ): Promise<boolean> => {
+    const { error } = await supabase.from('league_drafts').update(updates).eq('id', entryId);
     return !error;
   };
 
@@ -647,7 +670,7 @@ export const useLeagueActions = () => {
   return {
     createLeague, updateLeagueName,
     createSeason, updateSeason, deleteSeason,
-    addDraftToLeague, removeDraftFromLeague, scheduleDraft, removeScheduledDraft, assignDraftToSeason,
+    addDraftToLeague, removeDraftFromLeague, scheduleDraft, removeScheduledDraft, updateScheduledDraft, assignDraftToSeason,
     inviteByUsername, removeMember,
     acceptInvite, declineInvite, acceptInviteByToken,
   };

@@ -15,6 +15,8 @@ import {
   Pencil,
   Check,
   Trash2,
+  Monitor,
+  Wifi,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,7 +76,7 @@ type ScheduleSlice = 'filmography' | 'year' | 'alternate';
 
 function sectionShellProps() {
   return {
-    className: 'rounded-lg p-6 text-greyscale-blue-100',
+    className: 'rounded-lg p-4 text-greyscale-blue-100 md:p-6',
     style: { background: '#0E0E0F', boxShadow: '0px 0px 6px #3B0394' } as React.CSSProperties,
   };
 }
@@ -205,6 +207,8 @@ const LeagueSettings = () => {
     updateSeason,
     deleteSeason,
     scheduleDraft,
+    updateScheduledDraft,
+    removeScheduledDraft,
     removeMember,
     inviteByUsername,
   } = useLeagueActions();
@@ -239,6 +243,7 @@ const LeagueSettings = () => {
   const [schedNotes, setSchedNotes] = useState('');
   const [scheduling, setScheduling] = useState(false);
   const [scheduleSlice, setScheduleSlice] = useState<ScheduleSlice>('filmography');
+  const [schedIsMultiplayer, setSchedIsMultiplayer] = useState(false);
   const [altDraftType, setAltDraftType] = useState<'classic' | 'spec-draft'>('classic');
   const [yearThemeInput, setYearThemeInput] = useState('');
   const [personSearch, setPersonSearch] = useState('');
@@ -250,6 +255,12 @@ const LeagueSettings = () => {
     defaultValues: { participants: [], categories: [] },
   });
   const [specDraftId, setSpecDraftId] = useState('');
+  // Player selection: UUIDs of members included in this draft (empty = all)
+  const [schedPlayerIds, setSchedPlayerIds] = useState<string[]>([]);
+  // Edit mode: non-null when editing an existing scheduled entry
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  // Entry pending deletion confirmation
+  const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     if (scheduleSlice === 'alternate' && altDraftType === 'spec-draft' && specSummaries.length === 0) {
@@ -309,6 +320,76 @@ const LeagueSettings = () => {
     }
   }, [league, leagueLoading, user, leagueId, navigate]);
 
+  // When members load (and we're NOT already in edit mode), default all players selected
+  useEffect(() => {
+    if (!membersLoading && members.length > 0 && !editingEntryId) {
+      setSchedPlayerIds(members.map((m) => m.user_id));
+    }
+  }, [membersLoading, members.length, editingEntryId]);
+
+  // Detect ?edit=<entryId> in the URL and pre-populate the scheduling form
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (!editId || drafts.length === 0 || membersLoading) return;
+    const entry = drafts.find((d) => d.id === editId && !d.draft_id);
+    if (!entry) return;
+
+    setEditingEntryId(editId);
+    setTab('schedule');
+
+    // Date / time
+    if (entry.scheduled_at) {
+      const dt = new Date(entry.scheduled_at);
+      setSchedDatePart(dt.toISOString().slice(0, 10));
+      // format HH:mm in local time
+      const hh = String(dt.getHours()).padStart(2, '0');
+      const mm = String(dt.getMinutes()).padStart(2, '0');
+      setSchedTimePart(`${hh}:${mm}`);
+    }
+
+    // Season
+    setSchedSeason(entry.season_id ?? 'none');
+
+    // Multiplayer
+    setSchedIsMultiplayer(!!entry.is_multiplayer);
+
+    // Notes
+    setSchedNotes(entry.notes ?? '');
+
+    // Draft type / theme
+    const t = entry.draft_type;
+    if (t === 'filmography' || t === 'people') {
+      setScheduleSlice('filmography');
+      // Reconstruct a minimal PersonRow so the UI shows the selection
+      if (entry.theme) {
+        setSelectedPerson({ id: -1, name: entry.theme, profile_path: null, known_for_department: null, known_for: [] } as any);
+      }
+    } else if (t === 'year') {
+      setScheduleSlice('year');
+      setYearThemeInput(entry.theme ?? '');
+    } else if (t === 'spec-draft') {
+      setScheduleSlice('alternate');
+      setAltDraftType('spec-draft');
+      setSpecDraftId(entry.theme ?? '');
+    } else {
+      setScheduleSlice('alternate');
+      setAltDraftType('classic');
+    }
+
+    // Categories
+    if (entry.categories?.length) {
+      scheduleCategoryForm.reset({ participants: [], categories: entry.categories });
+    }
+
+    // Player selection: use saved player_ids or fall back to all members
+    if (entry.player_ids?.length) {
+      setSchedPlayerIds(entry.player_ids);
+    } else {
+      setSchedPlayerIds(members.map((m) => m.user_id));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.get('edit'), drafts.length, membersLoading]);
+
   const groupedSeasons = useMemo(() => {
     const currentLike = seasons.filter((s) => seasonStatus(s) !== 'past');
     const prev = seasons.filter((s) => seasonStatus(s) === 'past');
@@ -329,13 +410,38 @@ const LeagueSettings = () => {
         ? yearThemeInput.trim()
         : '';
   const selectedCategoriesList = scheduleCategoryForm.watch('categories') ?? [];
-  const schedulePlayerCount = Math.max(members.length, 2);
+  const schedulePlayerCount = Math.max(schedPlayerIds.length || members.length, 2);
   const showScheduleCategories =
     scheduleSlice !== 'alternate'
     && scheduleCategories.length > 0
     && (scheduleSlice === 'year' || !!selectedPerson);
 
   const draftCountTotal = drafts.length;
+  const scheduledEntries = useMemo(
+    () => drafts.filter((d) => !d.draft_id && !!d.scheduled_at),
+    [drafts],
+  );
+
+  // Must be defined before any early returns (Rules of Hooks)
+  const resetScheduleForm = useCallback(() => {
+    setSchedDatePart('');
+    setSchedTimePart('');
+    setSchedSeason('none');
+    setSchedNotes('');
+    setSchedIsMultiplayer(false);
+    setScheduleSlice('filmography');
+    setYearThemeInput('');
+    setSelectedPerson(null);
+    setSpecDraftId('');
+    scheduleCategoryForm.reset({ participants: [], categories: [] });
+    setSchedPlayerIds(members.map((m) => m.user_id));
+    setEditingEntryId(null);
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      p.delete('edit');
+      return p;
+    }, { replace: true });
+  }, [members, scheduleCategoryForm, setSearchParams]);
 
   if (leagueLoading) {
     return (
@@ -477,30 +583,60 @@ const LeagueSettings = () => {
       categoriesOut = undefined;
     }
 
+    // Determine player_ids: empty means "all members"
+    const allSelected = schedPlayerIds.length === members.length;
+    const playerIdsOut = allSelected ? [] : schedPlayerIds;
+
     setScheduling(true);
-    const ok = await scheduleDraft(
-      leagueId!,
-      scheduledAt.toISOString(),
-      draftType,
-      schedSeason !== 'none' ? schedSeason : undefined,
-      schedNotes.trim() || undefined,
-      themeValue,
-      categoriesOut,
-    );
+
+    let ok: boolean;
+    if (editingEntryId) {
+      ok = await updateScheduledDraft(editingEntryId, {
+        scheduled_at: scheduledAt.toISOString(),
+        draft_type: draftType,
+        theme: themeValue ?? null,
+        categories: categoriesOut ?? [],
+        notes: schedNotes.trim() || null,
+        is_multiplayer: schedIsMultiplayer,
+        player_ids: playerIdsOut,
+        season_id: schedSeason !== 'none' ? schedSeason : null,
+      });
+    } else {
+      ok = await scheduleDraft(
+        leagueId!,
+        scheduledAt.toISOString(),
+        draftType,
+        schedSeason !== 'none' ? schedSeason : undefined,
+        schedNotes.trim() || undefined,
+        themeValue,
+        categoriesOut,
+        schedIsMultiplayer,
+        playerIdsOut,
+      );
+    }
+
     setScheduling(false);
     if (ok) {
-      toast({ title: 'Draft scheduled.' });
-      setSchedDatePart('');
-      setSchedTimePart('');
-      setSchedSeason('none');
-      setSchedNotes('');
-      setScheduleSlice('filmography');
-      setYearThemeInput('');
-      setSelectedPerson(null);
-      setSpecDraftId('');
-      scheduleCategoryForm.reset({ participants: [], categories: [] });
+      toast({ title: editingEntryId ? 'Draft updated.' : 'Draft scheduled.' });
+      resetScheduleForm();
       refetchDrafts();
-    } else toast({ title: 'Could not schedule draft.', variant: 'destructive' });
+    } else {
+      toast({ title: editingEntryId ? 'Could not update draft.' : 'Could not schedule draft.', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteScheduledEntry = async () => {
+    if (!entryToDelete) return;
+    const ok = await removeScheduledDraft(entryToDelete);
+    setEntryToDelete(null);
+    if (ok) {
+      // If we were editing this entry, reset the form
+      if (editingEntryId === entryToDelete) resetScheduleForm();
+      refetchDrafts();
+      toast({ title: 'Scheduled draft removed.' });
+    } else {
+      toast({ title: 'Could not remove scheduled draft.', variant: 'destructive' });
+    }
   };
 
   const handleAddEmail = () => {
@@ -600,26 +736,26 @@ const LeagueSettings = () => {
       </Helmet>
 
       <div
-        className="min-h-screen p-6 font-brockmann text-greyscale-blue-100"
+        className="min-h-screen px-3 py-6 font-brockmann text-greyscale-blue-100 md:p-6"
         style={{
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
-        <div className="container mx-auto max-w-7xl">
+        <div className="mx-auto w-full max-w-7xl">
           <Button
             variant="ghost"
             onClick={() => navigate(`/league/${leagueId}`)}
-            className="-ml-2 mb-4 text-greyscale-blue-100 hover:bg-white/10 hover:text-white"
+            className="-ml-1 mb-4 text-greyscale-blue-100 hover:bg-white/10 hover:text-white md:-ml-2"
           >
             <ArrowLeft className="h-4 w-4 mr-2 shrink-0" />
             Back to League
           </Button>
 
-          <h1 className="text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-wide m-0 mb-8">
+          <h1 className="text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-wide m-0 mb-6 md:mb-8">
             League Settings
           </h1>
 
-          <div className="flex gap-8 items-start flex-col lg:flex-row">
+          <div className="flex flex-col items-start gap-6 lg:flex-row lg:gap-8">
             <nav className="w-full lg:w-[206px] flex flex-col gap-4 shrink-0">
               <div className="flex flex-col gap-1">
                 {NAV_ITEMS.map((item) => (
@@ -633,7 +769,7 @@ const LeagueSettings = () => {
               </div>
             </nav>
 
-            <div className="flex-1 min-w-0 space-y-8">
+            <div className="min-w-0 flex-1 space-y-6 md:space-y-8">
               {activeTab === 'general' && (
                 <section {...shell}>
                   <h2 className="text-xl font-bold text-greyscale-blue-50 font-brockmann tracking-tight m-0 mb-8">
@@ -715,8 +851,9 @@ const LeagueSettings = () => {
                       <h2 className="text-xl font-bold text-greyscale-blue-50 font-brockmann tracking-tight m-0">
                         Your Seasons
                       </h2>
-                      <Button
-                        className="font-brockmann gap-2 bg-purple-900 hover:bg-purple-800 text-white border border-purple-500/40"
+                      <button
+                        type="button"
+                        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-[2px] bg-[#7142FF] px-3 py-2 text-sm font-medium leading-5 text-greyscale-blue-100 transition-colors hover:bg-[#6338e0] font-brockmann"
                         onClick={() => {
                           setEditingSeasonId(null);
                           setShowSeasonForm(true);
@@ -725,9 +862,9 @@ const LeagueSettings = () => {
                           setSeasonEnd('');
                         }}
                       >
-                        <Plus className="w-4 h-4" />
+                        <Plus className="size-4" aria-hidden />
                         New Season
-                      </Button>
+                      </button>
                     </div>
                   )}
 
@@ -917,14 +1054,104 @@ const LeagueSettings = () => {
 
               {activeTab === 'schedule' && (
                 <>
+                {/* ── Existing scheduled drafts ─────────────────────────── */}
+                {scheduledEntries.length > 0 && (
+                  <section
+                    className="flex w-full flex-col gap-4 rounded-lg px-3 pb-6 pt-5 text-greyscale-blue-100 md:px-6"
+                    style={{ background: '#0E0E0F', boxShadow: '0px 0px 6px #3B0394' }}
+                  >
+                    <HeaderIcon3
+                      title="Scheduled Drafts"
+                      icon={<CalendarDays className="w-5 h-5 text-[#907AFF]" aria-hidden />}
+                    />
+                    <div className="flex flex-col gap-3">
+                      {scheduledEntries.map((entry) => {
+                        const dt = entry.scheduled_at ? new Date(entry.scheduled_at) : null;
+                        const isEditing = editingEntryId === entry.id;
+                        const playerCount = entry.player_ids?.length || members.length;
+                        return (
+                          <div
+                            key={entry.id}
+                            className="flex flex-wrap items-center gap-3 rounded-[6px] px-4 py-3"
+                            style={{
+                              background: isEditing ? 'rgba(113, 66, 255, 0.12)' : '#1A1A1D',
+                              outline: isEditing ? '1px solid #7142FF' : '1px solid #2E2C32',
+                              outlineOffset: '-1px',
+                            }}
+                          >
+                            <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                              <span className="truncate text-sm font-semibold text-greyscale-blue-100 font-brockmann">
+                                {entry.draft_type === 'spec-draft'
+                                  ? 'Special Draft'
+                                  : entry.theme?.trim() || entry.draft_type || 'Draft'}
+                              </span>
+                              <div className="flex flex-wrap items-center gap-3">
+                                {dt && (
+                                  <span className="text-xs text-[#907AFF] font-brockmann">
+                                    {format(dt, "MMM d 'at' h:mm a")}
+                                  </span>
+                                )}
+                                <span className="text-xs text-greyscale-blue-400 font-brockmann">
+                                  {playerCount} {playerCount === 1 ? 'player' : 'players'}
+                                </span>
+                                <span
+                                  className="text-[10px] font-medium px-2 py-0.5 rounded-full font-brockmann"
+                                  style={
+                                    entry.is_multiplayer
+                                      ? { background: 'rgba(20,84,96,0.5)', color: '#B2FFEA', outline: '0.5px solid #B2FFEA', outlineOffset: '-0.5px' }
+                                      : { background: 'rgba(88,40,120,0.5)', color: '#EDEBFF', outline: '0.5px solid #EDEBFF', outlineOffset: '-0.5px' }
+                                  }
+                                >
+                                  {entry.is_multiplayer ? 'Multiplayer' : 'Local'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (isEditing) {
+                                    resetScheduleForm();
+                                  } else {
+                                    setSearchParams((prev) => {
+                                      const p = new URLSearchParams(prev);
+                                      p.set('tab', 'schedule');
+                                      p.set('edit', entry.id);
+                                      return p;
+                                    }, { replace: true });
+                                  }
+                                }}
+                                className="flex items-center gap-1.5 rounded-[4px] px-3 py-1.5 text-xs font-medium text-greyscale-blue-200 transition-colors hover:bg-white/10 font-brockmann"
+                                style={{ outline: '1px solid #49474B', outlineOffset: '-1px' }}
+                              >
+                                <Pencil className="w-3 h-3" />
+                                {isEditing ? 'Cancel' : 'Edit'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEntryToDelete(entry.id)}
+                                className="flex items-center gap-1.5 rounded-[4px] px-3 py-1.5 text-xs font-medium text-red-400 transition-colors hover:bg-red-500/10 font-brockmann"
+                                style={{ outline: '1px solid rgba(239,68,68,0.3)', outlineOffset: '-1px' }}
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
+
                 <section
-                  className="w-full rounded-lg pt-6 pb-8 px-6 text-greyscale-blue-100 flex flex-col gap-6"
+                  className="flex w-full flex-col gap-6 rounded-lg px-3 pb-8 pt-6 text-greyscale-blue-100 md:px-6"
                   style={{ background: '#0E0E0F', boxShadow: '0px 0px 6px #3B0394' }}
                 >
                   <div className="flex flex-col gap-8 w-full">
                     <div className="flex flex-col gap-[18px]">
                       <HeaderIcon3
-                        title="Schedule a Draft"
+                        title={editingEntryId ? 'Edit Scheduled Draft' : 'Schedule a Draft'}
                         icon={<CalendarDays className="w-5 h-5 text-[#907AFF]" aria-hidden />}
                       />
                       <div className="flex flex-col lg:flex-row gap-4 items-start w-full">
@@ -1206,6 +1433,136 @@ const LeagueSettings = () => {
                       </Form>
                     )}
 
+                    <div className="flex flex-col gap-3">
+                      <Label className="text-[#BDC3C2] text-sm font-medium leading-5 font-brockmann m-0">
+                        Draft Format
+                      </Label>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setSchedIsMultiplayer(false)}
+                          className={cn(
+                            'flex-1 py-3 px-4 rounded-[6px] flex items-center justify-center gap-2 text-sm font-medium transition-colors font-brockmann',
+                            !schedIsMultiplayer
+                              ? 'bg-brand-primary text-greyscale-blue-100'
+                              : 'bg-greyscale-purp-850 hover:bg-greyscale-purp-800 text-greyscale-blue-100',
+                          )}
+                          style={schedIsMultiplayer ? { outline: '1px solid #49474B', outlineOffset: '-1px' } : undefined}
+                        >
+                          <Monitor className="w-4 h-4 shrink-0" aria-hidden />
+                          Local
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSchedIsMultiplayer(true)}
+                          className={cn(
+                            'flex-1 py-3 px-4 rounded-[6px] flex items-center justify-center gap-2 text-sm font-medium transition-colors font-brockmann',
+                            schedIsMultiplayer
+                              ? 'bg-brand-primary text-greyscale-blue-100'
+                              : 'bg-greyscale-purp-850 hover:bg-greyscale-purp-800 text-greyscale-blue-100',
+                          )}
+                          style={!schedIsMultiplayer ? { outline: '1px solid #49474B', outlineOffset: '-1px' } : undefined}
+                        >
+                          <Wifi className="w-4 h-4 shrink-0" aria-hidden />
+                          Multiplayer
+                        </button>
+                      </div>
+                      <p className="text-xs text-greyscale-blue-500 m-0">
+                        {schedIsMultiplayer
+                          ? 'Each player joins from their own device using an invite code.'
+                          : 'Everyone plays together on the same screen in the same room.'}
+                      </p>
+                    </div>
+
+                    {/* ── Player selection ─────────────────────────── */}
+                    {members.length > 0 && (
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-[#BDC3C2] text-sm font-medium leading-5 font-brockmann m-0">
+                            Players in this draft
+                          </Label>
+                          <button
+                            type="button"
+                            className="text-xs font-medium text-purple-300 hover:text-white font-brockmann"
+                            onClick={() => {
+                              if (schedPlayerIds.length === members.length) {
+                                setSchedPlayerIds([]);
+                              } else {
+                                setSchedPlayerIds(members.map((m) => m.user_id));
+                              }
+                            }}
+                          >
+                            {schedPlayerIds.length === members.length ? 'Deselect all' : 'Select all'}
+                          </button>
+                        </div>
+                        <p className="text-xs text-greyscale-blue-500 m-0 font-brockmann">
+                          {schedPlayerIds.length === members.length
+                            ? 'All league members are in this draft.'
+                            : `${schedPlayerIds.length} of ${members.length} members selected.`}
+                        </p>
+                        <div className="flex flex-col gap-2">
+                          {membersLoading ? (
+                            <p className="text-xs text-greyscale-blue-400 font-brockmann">Loading members…</p>
+                          ) : (
+                            members.map((member) => {
+                              const name = member.profile?.name ?? member.profile?.email ?? 'Player';
+                              const selected = schedPlayerIds.includes(member.user_id);
+                              return (
+                                <button
+                                  key={member.user_id}
+                                  type="button"
+                                  onClick={() => {
+                                    setSchedPlayerIds((prev) =>
+                                      selected
+                                        ? prev.filter((id) => id !== member.user_id)
+                                        : [...prev, member.user_id],
+                                    );
+                                  }}
+                                  className={cn(
+                                    'flex items-center gap-3 rounded-[6px] px-3 py-2.5 text-left transition-colors font-brockmann',
+                                    selected
+                                      ? 'bg-[#7142FF]/20'
+                                      : 'bg-[#1A1A1D] hover:bg-[#252528]',
+                                  )}
+                                  style={{
+                                    outline: selected ? '1px solid #7142FF' : '1px solid #2E2C32',
+                                    outlineOffset: '-1px',
+                                  }}
+                                >
+                                  {/* Checkbox indicator */}
+                                  <div
+                                    className={cn(
+                                      'flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] border',
+                                      selected
+                                        ? 'border-[#7142FF] bg-[#7142FF]'
+                                        : 'border-[#49474B] bg-transparent',
+                                    )}
+                                  >
+                                    {selected && <Check className="w-3 h-3 text-white" />}
+                                  </div>
+                                  {/* Avatar initial */}
+                                  <div
+                                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-greyscale-blue-100"
+                                    style={{ background: member.role === 'admin' ? '#7142FF' : '#3B2050' }}
+                                  >
+                                    {name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="flex min-w-0 flex-1 flex-col">
+                                    <span className="truncate text-sm font-medium text-greyscale-blue-100">
+                                      {name}
+                                    </span>
+                                    {member.role === 'admin' && (
+                                      <span className="text-[10px] text-[#907AFF]">Admin</span>
+                                    )}
+                                  </div>
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex flex-col gap-[9px] pt-[3px]">
                       <Label className="text-[#BDC3C2] text-sm font-medium leading-5 font-brockmann m-0">
                         Notes <span className="font-normal text-greyscale-blue-500">Optional</span>
@@ -1223,7 +1580,18 @@ const LeagueSettings = () => {
                   </div>
                 </section>
 
-                <div className="flex justify-center">
+                <div className="flex items-center justify-center gap-3 flex-wrap">
+                  {editingEntryId && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="lg"
+                      className="border-white/20 bg-transparent text-greyscale-blue-200 hover:bg-white/10 hover:text-greyscale-blue-100 font-brockmann font-medium px-6 py-3 text-base rounded-[2px] min-h-12"
+                      onClick={resetScheduleForm}
+                    >
+                      Cancel
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     size="lg"
@@ -1233,6 +1601,7 @@ const LeagueSettings = () => {
                       scheduling
                       || !schedDatePart
                       || !schedTimePart
+                      || schedPlayerIds.length === 0
                       || (scheduleSlice === 'filmography' && !selectedPerson)
                       || (scheduleSlice === 'year' && !yearThemeInput.trim())
                       || (scheduleSlice === 'alternate'
@@ -1241,7 +1610,9 @@ const LeagueSettings = () => {
                     }
                   >
                     <CalendarDays className="w-5 h-5 mr-2" />
-                    {scheduling ? 'Scheduling…' : 'Schedule Draft'}
+                    {scheduling
+                      ? (editingEntryId ? 'Updating…' : 'Scheduling…')
+                      : (editingEntryId ? 'Update Draft' : 'Schedule Draft')}
                   </Button>
                 </div>
                 </>
@@ -1436,6 +1807,26 @@ const LeagueSettings = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!entryToDelete} onOpenChange={(o) => !o && setEntryToDelete(null)}>
+        <AlertDialogContent className="bg-[#161618] border-[#49474B] text-greyscale-blue-50">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove scheduled draft?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the scheduled draft entry. Members will lose their upcoming-draft notification.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteScheduledEntry}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

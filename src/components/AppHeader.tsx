@@ -6,6 +6,7 @@ import { HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { getInitials } from '@/utils/avatarUpload';
+import { NotificationBell } from '@/components/NotificationBell';
 
 const useHeaderProfile = (userId: string | undefined) => {
   const [profile, setProfile] = useState<{ name: string | null; avatar_url: string | null } | null>(null);
@@ -191,9 +192,9 @@ const AppHeader = () => {
           {/* Right side buttons */}
           <div className="flex items-center gap-3">
             {/* Learn More Button */}
-            <Button 
+            <Button
               onClick={() => navigate('/learn-more')}
-              variant="ghost" 
+              variant="ghost"
               size="sm"
               font="brockmann-medium"
               className="text-purple-150 hover:text-purple-200 hover:bg-transparent px-3 py-2 text-sm"
@@ -202,15 +203,18 @@ const AppHeader = () => {
               Learn More
             </Button>
 
-            {/* Profile/Login Button */}
+            {/* Notifications + Profile/Login */}
             {user ? (
-              <UserAvatar
-                name={profile?.name ?? null}
-                email={user.email ?? null}
-                avatarUrl={profile?.avatar_url ?? null}
-                size={36}
-                onClick={() => navigate('/profile')}
-              />
+              <>
+                <NotificationBell />
+                <UserAvatar
+                  name={profile?.name ?? null}
+                  email={user.email ?? null}
+                  avatarUrl={profile?.avatar_url ?? null}
+                  size={36}
+                  onClick={() => navigate('/profile')}
+                />
+              </>
             ) : (
               <Button
                 onClick={() => navigate('/auth')}
@@ -237,15 +241,18 @@ const AppHeader = () => {
 
           {/* Right side buttons */}
           <div className="flex flex-col items-end gap-3">
-            {/* Profile/Login Button */}
+            {/* Notifications + Profile/Login */}
             {user ? (
-              <UserAvatar
-                name={profile?.name ?? null}
-                email={user.email ?? null}
-                avatarUrl={profile?.avatar_url ?? null}
-                size={36}
-                onClick={() => navigate('/profile')}
-              />
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <UserAvatar
+                  name={profile?.name ?? null}
+                  email={user.email ?? null}
+                  avatarUrl={profile?.avatar_url ?? null}
+                  size={36}
+                  onClick={() => navigate('/profile')}
+                />
+              </div>
             ) : (
               <Button
                 onClick={() => navigate('/auth')}
@@ -259,9 +266,9 @@ const AppHeader = () => {
             )}
 
             {/* Learn More Button */}
-            <Button 
+            <Button
               onClick={() => navigate('/learn-more')}
-              variant="ghost" 
+              variant="ghost"
               size="sm"
               font="brockmann-medium"
               className="text-purple-150 hover:text-purple-200 hover:bg-transparent px-3 py-2 text-sm"
@@ -296,15 +303,18 @@ const AppHeader = () => {
               Learn More
             </Button>
 
-            {/* Profile/Login Button */}
+            {/* Notifications + Profile/Login */}
             {user ? (
-              <UserAvatar
-                name={profile?.name ?? null}
-                email={user.email ?? null}
-                avatarUrl={profile?.avatar_url ?? null}
-                size={36}
-                onClick={() => navigate('/profile')}
-              />
+              <>
+                <NotificationBell />
+                <UserAvatar
+                  name={profile?.name ?? null}
+                  email={user.email ?? null}
+                  avatarUrl={profile?.avatar_url ?? null}
+                  size={36}
+                  onClick={() => navigate('/profile')}
+                />
+              </>
             ) : (
               <Button
                 onClick={() => navigate('/auth')}

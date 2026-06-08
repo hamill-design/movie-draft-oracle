@@ -15,6 +15,12 @@ export type LeagueUpcomingDraftCardProps = {
   onEdit: () => void;
   /** When false, edit control is hidden (e.g. non-admin). Defaults to true. */
   canEdit?: boolean;
+  /** Override the default "Edit Draft" label for admin button */
+  editLabel?: string;
+  /** Disable the admin button (e.g. while an async action is in flight) */
+  editDisabled?: boolean;
+  /** Non-admin callback to view details / navigate to lobby */
+  onDetails?: () => void;
 };
 
 const cardShell =
@@ -26,6 +32,9 @@ export const LeagueUpcomingDraftCard: React.FC<LeagueUpcomingDraftCardProps> = (
   specInfo,
   onEdit,
   canEdit = true,
+  editLabel,
+  editDisabled = false,
+  onDetails,
 }) => {
   const dt = entry.scheduled_at ? new Date(entry.scheduled_at) : null;
   const datetimeStr = dt
@@ -115,15 +124,16 @@ export const LeagueUpcomingDraftCard: React.FC<LeagueUpcomingDraftCardProps> = (
         )}
       </div>
 
-      {canEdit && (
+      {(canEdit || onDetails) && (
       <div className="flex max-w-[360px] min-w-[240px] flex-col items-end justify-start gap-[18px]">
         <Button
           type="button"
-          onClick={onEdit}
+          onClick={canEdit ? onEdit : onDetails}
+          disabled={canEdit && editDisabled}
           variant="default"
-          className="w-full self-stretch rounded-[2px] bg-brand-primary px-4 py-2 text-sm font-medium text-greyscale-blue-100 hover:bg-purple-300"
+          className="w-full self-stretch rounded-[2px] bg-brand-primary px-4 py-2 text-sm font-medium text-greyscale-blue-100 hover:bg-purple-300 disabled:opacity-60"
         >
-          Edit Draft
+          {canEdit ? (editLabel ?? 'Edit Draft') : 'View Details'}
         </Button>
       </div>
       )}

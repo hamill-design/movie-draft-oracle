@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Trophy, Users, User } from 'lucide-react';
+import { Calendar, Trophy, Users, User, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DraftActorPortrait } from '@/components/DraftActorPortrait';
 import { cn, getCleanActorName } from '@/lib/utils';
@@ -39,6 +39,12 @@ export type LeagueDraftCardProps = {
   viewLabel: string;
   /** Scheduled rows only: when false, primary action is disabled (non-admins). Defaults to true. */
   canEditSchedule?: boolean;
+  /** Disable the primary action button (e.g. while async action is in flight) */
+  viewDisabled?: boolean;
+  /** Scheduled rows: non-admin callback to view details / navigate to lobby */
+  onDetails?: () => void;
+  /** Admin-only: opens the delete confirmation dialog */
+  onDelete?: () => void;
 };
 
 const cardShell =
@@ -64,6 +70,9 @@ export const LeagueDraftCard: React.FC<LeagueDraftCardProps> = ({
   rankDelta,
   viewLabel,
   canEditSchedule = true,
+  viewDisabled = false,
+  onDetails,
+  onDelete,
 }) => {
   const theme = entry.draft?.theme ?? '';
   const scheduleType = entry.draft_type;
@@ -85,7 +94,8 @@ export const LeagueDraftCard: React.FC<LeagueDraftCardProps> = ({
   const showDelta =
     showPlacement && isComplete && rankDelta != null && rankDelta !== 0;
 
-  const showSchedulePrimary = !isScheduled || canEditSchedule;
+  // Show right column if: non-scheduled (always), admin on scheduled, or non-admin with onDetails handler
+  const showSchedulePrimary = !isScheduled || canEditSchedule || !!onDetails;
   const showRightColumn = showPlacement || showSchedulePrimary;
 
   const deltaText = rankDelta == null || rankDelta === 0 ? null : rankDelta > 0 ? `+${rankDelta}` : `${rankDelta}`;
@@ -247,13 +257,25 @@ export const LeagueDraftCard: React.FC<LeagueDraftCardProps> = ({
         {showSchedulePrimary && (
         <Button
           type="button"
-          onClick={onView}
+          onClick={isScheduled && !canEditSchedule && onDetails ? onDetails : onView}
+          disabled={viewDisabled}
           variant="default"
           size="default"
-          className="w-full max-w-[360px] self-end rounded-[2px] bg-brand-primary px-4 py-2 text-greyscale-blue-100 hover:bg-purple-300"
+          className="w-full max-w-[360px] self-end rounded-[2px] bg-brand-primary px-4 py-2 text-greyscale-blue-100 hover:bg-purple-300 disabled:opacity-60"
         >
-          {viewLabel}
+          {isScheduled && !canEditSchedule ? 'View Details' : viewLabel}
         </Button>
+        )}
+        {onDelete && (
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label="Delete from league history"
+            className="mt-1 inline-flex items-center gap-1.5 self-end text-xs text-greyscale-blue-500 transition-colors hover:text-red-400 font-brockmann"
+          >
+            <Trash2 size={13} />
+            Remove from league
+          </button>
         )}
       </div>
       )}
