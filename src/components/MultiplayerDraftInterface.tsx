@@ -649,6 +649,17 @@ export const MultiplayerDraftInterface = ({
     });
   }, [participants]);
 
+  // Count of participants who have actually opened this draft (status ===
+  // 'joined'), as opposed to participants.length which counts every row
+  // pre-created when the draft was scheduled (most still 'invited'). Used
+  // for the host's pre-start "Everybody Ready?" panel — without this, that
+  // panel claimed "4 players have joined" the instant a scheduled draft was
+  // opened, when really only the host had.
+  const joinedParticipantsCount = useMemo(
+    () => getParticipantsSortedByCreatedAt.filter(participant => participant.status === 'joined').length,
+    [getParticipantsSortedByCreatedAt]
+  );
+
   // Check if draft has been started (has turn order)
   const draftHasStarted = draft?.turn_order && draft.turn_order.length > 0;
 
@@ -1591,7 +1602,7 @@ export const MultiplayerDraftInterface = ({
                   <div style={{textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px', fontFamily: 'Brockmann', fontWeight: '500', lineHeight: '28px', wordWrap: 'break-word'}}>Everybody Ready?</div>
                 </div>
                 <div style={{alignSelf: 'stretch', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'center', display: 'flex'}}>
-                  <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Light-grey, #BDC3C2)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>{participants.length} players have joined. Click below to randomize turn order and start the draft!</div>
+                  <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Light-grey, #BDC3C2)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>{joinedParticipantsCount} {joinedParticipantsCount === 1 ? 'player has' : 'players have'} joined. Click below to randomize turn order and start the draft!</div>
                 </div>
               </div>
               <div 

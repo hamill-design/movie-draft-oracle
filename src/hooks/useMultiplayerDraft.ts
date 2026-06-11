@@ -1019,8 +1019,21 @@ export const useMultiplayerDraft = (
         // Reload participants when changes occur (debounced)
         debouncedReload(normalizedDraftId);
         
-        // Show toast for participant changes
-        if (payload.eventType === 'INSERT') {
+        // Show toast for participant changes. Scheduling a league draft
+        // pre-creates a draft_participants row for every invited member with
+        // status='invited' (the host alone starts as 'joined'), so an INSERT
+        // doesn't mean someone actually joined yet — only that they were
+        // invited. Only announce "Player Joined" once a row's status is
+        // 'joined', whether that arrives as an INSERT (host's own row, or a
+        // guest joining via invite code) or an UPDATE (an invited league
+        // member opening the draft for the first time, which flips their
+        // status via load_draft_unified). Otherwise opening a freshly
+        // scheduled draft fires a "Player Joined" toast for every invited
+        // member at once, even though nobody but the host has shown up.
+        if (
+          (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') &&
+          payload.new?.status === 'joined'
+        ) {
           toast({
             title: "Player Joined",
             description: `${payload.new.participant_name} joined the draft`,
