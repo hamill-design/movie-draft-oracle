@@ -1,6 +1,6 @@
 import type { LeagueStanding } from '@/hooks/useLeagues';
 
-export type DraftParticipantRow = { draft_id: string; user_id: string | null; participant_name: string };
+export type DraftParticipantRow = { draft_id: string; user_id: string | null; participant_name: string; status?: 'invited' | 'joined' | 'left' };
 export type DraftPickRow = { draft_id: string; player_name: string; calculated_score: number | null };
 
 export type LeagueDraftMetricPack = {

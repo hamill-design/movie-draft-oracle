@@ -401,7 +401,7 @@ const LeaguePage = () => {
     (async () => {
       const [picksRes, partsRes] = await Promise.all([
         supabase.from('draft_picks').select('draft_id, calculated_score, player_name').in('draft_id', ids),
-        supabase.from('draft_participants').select('draft_id, user_id, participant_name').in('draft_id', ids),
+        supabase.from('draft_participants').select('draft_id, user_id, participant_name, status').in('draft_id', ids),
       ]);
       if (cancelled) return;
       if (picksRes.error || partsRes.error) {
@@ -781,6 +781,14 @@ const LeaguePage = () => {
                       // League members are pre-joined into draft_participants when the
                       // admin opens the draft room — never send them through the
                       // invite-code join flow. Always navigate directly to /draft/:id.
+                      // Their draft_participants row starts as 'invited' until they
+                      // open the draft for the first time (load_draft_unified flips it
+                      // to 'joined'), so "Continue Draft" is misleading the first time
+                      // — show "Join Draft" until this viewer has actually shown up.
+                      const viewerParticipant = user
+                        ? participants.find(p => p.draft_id === id && p.user_id === user.id)
+                        : undefined;
+                      const viewerHasJoined = viewerParticipant?.status === 'joined';
                       return (
                         <LeagueDraftCard
                           key={entry.id}
@@ -800,7 +808,7 @@ const LeaguePage = () => {
                           isMultiplayer={entry.draft ? !!entry.draft.is_multiplayer : !!entry.is_multiplayer}
                           placementRank={placement}
                           leaguePointsEarned={null}
-                          viewLabel="Continue Draft"
+                          viewLabel={viewerHasJoined ? 'Continue Draft' : 'Join Draft'}
                           onView={() => handleViewLeagueDraft(entry)}
                           onDelete={isAdmin ? () => setEntryToDelete(entry) : undefined}
                         />
