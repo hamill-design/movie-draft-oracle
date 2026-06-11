@@ -1550,7 +1550,13 @@ export const MultiplayerDraftInterface = ({
                             lineHeight: '16px', 
                             wordWrap: 'break-word'
                           }}>
-                            {participant.status === 'joined' ? 'Joined' : participant.status}
+                            {participant.status === 'joined'
+                              ? 'Joined'
+                              : participant.status === 'invited'
+                              ? 'Invited'
+                              : participant.status === 'left'
+                              ? 'Left'
+                              : participant.status}
                           </div>
                           {participant.email && <div style={{
                             justifyContent: 'center', 
