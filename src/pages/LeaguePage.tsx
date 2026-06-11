@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
   Settings, Film, CalendarClock,
@@ -63,6 +63,12 @@ function upcomingScheduledHeadline(
 
 type MainTab = 'standings' | 'drafts' | 'schedule';
 
+const MAIN_TABS: readonly MainTab[] = ['standings', 'drafts', 'schedule'];
+
+function isMainTab(value: string | null): value is MainTab {
+  return !!value && (MAIN_TABS as readonly string[]).includes(value);
+}
+
 /** Matches FinalScores pill tabs: gap-px separators, single outer border — avoids uneven inner outlines on rounded hull. */
 const LEAGUE_MAIN_TAB_SEGMENT_CLASS =
   'min-w-0 flex-1 shrink basis-0 md:min-w-[127px] md:w-[127px] md:max-w-[127px] md:shrink-0 md:grow-0 md:basis-[127px]';
@@ -91,7 +97,7 @@ const StandingRow: React.FC<{ s: LeagueStanding; isYou?: boolean }> = ({ s, isYo
       </div>
     );
   } else if (r === 2) {
-    rowClass = 'bg-[#49474B] outline outline-1 -outline-offset-1 outline-[#49474B]';
+    rowClass = 'bg-[#1D1D1F] outline outline-1 -outline-offset-1 outline-[#49474B]';
     rankBadge = (
       <div
         className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#CCCCCC] text-base font-bold leading-6 text-[#1D1D1F] outline outline-2 -outline-offset-2 outline-[#E5E5E5] font-brockmann tabular-nums"
@@ -135,16 +141,15 @@ const StandingRow: React.FC<{ s: LeagueStanding; isYou?: boolean }> = ({ s, isYo
   return (
     <div
       className={cn(
-        'flex items-center gap-4 rounded-lg py-4 pl-4 pr-6 transition-colors',
+        'flex items-center gap-4 rounded-lg py-4 pl-4 pr-6',
         rowClass,
-        r === 2 && 'hover:bg-[#535151]',
+        isYou && 'outline outline-2 -outline-offset-1 outline-[#907AFF]',
       )}
     >
       {rankBadge}
       <div className="min-w-0 flex-1 pb-0.5">
         <p className={`${nameClass} truncate`}>
           {s.display_name ?? 'Unknown'}
-          {isYou && <span className="ml-1.5 text-sm font-normal text-greyscale-blue-200">(you)</span>}
         </p>
         <p className={subClass}>{subline}</p>
       </div>
@@ -188,6 +193,7 @@ const LeaguePage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
 
   const { league, loading: leagueLoading } = useLeague(leagueId);
   const { members } = useLeagueMembers(leagueId);
@@ -196,7 +202,10 @@ const LeaguePage = () => {
   const { removeScheduledDraft, acceptInvite, declineInvite } = useLeagueActions();
   const { invites: pendingInvites, loading: invitesLoading } = usePendingLeagueInvites();
 
-  const [mainTab, setMainTab] = useState<MainTab>('standings');
+  const [mainTab, setMainTab] = useState<MainTab>(() => {
+    const initialTab = searchParams.get('tab');
+    return isMainTab(initialTab) ? initialTab : 'standings';
+  });
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>('all-time');
   const [showNewDraftFlow, setShowNewDraftFlow] = useState(false);
 
