@@ -843,42 +843,53 @@ const Profile = () => {
 
         {/* Pending league invites */}
         {!invitesLoading && pendingInvites.length > 0 && (
-          <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex-col justify-start items-start gap-4 inline-flex mb-8" style={{boxShadow: '0px 0px 6px #3B0394', borderLeft: '3px solid #7142FF'}}>
-            <h2 className="text-greyscale-blue-100 text-xl font-brockmann font-bold leading-7 tracking-[0.8px] m-0">
+          <div
+            className="mb-8 inline-flex w-full flex-col items-start justify-start gap-4 rounded-lg p-6"
+            style={{
+              boxShadow: '0px 0px 6px #3B0394',
+              background: 'var(--Section-Container, #0E0E0F)',
+            }}
+          >
+            <h2 className="m-0 text-xl font-medium leading-7 text-greyscale-blue-100 font-brockmann">
               League Invites
             </h2>
-            {pendingInvites.map((invite) => (
-              <div key={invite.id} className="w-full flex items-center justify-between gap-4 flex-wrap">
-                <div>
-                  <p className="text-greyscale-blue-100 text-sm font-brockmann font-medium m-0">
-                    {invite.league?.name ?? 'A league'}
-                  </p>
-                  <p className="text-greyscale-blue-300 text-xs font-brockmann m-0">
-                    Invited by {invite.inviter?.name ?? 'someone'}
-                  </p>
+            <div className="flex w-full flex-col gap-3">
+              {pendingInvites.map((invite) => (
+                <div
+                  key={invite.id}
+                  className="flex w-full flex-wrap items-center justify-between gap-4 rounded-[6px] px-4 py-3 font-brockmann"
+                  style={{ background: '#1D1D1F', outline: '1px solid #2E2C32', outlineOffset: '-1px' }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="m-0 text-sm font-normal leading-5 text-[#FCFFFF]">
+                      {invite.league?.name ?? 'A league'}
+                    </p>
+                    <p className="m-0 mt-0.5 text-xs font-normal leading-4 tracking-[0.36px] text-[#BDC3C2]">
+                      Invited by {invite.inviter?.name ?? 'someone'}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center rounded-[2px] bg-[#7142FF] px-[18px] py-2 text-sm font-medium leading-5 text-[#FCFFFF] transition-colors hover:bg-[#6338e0]"
+                      onClick={async () => {
+                        const leagueId = await acceptInvite(invite.id);
+                        if (leagueId) { refetchInvites(); navigate(`/league/${leagueId}`); }
+                      }}
+                    >
+                      Accept
+                    </button>
+                    <button
+                      type="button"
+                      className="inline-flex items-center justify-center rounded-[2px] bg-[#1D1D1F] px-[18px] py-2 text-sm font-medium leading-5 text-[#FCFFFF] outline outline-1 -outline-offset-1 outline-[#666469] transition-colors hover:bg-[#252528]"
+                      onClick={async () => { await declineInvite(invite.id); refetchInvites(); }}
+                    >
+                      Decline
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2 flex-wrap">
-                  <Button
-                    size="sm"
-                    className="bg-brand-primary text-greyscale-blue-100 hover:bg-purple-300 font-brockmann text-xs"
-                    onClick={async () => {
-                      const leagueId = await acceptInvite(invite.id);
-                      if (leagueId) { refetchInvites(); navigate(`/league/${leagueId}`); }
-                    }}
-                  >
-                    Accept
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="border-greyscale-purp-500 text-greyscale-blue-300 hover:border-greyscale-blue-300 hover:text-greyscale-blue-100 hover:bg-transparent font-brockmann text-xs"
-                    onClick={async () => { await declineInvite(invite.id); refetchInvites(); }}
-                  >
-                    Decline
-                  </Button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 

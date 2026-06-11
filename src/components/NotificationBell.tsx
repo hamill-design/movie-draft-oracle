@@ -1,9 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, Film, Users, CalendarDays } from 'lucide-react';
+import { Bell, CalendarDays, Film, User } from 'lucide-react';
+import { TrophyIcon } from '@/components/icons/TrophyIcon';
 import { useNotifications, AppNotification } from '@/hooks/useNotifications';
 import { useLeagueActions, usePendingLeagueInvites, type LeagueInvite } from '@/hooks/useLeagues';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { DraftActorPortrait } from '@/components/DraftActorPortrait';
+import { resolveYearDraftIconSrc } from '@/lib/yearDraftIcon';
+import { cn, getCleanActorName } from '@/lib/utils';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -24,31 +29,129 @@ function isStartingSoon(metadata: Record<string, unknown>): boolean {
   return diff > 0 && diff < 60 * 60 * 1000;
 }
 
-// ── Notification item ─────────────────────────────────────────────────────────
+function leagueSubtitle(notification: AppNotification, invite?: LeagueInvite): string {
+  if (invite?.league?.name) return invite.league.name;
+  const body = notification.body ?? '';
+  const marker = ' invited you to ';
+  const idx = body.lastIndexOf(marker);
+  if (idx >= 0) return body.slice(idx + marker.length).trim();
+  return body;
+}
 
-const TYPE_CONFIG = {
-  draft_invite: {
-    Icon: Film,
-    iconColor: '#907aff',
-    iconBg: 'rgba(144, 122, 255, 0.15)',
-  },
-  league_invite: {
-    Icon: Users,
-    iconColor: '#d3cfff',
-    iconBg: 'rgba(211, 207, 255, 0.12)',
-  },
-  upcoming_draft: {
-    Icon: CalendarDays,
-    iconColor: '#680aff',
-    iconBg: 'rgba(104, 10, 255, 0.2)',
-  },
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type DraftMeta = { theme: string; option: string | null; title: string | null };
+
+type NotificationEnrichment = {
+  drafts: Map<string, DraftMeta>;
+  specPhotos: Map<string, string | null>;
 };
+
+function LeagueTrophyThumbnail() {
+  return (
+    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#3B0394]">
+      <TrophyIcon className="h-5 w-5 shrink-0" style={{ color: '#BCB2FF' }} aria-hidden />
+    </div>
+  );
+}
+
+// ── Thumbnail ─────────────────────────────────────────────────────────────────
+
+function NotificationThumbnail({
+  notification,
+  draftMeta,
+  specPhoto,
+}: {
+  notification: AppNotification;
+  draftMeta?: DraftMeta;
+  specPhoto?: string | null;
+}) {
+  const shell = 'flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full';
+
+  if (notification.type === 'league_invite') {
+    return <LeagueTrophyThumbnail />;
+  }
+
+  if (notification.type === 'draft_invite') {
+    const theme = draftMeta?.theme ?? '';
+    const option = draftMeta?.option ?? '';
+    const label = draftMeta?.title ?? notification.body ?? '';
+    const displayLabel = option || label || notification.body || '';
+
+    if (theme === 'year' || (!theme && resolveYearDraftIconSrc(displayLabel))) {
+      const yearSrc = resolveYearDraftIconSrc(theme === 'year' ? (option || label) : displayLabel);
+      if (yearSrc) {
+        return (
+          <div className={cn(shell, 'rounded-[4px] bg-transparent')}>
+            <img src={yearSrc} alt="" className="h-full w-full object-contain p-0.5" draggable={false} />
+          </div>
+        );
+      }
+    }
+
+    if (theme === 'spec-draft' && specPhoto) {
+      return (
+        <img
+          src={specPhoto}
+          alt=""
+          className={cn(shell, 'rounded-[4px] object-cover')}
+        />
+      );
+    }
+
+    const actorName = getCleanActorName(
+      theme === 'people' || theme === 'filmography' ? (option || label) : displayLabel,
+    );
+    if (
+      actorName
+      && (theme === 'people' || theme === 'filmography' || (!theme && !UUID_RE.test(displayLabel)))
+    ) {
+      return (
+        <DraftActorPortrait
+          actorName={actorName}
+          size="sm"
+          className="h-9 w-9 rounded-full object-cover"
+        />
+      );
+    }
+
+    return (
+      <div className={cn(shell, 'bg-[#3B2050]')}>
+        <Film className="h-4 w-4 text-[#907AFF]" aria-hidden />
+      </div>
+    );
+  }
+
+  if (notification.type === 'upcoming_draft') {
+    return (
+      <div className={cn(shell, 'bg-[#3B2050]')}>
+        <CalendarDays className="h-4 w-4 text-[#907AFF]" aria-hidden />
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn(shell, 'bg-[#3B2050]')}>
+      <User className="h-4 w-4 text-[#907AFF]" aria-hidden />
+    </div>
+  );
+}
+
+function itemBackground(isRead: boolean, hovered: boolean): string {
+  if (hovered) return '#252528';
+  return isRead ? '#1D1D1F' : '#160038';
+}
+
+// ── Notification item ─────────────────────────────────────────────────────────
 
 type InviteActionState = 'pending' | 'accepted' | 'declined' | undefined;
 
 interface NotificationItemProps {
   notification: AppNotification;
   onAction: (notification: AppNotification) => void;
+  invite?: LeagueInvite;
+  draftMeta?: DraftMeta;
+  specPhoto?: string | null;
   inviteState?: InviteActionState;
   inviteLoading?: 'accept' | 'decline' | null;
   onAcceptInvite?: (e: React.MouseEvent) => void;
@@ -56,11 +159,26 @@ interface NotificationItemProps {
 }
 
 const NotificationItem = ({
-  notification, onAction, inviteState, inviteLoading, onAcceptInvite, onDeclineInvite,
+  notification,
+  onAction,
+  invite,
+  draftMeta,
+  specPhoto,
+  inviteState,
+  inviteLoading,
+  onAcceptInvite,
+  onDeclineInvite,
 }: NotificationItemProps) => {
-  const cfg = TYPE_CONFIG[notification.type];
+  const [hovered, setHovered] = useState(false);
   const soon = notification.type === 'upcoming_draft' && isStartingSoon(notification.metadata);
   const showInviteActions = inviteState === 'pending';
+
+  const subtitle =
+    notification.type === 'league_invite'
+      ? leagueSubtitle(notification, invite)
+      : notification.type === 'draft_invite'
+        ? (notification.body ?? draftMeta?.title ?? '')
+        : notification.body ?? '';
 
   return (
     <div
@@ -73,110 +191,57 @@ const NotificationItem = ({
           onAction(notification);
         }
       }}
-      style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 12,
-        width: '100%',
-        padding: '12px 16px',
-        background: notification.is_read ? 'transparent' : 'rgba(104, 10, 255, 0.1)',
-        border: 'none',
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-        cursor: 'pointer',
-        textAlign: 'left',
-        transition: 'background 0.15s',
-      }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.05)';
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLDivElement).style.background =
-          notification.is_read ? 'transparent' : 'rgba(104, 10, 255, 0.1)';
-      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="flex w-full cursor-pointer items-start gap-3 px-4 pb-4 pt-3 text-left font-brockmann transition-colors"
+      style={{ background: itemBackground(notification.is_read, hovered) }}
     >
-      {/* Icon */}
-      <div style={{
-        width: 36,
-        height: 36,
-        borderRadius: '50%',
-        background: cfg.iconBg,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        flexShrink: 0,
-        marginTop: 1,
-      }}>
-        <cfg.Icon size={16} color={cfg.iconColor} />
+      <div className="flex shrink-0 items-center py-0.5">
+        <NotificationThumbnail
+          notification={notification}
+          draftMeta={draftMeta}
+          specPhoto={specPhoto}
+        />
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <span style={{
-            color: '#FCFFFF',
-            fontSize: 13,
-            fontWeight: 600,
-            lineHeight: 1.3,
-          }}>
-            {notification.title}
-          </span>
-          {soon && (
-            <span style={{
-              background: 'rgba(255, 120, 50, 0.2)',
-              color: '#ff9f60',
-              fontSize: 10,
-              fontWeight: 600,
-              padding: '1px 6px',
-              borderRadius: 10,
-              letterSpacing: '0.02em',
-              whiteSpace: 'nowrap',
-            }}>
-              STARTING SOON
-            </span>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-start gap-1">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-normal leading-5 text-[#FCFFFF]">
+                {notification.title}
+              </span>
+              {soon && (
+                <span className="whitespace-nowrap rounded-full bg-[rgba(255,120,50,0.2)] px-1.5 py-px text-[10px] font-semibold tracking-wide text-[#ff9f60]">
+                  STARTING SOON
+                </span>
+              )}
+            </div>
+            {subtitle && (
+              <div className="mt-0.5 text-xs font-semibold leading-4 text-[#907AFF]">
+                {subtitle}
+              </div>
+            )}
+          </div>
+          {!notification.is_read && (
+            <div
+              className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#7142FF]"
+              aria-hidden
+            />
           )}
         </div>
-        {notification.body && (
-          <div style={{
-            color: 'rgba(252, 255, 255, 0.55)',
-            fontSize: 12,
-            lineHeight: 1.4,
-            marginTop: 2,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}>
-            {notification.body}
-          </div>
-        )}
-        <div style={{
-          color: 'rgba(252, 255, 255, 0.35)',
-          fontSize: 11,
-          marginTop: 4,
-        }}>
+
+        <div className="mt-1 pt-px text-xs font-normal leading-4 tracking-[0.36px] text-[#BDC3C2]">
           {timeAgo(notification.created_at)}
         </div>
 
-        {/* League invite quick actions */}
         {showInviteActions && (
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+          <div className="mt-3 flex items-center gap-3">
             <button
               type="button"
               disabled={!!inviteLoading}
               onClick={onAcceptInvite}
-              style={{
-                padding: '6px 14px',
-                fontSize: 12,
-                fontWeight: 600,
-                borderRadius: 6,
-                border: 'none',
-                background: '#7142FF',
-                color: '#FCFFFF',
-                cursor: inviteLoading ? 'default' : 'pointer',
-                opacity: inviteLoading ? 0.6 : 1,
-                transition: 'background 0.15s, opacity 0.15s',
-              }}
-              onMouseEnter={e => { if (!inviteLoading) (e.currentTarget as HTMLButtonElement).style.background = '#8257FF'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#7142FF'; }}
+              className="inline-flex flex-1 items-center justify-center rounded-[2px] bg-[#7142FF] px-[18px] py-2 text-sm font-medium leading-5 text-[#FCFFFF] transition-colors hover:bg-[#6338e0] disabled:pointer-events-none disabled:opacity-60"
             >
               {inviteLoading === 'accept' ? 'Accepting…' : 'Accept'}
             </button>
@@ -184,55 +249,20 @@ const NotificationItem = ({
               type="button"
               disabled={!!inviteLoading}
               onClick={onDeclineInvite}
-              style={{
-                padding: '6px 14px',
-                fontSize: 12,
-                fontWeight: 600,
-                borderRadius: 6,
-                border: '1px solid rgba(255,255,255,0.15)',
-                background: 'transparent',
-                color: 'rgba(252,255,255,0.7)',
-                cursor: inviteLoading ? 'default' : 'pointer',
-                opacity: inviteLoading ? 0.6 : 1,
-                transition: 'background 0.15s, color 0.15s, opacity 0.15s',
-              }}
-              onMouseEnter={e => {
-                if (inviteLoading) return;
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.3)';
-                (e.currentTarget as HTMLButtonElement).style.color = '#FCFFFF';
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.15)';
-                (e.currentTarget as HTMLButtonElement).style.color = 'rgba(252,255,255,0.7)';
-              }}
+              className="inline-flex flex-1 items-center justify-center rounded-[2px] bg-[#1D1D1F] px-[18px] py-2 text-sm font-medium leading-5 text-[#FCFFFF] outline outline-1 -outline-offset-1 outline-[#666469] transition-colors hover:bg-[#252528] disabled:pointer-events-none disabled:opacity-60"
             >
               {inviteLoading === 'decline' ? 'Declining…' : 'Decline'}
             </button>
           </div>
         )}
+
         {inviteState === 'accepted' && (
-          <div style={{ marginTop: 6, fontSize: 12, fontWeight: 600, color: '#9ee6a8' }}>
-            ✓ Joined
-          </div>
+          <div className="mt-2 text-xs font-semibold text-[#9ee6a8]">✓ Joined</div>
         )}
         {inviteState === 'declined' && (
-          <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(252,255,255,0.4)' }}>
-            Invite declined
-          </div>
+          <div className="mt-2 text-xs text-[#BDC3C2]/70">Invite declined</div>
         )}
       </div>
-
-      {/* Unread dot */}
-      {!notification.is_read && (
-        <div style={{
-          width: 7,
-          height: 7,
-          borderRadius: '50%',
-          background: '#680aff',
-          flexShrink: 0,
-          marginTop: 6,
-        }} />
-      )}
     </div>
   );
 };
@@ -247,22 +277,70 @@ export const NotificationBell = () => {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [enrichment, setEnrichment] = useState<NotificationEnrichment>({
+    drafts: new Map(),
+    specPhotos: new Map(),
+  });
 
-  // Track per-notification accept/decline outcomes so the buttons can be
-  // swapped for a confirmation immediately, without waiting on a refetch.
   const [inviteResults, setInviteResults] = useState<Record<string, 'accepted' | 'declined'>>({});
   const [loadingInvite, setLoadingInvite] = useState<{ id: string; action: 'accept' | 'decline' } | null>(null);
 
-  // Pending league invites, keyed by league_id, so each league_invite
-  // notification can find "its" invite (notifications store league_id as
-  // reference_id, not the invite row's own id).
   const inviteByLeagueId = useMemo(() => {
     const map = new Map<string, LeagueInvite>();
     for (const inv of pendingInvites) map.set(inv.league_id, inv);
     return map;
   }, [pendingInvites]);
 
-  // Close on outside click
+  useEffect(() => {
+    const draftIds = [
+      ...new Set(
+        notifications
+          .filter((n) => n.type === 'draft_invite' && n.reference_id)
+          .map((n) => n.reference_id as string),
+      ),
+    ];
+
+    if (draftIds.length === 0) return;
+
+    let cancelled = false;
+
+    (async () => {
+      const drafts = new Map<string, DraftMeta>();
+      const specPhotos = new Map<string, string | null>();
+
+      const { data: draftRows } = await supabase
+        .from('drafts')
+        .select('id, theme, option, title')
+        .in('id', draftIds);
+
+      const specIds: string[] = [];
+      for (const row of draftRows ?? []) {
+        const r = row as { id: string; theme: string; option: string | null; title: string | null };
+        drafts.set(r.id, { theme: r.theme, option: r.option, title: r.title });
+        if (r.theme === 'spec-draft' && r.option && UUID_RE.test(r.option)) {
+          specIds.push(r.option);
+        }
+      }
+
+      if (specIds.length > 0) {
+        const { data: specRows } = await supabase
+          .from('spec_drafts' as never)
+          .select('id, photo_url')
+          .in('id', specIds);
+        for (const row of specRows ?? []) {
+          const r = row as { id: string; photo_url: string | null };
+          specPhotos.set(r.id, r.photo_url);
+        }
+      }
+
+      if (!cancelled) {
+        setEnrichment({ drafts, specPhotos });
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [notifications]);
+
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -274,7 +352,6 @@ export const NotificationBell = () => {
     return () => document.removeEventListener('mousedown', handler);
   }, [open]);
 
-  // Close on Escape
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
@@ -283,13 +360,11 @@ export const NotificationBell = () => {
   }, [open]);
 
   const handleNotificationClick = async (notification: AppNotification) => {
+    if (notification.type === 'league_invite' && inviteByLeagueId.has(notification.reference_id ?? '')) {
+      return;
+    }
     setOpen(false);
     if (!notification.is_read) await markAsRead(notification.id);
-
-    // For upcoming_draft notifications, navigate to the league page.
-    // The league page shows the correct button state:
-    //   • If draft_id is set → "Join Draft" button → /draft/:id (the waiting room)
-    //   • If not yet opened → admin sees "Open Draft Room", members see details
     if (notification.link) navigate(notification.link);
   };
 
@@ -302,7 +377,7 @@ export const NotificationBell = () => {
     const acceptedLeagueId = await acceptInvite(invite.id);
     setLoadingInvite(null);
     if (acceptedLeagueId) {
-      setInviteResults(prev => ({ ...prev, [notification.id]: 'accepted' }));
+      setInviteResults((prev) => ({ ...prev, [notification.id]: 'accepted' }));
       if (!notification.is_read) markAsRead(notification.id);
       refetchPendingInvites();
       toast({ title: `Joined ${invite.league?.name ?? 'the league'}!` });
@@ -320,7 +395,7 @@ export const NotificationBell = () => {
     const ok = await declineInvite(invite.id);
     setLoadingInvite(null);
     if (ok) {
-      setInviteResults(prev => ({ ...prev, [notification.id]: 'declined' }));
+      setInviteResults((prev) => ({ ...prev, [notification.id]: 'declined' }));
       if (!notification.is_read) markAsRead(notification.id);
       refetchPendingInvites();
     } else {
@@ -329,145 +404,71 @@ export const NotificationBell = () => {
   };
 
   return (
-    <div ref={containerRef} style={{ position: 'relative' }}>
-      {/* Bell button */}
+    <div ref={containerRef} className="relative">
       <button
         type="button"
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
-        onClick={() => setOpen(prev => !prev)}
-        style={{
-          position: 'relative',
-          width: 36,
-          height: 36,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: open ? 'rgba(255,255,255,0.08)' : 'transparent',
-          border: 'none',
-          borderRadius: 8,
-          cursor: 'pointer',
-          color: 'rgba(252, 255, 255, 0.7)',
-          transition: 'background 0.15s, color 0.15s',
-          flexShrink: 0,
-        }}
-        onMouseEnter={e => {
-          if (!open) {
-            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.07)';
-            (e.currentTarget as HTMLButtonElement).style.color = '#FCFFFF';
-          }
-        }}
-        onMouseLeave={e => {
-          if (!open) {
-            (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
-            (e.currentTarget as HTMLButtonElement).style.color = 'rgba(252, 255, 255, 0.7)';
-          }
-        }}
+        onClick={() => setOpen((prev) => !prev)}
+        className={cn(
+          'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border-none transition-colors',
+          open ? 'bg-white/[0.08] text-[#FCFFFF]' : 'bg-transparent text-white/70 hover:bg-white/[0.07] hover:text-[#FCFFFF]',
+        )}
       >
         <Bell size={20} />
         {unreadCount > 0 && (
-          <span style={{
-            position: 'absolute',
-            top: 4,
-            right: 4,
-            minWidth: 16,
-            height: 16,
-            borderRadius: 8,
-            background: '#680aff',
-            color: '#FCFFFF',
-            fontSize: 10,
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '0 4px',
-            lineHeight: 1,
-            pointerEvents: 'none',
-          }}>
+          <span className="pointer-events-none absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#680aff] px-1 text-[10px] font-bold leading-none text-[#FCFFFF]">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Dropdown */}
       {open && (
         <div
           role="dialog"
           aria-label="Notifications"
+          className="absolute right-0 top-[calc(100%+8px)] z-[100] flex max-h-[420px] w-[340px] flex-col gap-0.5 overflow-y-auto rounded-xl font-brockmann outline outline-2 -outline-offset-2 outline-[#0E0E0F]"
           style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: 0,
-            width: 340,
-            maxHeight: 420,
-            overflowY: 'auto',
-            background: '#1a1a1d',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-            zIndex: 100,
-            display: 'flex',
-            flexDirection: 'column',
+            background: '#0E0E0F',
+            boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.50)',
           }}
         >
-          {/* Header */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '14px 16px 12px',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-            position: 'sticky',
-            top: 0,
-            background: '#1a1a1d',
-            zIndex: 1,
-          }}>
-            <span style={{ color: '#FCFFFF', fontSize: 14, fontWeight: 600 }}>
-              Notifications
-            </span>
+          <div className="flex items-center justify-between bg-[#1D1D1F] px-4 pb-3 pt-3.5">
+            <span className="text-sm font-medium leading-5 text-[#FCFFFF]">Notifications</span>
             {unreadCount > 0 && (
               <button
                 type="button"
                 onClick={markAllAsRead}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#907aff',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                  padding: '2px 4px',
-                  borderRadius: 4,
-                  transition: 'color 0.15s',
-                }}
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#d3cfff'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#907aff'; }}
+                className="rounded px-1 py-0.5 text-xs text-[#907AFF] transition-colors hover:text-[#d3cfff]"
               >
                 Mark all as read
               </button>
             )}
           </div>
 
-          {/* List */}
           {notifications.length === 0 ? (
-            <div style={{
-              padding: '40px 16px',
-              textAlign: 'center',
-              color: 'rgba(252, 255, 255, 0.35)',
-              fontSize: 13,
-            }}>
+            <div className="px-4 py-10 text-center text-sm text-[#BDC3C2]/50">
               No notifications
             </div>
           ) : (
-            notifications.map(n => {
+            notifications.map((n) => {
               const invite = n.type === 'league_invite' && n.reference_id
                 ? inviteByLeagueId.get(n.reference_id)
                 : undefined;
               const inviteState: InviteActionState =
                 inviteResults[n.id] ?? (invite ? 'pending' : undefined);
+              const draftMeta = n.reference_id ? enrichment.drafts.get(n.reference_id) : undefined;
+              const specPhoto =
+                draftMeta?.theme === 'spec-draft' && draftMeta.option
+                  ? enrichment.specPhotos.get(draftMeta.option) ?? null
+                  : null;
 
               return (
                 <NotificationItem
                   key={n.id}
                   notification={n}
+                  invite={invite}
+                  draftMeta={draftMeta}
+                  specPhoto={specPhoto}
                   onAction={handleNotificationClick}
                   inviteState={inviteState}
                   inviteLoading={loadingInvite?.id === n.id ? loadingInvite.action : null}

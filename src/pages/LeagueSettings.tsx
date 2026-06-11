@@ -87,6 +87,12 @@ const inputDateDark = cn(inputDark, 'date-input-icon-light');
 
 const draftFieldOutline = { outline: '1px solid #666469', outlineOffset: '-1px' } as const;
 
+// Temporarily hidden: letting league admins search all Movie Drafter
+// profiles by display name to invite them feels like a privacy/security
+// risk for now. The feature stays in the code (just not rendered) so it's
+// easy to bring back later.
+const SHOW_INVITE_BY_DISPLAY_NAME = false;
+
 const draftInputClass =
   'rounded-[2px] bg-greyscale-purp-850 text-greyscale-blue-100 placeholder:text-greyscale-blue-500 border-0 focus:border-0 focus-visible:ring-0 font-brockmann font-medium text-sm leading-5';
 
@@ -1711,6 +1717,7 @@ const LeagueSettings = () => {
                     </div>
                   </section>
 
+                  {SHOW_INVITE_BY_DISPLAY_NAME && (
                   <section
                     className="flex w-full flex-col gap-6 rounded-lg px-3 pb-8 pt-6 text-greyscale-blue-100 md:px-6"
                     style={{ background: '#0E0E0F', boxShadow: '0px 0px 6px #3B0394' }}
@@ -1784,6 +1791,7 @@ const LeagueSettings = () => {
                       </div>
                     </div>
                   </section>
+                  )}
 
                   <section
                     className="flex w-full flex-col gap-6 rounded-lg px-3 pb-8 pt-6 text-greyscale-blue-100 md:px-6"
