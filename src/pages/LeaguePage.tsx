@@ -32,6 +32,7 @@ import {
   buildLeagueDraftMetrics,
   draftPlacementRank,
   draftLeaguePointsByUserId,
+  tieRanksForStandings,
   type LeagueDraftMetricPack,
   type DraftParticipantRow,
 } from '@/lib/leagueDraftMetrics';
@@ -76,48 +77,44 @@ const LEAGUE_MAIN_TAB_BUTTON_CLASS =
   'min-h-0 rounded-none border-0 px-6 py-3 font-brockmann text-sm font-medium leading-5 text-[var(--Text-Primary,#FCFFFF)] shadow-none ring-0 ring-offset-0 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#7142FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0E0E0F]';
 
 // ── Standing row (dashboard spec) ─────────────────────────────────────────────
-const StandingRow: React.FC<{ s: LeagueStanding; isYou?: boolean }> = ({ s, isYou }) => {
-  const r = s.rank;
+const StandingRow: React.FC<{ s: LeagueStanding; rank: number; isYou?: boolean }> = ({
+  s, rank: r, isYou,
+}) => {
   // total_score = F1 position points (integer); raw_score = movie score tiebreaker
   const scoreStr = String(s.total_score);
   const subline =
     `${s.draft_count} ${s.draft_count === 1 ? 'draft' : 'drafts'} · ${s.raw_score.toFixed(1)} movie score`;
 
-  let rowClass = '';
   let rankBadge: React.ReactNode;
 
   if (r === 1) {
-    rowClass = 'bg-[#7142FF]';
     rankBadge = (
       <div
         className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#FFD60A] text-base font-bold leading-6 text-[#1D1D1F] outline outline-2 -outline-offset-2 outline-[#FFF2B2] font-brockmann tabular-nums"
         aria-hidden
       >
-        1
+        {r}
       </div>
     );
   } else if (r === 2) {
-    rowClass = 'bg-[#1D1D1F] outline outline-1 -outline-offset-1 outline-[#49474B]';
     rankBadge = (
       <div
         className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#CCCCCC] text-base font-bold leading-6 text-[#1D1D1F] outline outline-2 -outline-offset-2 outline-[#E5E5E5] font-brockmann tabular-nums"
         aria-hidden
       >
-        2
+        {r}
       </div>
     );
   } else if (r === 3) {
-    rowClass = 'bg-[#1D1D1F] outline outline-1 -outline-offset-1 outline-[#49474B]';
     rankBadge = (
       <div
         className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#DE7E3E] text-base font-bold leading-6 text-[#1D1D1F] outline outline-2 -outline-offset-2 outline-[#FFAE78] font-brockmann tabular-nums"
         aria-hidden
       >
-        3
+        {r}
       </div>
     );
   } else {
-    rowClass = 'bg-[#1D1D1F] outline outline-1 -outline-offset-1 outline-[#49474B]';
     rankBadge = (
       <div
         className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[#907AFF] text-base font-bold leading-6 text-[#0E0F0F] font-brockmann tabular-nums"
@@ -129,21 +126,16 @@ const StandingRow: React.FC<{ s: LeagueStanding; isYou?: boolean }> = ({ s, isYo
   }
 
   const nameClass = 'text-base font-semibold leading-6 tracking-[0.32px] text-greyscale-blue-100 font-brockmann m-0';
-  const subClass = cn(
-    'text-sm font-normal leading-5 font-brockmann m-0',
-    r === 1 ? 'text-greyscale-blue-100' : 'text-[#BDC3C2]',
-  );
-  const scoreClass = cn(
-    'text-[32px] font-bold leading-9 tracking-wide tabular-nums font-brockmann m-0',
-    r === 1 ? 'text-greyscale-blue-100' : 'text-[#907AFF]',
-  );
+  const subClass = 'text-sm font-normal leading-5 font-brockmann m-0 text-[#BDC3C2]';
+  const scoreClass = 'text-[32px] font-bold leading-9 tracking-wide tabular-nums font-brockmann m-0 text-[#907AFF]';
 
   return (
     <div
       className={cn(
         'flex items-center gap-4 rounded-lg py-4 pl-4 pr-6',
-        rowClass,
-        isYou && 'outline outline-2 -outline-offset-1 outline-[#907AFF]',
+        isYou
+          ? 'bg-[#160038] outline outline-2 -outline-offset-1 outline-[#907AFF]'
+          : 'bg-[#1D1D1F] outline outline-1 -outline-offset-1 outline-[#49474B]',
       )}
     >
       {rankBadge}
@@ -155,7 +147,7 @@ const StandingRow: React.FC<{ s: LeagueStanding; isYou?: boolean }> = ({ s, isYo
       </div>
       <div className="shrink-0 text-right">
         <p className={scoreClass}>{scoreStr}</p>
-        <p className={cn('text-xs font-brockmann m-0', r === 1 ? 'text-greyscale-blue-200' : 'text-greyscale-blue-400')}>
+        <p className="text-xs font-brockmann m-0 text-greyscale-blue-400">
           pts
         </p>
       </div>
@@ -167,6 +159,8 @@ const SeasonStandingRows: React.FC<{
   standings: LeagueStanding[];
   currentUserId?: string;
 }> = ({ standings, currentUserId }) => {
+  const tieRanks = useMemo(() => tieRanksForStandings(standings), [standings]);
+
   if (!standings.length) {
     return (
       <div className="space-y-2 py-12 text-center">
@@ -180,8 +174,13 @@ const SeasonStandingRows: React.FC<{
 
   return (
     <div className="flex flex-col gap-4">
-      {standings.map(s => (
-        <StandingRow key={s.user_id} s={s} isYou={s.user_id === currentUserId} />
+      {standings.map((s, i) => (
+        <StandingRow
+          key={s.user_id}
+          s={s}
+          rank={tieRanks[i]}
+          isYou={s.user_id === currentUserId}
+        />
       ))}
     </div>
   );

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CalendarDays, Film, User } from 'lucide-react';
+import { Bell, Film, User } from 'lucide-react';
 import { TrophyIcon } from '@/components/icons/TrophyIcon';
 import { useNotifications, AppNotification } from '@/hooks/useNotifications';
 import { useLeagueActions, usePendingLeagueInvites, type LeagueInvite } from '@/hooks/useLeagues';
@@ -22,11 +22,39 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(hours / 24)}d ago`;
 }
 
-function isStartingSoon(metadata: Record<string, unknown>): boolean {
-  const scheduledAt = metadata?.scheduled_at as string | undefined;
-  if (!scheduledAt) return false;
-  const diff = new Date(scheduledAt).getTime() - Date.now();
-  return diff > 0 && diff < 60 * 60 * 1000;
+const DRAFT_TYPE_LABELS: Record<string, string> = {
+  classic: 'Classic',
+  year: 'By Year',
+  people: 'By Filmmaker',
+  'spec-draft': 'Special Draft',
+  filmography: 'By Filmography',
+};
+
+type ScheduledDraftMeta = {
+  draft_type: string | null;
+  theme: string | null;
+};
+
+function scheduledDraftThemeLabel(
+  entry: ScheduledDraftMeta,
+  specName?: string | null,
+): string {
+  const t = entry.draft_type;
+  if (t === 'spec-draft') return specName ?? 'Special draft';
+  if (t === 'filmography' || t === 'people') {
+    const name = getCleanActorName(entry.theme ?? '');
+    return name || entry.theme?.trim() || 'Draft';
+  }
+  if (t === 'year') return entry.theme?.trim() || 'Draft';
+  if (entry.theme?.trim()) return entry.theme.trim();
+  return DRAFT_TYPE_LABELS[t ?? ''] ?? 'Draft';
+}
+
+function scheduledDraftAsDraftMeta(entry: ScheduledDraftMeta): DraftMeta {
+  const t = entry.draft_type;
+  let theme = t ?? '';
+  if (t === 'filmography') theme = 'people';
+  return { theme, option: entry.theme, title: null };
 }
 
 function leagueSubtitle(notification: AppNotification, invite?: LeagueInvite): string {
@@ -45,6 +73,8 @@ type DraftMeta = { theme: string; option: string | null; title: string | null };
 type NotificationEnrichment = {
   drafts: Map<string, DraftMeta>;
   specPhotos: Map<string, string | null>;
+  specNames: Map<string, string>;
+  scheduledDrafts: Map<string, ScheduledDraftMeta>;
 };
 
 function LeagueTrophyThumbnail() {
@@ -124,9 +154,11 @@ function NotificationThumbnail({
 
   if (notification.type === 'upcoming_draft') {
     return (
-      <div className={cn(shell, 'bg-[#3B2050]')}>
-        <CalendarDays className="h-4 w-4 text-[#907AFF]" aria-hidden />
-      </div>
+      <NotificationThumbnail
+        notification={{ ...notification, type: 'draft_invite' }}
+        draftMeta={draftMeta}
+        specPhoto={specPhoto}
+      />
     );
   }
 
@@ -152,6 +184,7 @@ interface NotificationItemProps {
   invite?: LeagueInvite;
   draftMeta?: DraftMeta;
   specPhoto?: string | null;
+  upcomingTheme?: string | null;
   inviteState?: InviteActionState;
   inviteLoading?: 'accept' | 'decline' | null;
   onAcceptInvite?: (e: React.MouseEvent) => void;
@@ -164,13 +197,13 @@ const NotificationItem = ({
   invite,
   draftMeta,
   specPhoto,
+  upcomingTheme,
   inviteState,
   inviteLoading,
   onAcceptInvite,
   onDeclineInvite,
 }: NotificationItemProps) => {
   const [hovered, setHovered] = useState(false);
-  const soon = notification.type === 'upcoming_draft' && isStartingSoon(notification.metadata);
   const showInviteActions = inviteState === 'pending';
 
   const subtitle =
@@ -178,7 +211,12 @@ const NotificationItem = ({
       ? leagueSubtitle(notification, invite)
       : notification.type === 'draft_invite'
         ? (notification.body ?? draftMeta?.title ?? '')
-        : notification.body ?? '';
+        : notification.type === 'upcoming_draft'
+          ? (upcomingTheme ?? '')
+          : notification.body ?? '';
+
+  const scheduleLine =
+    notification.type === 'upcoming_draft' ? (notification.body ?? '') : null;
 
   return (
     <div
@@ -211,15 +249,15 @@ const NotificationItem = ({
               <span className="text-sm font-normal leading-5 text-[#FCFFFF]">
                 {notification.title}
               </span>
-              {soon && (
-                <span className="whitespace-nowrap rounded-full bg-[rgba(255,120,50,0.2)] px-1.5 py-px text-[10px] font-semibold tracking-wide text-[#ff9f60]">
-                  STARTING SOON
-                </span>
-              )}
             </div>
             {subtitle && (
               <div className="mt-0.5 text-xs font-semibold leading-4 text-[#907AFF]">
                 {subtitle}
+              </div>
+            )}
+            {scheduleLine && (
+              <div className="mt-0.5 text-sm font-normal leading-5 text-[#FCFFFF]">
+                {scheduleLine}
               </div>
             )}
           </div>
@@ -280,6 +318,8 @@ export const NotificationBell = () => {
   const [enrichment, setEnrichment] = useState<NotificationEnrichment>({
     drafts: new Map(),
     specPhotos: new Map(),
+    specNames: new Map(),
+    scheduledDrafts: new Map(),
   });
 
   const [inviteResults, setInviteResults] = useState<Record<string, 'accepted' | 'declined'>>({});
@@ -299,42 +339,70 @@ export const NotificationBell = () => {
           .map((n) => n.reference_id as string),
       ),
     ];
+    const scheduledIds = [
+      ...new Set(
+        notifications
+          .filter((n) => n.type === 'upcoming_draft' && n.reference_id)
+          .map((n) => n.reference_id as string),
+      ),
+    ];
 
-    if (draftIds.length === 0) return;
+    if (draftIds.length === 0 && scheduledIds.length === 0) return;
 
     let cancelled = false;
 
     (async () => {
       const drafts = new Map<string, DraftMeta>();
       const specPhotos = new Map<string, string | null>();
-
-      const { data: draftRows } = await supabase
-        .from('drafts')
-        .select('id, theme, option, title')
-        .in('id', draftIds);
-
+      const specNames = new Map<string, string>();
+      const scheduledDrafts = new Map<string, ScheduledDraftMeta>();
       const specIds: string[] = [];
-      for (const row of draftRows ?? []) {
-        const r = row as { id: string; theme: string; option: string | null; title: string | null };
-        drafts.set(r.id, { theme: r.theme, option: r.option, title: r.title });
-        if (r.theme === 'spec-draft' && r.option && UUID_RE.test(r.option)) {
-          specIds.push(r.option);
+
+      if (draftIds.length > 0) {
+        const { data: draftRows } = await supabase
+          .from('drafts')
+          .select('id, theme, option, title')
+          .in('id', draftIds);
+
+        for (const row of draftRows ?? []) {
+          const r = row as { id: string; theme: string; option: string | null; title: string | null };
+          drafts.set(r.id, { theme: r.theme, option: r.option, title: r.title });
+          if (r.theme === 'spec-draft' && r.option && UUID_RE.test(r.option)) {
+            specIds.push(r.option);
+          }
         }
       }
 
-      if (specIds.length > 0) {
+      if (scheduledIds.length > 0) {
+        const { data: scheduledRows } = await supabase
+          .from('league_drafts')
+          .select('id, draft_type, theme')
+          .in('id', scheduledIds);
+
+        for (const row of scheduledRows ?? []) {
+          const r = row as { id: string; draft_type: string | null; theme: string | null };
+          scheduledDrafts.set(r.id, { draft_type: r.draft_type, theme: r.theme });
+          if (r.draft_type === 'spec-draft' && r.theme && UUID_RE.test(r.theme)) {
+            specIds.push(r.theme);
+          }
+        }
+      }
+
+      const uniqueSpecIds = [...new Set(specIds)];
+      if (uniqueSpecIds.length > 0) {
         const { data: specRows } = await supabase
           .from('spec_drafts' as never)
-          .select('id, photo_url')
-          .in('id', specIds);
+          .select('id, photo_url, name')
+          .in('id', uniqueSpecIds);
         for (const row of specRows ?? []) {
-          const r = row as { id: string; photo_url: string | null };
+          const r = row as { id: string; photo_url: string | null; name: string };
           specPhotos.set(r.id, r.photo_url);
+          specNames.set(r.id, r.name);
         }
       }
 
       if (!cancelled) {
-        setEnrichment({ drafts, specPhotos });
+        setEnrichment({ drafts, specPhotos, specNames, scheduledDrafts });
       }
     })();
 
@@ -456,10 +524,28 @@ export const NotificationBell = () => {
                 : undefined;
               const inviteState: InviteActionState =
                 inviteResults[n.id] ?? (invite ? 'pending' : undefined);
-              const draftMeta = n.reference_id ? enrichment.drafts.get(n.reference_id) : undefined;
-              const specPhoto =
+
+              const scheduledEntry =
+                n.type === 'upcoming_draft' && n.reference_id
+                  ? enrichment.scheduledDrafts.get(n.reference_id)
+                  : undefined;
+              const draftMeta =
+                n.type === 'upcoming_draft' && scheduledEntry
+                  ? scheduledDraftAsDraftMeta(scheduledEntry)
+                  : n.reference_id
+                    ? enrichment.drafts.get(n.reference_id)
+                    : undefined;
+              const specId =
                 draftMeta?.theme === 'spec-draft' && draftMeta.option
-                  ? enrichment.specPhotos.get(draftMeta.option) ?? null
+                  ? draftMeta.option
+                  : null;
+              const specPhoto = specId ? enrichment.specPhotos.get(specId) ?? null : null;
+              const upcomingTheme =
+                scheduledEntry
+                  ? scheduledDraftThemeLabel(
+                      scheduledEntry,
+                      scheduledEntry.theme ? enrichment.specNames.get(scheduledEntry.theme) : null,
+                    )
                   : null;
 
               return (
@@ -469,6 +555,7 @@ export const NotificationBell = () => {
                   invite={invite}
                   draftMeta={draftMeta}
                   specPhoto={specPhoto}
+                  upcomingTheme={upcomingTheme}
                   onAction={handleNotificationClick}
                   inviteState={inviteState}
                   inviteLoading={loadingInvite?.id === n.id ? loadingInvite.action : null}
