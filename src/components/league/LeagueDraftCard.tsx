@@ -89,8 +89,12 @@ export const LeagueDraftCard: React.FC<LeagueDraftCardProps> = ({
 
   const title = headline ?? themeTitle(entry, specInfo);
 
+  // Placement (1st/2nd/etc.) only makes sense once the draft is finished —
+  // for an in-progress draft, everyone still has 0 picks scored, so the
+  // rank computed from scores is meaningless (e.g. "1st place" just from
+  // alphabetical tiebreaking) and shouldn't be shown.
   const showPlacement =
-    !isScheduled && placementRank != null && placementRank > 0;
+    !isScheduled && isComplete && placementRank != null && placementRank > 0;
   const showPointsEarned =
     showPlacement && isComplete && leaguePointsEarned != null && leaguePointsEarned > 0;
 
