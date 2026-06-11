@@ -544,12 +544,43 @@ export const usePendingLeagueInvites = () => {
 
   const fetchInvites = useCallback(async () => {
     if (!user) { setLoading(false); return; }
+
+    // Embed the league name (valid FK: league_invites.league_id -> leagues.id),
+    // but resolve the inviter's profile separately. There is no FK from
+    // league_invites.invited_by -> profiles, so an embedded
+    // `inviter:profiles!...` join has no relationship to hint at and
+    // PostgREST rejects the whole query with a 400 — which silently left
+    // `invites` empty (no pending-invite UI anywhere) without an error toast.
     const { data, error } = await supabase
       .from('league_invites')
-      .select('*, league:leagues(name), inviter:profiles!league_invites_invited_by_fkey(name)')
+      .select('*, league:leagues(name)')
       .eq('invited_user_id', user.id)
       .eq('status', 'pending');
-    if (!error && data) setInvites(data as unknown as LeagueInvite[]);
+
+    if (error || !data) { setLoading(false); return; }
+
+    const inviterIds = [...new Set(
+      data.map((inv: any) => inv.invited_by as string | null).filter((id): id is string => !!id)
+    )];
+    let inviterMap: Record<string, { name: string | null }> = {};
+    if (inviterIds.length > 0) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .in('id', inviterIds);
+      if (profileData) {
+        inviterMap = Object.fromEntries(
+          (profileData as any[]).map((p) => [p.id, { name: p.name }])
+        );
+      }
+    }
+
+    const merged = data.map((inv: any) => ({
+      ...inv,
+      inviter: inviterMap[inv.invited_by] ?? null,
+    }));
+
+    setInvites(merged as unknown as LeagueInvite[]);
     setLoading(false);
   }, [user]);
 
