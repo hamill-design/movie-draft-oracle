@@ -1380,7 +1380,9 @@ export const MultiplayerDraftInterface = ({
                 gap: '8px', 
                 display: 'flex'
               }}>
-                {getParticipantsSortedByCreatedAt.map(participant => {
+                {getParticipantsSortedByCreatedAt
+                  .filter(participant => participant.status !== 'invited')
+                  .map(participant => {
                   const pId = participant.participant_id || participant.user_id || participant.guest_participant_id || (participant.is_ai ? participant.id : null);
                   const currentTurnId = draft.current_turn_participant_id || draft.current_turn_user_id;
                   const isCurrentTurn = pId && currentTurnId && String(pId) === String(currentTurnId);
