@@ -20,6 +20,9 @@ export interface Draft {
   role?: 'host' | 'guest';
   /** For multiplayer drafts, derived from draft_participants. */
   participant_count?: number;
+  /** Set when draft is linked via league_drafts */
+  league_id?: string | null;
+  league_name?: string | null;
 }
 
 export interface DraftPick {
@@ -135,6 +138,36 @@ export const useDrafts = () => {
         const bTs = b.created_at ? new Date(b.created_at).getTime() : 0;
         return bTs - aTs;
       });
+
+      const draftIds = merged.map(d => d.id);
+      if (draftIds.length > 0) {
+        const { data: leagueLinks, error: leagueLinksError } = await supabase
+          .from('league_drafts')
+          .select('draft_id, league_id, added_at, leagues(name)')
+          .in('draft_id', draftIds)
+          .not('draft_id', 'is', null)
+          .order('added_at', { ascending: false });
+
+        if (leagueLinksError) throw leagueLinksError;
+
+        const leagueByDraftId = new Map<string, { league_id: string; league_name: string }>();
+        for (const row of leagueLinks || []) {
+          if (!row.draft_id || leagueByDraftId.has(row.draft_id)) continue;
+          const league = row.leagues as { name: string } | null;
+          leagueByDraftId.set(row.draft_id, {
+            league_id: row.league_id,
+            league_name: league?.name ?? 'League',
+          });
+        }
+
+        for (const d of merged) {
+          const link = leagueByDraftId.get(d.id);
+          if (link) {
+            d.league_id = link.league_id;
+            d.league_name = link.league_name;
+          }
+        }
+      }
 
       setDrafts(merged);
     } catch (err) {

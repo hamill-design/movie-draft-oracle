@@ -12,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import {
   useLeague, useLeagueMembers, useLeagueStandings, useLeagueSeasonStandings,
-  useLeagueDrafts, useLeagueSeasons, useLeagueActions,
+  useLeagueDrafts, useLeagueSeasons, useLeagueActions, usePendingLeagueInvites,
   type LeagueStanding, type LeagueDraftEntry,
 } from '@/hooks/useLeagues';
 import LeagueStandingsChart from '@/components/league/LeagueStandingsChart';
@@ -31,7 +31,7 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   buildLeagueDraftMetrics,
   draftPlacementRank,
-  computeLeagueRankDelta,
+  draftLeaguePointsByUserId,
   type LeagueDraftMetricPack,
   type DraftParticipantRow,
 } from '@/lib/leagueDraftMetrics';
@@ -193,11 +193,19 @@ const LeaguePage = () => {
   const { members } = useLeagueMembers(leagueId);
   const { seasons, activeSeason } = useLeagueSeasons(leagueId);
   const { drafts, loading: draftsLoading } = useLeagueDrafts(leagueId);
-  const { removeScheduledDraft } = useLeagueActions();
+  const { removeScheduledDraft, acceptInvite, declineInvite } = useLeagueActions();
+  const { invites: pendingInvites, loading: invitesLoading } = usePendingLeagueInvites();
 
   const [mainTab, setMainTab] = useState<MainTab>('standings');
   const [selectedSeasonId, setSelectedSeasonId] = useState<string>('all-time');
   const [showNewDraftFlow, setShowNewDraftFlow] = useState(false);
+
+  /** Pending invite for this league, if the current user hasn't joined yet */
+  const myInvite = useMemo(
+    () => pendingInvites.find(inv => inv.league_id === leagueId) ?? null,
+    [pendingInvites, leagueId],
+  );
+  const [inviteActionLoading, setInviteActionLoading] = useState<'accept' | 'decline' | null>(null);
 
   // ── Scheduled draft detail modal ──────────────────────────────────────────
   const [detailModalEntry, setDetailModalEntry] = useState<LeagueDraftEntry | null>(null);
@@ -427,7 +435,33 @@ const LeaguePage = () => {
     }
   }, [entryToDelete, deleting, removeScheduledDraft, toast]);
 
-  if (leagueLoading) {
+  const handleAcceptInvite = useCallback(async () => {
+    if (!myInvite || inviteActionLoading) return;
+    setInviteActionLoading('accept');
+    const acceptedLeagueId = await acceptInvite(myInvite.id);
+    if (acceptedLeagueId) {
+      // Reload so every membership-gated query (members, drafts, standings,
+      // message board, etc.) re-fetches with the user's new access.
+      window.location.reload();
+      return;
+    }
+    setInviteActionLoading(null);
+    toast({ title: 'Could not accept invite', description: 'Something went wrong. Please try again.', variant: 'destructive' });
+  }, [myInvite, inviteActionLoading, acceptInvite, toast]);
+
+  const handleDeclineInvite = useCallback(async () => {
+    if (!myInvite || inviteActionLoading) return;
+    setInviteActionLoading('decline');
+    const ok = await declineInvite(myInvite.id);
+    setInviteActionLoading(null);
+    if (ok) {
+      navigate('/profile');
+    } else {
+      toast({ title: 'Could not decline invite', description: 'Something went wrong. Please try again.', variant: 'destructive' });
+    }
+  }, [myInvite, inviteActionLoading, declineInvite, navigate, toast]);
+
+  if (leagueLoading || invitesLoading) {
     return (
       <div
         className="flex min-h-screen items-center justify-center font-brockmann"
@@ -447,6 +481,64 @@ const LeaguePage = () => {
         <p className="m-0 text-sm text-greyscale-blue-200">League not found.</p>
         <Button variant="outline" onClick={() => navigate('/profile')}>Back to profile</Button>
       </div>
+    );
+  }
+
+  // ── Invite preview: the user has a pending invite to this league but
+  // hasn't joined yet. Show Accept/Decline instead of the full dashboard
+  // (most of which would be empty/inaccessible until they're a member).
+  const isMember = members.some(m => m.user_id === user?.id);
+  if (myInvite && !isMember) {
+    return (
+      <>
+        <Helmet>
+          <title>{league.name} — Movie Drafter</title>
+          <meta name="robots" content="noindex" />
+        </Helmet>
+        <div
+          className="flex min-h-screen flex-col items-center justify-center gap-6 p-4 font-brockmann"
+          style={{ background: MOVIE_DRAFTER_PURPLE_SHELL }}
+        >
+          <div
+            className="flex w-full max-w-[420px] flex-col items-center gap-4 rounded-[8px] bg-greyscale-purp-900 p-6 text-center"
+            style={{ boxShadow: '0px 0px 6px #3B0394', borderLeft: '3px solid #7142FF' }}
+          >
+            <p className="m-0 font-brockmann text-xs font-semibold uppercase tracking-[0.2em] text-brand-primary">
+              League invite
+            </p>
+            <h1 className="m-0 font-brockmann text-xl font-bold leading-7 tracking-[0.8px] text-greyscale-blue-100">
+              {league.name}
+            </h1>
+            <p className="m-0 font-brockmann text-sm text-greyscale-blue-300">
+              {myInvite.inviter?.name ?? 'Someone'} invited you to join this league.
+            </p>
+            <div className="flex w-full flex-wrap justify-center gap-3 pt-2">
+              <Button
+                className="bg-brand-primary text-greyscale-blue-100 hover:bg-purple-300 font-brockmann"
+                disabled={inviteActionLoading !== null}
+                onClick={handleAcceptInvite}
+              >
+                {inviteActionLoading === 'accept' ? 'Joining…' : 'Accept invite'}
+              </Button>
+              <Button
+                variant="outline"
+                className="border-greyscale-purp-500 text-greyscale-blue-300 hover:border-greyscale-blue-300 hover:bg-transparent hover:text-greyscale-blue-100 font-brockmann"
+                disabled={inviteActionLoading !== null}
+                onClick={handleDeclineInvite}
+              >
+                {inviteActionLoading === 'decline' ? 'Declining…' : 'Decline'}
+              </Button>
+            </div>
+            <Button
+              variant="ghost"
+              className="font-brockmann text-greyscale-blue-300 hover:text-greyscale-blue-100"
+              onClick={() => navigate('/profile')}
+            >
+              Back to profile
+            </Button>
+          </div>
+        </div>
+      </>
     );
   }
 
@@ -576,9 +668,14 @@ const LeaguePage = () => {
               ) : (
                 <>
                   <SeasonStandingRows standings={standings} currentUserId={user?.id} />
-                  {standings.length > 0 && (
+                  {standings.length > 0 && completed.length > 0 && (
                     <div className="w-full border-t border-white/10 pt-6">
-                      <LeagueStandingsChart standings={standings} />
+                      <LeagueStandingsChart
+                        standings={standings}
+                        completedDrafts={completed}
+                        draftPickData={draftPickData}
+                        specDraftData={specDraftData}
+                      />
                     </div>
                   )}
                 </>
@@ -694,7 +791,7 @@ const LeaguePage = () => {
                           // start_league_scheduled_draft always keeps these two in sync.
                           isMultiplayer={entry.draft ? !!entry.draft.is_multiplayer : !!entry.is_multiplayer}
                           placementRank={placement}
-                          rankDelta={null}
+                          leaguePointsEarned={null}
                           viewLabel="Continue Draft"
                           onView={() => handleViewLeagueDraft(entry)}
                           onDelete={isAdmin ? () => setEntryToDelete(entry) : undefined}
@@ -717,9 +814,9 @@ const LeaguePage = () => {
                         user && m
                           ? draftPlacementRank(user.id, participants, id, m.byParticipantName)
                           : null;
-                      const rankDelta =
-                        user && entry.draft?.is_complete && m && standings.length > 0
-                          ? computeLeagueRankDelta(standings, m.contributionByUserId, user.id)
+                      const leaguePointsEarned =
+                        user && m
+                          ? draftLeaguePointsByUserId(id, participants, m.byParticipantName)[user.id] ?? null
                           : null;
                       return (
                         <LeagueDraftCard
@@ -735,7 +832,7 @@ const LeaguePage = () => {
                           // when the secondary drafts-table join didn't return a row.
                           isMultiplayer={entry.draft ? !!entry.draft.is_multiplayer : !!entry.is_multiplayer}
                           placementRank={placement}
-                          rankDelta={rankDelta}
+                          leaguePointsEarned={leaguePointsEarned}
                           viewLabel="View Draft"
                           onView={() => handleViewLeagueDraft(entry)}
                           onDelete={isAdmin ? () => setEntryToDelete(entry) : undefined}

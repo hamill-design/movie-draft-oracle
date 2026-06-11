@@ -9,6 +9,9 @@ import { syncMarketingAudience } from '@/lib/marketingAudienceSync';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import { ArrowLeft, Calendar, Users, Trophy, Trash2, User, Edit3, Save, X, Camera, Plus, ChevronRight } from 'lucide-react';
 import { uploadAvatarAndUpdateProfile, validateAvatarFile, getInitials } from '@/utils/avatarUpload';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +25,13 @@ import { Settings } from 'lucide-react';
 import BannerAd from '@/components/ads/BannerAd';
 import InlineAd from '@/components/ads/InlineAd';
 import { DraftActorPortrait } from '@/components/DraftActorPortrait';
-import { getCleanActorName } from '@/lib/utils';
+import { TrophyIcon } from '@/components/icons';
+import { getCleanActorName, formatCategoryDisplayName } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -50,6 +59,7 @@ const Profile = () => {
   const [newName, setNewName] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [draftToDelete, setDraftToDelete] = useState<string | null>(null);
+  const [draftLeagueFilter, setDraftLeagueFilter] = useState<string>('all');
   const [specDraftData, setSpecDraftData] = useState<Map<string, { name: string; photo_url: string | null }>>(new Map());
   const [marketingPrefUpdating, setMarketingPrefUpdating] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -145,6 +155,47 @@ const Profile = () => {
 
     fetchSpecDraftData();
   }, [drafts]);
+
+  const draftFilterOptions = useMemo(() => {
+    if (!drafts.length) return [] as { value: string; label: string; count: number }[];
+
+    const options: { value: string; label: string; count: number }[] = [
+      { value: 'all', label: 'All drafts', count: drafts.length },
+    ];
+
+    const personalCount = drafts.filter(d => !d.league_id).length;
+    if (personalCount > 0) {
+      options.push({ value: 'personal', label: 'Personal', count: personalCount });
+    }
+
+    const leagueMap = new Map<string, { name: string; count: number }>();
+    for (const d of drafts) {
+      if (!d.league_id) continue;
+      const existing = leagueMap.get(d.league_id);
+      if (existing) existing.count += 1;
+      else leagueMap.set(d.league_id, { name: d.league_name ?? 'League', count: 1 });
+    }
+    for (const [id, { name, count }] of leagueMap) {
+      options.push({ value: id, label: name, count });
+    }
+
+    return options;
+  }, [drafts]);
+
+  const showDraftLeagueFilter = draftFilterOptions.length > 1;
+
+  const filteredDrafts = useMemo(() => {
+    if (draftLeagueFilter === 'all') return drafts;
+    if (draftLeagueFilter === 'personal') return drafts.filter(d => !d.league_id);
+    return drafts.filter(d => d.league_id === draftLeagueFilter);
+  }, [drafts, draftLeagueFilter]);
+
+  useEffect(() => {
+    if (draftLeagueFilter === 'all' || draftLeagueFilter === 'personal') return;
+    if (!drafts.some(d => d.league_id === draftLeagueFilter)) {
+      setDraftLeagueFilter('all');
+    }
+  }, [drafts, draftLeagueFilter]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -328,10 +379,10 @@ const Profile = () => {
 
   // Memoize draft list to prevent unnecessary re-renders (must be before any early returns to satisfy Rules of Hooks)
   const draftList = useMemo(() => {
-    return drafts.map((draft, index) => (
+    return filteredDrafts.map((draft, index) => (
       <div key={draft.id} className="w-full">
         {/* New Draft Card Design */}
-        <div className="w-full p-6 bg-greyscale-purp-850 rounded-[8px] flex justify-between items-center flex-wrap gap-4" style={{boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', outline: '1px solid #49474B', outlineOffset: '-1px'}}>
+        <div className="w-full p-6 bg-greyscale-purp-850 rounded-[8px] flex flex-wrap justify-between items-start gap-4" style={{boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', outline: '1px solid #49474B', outlineOffset: '-1px'}}>
           {/* Left Container */}
           <div className="flex-1 min-w-[240px] flex-col justify-start items-start gap-4 inline-flex">
             {/* Header with Image and Info */}
@@ -494,19 +545,40 @@ const Profile = () => {
               </div>
               
               {/* Categories */}
-              <div className="justify-start items-center gap-1 flex">
-                <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
-                  <Trophy size={16} className="text-greyscale-blue-300" />
+              {(draft.categories?.length ?? 0) > 0 ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex cursor-default items-center gap-1">
+                      <div className="inline-flex h-4 w-4 flex-col items-center justify-center gap-2.5 p-0.5">
+                        <Trophy size={16} className="text-greyscale-blue-300" />
+                      </div>
+                      <span className="text-greyscale-blue-300 text-sm font-brockmann font-medium leading-5">
+                        {draft.categories.length} categories
+                      </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    className="max-w-xs border-[#49474B] bg-[#1D1D1F] text-greyscale-blue-100"
+                  >
+                    {draft.categories.map(formatCategoryDisplayName).join(', ')}
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <div className="inline-flex h-4 w-4 flex-col items-center justify-center gap-2.5 p-0.5">
+                    <Trophy size={16} className="text-greyscale-blue-300" />
+                  </div>
+                  <span className="text-greyscale-blue-300 text-sm font-brockmann font-medium leading-5">
+                    0 categories
+                  </span>
                 </div>
-                <span className="text-greyscale-blue-300 text-sm font-brockmann font-medium leading-5">
-                  {draft.categories?.length ?? 0} categories
-                </span>
-              </div>
+              )}
             </div>
           </div>
           
           {/* Right Container - Action Buttons */}
-          <div className="flex-1 max-w-[360px] min-w-[240px] h-[90px] flex-col justify-between items-end inline-flex">
+          <div className="flex w-full min-w-0 flex-col items-stretch gap-2 sm:ml-auto sm:w-auto sm:min-w-[240px] sm:max-w-[360px] sm:items-end">
             {/* Continue/View Draft Button */}
             <Button 
               onClick={() => handleViewDraft(draft)}
@@ -516,9 +588,21 @@ const Profile = () => {
             >
               {draft.is_complete ? 'View Draft' : 'Continue Draft'}
             </Button>
+
+            {draft.league_id && draft.league_name && (
+              <button
+                type="button"
+                onClick={() => navigate(`/league/${draft.league_id}`)}
+                className="inline-flex w-fit max-w-full items-center gap-2 self-end rounded-[2px] px-3 py-2 text-sm font-medium leading-5 text-[#907AFF] transition-colors hover:text-purple-200 font-brockmann"
+              >
+                <TrophyIcon className="size-4 shrink-0" aria-hidden />
+                <span className="truncate">{draft.league_name}</span>
+                <ChevronRight className="size-4 shrink-0" aria-hidden />
+              </button>
+            )}
             
-            {/* Delete Button */}
-            {draft.role !== 'guest' && (
+            {/* Delete Button — league drafts are removed from the league dashboard only */}
+            {draft.role !== 'guest' && !draft.league_id && (
               <button 
                 onClick={() => openDeleteDialog(draft.id)}
                 className="px-3 py-2 rounded-[2px] justify-center items-center gap-2 inline-flex transition-colors"
@@ -536,7 +620,7 @@ const Profile = () => {
         {/* {index > 0 && (index + 1) % 3 === 0 && <InlineAd />} */}
       </div>
     ));
-  }, [drafts, handleViewDraft, openDeleteDialog, specDraftData]);
+  }, [filteredDrafts, handleViewDraft, openDeleteDialog, specDraftData, navigate]);
 
   // Show loading only for auth, allow profile and drafts to load independently
   if (loading) {
@@ -866,10 +950,25 @@ const Profile = () => {
 
         {/* Saved Drafts */}
         <div className="w-full h-full p-6 bg-greyscale-purp-900 rounded-[8px] flex-col justify-start items-start gap-6 inline-flex" style={{boxShadow: '0px 0px 6px #3B0394'}}>
-          <div className="flex-col justify-start items-start flex">
+          <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="justify-center flex flex-col text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px] m-0">
               Saved Drafts
             </h2>
+
+            {showDraftLeagueFilter && !draftsLoading && (
+              <Select value={draftLeagueFilter} onValueChange={setDraftLeagueFilter}>
+                <SelectTrigger className="h-auto w-full rounded-[2px] border-0 bg-[#1D1D1F] px-4 py-3 text-sm font-brockmann text-[#BDC3C2] outline outline-1 -outline-offset-1 outline-[#BDC3C2] focus:ring-0 focus:ring-offset-0 sm:w-[min(100%,280px)]">
+                  <SelectValue placeholder="Filter by league" />
+                </SelectTrigger>
+                <SelectContent>
+                  {draftFilterOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value} className="font-brockmann">
+                      {opt.label} ({opt.count})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div className="w-full">
             {draftsLoading ? (
@@ -888,6 +987,10 @@ const Profile = () => {
             ) : drafts.length === 0 ? (
               <p className="text-greyscale-blue-300 text-center py-8 font-brockmann">
                 No saved drafts yet. Start a new draft to see it here!
+              </p>
+            ) : filteredDrafts.length === 0 ? (
+              <p className="text-greyscale-blue-300 text-center py-8 font-brockmann">
+                No drafts match this filter.
               </p>
             ) : (
               <div className="flex flex-col gap-4 w-full">

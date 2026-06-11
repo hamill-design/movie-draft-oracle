@@ -1,7 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Film, Users, CalendarDays } from 'lucide-react';
 import { useNotifications, AppNotification } from '@/hooks/useNotifications';
+import { useLeagueActions, usePendingLeagueInvites, type LeagueInvite } from '@/hooks/useLeagues';
+import { useToast } from '@/hooks/use-toast';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -42,19 +44,35 @@ const TYPE_CONFIG = {
   },
 };
 
+type InviteActionState = 'pending' | 'accepted' | 'declined' | undefined;
+
 interface NotificationItemProps {
   notification: AppNotification;
   onAction: (notification: AppNotification) => void;
+  inviteState?: InviteActionState;
+  inviteLoading?: 'accept' | 'decline' | null;
+  onAcceptInvite?: (e: React.MouseEvent) => void;
+  onDeclineInvite?: (e: React.MouseEvent) => void;
 }
 
-const NotificationItem = ({ notification, onAction }: NotificationItemProps) => {
+const NotificationItem = ({
+  notification, onAction, inviteState, inviteLoading, onAcceptInvite, onDeclineInvite,
+}: NotificationItemProps) => {
   const cfg = TYPE_CONFIG[notification.type];
   const soon = notification.type === 'upcoming_draft' && isStartingSoon(notification.metadata);
+  const showInviteActions = inviteState === 'pending';
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onAction(notification)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onAction(notification);
+        }
+      }}
       style={{
         display: 'flex',
         alignItems: 'flex-start',
@@ -69,10 +87,10 @@ const NotificationItem = ({ notification, onAction }: NotificationItemProps) => 
         transition: 'background 0.15s',
       }}
       onMouseEnter={e => {
-        (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.05)';
+        (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.05)';
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLButtonElement).style.background =
+        (e.currentTarget as HTMLDivElement).style.background =
           notification.is_read ? 'transparent' : 'rgba(104, 10, 255, 0.1)';
       }}
     >
@@ -137,6 +155,71 @@ const NotificationItem = ({ notification, onAction }: NotificationItemProps) => 
         }}>
           {timeAgo(notification.created_at)}
         </div>
+
+        {/* League invite quick actions */}
+        {showInviteActions && (
+          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+            <button
+              type="button"
+              disabled={!!inviteLoading}
+              onClick={onAcceptInvite}
+              style={{
+                padding: '6px 14px',
+                fontSize: 12,
+                fontWeight: 600,
+                borderRadius: 6,
+                border: 'none',
+                background: '#7142FF',
+                color: '#FCFFFF',
+                cursor: inviteLoading ? 'default' : 'pointer',
+                opacity: inviteLoading ? 0.6 : 1,
+                transition: 'background 0.15s, opacity 0.15s',
+              }}
+              onMouseEnter={e => { if (!inviteLoading) (e.currentTarget as HTMLButtonElement).style.background = '#8257FF'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = '#7142FF'; }}
+            >
+              {inviteLoading === 'accept' ? 'Accepting…' : 'Accept'}
+            </button>
+            <button
+              type="button"
+              disabled={!!inviteLoading}
+              onClick={onDeclineInvite}
+              style={{
+                padding: '6px 14px',
+                fontSize: 12,
+                fontWeight: 600,
+                borderRadius: 6,
+                border: '1px solid rgba(255,255,255,0.15)',
+                background: 'transparent',
+                color: 'rgba(252,255,255,0.7)',
+                cursor: inviteLoading ? 'default' : 'pointer',
+                opacity: inviteLoading ? 0.6 : 1,
+                transition: 'background 0.15s, color 0.15s, opacity 0.15s',
+              }}
+              onMouseEnter={e => {
+                if (inviteLoading) return;
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.3)';
+                (e.currentTarget as HTMLButtonElement).style.color = '#FCFFFF';
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.15)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'rgba(252,255,255,0.7)';
+              }}
+            >
+              {inviteLoading === 'decline' ? 'Declining…' : 'Decline'}
+            </button>
+          </div>
+        )}
+        {inviteState === 'accepted' && (
+          <div style={{ marginTop: 6, fontSize: 12, fontWeight: 600, color: '#9ee6a8' }}>
+            ✓ Joined
+          </div>
+        )}
+        {inviteState === 'declined' && (
+          <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(252,255,255,0.4)' }}>
+            Invite declined
+          </div>
+        )}
       </div>
 
       {/* Unread dot */}
@@ -150,7 +233,7 @@ const NotificationItem = ({ notification, onAction }: NotificationItemProps) => 
           marginTop: 6,
         }} />
       )}
-    </button>
+    </div>
   );
 };
 
@@ -159,8 +242,25 @@ const NotificationItem = ({ notification, onAction }: NotificationItemProps) => 
 export const NotificationBell = () => {
   const navigate = useNavigate();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { acceptInvite, declineInvite } = useLeagueActions();
+  const { invites: pendingInvites, refetch: refetchPendingInvites } = usePendingLeagueInvites();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Track per-notification accept/decline outcomes so the buttons can be
+  // swapped for a confirmation immediately, without waiting on a refetch.
+  const [inviteResults, setInviteResults] = useState<Record<string, 'accepted' | 'declined'>>({});
+  const [loadingInvite, setLoadingInvite] = useState<{ id: string; action: 'accept' | 'decline' } | null>(null);
+
+  // Pending league invites, keyed by league_id, so each league_invite
+  // notification can find "its" invite (notifications store league_id as
+  // reference_id, not the invite row's own id).
+  const inviteByLeagueId = useMemo(() => {
+    const map = new Map<string, LeagueInvite>();
+    for (const inv of pendingInvites) map.set(inv.league_id, inv);
+    return map;
+  }, [pendingInvites]);
 
   // Close on outside click
   useEffect(() => {
@@ -191,6 +291,41 @@ export const NotificationBell = () => {
     //   • If draft_id is set → "Join Draft" button → /draft/:id (the waiting room)
     //   • If not yet opened → admin sees "Open Draft Room", members see details
     if (notification.link) navigate(notification.link);
+  };
+
+  const handleAcceptInvite = async (
+    e: React.MouseEvent, notification: AppNotification, invite: LeagueInvite,
+  ) => {
+    e.stopPropagation();
+    if (loadingInvite) return;
+    setLoadingInvite({ id: notification.id, action: 'accept' });
+    const acceptedLeagueId = await acceptInvite(invite.id);
+    setLoadingInvite(null);
+    if (acceptedLeagueId) {
+      setInviteResults(prev => ({ ...prev, [notification.id]: 'accepted' }));
+      if (!notification.is_read) markAsRead(notification.id);
+      refetchPendingInvites();
+      toast({ title: `Joined ${invite.league?.name ?? 'the league'}!` });
+    } else {
+      toast({ title: 'Could not accept invite', description: 'Please try again.', variant: 'destructive' });
+    }
+  };
+
+  const handleDeclineInvite = async (
+    e: React.MouseEvent, notification: AppNotification, invite: LeagueInvite,
+  ) => {
+    e.stopPropagation();
+    if (loadingInvite) return;
+    setLoadingInvite({ id: notification.id, action: 'decline' });
+    const ok = await declineInvite(invite.id);
+    setLoadingInvite(null);
+    if (ok) {
+      setInviteResults(prev => ({ ...prev, [notification.id]: 'declined' }));
+      if (!notification.is_read) markAsRead(notification.id);
+      refetchPendingInvites();
+    } else {
+      toast({ title: 'Could not decline invite', description: 'Please try again.', variant: 'destructive' });
+    }
   };
 
   return (
@@ -322,13 +457,25 @@ export const NotificationBell = () => {
               No notifications
             </div>
           ) : (
-            notifications.map(n => (
-              <NotificationItem
-                key={n.id}
-                notification={n}
-                onAction={handleNotificationClick}
-              />
-            ))
+            notifications.map(n => {
+              const invite = n.type === 'league_invite' && n.reference_id
+                ? inviteByLeagueId.get(n.reference_id)
+                : undefined;
+              const inviteState: InviteActionState =
+                inviteResults[n.id] ?? (invite ? 'pending' : undefined);
+
+              return (
+                <NotificationItem
+                  key={n.id}
+                  notification={n}
+                  onAction={handleNotificationClick}
+                  inviteState={inviteState}
+                  inviteLoading={loadingInvite?.id === n.id ? loadingInvite.action : null}
+                  onAcceptInvite={invite ? (e) => handleAcceptInvite(e, n, invite) : undefined}
+                  onDeclineInvite={invite ? (e) => handleDeclineInvite(e, n, invite) : undefined}
+                />
+              );
+            })
           )}
         </div>
       )}

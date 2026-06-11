@@ -60,6 +60,37 @@ export function draftPlacementRank(
   return idx >= 0 ? idx + 1 : null;
 }
 
+/** F1-style league points for a draft finish (matches DB standings view). */
+export function f1PositionPoints(finishRank: number): number {
+  if (finishRank === 1) return 10;
+  if (finishRank === 2) return 7;
+  if (finishRank === 3) return 5;
+  if (finishRank === 4) return 3;
+  if (finishRank === 5) return 2;
+  return 1;
+}
+
+/** League points earned per authenticated member for one completed draft. */
+export function draftLeaguePointsByUserId(
+  draftId: string,
+  participants: DraftParticipantRow[],
+  byParticipantName: Record<string, number>,
+): Record<string, number> {
+  const sorted = Object.entries(byParticipantName).sort(
+    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+  );
+  const rankByName = new Map(sorted.map(([name], index) => [name, index + 1]));
+  const points: Record<string, number> = {};
+
+  for (const p of participants) {
+    if (p.draft_id !== draftId || !p.user_id) continue;
+    const rank = rankByName.get(p.participant_name);
+    if (rank) points[p.user_id] = f1PositionPoints(rank);
+  }
+
+  return points;
+}
+
 export function placementOrdinalLabel(rank: number): string {
   if (rank === 1) return 'First Place';
   if (rank === 2) return 'Second Place';

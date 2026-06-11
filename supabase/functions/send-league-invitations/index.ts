@@ -176,7 +176,14 @@ const handler = async (req: Request): Promise<Response> => {
     if (league.admin_id !== user.id) throw new Error("Only the league admin can send invites");
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const validEmails = emails.filter((e) => emailRegex.test(e));
+    const seenEmails = new Set<string>();
+    const validEmails = emails.filter((e) => {
+      if (!emailRegex.test(e)) return false;
+      const key = e.trim().toLowerCase();
+      if (seenEmails.has(key)) return false;
+      seenEmails.add(key);
+      return true;
+    });
 
     const originRaw =
       req.headers.get("origin") ||
@@ -190,31 +197,77 @@ const handler = async (req: Request): Promise<Response> => {
     const results: { email: string; status: string; error?: string }[] = [];
 
     for (const email of validEmails) {
+      // Resolve this email to an existing registered user (if any) so the
+      // invite shows up in their in-app "Pending Invites" list and they get
+      // a bell notification — not just the Resend email.
+      let invitedUserId: string | null = null;
+      const { data: matchedProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("email", email)
+        .maybeSingle();
+      if (matchedProfile?.id && matchedProfile.id !== user.id) {
+        invitedUserId = matchedProfile.id;
+      }
+
+      // Already a member of this league? Re-"inviting" them would be
+      // confusing (they're already in) — skip the invite/notification/email
+      // entirely for this address.
+      if (invitedUserId) {
+        const { data: existingMember } = await supabase
+          .from("league_members")
+          .select("user_id")
+          .eq("league_id", leagueId)
+          .eq("user_id", invitedUserId)
+          .maybeSingle();
+        if (existingMember) {
+          results.push({ email, status: "already_member" });
+          continue;
+        }
+      }
+
       // Create or reuse invite record
       const { data: existing } = await supabase
         .from("league_invites")
-        .select("id, token, status")
+        .select("id, token, status, invited_user_id")
         .eq("league_id", leagueId)
         .eq("invited_email", email)
         .maybeSingle();
 
       let token: string;
+      let isReinvite = false;
 
-      if (existing && existing.status === "pending") {
+      if (existing) {
+        isReinvite = true;
         token = existing.token;
+        // Reset to pending and refresh the 7-day expiry — a "resend" should
+        // act like a fresh invite, even if the previous one was declined,
+        // expired, or already had invited_user_id resolved.
+        const { error: updateError } = await supabase
+          .from("league_invites")
+          .update({
+            invited_by: user.id,
+            invited_user_id: invitedUserId ?? existing.invited_user_id,
+            status: "pending",
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          })
+          .eq("id", existing.id);
+
+        if (updateError) {
+          results.push({ email, status: "failed", error: updateError.message });
+          continue;
+        }
       } else {
         const { data: newInvite, error: insertError } = await supabase
           .from("league_invites")
-          .upsert(
-            {
-              league_id: leagueId,
-              invited_by: user.id,
-              invited_email: email,
-              status: "pending",
-              expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            },
-            { onConflict: "league_id,invited_email" }
-          )
+          .insert({
+            league_id: leagueId,
+            invited_by: user.id,
+            invited_email: email,
+            invited_user_id: invitedUserId,
+            status: "pending",
+            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          })
           .select("token")
           .single();
 
@@ -223,6 +276,21 @@ const handler = async (req: Request): Promise<Response> => {
           continue;
         }
         token = newInvite.token;
+      }
+
+      // The AFTER INSERT trigger (trg_notify_league_invite) only creates a
+      // notification for brand-new rows, so a resend (existing row updated
+      // above) needs its own notification — this is what makes "resend"
+      // actually re-notify the recipient in their bell.
+      if (isReinvite && invitedUserId) {
+        await supabase.from("notifications").insert({
+          user_id: invitedUserId,
+          type: "league_invite",
+          title: "You've been invited to a league",
+          body: `${adminName} invited you to ${leagueName}`,
+          link: `/league/${leagueId}`,
+          reference_id: leagueId,
+        });
       }
 
       const joinLink = `${origin}/league/join?token=${token}`;
@@ -263,6 +331,7 @@ const handler = async (req: Request): Promise<Response> => {
           sent: results.filter((r) => r.status === "sent").length,
           failed: results.filter((r) => r.status === "failed").length,
           simulated: results.filter((r) => r.status === "simulated").length,
+          alreadyMember: results.filter((r) => r.status === "already_member").length,
         },
       }),
       { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }

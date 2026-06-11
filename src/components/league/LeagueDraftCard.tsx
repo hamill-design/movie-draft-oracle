@@ -34,8 +34,8 @@ export type LeagueDraftCardProps = {
   onView: () => void;
   /** 1-based; null = hide placement row (scheduled / not a participant) */
   placementRank?: number | null;
-  /** Positive = moved up in league standings */
-  rankDelta?: number | null;
+  /** F1 league points earned in this draft (e.g. 10 for 1st place) */
+  leaguePointsEarned?: number | null;
   viewLabel: string;
   /** Scheduled rows only: when false, primary action is disabled (non-admins). Defaults to true. */
   canEditSchedule?: boolean;
@@ -67,7 +67,7 @@ export const LeagueDraftCard: React.FC<LeagueDraftCardProps> = ({
   isMultiplayer,
   onView,
   placementRank,
-  rankDelta,
+  leaguePointsEarned,
   viewLabel,
   canEditSchedule = true,
   viewDisabled = false,
@@ -91,14 +91,12 @@ export const LeagueDraftCard: React.FC<LeagueDraftCardProps> = ({
 
   const showPlacement =
     !isScheduled && placementRank != null && placementRank > 0;
-  const showDelta =
-    showPlacement && isComplete && rankDelta != null && rankDelta !== 0;
+  const showPointsEarned =
+    showPlacement && isComplete && leaguePointsEarned != null && leaguePointsEarned > 0;
 
   // Show right column if: non-scheduled (always), admin on scheduled, or non-admin with onDetails handler
   const showSchedulePrimary = !isScheduled || canEditSchedule || !!onDetails;
   const showRightColumn = showPlacement || showSchedulePrimary;
-
-  const deltaText = rankDelta == null || rankDelta === 0 ? null : rankDelta > 0 ? `+${rankDelta}` : `${rankDelta}`;
 
   return (
     <div className={cardShell} style={{ boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.05)', outline: '1px solid #49474B', outlineOffset: '-1px' }}>
@@ -239,15 +237,10 @@ export const LeagueDraftCard: React.FC<LeagueDraftCardProps> = ({
                 {placementOrdinalLabel(placementRank)}
               </div>
             </div>
-            {showDelta && deltaText && (
+            {showPointsEarned && (
               <div className="flex flex-col items-end justify-start">
-                <div
-                  className={cn(
-                    'text-right text-[32px] font-bold leading-9 tracking-wide font-brockmann',
-                    rankDelta != null && rankDelta > 0 ? 'text-[#907AFF]' : 'text-red-400',
-                  )}
-                >
-                  {deltaText}
+                <div className="text-right text-[32px] font-bold leading-9 tracking-wide font-brockmann text-greyscale-blue-100">
+                  +{leaguePointsEarned}
                 </div>
               </div>
             )}

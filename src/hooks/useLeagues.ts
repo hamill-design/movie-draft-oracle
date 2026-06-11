@@ -79,6 +79,7 @@ export interface LeagueDraftEntry {
     theme: string;
     is_complete: boolean;
     created_at: string;
+    updated_at?: string | null;
     user_id: string;
     option?: string;
     is_multiplayer?: boolean | null;
@@ -376,7 +377,7 @@ export const useLeagueDrafts = (leagueId: string | undefined) => {
     if (draftIds.length > 0) {
       const { data: draftData } = await supabase
         .from('drafts')
-        .select('id, title, theme, is_complete, created_at, user_id, option, is_multiplayer, categories')
+        .select('id, title, theme, is_complete, created_at, updated_at, user_id, option, is_multiplayer, categories')
         .in('id', draftIds);
       if (draftData) {
         draftMap = Object.fromEntries((draftData as any[]).map((d) => [d.id, d]));
