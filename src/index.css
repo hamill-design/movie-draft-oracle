@@ -403,4 +403,15 @@ a[href*="spline.design"] {
     opacity: 1;
     cursor: pointer;
   }
+
+  /**
+   * Tiptap placeholder text for the blog content editor's empty state.
+   */
+  .tiptap-editor p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: theme('colors.greyscale-blue.300');
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
 }

@@ -39,6 +39,8 @@ import LeagueSettings from "./pages/LeagueSettings";
 import LeagueJoin from "./pages/LeagueJoin";
 import LeagueDraftLobbyPage from "./pages/LeagueDraftLobbyPage";
 import News from "./pages/News";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 
 function LegacyThemesSlugRedirect() {
   const { slug } = useParams<{ slug: string }>();
@@ -103,6 +105,8 @@ const App = () => (
               <Route path="/league/:leagueId/lobby/:entryId" element={<LeagueDraftLobbyPage />} />
               <Route path="/league/:leagueId" element={<LeaguePage />} />
               <Route path="/news" element={<News />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

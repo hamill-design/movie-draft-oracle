@@ -10,6 +10,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { DraftPick } from '@/hooks/useDrafts';
 import DraftBoard from '@/components/DraftBoard';
 import { getCleanActorName } from '@/lib/utils';
+import { DraftPageHeaderSection } from '@/components/DraftPageHeaderSection';
+import { DraftHeadingTitle } from '@/components/DraftHeadingTitle';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { SITE_ORIGIN, dynamicOgImageUrl, OG_IMAGE_ALT } from '@/config/socialShareMeta';
 import { buildDraftBoardModel, type DraftBoardParticipant } from '@/utils/finalScoresBoardModel';
@@ -297,34 +299,12 @@ const VotePage = () => {
       <div className="min-h-screen text-foreground" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
         <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col gap-8">
           {/* Header – same style as draft interface */}
-          <div className="mb-6">
-            <div className="p-6 rounded-[8px]">
-              <div className="flex flex-col justify-center items-center gap-4 text-center">
-                <p className="text-purple-300 text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px] m-0">
-                  VOTE ON
-                </p>
-                <h1
-                  className="font-chaney font-normal text-center break-words m-0"
-                  style={{
-                    fontSize: '64px',
-                    lineHeight: '64px',
-                    maxWidth: '100%',
-                  }}
-                >
-                  <span className="text-greyscale-blue-100">
-                    {draft.theme === 'spec-draft'
-                      ? (draft.option || '').toUpperCase()
-                      : draft.theme === 'people'
-                        ? getCleanActorName(draft.option ?? '').toUpperCase() + ' '
-                        : (draft.option ?? '').toString() + ' '}
-                  </span>
-                  {draft.theme !== 'spec-draft' && (
-                    <span className="text-purple-300">MOVIES</span>
-                  )}
-                </h1>
-              </div>
-            </div>
-          </div>
+          <DraftPageHeaderSection label="VOTE ON">
+            <DraftHeadingTitle
+              option={draft.option ?? ''}
+              theme={draft.theme}
+            />
+          </DraftPageHeaderSection>
 
           <p className="text-greyscale-blue-300 text-sm font-brockmann text-center -mt-2">
             Completed rosters – vote for who you think won. Scores are hidden until after voting.

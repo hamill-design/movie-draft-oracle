@@ -10,7 +10,22 @@ import { DraftActorPortrait } from '@/components/DraftActorPortrait';
 import { resolveYearDraftIconSrc } from '@/lib/yearDraftIcon';
 import { cn, getCleanActorName } from '@/lib/utils';
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+function useMaxWidth(maxWidth: number) {
+  const query = `(max-width: ${maxWidth}px)`;
+  const [matches, setMatches] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia(query).matches : false,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia(query);
+    const onChange = () => setMatches(media.matches);
+    onChange();
+    media.addEventListener('change', onChange);
+    return () => media.removeEventListener('change', onChange);
+  }, [query]);
+
+  return matches;
+}
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -314,7 +329,9 @@ export const NotificationBell = () => {
   const { invites: pendingInvites, refetch: refetchPendingInvites } = usePendingLeagueInvites();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
+  const isMobile = useMaxWidth(767);
   const containerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [enrichment, setEnrichment] = useState<NotificationEnrichment>({
     drafts: new Map(),
     specPhotos: new Map(),
@@ -412,9 +429,14 @@ export const NotificationBell = () => {
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false);
+      const target = e.target as Node;
+      if (
+        containerRef.current?.contains(target)
+        || panelRef.current?.contains(target)
+      ) {
+        return;
       }
+      setOpen(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
@@ -433,6 +455,12 @@ export const NotificationBell = () => {
     }
     setOpen(false);
     if (!notification.is_read) await markAsRead(notification.id);
+    // draft_invite fires after the user is already in draft_participants — go
+    // straight to the draft room, not the invite-code page (avoids join-draft flicker).
+    if (notification.type === 'draft_invite' && notification.reference_id) {
+      navigate(`/draft/${notification.reference_id}`);
+      return;
+    }
     if (notification.link) navigate(notification.link);
   };
 
@@ -492,12 +520,17 @@ export const NotificationBell = () => {
 
       {open && (
         <div
+          ref={panelRef}
           role="dialog"
           aria-label="Notifications"
-          className="absolute right-0 top-[calc(100%+8px)] z-[100] flex max-h-[420px] w-[340px] flex-col gap-0.5 overflow-y-auto rounded-xl font-brockmann outline outline-2 -outline-offset-2 outline-[#0E0E0F]"
+          className="absolute top-[calc(100%+8px)] z-[100] flex max-h-[420px] w-[340px] flex-col gap-0.5 overflow-y-auto rounded-xl font-brockmann outline outline-2 -outline-offset-2 outline-[#0E0E0F]"
           style={{
             background: '#0E0E0F',
             boxShadow: '0px 8px 32px rgba(0, 0, 0, 0.50)',
+            ...(isMobile
+              ? { left: '-252px' }
+              : { right: '0px' }),
+            maxWidth: isMobile ? 'calc(100vw - 2rem)' : undefined,
           }}
         >
           <div className="flex items-center justify-between bg-[#1D1D1F] px-4 pb-3 pt-3.5">

@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { AlertCircle, Camera } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Session } from '@supabase/supabase-js';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { getPendingDraft, clearPendingDraft } from '@/utils/draftStorage';
@@ -57,11 +58,11 @@ const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
-        
+
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
             setError('Invalid email or password. Please check your credentials.');
@@ -73,24 +74,15 @@ const Auth = () => {
             title: "Welcome back!",
             description: "You've been successfully logged in.",
           });
-          
-          // Wait for session to be available before trying to save draft
-          // The auth state change happens asynchronously, so we need to wait
-          let attempts = 0;
-          const maxAttempts = 15;
-          while (attempts < maxAttempts) {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-              // Session is available, now we can save the draft
-              // We use session.user.id directly, so we don't need to wait for React state
-              await handlePostLoginDraftSave();
-              break;
-            }
-            // Wait a bit before checking again
-            await new Promise(resolve => setTimeout(resolve, 200));
-            attempts++;
+
+          // signInWithPassword already returns the new session, so use it
+          // directly rather than re-checking via getSession() (which can
+          // hang indefinitely if a stale saved session left Supabase's
+          // internal auth lock stuck on mobile).
+          if (data.session) {
+            await handlePostLoginDraftSave(data.session);
           }
-          
+
           // Get return path from URL params or default to home
           const returnTo = searchParams.get('returnTo');
           navigate(returnTo || '/');
@@ -204,18 +196,11 @@ const Auth = () => {
     setIsLogin(true);
   };
 
-  const handlePostLoginDraftSave = async () => {
+  const handlePostLoginDraftSave = async (session: Session) => {
     // Check if we should save a draft (from URL param)
     const shouldSaveDraft = searchParams.get('saveDraft') === 'true';
-    
-    if (!shouldSaveDraft) {
-      return;
-    }
 
-    // Verify user is authenticated
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) {
-      console.warn('User not authenticated yet, skipping draft save');
+    if (!shouldSaveDraft) {
       return;
     }
 

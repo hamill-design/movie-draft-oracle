@@ -17,6 +17,8 @@ import PickConfirmation from '@/components/PickConfirmation';
 import DraftBoard from '@/components/DraftBoard';
 
 import { getCleanActorName } from '@/lib/utils';
+import { DraftPageHeaderSection } from '@/components/DraftPageHeaderSection';
+import { DraftHeadingTitle } from '@/components/DraftHeadingTitle';
 import { supabase } from '@/integrations/supabase/client';
 import { Participant, normalizeParticipants } from '@/types/participant';
 import { useAuth } from '@/contexts/AuthContext';
@@ -897,37 +899,13 @@ export const MultiplayerDraftInterface = ({
     }}>
       <div className="max-w-6xl mx-auto p-4 space-y-6">
         {/* Header */}
-        <div className="mb-6">
-          <div className="p-6 rounded-[8px]">
-            <div className="flex flex-col justify-center items-center gap-4 text-center">
-              <p className="text-purple-300 text-[32px] font-brockmann font-bold leading-9 tracking-[1.28px] m-0">
-                NOW DRAFTING
-              </p>
-              <h1
-                className="font-chaney font-normal text-center break-words m-0"
-                style={{
-                  fontSize: '64px',
-                  lineHeight: '64px',
-                  maxWidth: '100%'
-                }}
-              >
-                <span className="text-greyscale-blue-100">
-                  {draft.theme === 'spec-draft'
-                    ? (specDraftName || draft.option).toUpperCase()
-                    : draft.theme === 'people'
-                      ? getCleanActorName(draft.option).toUpperCase() + ' '
-                      : draft.option.toString() + ' '}
-                </span>
-                {draft.theme !== 'spec-draft' && (
-                  <span className="text-purple-300">
-                    MOVIES
-                  </span>
-                )}
-              </h1>
-              
-            </div>
-          </div>
-        </div>
+        <DraftPageHeaderSection label="NOW DRAFTING">
+          <DraftHeadingTitle
+            option={draft.option}
+            theme={draft.theme}
+            specDraftName={specDraftName}
+          />
+        </DraftPageHeaderSection>
 
         {/* Status and Participants */}
         <div style={{
@@ -1675,7 +1653,7 @@ export const MultiplayerDraftInterface = ({
 
           {/* Voting setup (host) and voting UI - when draft is complete */}
           {isComplete && draft?.id && (
-            <div className="flex flex-col gap-3 w-full max-w-[680px] mx-auto px-4">
+            <div className="flex flex-col gap-3 w-full max-w-[680px] mx-auto">
               {!votingConfigured && (
                 <>
                   {isHost ? (

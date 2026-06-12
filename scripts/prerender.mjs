@@ -60,6 +60,7 @@ const BASE_ROUTES = [
   "/privacy-policy",
   "/terms-of-service",
   "/draft",
+  "/blog",
 ];
 
 async function fetchThemeSlugRoutes() {
@@ -85,6 +86,33 @@ async function fetchThemeSlugRoutes() {
       .map((slug) => `/special-draft/${slug}`);
   } catch (e) {
     console.warn("prerender: could not fetch theme slugs", e?.message || e);
+    return [];
+  }
+}
+
+async function fetchBlogSlugRoutes() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/blog_posts?select=slug&status=eq.published`,
+      {
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        },
+      }
+    );
+    if (!res.ok) {
+      console.warn("prerender: blog_posts slug fetch HTTP", res.status);
+      return [];
+    }
+    const rows = await res.json();
+    if (!Array.isArray(rows)) return [];
+    return rows
+      .map((r) => (typeof r.slug === "string" ? r.slug.trim() : ""))
+      .filter(Boolean)
+      .map((slug) => `/blog/${slug}`);
+  } catch (e) {
+    console.warn("prerender: could not fetch blog slugs", e?.message || e);
     return [];
   }
 }
@@ -139,9 +167,13 @@ async function main() {
     await waitForServer(BASE);
 
     const themeRoutes = await fetchThemeSlugRoutes();
-    const ROUTES = [...BASE_ROUTES, ...themeRoutes];
+    const blogRoutes = await fetchBlogSlugRoutes();
+    const ROUTES = [...BASE_ROUTES, ...themeRoutes, ...blogRoutes];
     if (themeRoutes.length) {
       console.log("prerender: +", themeRoutes.length, "theme URLs");
+    }
+    if (blogRoutes.length) {
+      console.log("prerender: +", blogRoutes.length, "blog URLs");
     }
 
     const browser = await launchBrowser();

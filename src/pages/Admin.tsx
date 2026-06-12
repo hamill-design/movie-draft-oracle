@@ -16,6 +16,9 @@ import { SpecDraftForm } from '@/components/admin/SpecDraftForm';
 import { SpecDraftList } from '@/components/admin/SpecDraftList';
 import { SpecDraftMovieManager } from '@/components/admin/SpecDraftMovieManager';
 import { SpecDraftCategoriesManager } from '@/components/admin/SpecDraftCategoriesManager';
+import { useBlogPostsAdmin, BlogPost } from '@/hooks/useBlogPostsAdmin';
+import { BlogPostForm, BlogPostFormValues } from '@/components/admin/blog/BlogPostForm';
+import { BlogPostList } from '@/components/admin/blog/BlogPostList';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -33,11 +36,13 @@ const Admin = () => {
   const { toast } = useToast();
 
   const [editingCategory, setEditingCategory] = useState<ActorSpecCategory | null>(null);
-  const [activeSection, setActiveSection] = useState<'actor-categories' | 'spec-drafts'>('actor-categories');
+  const [activeSection, setActiveSection] = useState<'actor-categories' | 'spec-drafts' | 'blog'>('actor-categories');
   const [actorCategorySection, setActorCategorySection] = useState<'list' | 'form'>('list');
   const [specDraftSection, setSpecDraftSection] = useState<'list' | 'form' | 'movies'>('list');
   const [editingSpecDraft, setEditingSpecDraft] = useState<SpecDraft | null>(null);
   const [managingMoviesForDraft, setManagingMoviesForDraft] = useState<SpecDraftWithMovies | null>(null);
+  const [blogSection, setBlogSection] = useState<'list' | 'form'>('list');
+  const [editingBlogPost, setEditingBlogPost] = useState<BlogPost | null>(null);
 
   const {
     specDrafts,
@@ -54,6 +59,15 @@ const Admin = () => {
     deleteCustomCategory,
   } = useSpecDraftsAdmin();
 
+  const {
+    posts: blogPosts,
+    loading: blogPostsLoading,
+    fetchBlogPosts,
+    createBlogPost,
+    updateBlogPost,
+    deleteBlogPost,
+  } = useBlogPostsAdmin();
+
   useEffect(() => {
     if (!authLoading && !isAdmin) {
       toast({
@@ -69,8 +83,9 @@ const Admin = () => {
     if (isAdmin) {
       fetchCategories();
       fetchSpecDrafts();
+      fetchBlogPosts();
     }
-  }, [isAdmin, fetchCategories, fetchSpecDrafts]);
+  }, [isAdmin, fetchCategories, fetchSpecDrafts, fetchBlogPosts]);
 
   const handleCreate = async (data: {
     actorName: string;
@@ -261,6 +276,51 @@ const Admin = () => {
     fetchSpecDrafts();
   };
 
+  // Blog post handlers
+  const handleBlogPostEdit = (post: BlogPost) => {
+    setEditingBlogPost(post);
+    setBlogSection('form');
+  };
+
+  const handleBlogPostDelete = async (id: string) => {
+    try {
+      await deleteBlogPost(id);
+    } catch (error) {
+      // Error already handled in hook
+    }
+  };
+
+  const handleBlogPostCancel = () => {
+    setEditingBlogPost(null);
+    setBlogSection('list');
+  };
+
+  const handleBlogPostSubmit = async (data: BlogPostFormValues) => {
+    try {
+      const payload = {
+        title: data.title,
+        slug: data.slug,
+        excerpt: data.excerpt,
+        content: data.content,
+        cover_image_url: data.cover_image_url,
+        seo_title: data.seo_title,
+        seo_description: data.seo_description,
+        status: data.status,
+      };
+
+      if (editingBlogPost) {
+        await updateBlogPost(editingBlogPost.id, payload, editingBlogPost.published_at);
+      } else {
+        await createBlogPost(data.id, payload);
+      }
+
+      setBlogSection('list');
+      setEditingBlogPost(null);
+    } catch (error) {
+      // Error already handled in hook
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
@@ -343,6 +403,29 @@ const Admin = () => {
                     } text-base leading-6 tracking-[0.32px]`}
                     >
                       Spec Draft Builder
+                    </span>
+                  </button>
+
+                  {/* Blog Posts */}
+                  <button
+                    onClick={() => setActiveSection('blog')}
+                    className={`self-stretch px-3 py-1.5 flex justify-start items-center border-l-2 ${
+                      activeSection === 'blog'
+                        ? 'border-purple-300'
+                        : 'border-transparent'
+                    }`}
+                    style={{
+                      fontFamily: 'Brockmann',
+                      fontWeight: 600
+                    }}
+                  >
+                    <span className={`text-left whitespace-nowrap ${
+                      activeSection === 'blog'
+                        ? 'text-purple-300'
+                        : 'text-greyscale-blue-100'
+                    } text-base leading-6 tracking-[0.32px]`}
+                    >
+                      Blog Posts
                     </span>
                   </button>
       </div>
@@ -492,6 +575,31 @@ const Admin = () => {
             </div>
           )}
                   </>
+                )}
+
+                {/* Blog Posts Section */}
+                {activeSection === 'blog' && (
+                  <div className="space-y-6">
+                    {blogSection === 'form' ? (
+                      <BlogPostForm
+                        post={editingBlogPost}
+                        onSubmit={handleBlogPostSubmit}
+                        onCancel={handleBlogPostCancel}
+                        loading={blogPostsLoading}
+                      />
+                    ) : (
+                      <BlogPostList
+                        posts={blogPosts}
+                        onEdit={handleBlogPostEdit}
+                        onDelete={handleBlogPostDelete}
+                        onCreateNew={() => {
+                          setEditingBlogPost(null);
+                          setBlogSection('form');
+                        }}
+                        loading={blogPostsLoading}
+                      />
+                    )}
+                  </div>
                 )}
               </div>
             </div>

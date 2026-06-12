@@ -68,6 +68,13 @@ const Footer = () => {
               </Link>
               <Separator orientation="vertical" className="hidden md:block h-4 bg-greyscale-blue-200" />
               <Link
+                to="/blog"
+                className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
+              >
+                Blog
+              </Link>
+              <Separator orientation="vertical" className="hidden md:block h-4 bg-greyscale-blue-200" />
+              <Link
                 to="/special-draft"
                 className="text-sm font-brockmann font-medium text-greyscale-blue-200 hover:text-greyscale-blue-100 transition-colors leading-5"
               >

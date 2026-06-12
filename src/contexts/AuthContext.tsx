@@ -164,9 +164,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    let initialCheckResolved = false;
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        initialCheckResolved = true;
         setSession(session);
         setUser(session?.user ?? null);
         setAuthLoading(false);
@@ -188,12 +191,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      initialCheckResolved = true;
       setSession(session);
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Supabase holds an internal lock while checking/refreshing a saved
+    // session. On a flaky mobile connection that refresh can hang forever
+    // and never release the lock, leaving the checks above unresolved. Fall
+    // back to "logged out for now" so the app doesn't get stuck loading.
+    const timeoutId = setTimeout(() => {
+      if (!initialCheckResolved) {
+        setAuthLoading(false);
+      }
+    }, 5000);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeoutId);
+    };
   }, []); // Remove guestSession dependency to prevent loops
 
   const signOut = async () => {

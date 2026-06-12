@@ -20,7 +20,9 @@ import { dynamicOgImageUrl, OG_IMAGE_ALT, SITE_ORIGIN } from '@/config/socialSha
 import DraftBoard from '@/components/DraftBoard';
 import { FinalScoresPickOrder } from '@/components/FinalScoresPickOrder';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getCleanActorName } from '@/lib/utils';
+import { cn, getCleanActorName } from '@/lib/utils';
+import { DraftPageHeaderSection } from '@/components/DraftPageHeaderSection';
+import { FinalScoresHeadingTitle } from '@/components/FinalScoresHeadingTitle';
 import {
   buildDraftBoardModel,
   type DraftBoardParticipant,
@@ -43,11 +45,25 @@ function buildSearchWithView(prevSearch: string, view: DetailView): string {
   return q ? `?${q}` : '';
 }
 
-const FINAL_SCORES_VIEW_TAB_SEGMENT_CLASS =
-  'min-w-[127px] w-[127px] max-w-[127px] shrink-0 grow-0 basis-[127px]';
+/** Below md: equal full-width tabs. Desktop: 127px pills. */
+const FINAL_SCORES_VIEW_TAB_CLASS = cn(
+  'flex min-h-0 min-w-0 flex-1 basis-0 overflow-hidden truncate',
+  'rounded-none border-0 px-2 py-2.5 font-brockmann text-xs font-medium leading-4',
+  'text-[var(--Text-Primary,#FCFFFF)] shadow-none bg-[var(--UI-Primary,#1D1D1F)] ring-0 ring-offset-0',
+  'data-[state=active]:bg-[var(--Brand-Primary,#7142FF)] data-[state=active]:text-[var(--Text-Primary,#FCFFFF)]',
+  'focus-visible:ring-2 focus-visible:ring-[#7142FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0E0E0F]',
+  'sm:px-3 sm:text-sm sm:leading-5',
+  'md:flex-none md:min-w-[127px] md:w-[127px] md:max-w-[127px] md:basis-[127px] md:px-6 md:py-3',
+);
 
-const FINAL_SCORES_VIEW_TAB_TRIGGER_CLASS =
-  'min-h-0 rounded-none border-0 px-6 py-3 font-brockmann text-sm font-medium leading-5 text-[var(--Text-Primary,#FCFFFF)] shadow-none bg-[var(--UI-Primary,#1D1D1F)] ring-0 ring-offset-0 data-[state=active]:bg-[var(--Brand-Primary,#7142FF)] data-[state=active]:text-[var(--Text-Primary,#FCFFFF)] focus-visible:ring-2 focus-visible:ring-[#7142FF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0E0E0F]';
+const FINAL_SCORES_VIEW_TABS_CLASS =
+  'flex w-full max-w-full min-w-0 flex-col items-center justify-start md:max-w-none';
+
+const FINAL_SCORES_VIEW_TAB_LIST_CLASS = cn(
+  'flex h-auto w-full min-w-0 items-stretch justify-start gap-px overflow-hidden rounded-full',
+  'border border-solid border-[var(--Item-Stroke,#49474B)] bg-[var(--Item-Stroke,#49474B)] p-0 text-[rgb(125,133,140)] shadow-none',
+  'md:w-fit md:max-w-none',
+);
 
 interface TeamScore {
   playerName: string;
@@ -994,34 +1010,13 @@ const FinalScores = () => {
       <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="w-full p-6 rounded-[8px] flex flex-wrap items-start content-start">
-          <div className="flex-1 flex flex-col gap-6">
-            <div className="self-stretch min-w-[310px] text-center flex flex-col justify-center">
-              <h1 
-                className="break-words m-0"
-                style={{
-                  fontSize: '64px', 
-                  fontFamily: 'CHANEY', 
-                  fontWeight: '400', 
-                  lineHeight: '64px',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  gap: '0px',
-                  gridGap: '0px',
-                  maxWidth: '100%'
-                }}
-              >
-                <span className="text-greyscale-blue-100">THE</span>
-                <span className="text-brand-primary" style={{ margin: '0 0.5ch' }}>
-                  {draft.title}
-                </span>
-                <span className="text-greyscale-blue-100">DRAFT</span>
-              </h1>
-            </div>
-          </div>
-        </div>
+        <DraftPageHeaderSection label="FINAL SCORES">
+          <FinalScoresHeadingTitle
+            title={draft.title}
+            option={draft.option}
+            theme={draft.theme}
+          />
+        </DraftPageHeaderSection>
 
         {/* Action Buttons */}
         <div className="flex flex-col md:flex-row items-center md:items-stretch justify-center gap-3 mb-8">
@@ -1135,26 +1130,15 @@ const FinalScores = () => {
             </div>
           </div>
 
-          <Tabs value={detailView} onValueChange={handleDetailViewChange} className="flex w-full flex-col items-center justify-start">
-            <TabsList
-              className="flex h-auto w-fit items-start justify-start gap-px overflow-hidden rounded-full border border-solid border-[var(--Item-Stroke,#49474B)] bg-[var(--Item-Stroke,#49474B)] p-0 text-[rgb(125,133,140)] shadow-none"
-            >
-              <TabsTrigger
-                value="roster"
-                className={`${FINAL_SCORES_VIEW_TAB_TRIGGER_CLASS} ${FINAL_SCORES_VIEW_TAB_SEGMENT_CLASS}`}
-              >
+          <Tabs value={detailView} onValueChange={handleDetailViewChange} className={FINAL_SCORES_VIEW_TABS_CLASS}>
+            <TabsList className={FINAL_SCORES_VIEW_TAB_LIST_CLASS}>
+              <TabsTrigger value="roster" className={FINAL_SCORES_VIEW_TAB_CLASS}>
                 Roster
               </TabsTrigger>
-              <TabsTrigger
-                value="board"
-                className={`${FINAL_SCORES_VIEW_TAB_TRIGGER_CLASS} ${FINAL_SCORES_VIEW_TAB_SEGMENT_CLASS}`}
-              >
+              <TabsTrigger value="board" className={FINAL_SCORES_VIEW_TAB_CLASS}>
                 Draft Board
               </TabsTrigger>
-              <TabsTrigger
-                value="picks"
-                className={`${FINAL_SCORES_VIEW_TAB_TRIGGER_CLASS} ${FINAL_SCORES_VIEW_TAB_SEGMENT_CLASS}`}
-              >
+              <TabsTrigger value="picks" className={FINAL_SCORES_VIEW_TAB_CLASS}>
                 Pick Order
               </TabsTrigger>
             </TabsList>

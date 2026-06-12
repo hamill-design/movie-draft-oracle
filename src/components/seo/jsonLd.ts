@@ -149,6 +149,9 @@ export function articleNode(opts: {
   headline: string;
   description: string;
   idSuffix?: string;
+  image?: string;
+  datePublished?: string;
+  dateModified?: string;
 }) {
   const pageUrl = absolutePath(opts.path);
   const id = `${pageUrl}${opts.idSuffix ?? '#article'}`;
@@ -158,7 +161,9 @@ export function articleNode(opts: {
     headline: opts.headline,
     description: opts.description,
     url: pageUrl,
-    image: DEFAULT_OG_IMAGE_URL,
+    image: opts.image ?? DEFAULT_OG_IMAGE_URL,
+    ...(opts.datePublished ? { datePublished: opts.datePublished } : {}),
+    ...(opts.dateModified ? { dateModified: opts.dateModified } : {}),
     author: { '@id': siteOrganizationId },
     publisher: {
       '@id': siteOrganizationId,
