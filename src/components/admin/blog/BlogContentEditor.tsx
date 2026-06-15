@@ -45,8 +45,8 @@ const ToolbarButton = ({ onClick, active, disabled, title, children }: ToolbarBu
     className={cn(
       'flex items-center justify-center w-8 h-8 rounded-[4px] transition-colors',
       active
-        ? 'bg-purple-300/20 text-purple-300'
-        : 'text-greyscale-blue-200 hover:text-greyscale-blue-100 hover:bg-greyscale-blue-200/10',
+        ? 'bg-purple-400/15 text-purple-400'
+        : 'text-greyscale-blue-600 hover:text-foreground hover:bg-greyscale-blue-200/60',
       disabled && 'opacity-40 pointer-events-none'
     )}
   >
@@ -54,7 +54,7 @@ const ToolbarButton = ({ onClick, active, disabled, title, children }: ToolbarBu
   </button>
 );
 
-const ToolbarDivider = () => <div className="w-px h-5 bg-greyscale-blue-200/40 mx-1" />;
+const ToolbarDivider = () => <div className="w-px h-5 bg-greyscale-blue-300/60 mx-1" />;
 
 export const BlogContentEditor = ({ value, onChange, postId }: BlogContentEditorProps) => {
   const { toast } = useToast();
@@ -89,11 +89,11 @@ export const BlogContentEditor = ({ value, onChange, postId }: BlogContentEditor
     editorProps: {
       attributes: {
         class: cn(
-          'tiptap-editor prose prose-invert max-w-none min-h-[280px] focus:outline-none',
-          'prose-headings:font-chaney prose-headings:font-normal prose-headings:text-greyscale-blue-100',
-          'prose-p:font-brockmann prose-li:font-brockmann prose-p:text-greyscale-blue-100 prose-li:text-greyscale-blue-100',
-          'prose-strong:text-greyscale-blue-100 prose-a:text-purple-300',
-          'prose-blockquote:text-greyscale-blue-200 prose-blockquote:border-l-purple-300'
+          'tiptap-editor prose max-w-none min-h-[280px] focus:outline-none',
+          'prose-headings:font-chaney prose-headings:font-normal prose-headings:text-foreground',
+          'prose-p:font-brockmann prose-li:font-brockmann prose-p:text-foreground prose-li:text-foreground',
+          'prose-strong:text-foreground prose-a:text-purple-400',
+          'prose-blockquote:text-greyscale-blue-600 prose-blockquote:border-l-purple-400'
         ),
       },
     },
