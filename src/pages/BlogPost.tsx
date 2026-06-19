@@ -127,11 +127,18 @@ const BlogPost = () => {
 
           <header className="flex flex-col gap-4">
             {post.cover_image_url && (
-              <img
-                src={post.cover_image_url}
-                alt=""
-                className="w-full max-h-[420px] object-cover rounded-md"
-              />
+              <figure className="m-0">
+                <img
+                  src={post.cover_image_url}
+                  alt={post.cover_image_alt || ''}
+                  className="w-full max-h-[420px] object-cover rounded-md"
+                />
+                {post.cover_image_caption && (
+                  <figcaption className="mt-2 text-center font-brockmann text-sm text-greyscale-blue-300">
+                    {post.cover_image_caption}
+                  </figcaption>
+                )}
+              </figure>
             )}
             <h1 className="m-0 font-chaney font-normal text-3xl sm:text-5xl text-greyscale-blue-50 leading-tight">
               {post.title}
@@ -140,7 +147,7 @@ const BlogPost = () => {
           </header>
 
           <div
-            className="prose prose-invert max-w-none prose-headings:font-chaney prose-headings:font-normal prose-headings:text-greyscale-blue-100 prose-p:font-brockmann prose-li:font-brockmann prose-p:text-greyscale-blue-100 prose-li:text-greyscale-blue-100 prose-strong:text-greyscale-blue-100 prose-a:text-purple-300 prose-blockquote:text-greyscale-blue-200 prose-blockquote:border-l-purple-300"
+            className="prose prose-invert max-w-none prose-headings:font-chaney prose-headings:font-normal prose-headings:text-greyscale-blue-100 prose-p:font-brockmann prose-li:font-brockmann prose-p:text-greyscale-blue-100 prose-li:text-greyscale-blue-100 prose-strong:text-greyscale-blue-100 prose-a:text-purple-300 prose-blockquote:text-greyscale-blue-200 prose-blockquote:border-l-purple-300 prose-figcaption:text-greyscale-blue-300 prose-figcaption:text-center prose-figcaption:font-brockmann"
             dangerouslySetInnerHTML={{ __html: sanitizedContent }}
           />
         </article>

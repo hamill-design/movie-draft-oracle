@@ -49,7 +49,7 @@ function BlogCard({ post }: { post: PublicBlogPostSummary }) {
         <div style={{ height: '168px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', flexShrink: 0 }}>
           <img
             src={post.cover_image_url}
-            alt=""
+            alt={post.cover_image_alt || ''}
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
         </div>

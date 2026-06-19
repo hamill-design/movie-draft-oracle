@@ -12,6 +12,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["vercel", "dev", "--listen", "3333"],
       "port": 3333
+    },
+    {
+      "name": "preview",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "8123", "--strictPort"],
+      "port": 8123
     }
   ]
 }

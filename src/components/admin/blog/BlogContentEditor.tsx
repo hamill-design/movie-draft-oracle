@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
+import { Figure } from './figureExtension';
 import {
   Bold,
   Italic,
@@ -75,9 +75,7 @@ export const BlogContentEditor = ({ value, onChange, postId }: BlogContentEditor
           },
         },
       }),
-      Image.configure({
-        HTMLAttributes: { class: 'rounded-md' },
-      }),
+      Figure,
       Placeholder.configure({
         placeholder: 'Start writing your post…',
       }),
@@ -93,7 +91,8 @@ export const BlogContentEditor = ({ value, onChange, postId }: BlogContentEditor
           'prose-headings:font-chaney prose-headings:font-normal prose-headings:text-foreground',
           'prose-p:font-brockmann prose-li:font-brockmann prose-p:text-foreground prose-li:text-foreground',
           'prose-strong:text-foreground prose-a:text-purple-400',
-          'prose-blockquote:text-greyscale-blue-600 prose-blockquote:border-l-purple-400'
+          'prose-blockquote:text-greyscale-blue-600 prose-blockquote:border-l-purple-400',
+          'prose-figcaption:text-greyscale-blue-600 prose-figcaption:text-center prose-figcaption:font-brockmann'
         ),
       },
     },
@@ -122,6 +121,30 @@ export const BlogContentEditor = ({ value, onChange, postId }: BlogContentEditor
   }, [editor]);
 
   const handleImageButtonClick = () => {
+    if (!editor) return;
+    // When a figure is selected, edit its alt text + caption instead of inserting a new image.
+    if (editor.isActive('figure')) {
+      const current = editor.getAttributes('figure');
+      const alt = window.prompt(
+        'Alt text (describe the image for SEO & screen readers):',
+        current.alt ?? ''
+      );
+      if (alt === null) return; // cancelled
+      const caption = window.prompt(
+        'Caption (optional — shown beneath the image):',
+        current.caption ?? ''
+      );
+      if (caption === null) return; // cancelled
+      editor
+        .chain()
+        .focus()
+        .updateAttributes('figure', {
+          alt: alt.trim() || null,
+          caption: caption.trim() || null,
+        })
+        .run();
+      return;
+    }
     fileInputRef.current?.click();
   };
 
@@ -133,7 +156,13 @@ export const BlogContentEditor = ({ value, onChange, postId }: BlogContentEditor
     setUploadingImage(true);
     try {
       const url = await uploadBlogImage(postId, file, 'content');
-      editor.chain().focus().setImage({ src: url }).run();
+      const alt = window.prompt('Alt text (describe the image for SEO & screen readers):', '') ?? '';
+      const caption = window.prompt('Caption (optional — shown beneath the image):', '') ?? '';
+      editor
+        .chain()
+        .focus()
+        .setFigure({ src: url, alt: alt.trim() || null, caption: caption.trim() || null })
+        .run();
     } catch (err) {
       toast({
         title: 'Error',
@@ -215,7 +244,12 @@ export const BlogContentEditor = ({ value, onChange, postId }: BlogContentEditor
         >
           {editor.isActive('link') ? <Unlink className="w-4 h-4" /> : <Link2 className="w-4 h-4" />}
         </ToolbarButton>
-        <ToolbarButton onClick={handleImageButtonClick} disabled={uploadingImage} title="Insert image">
+        <ToolbarButton
+          onClick={handleImageButtonClick}
+          active={editor.isActive('figure')}
+          disabled={uploadingImage}
+          title={editor.isActive('figure') ? 'Edit image alt & caption' : 'Insert image'}
+        >
           {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
         </ToolbarButton>
         <input

@@ -249,16 +249,8 @@ Deno.serve(async (req) => {
             }
           }
 
-          // Oscar status
-          if (omdbData.Awards) {
-            const awards = omdbData.Awards.toLowerCase()
-            if (awards.includes('won') && (awards.includes('oscar') || awards.includes('academy award'))) {
-              enrichmentData.oscarStatus = 'winner'
-            } else if (awards.includes('nominated') && (awards.includes('oscar') || awards.includes('academy award'))) {
-              enrichmentData.oscarStatus = 'nominee'
-            }
-            console.log(`Oscar: ${enrichmentData.oscarStatus}`)
-          }
+          // Oscar status intentionally NOT read from OMDb — it is sourced from the
+          // allow-list (oscar_cache + academy-awards.json) after this OMDB block.
         } else {
           console.log('OMDB: No data found after all attempts')
         }
@@ -267,11 +259,22 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Oscar status from the allow-list only: oscar_cache (authoritative, populated from
+    // academy-awards.json) merged with the academy-awards.json map. No OMDb; absent = 'none'.
     const academyMap = await getAcademyAwardsMap()
     const tmdbNum = Number(movieId)
     const fromAcademy = Number.isFinite(tmdbNum) ? academyMap.get(tmdbNum) : undefined
-    enrichmentData.oscarStatus = mergeOscarStatusesForEnrich(enrichmentData.oscarStatus, fromAcademy)
-    console.log(`Oscar after Academy JSON merge: ${enrichmentData.oscarStatus}`)
+    let fromCache: string | undefined
+    if (Number.isFinite(tmdbNum)) {
+      const { data: cacheRow } = await supabaseClient
+        .from('oscar_cache')
+        .select('oscar_status')
+        .eq('tmdb_id', tmdbNum)
+        .maybeSingle()
+      if (cacheRow?.oscar_status) fromCache = cacheRow.oscar_status
+    }
+    enrichmentData.oscarStatus = mergeOscarStatusesForEnrich(fromCache, fromAcademy)
+    console.log(`Oscar from allow-list (cache+JSON): ${enrichmentData.oscarStatus}`)
 
     // Calculate score
     const finalScore = calculateScore(enrichmentData)

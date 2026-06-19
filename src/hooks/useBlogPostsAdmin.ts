@@ -11,6 +11,8 @@ export interface BlogPost {
   excerpt: string | null;
   content: string;
   cover_image_url: string | null;
+  cover_image_alt: string | null;
+  cover_image_caption: string | null;
   seo_title: string | null;
   seo_description: string | null;
   status: BlogPostStatus;
@@ -25,13 +27,15 @@ export interface BlogPostInput {
   excerpt?: string | null;
   content?: string;
   cover_image_url?: string | null;
+  cover_image_alt?: string | null;
+  cover_image_caption?: string | null;
   seo_title?: string | null;
   seo_description?: string | null;
   status?: BlogPostStatus;
 }
 
 const COLUMNS =
-  'id, slug, title, excerpt, content, cover_image_url, seo_title, seo_description, status, published_at, created_at, updated_at';
+  'id, slug, title, excerpt, content, cover_image_url, cover_image_alt, cover_image_caption, seo_title, seo_description, status, published_at, created_at, updated_at';
 
 export const useBlogPostsAdmin = () => {
   const [posts, setPosts] = useState<BlogPost[]>([]);
@@ -87,6 +91,8 @@ export const useBlogPostsAdmin = () => {
           excerpt: input.excerpt?.trim() || null,
           content: input.content || '',
           cover_image_url: input.cover_image_url || null,
+          cover_image_alt: input.cover_image_alt?.trim() || null,
+          cover_image_caption: input.cover_image_caption?.trim() || null,
           seo_title: input.seo_title?.trim() || null,
           seo_description: input.seo_description?.trim() || null,
           status,
@@ -142,6 +148,8 @@ export const useBlogPostsAdmin = () => {
 
       if (typeof updates.title === 'string') updateData.title = updates.title.trim();
       if (typeof updates.excerpt === 'string') updateData.excerpt = updates.excerpt.trim() || null;
+      if (typeof updates.cover_image_alt === 'string') updateData.cover_image_alt = updates.cover_image_alt.trim() || null;
+      if (typeof updates.cover_image_caption === 'string') updateData.cover_image_caption = updates.cover_image_caption.trim() || null;
       if (typeof updates.seo_title === 'string') updateData.seo_title = updates.seo_title.trim() || null;
       if (typeof updates.seo_description === 'string') updateData.seo_description = updates.seo_description.trim() || null;
 

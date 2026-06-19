@@ -46,6 +46,8 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({
   const [excerpt, setExcerpt] = useState(post?.excerpt || '');
   const [content, setContent] = useState(post?.content || '');
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(post?.cover_image_url ?? null);
+  const [coverImageAlt, setCoverImageAlt] = useState(post?.cover_image_alt || '');
+  const [coverImageCaption, setCoverImageCaption] = useState(post?.cover_image_caption || '');
   const [uploadingCover, setUploadingCover] = useState(false);
   const [seoTitle, setSeoTitle] = useState(post?.seo_title || '');
   const [seoDescription, setSeoDescription] = useState(post?.seo_description || '');
@@ -82,6 +84,8 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({
 
   const handleRemoveCover = () => {
     setCoverImageUrl(null);
+    setCoverImageAlt('');
+    setCoverImageCaption('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -121,6 +125,8 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({
       excerpt: excerpt.trim() || null,
       content,
       cover_image_url: coverImageUrl,
+      cover_image_alt: coverImageUrl ? coverImageAlt.trim() || null : null,
+      cover_image_caption: coverImageUrl ? coverImageCaption.trim() || null : null,
       seo_title: seoTitle.trim() || null,
       seo_description: seoDescription.trim() || null,
       status,
@@ -235,6 +241,32 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({
                       : 'Recommended: a wide image (resized to a max of 1600px). Max 5MB.'}
                   </p>
                 </div>
+
+                {coverImageUrl && (
+                  <div className="space-y-3 pt-1">
+                    <div className="space-y-2">
+                      <Label htmlFor="cover-alt">Alt Text</Label>
+                      <Input
+                        id="cover-alt"
+                        value={coverImageAlt}
+                        onChange={(e) => setCoverImageAlt(e.target.value)}
+                        placeholder="Describe the image for search engines & screen readers"
+                      />
+                      <p className="text-xs text-greyscale-blue-300">
+                        Used as the image&apos;s <code>alt</code> attribute. Important for image SEO and accessibility.
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="cover-caption">Caption (Optional)</Label>
+                      <Input
+                        id="cover-caption"
+                        value={coverImageCaption}
+                        onChange={(e) => setCoverImageCaption(e.target.value)}
+                        placeholder="Visible text shown beneath the cover image"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

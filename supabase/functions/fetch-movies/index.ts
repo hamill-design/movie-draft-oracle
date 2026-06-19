@@ -20,11 +20,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Rate limiting for OMDb API calls
-let omdbCallsToday = 0;
-const OMDB_DAILY_LIMIT = 900; // Stay under 1000 limit
-let lastResetDate = new Date().toDateString();
-
 // Initialize Supabase client for oscar_cache
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -403,199 +398,8 @@ async function getImdbIdForMovie(tmdbId: number, tmdbApiKey: string): Promise<st
   return null;
 }
 
-// Helper function to check and get Oscar status from cache or OMDb
-async function getOscarStatus(tmdbId: number, title: string, year: number, imdbId?: string | null, originalTitle?: string | null): Promise<string> {
-  try {
-    // Reset daily counter if needed
-    const today = new Date().toDateString();
-    if (lastResetDate !== today) {
-      omdbCallsToday = 0;
-      lastResetDate = today;
-    }
-
-    // First check cache
-    // Prefer cache by tmdb_id + year
-    const { data: cached } = await supabase
-      .from('oscar_cache')
-      .select('oscar_status, movie_year')
-      .eq('tmdb_id', tmdbId)
-      .eq('movie_year', year || null)
-      .single();
-
-    if (cached) {
-      console.log(`Oscar cache hit for "${title}": ${cached.oscar_status}`);
-      return cached.oscar_status;
-    }
-
-    // If no tmdb-year hit and imdbId present, check cache by imdb_id
-    if (!cached && imdbId) {
-      const { data: cachedByImdb } = await supabase
-        .from('oscar_cache')
-        .select('oscar_status, movie_year')
-        .eq('imdb_id', imdbId)
-        .single();
-      if (cachedByImdb) {
-        console.log(`Oscar cache hit by IMDb for "${title}": ${cachedByImdb.oscar_status}`);
-        return cachedByImdb.oscar_status;
-      }
-    }
-
-    // Check rate limit
-    if (omdbCallsToday >= OMDB_DAILY_LIMIT) {
-      console.log(`OMDb rate limit reached for today (${omdbCallsToday}/${OMDB_DAILY_LIMIT})`);
-      return 'unknown';
-    }
-
-    // Call OMDb API
-    const omdbApiKey = Deno.env.get('OMDB');
-    if (!omdbApiKey) {
-      console.log('OMDb API key not configured');
-      return 'unknown';
-    }
-
-    let data: any = null;
-    if (imdbId) {
-      const urlById = `http://www.omdbapi.com/?apikey=${omdbApiKey}&i=${encodeURIComponent(imdbId)}`;
-      console.log(`Calling OMDb by IMDb ID for "${title}":`, urlById);
-      const response = await fetch(urlById);
-      data = await response.json();
-    }
-
-    // Fallbacks when IMDb lookup missing or failed
-    if (!data || data.Response !== 'True') {
-      const tryTitleYear = async (t: string, y: number | null) => {
-        const q = y ? `&y=${y}` : '';
-        const u = `http://www.omdbapi.com/?apikey=${omdbApiKey}&t=${encodeURIComponent(t)}${q}`;
-        const r = await fetch(u);
-        return r.json();
-      };
-
-      // Title + exact year, then ±1 tolerance
-      data = await tryTitleYear(title, year);
-      if (!data || data.Response !== 'True') data = await tryTitleYear(title, year ? year - 1 : null);
-      if (!data || data.Response !== 'True') data = await tryTitleYear(title, year ? year + 1 : null);
-
-      // Try original title if provided
-      if ((!data || data.Response !== 'True') && originalTitle) {
-        data = await tryTitleYear(originalTitle, year);
-        if (!data || data.Response !== 'True') data = await tryTitleYear(originalTitle, year ? year - 1 : null);
-        if (!data || data.Response !== 'True') data = await tryTitleYear(originalTitle, year ? year + 1 : null);
-      }
-
-      // Fallback to title-only if still not found
-      if (!data || data.Response !== 'True') {
-        const urlByTitle = `http://www.omdbapi.com/?apikey=${omdbApiKey}&t=${encodeURIComponent(title)}`;
-        console.log(`Calling OMDb by title only for "${title}":`, urlByTitle);
-        const response3 = await fetch(urlByTitle);
-        data = await response3.json();
-      }
-    }
-    omdbCallsToday++;
-
-    let oscarStatus = 'none';
-    let awardsData = '';
-
-    if (data.Response === 'True' && data.Awards) {
-      awardsData = data.Awards;
-      console.log(`OMDb awards for "${title}": ${awardsData}`);
-      
-      const awards = awardsData.toLowerCase();
-      if (awards.includes('won') && (awards.includes('oscar') || awards.includes('academy award'))) {
-        oscarStatus = 'winner';
-      } else if (awards.includes('nominated') && (awards.includes('oscar') || awards.includes('academy award'))) {
-        oscarStatus = 'nominee';
-      }
-    }
-
-    // Cache the result
-    await supabase.from('oscar_cache').upsert({
-      tmdb_id: tmdbId,
-      imdb_id: imdbId || null,
-      movie_title: title,
-      movie_year: year,
-      oscar_status: oscarStatus,
-      awards_data: awardsData,
-      updated_at: new Date().toISOString()
-    });
-
-    console.log(`OMDb result for "${title}": ${oscarStatus}`);
-    return oscarStatus;
-
-  } catch (error) {
-    console.error(`Error getting Oscar status for "${title}":`, error);
-    return 'none';
-  }
-}
-
-// Normalized resolver that returns one of: 'winner' | 'nominee' | 'none' | 'unknown'
-async function resolveOscarStatus(tmdbId: number, title: string, year: number, tmdbApiKey: string, options: { preferFreshOscarStatus?: boolean } = {}): Promise<string> {
-  try {
-    // Try to get IMDb ID first for high-accuracy lookups
-    const imdbId = await getImdbIdForMovie(tmdbId, tmdbApiKey);
-    let originalTitle: string | null = null;
-    try {
-      const det = await fetch(`https://api.themoviedb.org/3/movie/${tmdbId}?api_key=${tmdbApiKey}`);
-      if (det.ok) {
-        const j = await det.json();
-        originalTitle = j?.original_title || null;
-      }
-    } catch {}
-
-    // For Academy fresh runs, bypass cache entirely to avoid stale negatives
-    if (options.preferFreshOscarStatus && imdbId) {
-      console.log(`PreferFresh: bypassing cache for ${title} (${year}) using IMDb ${imdbId}`);
-      const fresh = await getOscarStatus(tmdbId, title, year, imdbId, originalTitle);
-      if (fresh) return fresh;
-    }
-
-    // Prefer exact year match in cache
-    const { data: cachedExact } = await supabase
-      .from('oscar_cache')
-      .select('oscar_status, updated_at')
-      .eq('tmdb_id', tmdbId)
-      .eq('movie_year', year || null)
-      .single();
-
-    if (cachedExact?.oscar_status) {
-      const isNegative = cachedExact.oscar_status === 'none' || cachedExact.oscar_status === 'unknown';
-      const updatedAt = cachedExact.updated_at ? new Date(cachedExact.updated_at).getTime() : 0;
-      const isStale = !updatedAt || (Date.now() - updatedAt > 30 * 24 * 60 * 60 * 1000);
-      if ((options.preferFreshOscarStatus && isNegative && imdbId) || (isNegative && isStale && imdbId)) {
-        console.log(`Refreshing negative/stale cache (exact) via IMDb for ${title}`);
-        const refreshed = await getOscarStatus(tmdbId, title, year, imdbId, originalTitle);
-        if (refreshed === 'winner' || refreshed === 'nominee') return refreshed;
-      }
-      return cachedExact.oscar_status;
-    }
-
-    // Fallback: any cache for this tmdb_id regardless of year
-    const { data: cachedAny } = await supabase
-      .from('oscar_cache')
-      .select('oscar_status, updated_at')
-      .eq('tmdb_id', tmdbId)
-      .limit(1)
-      .single();
-
-    if (cachedAny?.oscar_status) {
-      const isNegative = cachedAny.oscar_status === 'none' || cachedAny.oscar_status === 'unknown';
-      const updatedAt = cachedAny.updated_at ? new Date(cachedAny.updated_at).getTime() : 0;
-      const isStale = !updatedAt || (Date.now() - updatedAt > 30 * 24 * 60 * 60 * 1000);
-      if ((options.preferFreshOscarStatus && isNegative && imdbId) || (isNegative && isStale && imdbId)) {
-        console.log(`Refreshing negative/stale cache (any) via IMDb for ${title}`);
-        const refreshed = await getOscarStatus(tmdbId, title, year, imdbId, originalTitle);
-        if (refreshed === 'winner' || refreshed === 'nominee') return refreshed;
-      }
-      return cachedAny.oscar_status;
-    }
-
-    // Last resort: fetch via OMDb parser helper
-    const status = await getOscarStatus(tmdbId, title, year, imdbId || undefined, originalTitle);
-    return status || 'unknown';
-  } catch (e) {
-    console.log('resolveOscarStatus error:', e);
-    return 'unknown';
-  }
-}
+// Oscar status is sourced exclusively from the academy-awards.json / oscar_cache allow-list;
+// the former OMDb-based oscar guessing helpers were removed in the allow-list cutover.
 
 // Enhanced year extraction with multiple date field support
 function getYearFromDate(dateString: string): number {
@@ -1502,14 +1306,12 @@ async function processMovieResults(data: any, tmdbApiKey: string, opts: { prefer
           }
         }
 
-        // Only fetch Oscar status from API if not already in cache or academy-awards.json
+        // Allow-list model: Oscar status comes only from the academy-awards.json allow-list
+        // or the oscar_cache allow-list (both checked above). Not found = no Oscar; no
+        // external API guessing. Absence from the allow-list means the film has no Oscar.
         if (oscarStatusNormalized === 'unknown') {
-          const correctYear = extractMovieYear(detailedMovie);
-          const oscarStatus = await resolveOscarStatus(movie.id, movie.title, correctYear, tmdbApiKey, { 
-            preferFreshOscarStatus: !!opts.preferFreshOscarStatus 
-          });
-          oscarStatusNormalized = oscarStatus || 'unknown';
-          hasOscar = oscarStatusNormalized !== 'none' && oscarStatusNormalized !== 'unknown';
+          oscarStatusNormalized = 'none';
+          hasOscar = false;
         }
         
       } catch (error) {

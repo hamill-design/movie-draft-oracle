@@ -7,20 +7,22 @@ export type PublicBlogPostSummary = {
   excerpt: string | null;
   content: string;
   cover_image_url: string | null;
+  cover_image_alt: string | null;
   published_at: string | null;
   updated_at: string;
 };
 
 export type PublicBlogPost = PublicBlogPostSummary & {
+  cover_image_caption: string | null;
   seo_title: string | null;
   seo_description: string | null;
   created_at: string;
 };
 
 const SUMMARY_COLUMNS =
-  'id, slug, title, excerpt, content, cover_image_url, published_at, updated_at';
+  'id, slug, title, excerpt, content, cover_image_url, cover_image_alt, published_at, updated_at';
 
-const FULL_COLUMNS = `${SUMMARY_COLUMNS}, seo_title, seo_description, created_at`;
+const FULL_COLUMNS = `${SUMMARY_COLUMNS}, cover_image_caption, seo_title, seo_description, created_at`;
 
 /** Strips HTML tags and collapses whitespace, for deriving previews/meta descriptions. */
 export function stripHtml(html: string): string {
