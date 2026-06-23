@@ -57,7 +57,7 @@ const DraftHeader = ({
       
 
       {/* Draft Info */}
-      <DraftPageHeaderSection label="NOW DRAFTING">
+      <DraftPageHeaderSection>
         <DraftHeadingTitle
           option={draftOption}
           theme={theme}

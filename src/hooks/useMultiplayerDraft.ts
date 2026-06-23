@@ -54,6 +54,7 @@ interface DraftParticipant {
   joined_at: string | null;
   created_at?: string | null; // Used for sorting to match player_id calculation
   email?: string | null; // User's email from profiles
+  avatar_url?: string | null;
 }
 
 interface MultiplayerDraft {
@@ -237,7 +238,7 @@ export const useMultiplayerDraft = (
     // Fetch emails from profiles
     const { data: profiles, error } = await supabase
       .from('profiles')
-      .select('id, email')
+      .select('id, email, avatar_url')
       .in('id', userIds);
 
     if (error) {
@@ -247,20 +248,24 @@ export const useMultiplayerDraft = (
     }
 
     // Create a map of user_id -> email
-    const emailMap = new Map<string, string>();
+    const profileMap = new Map<string, { email?: string; avatar_url?: string | null }>();
     if (profiles) {
       profiles.forEach(profile => {
-        if (profile.email) {
-          emailMap.set(profile.id, profile.email);
-        }
+        profileMap.set(profile.id, {
+          email: profile.email ?? undefined,
+          avatar_url: profile.avatar_url,
+        });
       });
     }
 
-    // Enrich participants with emails
-    return participants.map(participant => ({
-      ...participant,
-      email: participant.user_id ? emailMap.get(participant.user_id) || null : null
-    }));
+    return participants.map(participant => {
+      const profile = participant.user_id ? profileMap.get(participant.user_id) : undefined;
+      return {
+        ...participant,
+        email: profile?.email ?? null,
+        avatar_url: profile?.avatar_url ?? null,
+      };
+    });
   }, []);
 
   // Create a multiplayer draft with email invitations

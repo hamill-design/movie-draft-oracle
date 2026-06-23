@@ -86,7 +86,7 @@ All colors MUST be HSL.
     --popover-foreground: 195 6% 18%;
 
     /* Brand Colors - Purple Scale */
-    --brand-primary: 262 100% 52%; /* Purple 500 #680AFF */
+    --brand-primary: 258 100% 63%; /* Brand Primary #7142FF */
     --brand-primary-foreground: 0 0% 100%;
     
     /* Purple Scale */
@@ -212,6 +212,17 @@ All colors MUST be HSL.
     --ui-highlight: 48 100% 74%; /* Yellow 300 */
     --text-primary: 195 6% 18%; /* Greyscale Blue 800 */
 
+    /* Figma semantic aliases (light) */
+    --text-purple: 244 100% 79%; /* #A496FF */
+    --text-light-grey: 150 6% 75%; /* #BDC3C2 */
+    --text-dark: 195 6% 18%; /* #2B2D2D */
+    --section-container: 270 3% 5%; /* #0E0E0F */
+    --ui-primary-pressed: 262 96% 19%; /* #25015E */
+    --gold-primary: 48 100% 52%; /* #FFD60A */
+    --button-stroke: 270 2% 40%; /* #666469 */
+    --item-stroke: 270 2% 29%; /* #49474B */
+    --draft-page-gradient: linear-gradient(140deg, hsl(var(--purple-900)) 16%, hsl(var(--purple-850)) 50%, hsl(var(--purple-900)) 83%);
+
     /* Hover state */
     --Hover: 244 100% 74%; /* Purple.300 #907aff */
 
@@ -275,6 +286,17 @@ All colors MUST be HSL.
     --ui-bg: 270 3% 5%; /* Greyscale (Purp).900 #0e0e0f */
     --ui-highlight: 48 100% 74%; /* Yellow.300 #ffe97a */
     --text-primary: 180 100% 99%; /* Greyscale (Blue).100 #fcffff */
+
+    /* Figma semantic aliases (dark) */
+    --text-purple: 244 100% 79%; /* #A496FF */
+    --text-light-grey: 150 6% 75%; /* #BDC3C2 */
+    --text-dark: 195 6% 18%; /* #2B2D2D */
+    --section-container: 270 3% 5%; /* #0E0E0F */
+    --ui-primary-pressed: 262 96% 19%; /* #25015E */
+    --gold-primary: 48 100% 52%; /* #FFD60A */
+    --button-stroke: 270 2% 40%; /* #666469 */
+    --item-stroke: 270 2% 29%; /* #49474B */
+    --draft-page-gradient: linear-gradient(140deg, hsl(var(--purple-900)) 16%, hsl(var(--purple-850)) 50%, hsl(var(--purple-900)) 83%);
 
     /* Component tokens */
     --primary: 258 100% 63%; /* Purple.400 #7142ff */
@@ -356,6 +378,32 @@ All colors MUST be HSL.
     margin: 0;
     padding: 0;
     position: relative;
+  }
+}
+
+/**
+ * Hero parallax — runs on the compositor thread so it stays perfectly in sync
+ * with scroll. A JS `scroll` handler can only update the transform on the main
+ * thread one frame *after* the page has already scrolled, which reads as jumpy.
+ *
+ * `animation-range: 0 100vh` with a `50vh` end keyframe makes the drift exactly
+ * `scrollY * 0.5` over the first viewport (where the hero is visible), matching
+ * the JS fallback in Home.tsx that older browsers (e.g. Safari) still use.
+ * Guarded by @supports so unsupported browsers never apply a 0s-duration
+ * animation, and skipped entirely under prefers-reduced-motion.
+ */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes hero-parallax {
+      from { transform: translateX(-50%) translateY(-50%); }
+      to   { transform: translateX(-50%) translateY(calc(-50% + 50vh)); }
+    }
+
+    .hero-parallax {
+      animation: hero-parallax linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 100vh;
+    }
   }
 }
 

@@ -8,13 +8,16 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Participant, normalizeParticipants } from '@/types/participant';
 import { useAIPick } from '@/hooks/useAIPick';
-import { mergeOscarStatusFromSources } from '@/utils/movieCategoryUtils';
+import { useDraftBoardPicker } from '@/hooks/useDraftBoardPicker';
+import { useActorSpecCategories } from '@/hooks/useActorSpecCategories';
+import { getEligibleCategories } from '@/utils/movieCategoryUtils';
 import { BOX_OFFICE_FLOP_PENALTY } from '@/utils/scoreCalculator';
+import { InteractiveDraftBoard } from '@/components/draft-board/InteractiveDraftBoard';
+import type { BoardRailParticipant } from '@/components/draft-board/DraftBoardPlayerRail';
+import { buildInteractiveBoardModelFromLocal } from '@/utils/interactiveBoardModel';
+import { Movie } from '@/data/movies';
+import { getCleanActorName } from '@/lib/utils';
 
-import DraftBoard from './DraftBoard';
-import MovieSearch from './MovieSearch';
-import EnhancedCategorySelection from '@/components/EnhancedCategorySelection';
-import PickConfirmation from './PickConfirmation';
 import DraftComplete from './DraftComplete';
 import { MultiplayerDraftInterface } from './MultiplayerDraftInterface';
 
@@ -91,10 +94,6 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   }
 
   // Single player draft logic (existing code)
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMovie, setSelectedMovie] = useState<any>(null);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [checkingOscarStatus, setCheckingOscarStatus] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(safeDraftState?.existingDraftId || null);
   // Use ref to track draftId immediately (before state update)
   const draftIdRef = useRef<string | null>(safeDraftState?.existingDraftId || null);
@@ -510,10 +509,149 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   const themeConstraint = safeDraftState?.theme === 'year' || safeDraftState?.theme === 'people' || safeDraftState?.theme === 'spec-draft'
     ? safeDraftState.option 
     : '';
-  
-  // Use movies hook - pass the theme constraint and user's search query
-  // For year/person, only fetch when user types (searchQuery state)
-  const { movies, loading: moviesLoading } = useMovies(baseCategory, themeConstraint, searchQuery);
+
+  const actorNameForSpec =
+    safeDraftState?.theme === 'people' ? getCleanActorName(safeDraftState.option || '') : null;
+  const { specCategories } = useActorSpecCategories(actorNameForSpec);
+
+  const interactiveBoardModel = useMemo(
+    () =>
+      buildInteractiveBoardModelFromLocal(
+        safeDraftState.categories,
+        randomizedPlayers,
+        picks.map((p) => ({
+          playerId: p.playerId,
+          playerName: p.playerName,
+          movie: {
+            id: p.movie.id,
+            title: p.movie.title,
+            year: p.movie.year,
+            poster_path: p.movie.poster_path ?? p.movie.posterPath ?? null,
+          },
+          category: p.category,
+        }))
+      ),
+    [safeDraftState.categories, randomizedPlayers, picks]
+  );
+
+  const boardPicksForPicker = useMemo(
+    () =>
+      interactiveBoardModel.boardPicks.map((p) => ({
+        playerId: p.playerId,
+        category: p.category,
+      })),
+    [interactiveBoardModel.boardPicks]
+  );
+
+  const handlePickSubmit = useCallback(
+    async (movie: Movie, category: string, options?: { houseOverride?: boolean }) => {
+      if (!currentPlayer || isAITurn) return;
+
+      if (!options?.houseOverride) {
+        const eligible = getEligibleCategories(
+          movie,
+          safeDraftState.categories,
+          safeDraftState.theme,
+          safeDraftState.option,
+          specCategories
+        );
+        if (!eligible.includes(category)) {
+          toast({
+            title: 'Invalid Category',
+            description: `${movie.title} cannot be placed in ${category}.`,
+            variant: 'destructive',
+          });
+          return;
+        }
+
+        const movieYear = movie.releaseDate
+          ? new Date(movie.releaseDate).getFullYear()
+          : movie.year || new Date().getFullYear();
+        if (
+          safeDraftState.theme === 'year' &&
+          safeDraftState.option &&
+          movieYear !== parseInt(safeDraftState.option, 10)
+        ) {
+          toast({
+            title: 'Invalid Category',
+            description: `${movie.title} (${movieYear}) is not from ${safeDraftState.option}.`,
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+
+      const isDuplicate = picks.some((pick: { movie: { id: number } }) => pick.movie.id === movie.id);
+      if (isDuplicate) {
+        toast({
+          title: 'Movie Already Drafted',
+          description: `${movie.title} has already been selected by another player.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const newPick = {
+        playerId: currentPlayer.id,
+        playerName: currentPlayer.name,
+        movie,
+        category,
+      };
+
+      const updatedPicks = addPick(newPick);
+      const newIsComplete =
+        picks.length + 1 >= normalizedParticipants.length * safeDraftState.categories.length;
+
+      await performAutoSave(updatedPicks, newIsComplete);
+
+      if (newIsComplete) {
+        toast({
+          title: 'Draft Complete!',
+          description: 'Your draft has been automatically saved.',
+        });
+      }
+    },
+    [
+      currentPlayer,
+      isAITurn,
+      safeDraftState,
+      specCategories,
+      picks,
+      addPick,
+      normalizedParticipants.length,
+      performAutoSave,
+      toast,
+    ]
+  );
+
+  const {
+    pickerState,
+    submitting: pickerSubmitting,
+    startSelect,
+    cancel: cancelPicker,
+    selectMovie,
+    confirmPick,
+    setSearchQuery,
+    isCategoryAvailable,
+  } = useDraftBoardPicker({
+    isMyTurn: Boolean(currentPlayer && !isAITurn && !isComplete),
+    currentPlayerId: currentPlayer?.id ?? 1,
+    picks: boardPicksForPicker,
+    onSubmit: handlePickSubmit,
+  });
+
+  const { movies, loading: moviesLoading } = useMovies(baseCategory, themeConstraint, pickerState.searchQuery);
+
+  const railParticipants: BoardRailParticipant[] = useMemo(
+    () =>
+      randomizedPlayers.map((player) => ({
+        id: String(player.id),
+        name: player.name,
+        isCurrentTurn: currentPlayer?.id === player.id,
+        showOnlineStatus: false,
+      })),
+    [randomizedPlayers, currentPlayer]
+  );
 
   // Save draft to localStorage as fallback
   const saveLocalDraft = (draftId: string, draftData: any, picks: any[]) => {
@@ -539,104 +677,6 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   };
 
 
-  const handleMovieSelect = async (movie: any) => {
-    setSelectedMovie(movie);
-    setSelectedCategory('');
-    
-    // Simple Oscar status check - just check cache, no synchronous enrichment
-    if (movie.id) {
-      setCheckingOscarStatus(true);
-      try {
-        // Try cache lookup by tmdb_id (with or without year)
-        const { data: cached } = await supabase
-          .from('oscar_cache')
-          .select('oscar_status')
-          .eq('tmdb_id', movie.id)
-          .maybeSingle();
-        
-        if (cached) {
-          const merged = mergeOscarStatusFromSources(movie.oscar_status, cached.oscar_status);
-          setSelectedMovie({
-            ...movie,
-            oscar_status: merged.oscar_status,
-            hasOscar: merged.hasOscar,
-          });
-          setCheckingOscarStatus(false);
-        } else {
-          // If not in cache, enrich in background (async, non-blocking)
-          supabase.functions.invoke('enrich-movie-data', {
-            body: { movieId: movie.id, movieTitle: movie.title, movieYear: movie.year }
-          }).then(({ data: enrichmentData }) => {
-            if (enrichmentData?.enrichmentData) {
-              const fromEnrich =
-                enrichmentData.enrichmentData.oscarStatus ||
-                enrichmentData.enrichmentData.oscar_status ||
-                undefined;
-              const merged = mergeOscarStatusFromSources(movie.oscar_status, fromEnrich);
-              setSelectedMovie({
-                ...movie,
-                oscar_status: merged.oscar_status,
-                hasOscar: merged.hasOscar,
-              });
-            }
-            setCheckingOscarStatus(false);
-          }).catch(err => {
-            console.log('Background Oscar fetch failed:', err);
-            setCheckingOscarStatus(false);
-          });
-        }
-      } catch (error) {
-        console.log('Oscar status check failed:', error);
-        setCheckingOscarStatus(false);
-      }
-    } else {
-      setCheckingOscarStatus(false);
-    }
-  };
-
-  const handleCategorySelect = (category: string) => {
-    setSelectedCategory(category);
-  };
-
-  const confirmPick = async () => {
-    if (!selectedMovie || !selectedCategory || !currentPlayer) return;
-
-    // Check if this movie has already been drafted
-    const isDuplicate = picks.some((pick: any) => pick.movie.id === selectedMovie.id);
-    if (isDuplicate) {
-      toast({
-        title: "Movie Already Drafted",
-        description: `${selectedMovie.title} has already been selected by another player.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newPick = {
-      playerId: currentPlayer.id,
-      playerName: currentPlayer.name,
-      movie: selectedMovie,
-      category: selectedCategory
-    };
-
-    const updatedPicks = addPick(newPick);
-    const newIsComplete = picks.length + 1 >= normalizedParticipants.length * safeDraftState.categories.length;
-
-    setSelectedMovie(null);
-    setSelectedCategory('');
-    setSearchQuery('');
-
-    // Auto-save after each pick
-    await performAutoSave(updatedPicks, newIsComplete);
-
-    if (newIsComplete) {
-      toast({
-        title: "Draft Complete!",
-        description: "Your draft has been automatically saved.",
-      });
-    }
-  };
-  
   // Enrich picks with scoring data when draft completes
   const enrichPicksForFinalScores = async (picksToEnrich: any[]) => {
     if (enriching || enrichedPicks) return; // Already enriching or enriched
@@ -839,65 +879,31 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      <DraftBoard
-        players={randomizedPlayers}
-        categories={safeDraftState.categories}
-        picks={picks}
+    <div className="flex flex-col items-center gap-6 w-full">
+      <InteractiveDraftBoard
+        players={interactiveBoardModel.boardPlayers}
+        categories={interactiveBoardModel.boardCategories}
+        picks={interactiveBoardModel.boardPicks}
         theme={safeDraftState.theme}
         draftOption={safeDraftState.option}
-        currentPlayer={currentPlayer}
+        currentPlayer={currentPlayer ?? undefined}
+        railParticipants={railParticipants}
+        isMyTurn={Boolean(currentPlayer && !isAITurn && !isComplete)}
+        isAiThinking={isAITurn}
+        aiThinkingName={currentPlayer?.name}
+        aiPicking={aiPicking}
+        pickerState={pickerState}
+        movies={movies}
+        moviesLoading={moviesLoading}
+        onStartSelect={startSelect}
+        onCancel={cancelPicker}
+        onSearchChange={setSearchQuery}
+        onMovieSelect={selectMovie}
+        onConfirm={confirmPick}
+        confirming={pickerSubmitting}
+        isCategoryAvailable={isCategoryAvailable}
+        specCategories={specCategories}
       />
-
-      {!isComplete && currentPlayer && (
-        <>
-          {isAITurn ? (
-            <div className="p-6 bg-greyscale-purp-900 rounded-lg flex flex-col items-center gap-4">
-              <div className="text-greyscale-blue-100 text-lg font-brockmann font-medium">
-                {currentPlayer.name} is thinking...
-              </div>
-              {aiPicking && (
-                <div className="text-greyscale-blue-300 text-sm">
-                  Analyzing movies...
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              <MovieSearch
-                theme={safeDraftState.theme}
-                option={safeDraftState.option}
-                searchQuery={searchQuery}
-                onSearchChange={setSearchQuery}
-                movies={movies}
-                loading={moviesLoading}
-                selectedMovie={selectedMovie}
-                onMovieSelect={handleMovieSelect}
-                themeParameter={themeConstraint}
-              />
-
-              <EnhancedCategorySelection
-                selectedMovie={selectedMovie}
-                categories={safeDraftState.categories}
-                selectedCategory={selectedCategory}
-                onCategorySelect={handleCategorySelect}
-                picks={picks}
-                currentPlayerId={currentPlayer.id}
-                theme={safeDraftState.theme}
-                option={safeDraftState.option}
-                checkingOscarStatus={checkingOscarStatus}
-              />
-
-              <PickConfirmation
-                currentPlayerName={currentPlayer.name}
-                selectedMovie={selectedMovie}
-                selectedCategory={selectedCategory}
-                onConfirm={confirmPick}
-              />
-            </>
-          )}
-        </>
-      )}
 
       {isComplete && (
         (() => {

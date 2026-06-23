@@ -24,6 +24,12 @@ const Home = () => {
     // Skip the parallax entirely for users who prefer reduced motion.
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
+    // Modern browsers run the parallax on the compositor via the `.hero-parallax`
+    // CSS scroll-driven animation (see index.css), which stays perfectly in sync
+    // with scroll. Only fall back to this main-thread handler where that's
+    // unsupported (e.g. Safari), which lags ~1 frame and can look jumpy.
+    if (CSS.supports('animation-timeline', 'scroll()')) return;
+
     let rafId: number | null = null;
     let latestY = window.scrollY;
 
@@ -104,7 +110,7 @@ const Home = () => {
               splineWrapperRef.current = node;
               registerSplineContainer(node);
             }}
-            className="absolute left-1/2 top-[calc(50%+180px)] md:top-[calc(50%+260px)] lg:top-[calc(50%+300px)] z-0 h-screen w-screen"
+            className="hero-parallax absolute left-1/2 top-[calc(50%+180px)] md:top-[calc(50%+260px)] lg:top-[calc(50%+300px)] z-0 h-screen w-screen"
             style={{
               transform: 'translateX(-50%) translateY(-50%)',
               opacity: splineLoaded ? 0.6 : 0,
