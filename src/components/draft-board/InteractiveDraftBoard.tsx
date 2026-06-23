@@ -76,6 +76,9 @@ export function InteractiveDraftBoard({
 
   const minGridWidth = RAIL_WIDTH + categories.length * 150;
 
+  const railCellClassName =
+    'sticky left-0 z-10 flex items-center justify-center bg-[hsl(var(--section-container))]';
+
   const railCellStyle = {
     width: RAIL_WIDTH,
     flexShrink: 0,
@@ -86,7 +89,7 @@ export function InteractiveDraftBoard({
   } as const;
 
   return (
-    <div className="w-full border-y border-[hsl(var(--greyscale-blue-800))] bg-[hsl(var(--section-container))] px-6 py-[18px]">
+    <div className="w-full border-y border-[hsl(var(--greyscale-blue-800))] bg-[hsl(var(--section-container))] px-0 py-[12px] sm:px-6 sm:py-[18px]">
       <div className="w-full overflow-x-auto">
         <div style={{ minWidth: minGridWidth, width: '100%' }}>
           {/* Header row — rail + categories share one flex row so borders align */}
@@ -95,7 +98,7 @@ export function InteractiveDraftBoard({
             style={{ height: HEADER_HEIGHT }}
           >
             <div
-              className="flex items-center justify-center"
+              className={`${railCellClassName} border-b border-[hsl(var(--text-purple))]`}
               style={{ ...railCellStyle, ...railBorderStyle, height: HEADER_HEIGHT }}
             >
               <User className="w-4 h-4 text-[hsl(var(--text-purple))]" />
@@ -124,7 +127,7 @@ export function InteractiveDraftBoard({
                 <div key={player.id} className="flex flex-col">
                   <div className="flex" style={{ minHeight: ROW_MIN_HEIGHT }}>
                     <div
-                      className="flex items-center justify-center"
+                      className={railCellClassName}
                       style={{ ...railCellStyle, ...railBorderStyle, minHeight: ROW_MIN_HEIGHT }}
                     >
                       {railParticipant && (
@@ -183,7 +186,7 @@ export function InteractiveDraftBoard({
 
                   {showPicker && (
                     <div className="flex">
-                      <div style={{ ...railCellStyle, ...railBorderStyle }} aria-hidden />
+                      <div className={railCellClassName} style={{ ...railCellStyle, ...railBorderStyle }} aria-hidden />
                       <div className="flex-1 min-w-0 p-1">
                         <DraftBoardInlinePicker
                           theme={theme}
@@ -204,7 +207,7 @@ export function InteractiveDraftBoard({
 
                   {isCurrentRow && isAiThinking && (
                     <div className="flex">
-                      <div style={{ ...railCellStyle, ...railBorderStyle }} aria-hidden />
+                      <div className={railCellClassName} style={{ ...railCellStyle, ...railBorderStyle }} aria-hidden />
                       <div className="flex-1 min-w-0">
                         <DraftBoardAiThinkingRow
                           playerName={aiThinkingName || player.name}

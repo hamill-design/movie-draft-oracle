@@ -4,6 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from './useCurrentUser';
 import { useGuestSession } from './useGuestSession';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DRAFT_PRESENCE_HEARTBEAT_MS,
+  DRAFT_PRESENCE_SYNC_MS,
+  isPresenceHeartbeatUpdate,
+  mergeParticipantPresenceRows,
+} from '@/utils/draftPresence';
 
 // Helper function to extract detailed error information (Supabase RPC, PostgrestError, etc.)
 const getErrorMessage = (error: any): string => {
@@ -55,6 +61,7 @@ interface DraftParticipant {
   created_at?: string | null; // Used for sorting to match player_id calculation
   email?: string | null; // User's email from profiles
   avatar_url?: string | null;
+  last_seen_at?: string | null;
 }
 
 interface MultiplayerDraft {
@@ -76,6 +83,30 @@ interface MultiplayerDraft {
   player_id_to_display_row?: Record<string, number> | null;
   voting_ends_at?: string | null;
   allow_public_voting?: boolean;
+}
+
+function patchParticipantLastSeenAt(
+  participants: DraftParticipant[],
+  rowId: string,
+  lastSeenAt: string | null
+): DraftParticipant[] {
+  return participants.map((participant) =>
+    participant.id === rowId ? { ...participant, last_seen_at: lastSeenAt } : participant
+  );
+}
+
+function patchOwnParticipantLastSeenAt(
+  participants: DraftParticipant[],
+  sessionParticipantId: string,
+  lastSeenAt: string | null
+): DraftParticipant[] {
+  return participants.map((participant) => {
+    const isSelf =
+      participant.participant_id === sessionParticipantId ||
+      participant.user_id === sessionParticipantId ||
+      participant.guest_participant_id === sessionParticipantId;
+    return isSelf ? { ...participant, last_seen_at: lastSeenAt } : participant;
+  });
 }
 
 export const useMultiplayerDraft = (
@@ -114,6 +145,9 @@ export const useMultiplayerDraft = (
   const draftChannelRef = useRef<any>(null);
   const picksChannelRef = useRef<any>(null);
   const participantsChannelRef = useRef<any>(null);
+  const presenceHeartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const presenceSyncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const presencePausedRef = useRef(false);
   
   // Connection monitoring and health checks
   const [isConnected, setIsConnected] = useState(true);
@@ -578,6 +612,68 @@ export const useMultiplayerDraft = (
     loadDraftRef.current = loadDraft;
   }, [loadDraft]);
 
+  const sendPresenceHeartbeat = useCallback(
+    async (options?: { clear?: boolean }) => {
+      if (!normalizedDraftId || !effectiveParticipantId) return;
+      if (isGuest && !guestSession) return;
+      if (presencePausedRef.current && !options?.clear) return;
+
+      try {
+        if (guestSession) {
+          await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
+        }
+
+        if (options?.clear) {
+          await supabase.rpc('clear_draft_presence', {
+            p_draft_id: normalizedDraftId,
+            p_participant_id: effectiveParticipantId,
+          });
+          setParticipants((prev) =>
+            patchOwnParticipantLastSeenAt(prev, effectiveParticipantId, null)
+          );
+          return;
+        }
+
+        await supabase.rpc('heartbeat_draft_presence', {
+          p_draft_id: normalizedDraftId,
+          p_participant_id: effectiveParticipantId,
+        });
+        setParticipants((prev) =>
+          patchOwnParticipantLastSeenAt(prev, effectiveParticipantId, new Date().toISOString())
+        );
+      } catch (error) {
+        console.warn('Draft presence heartbeat failed:', error);
+      }
+    },
+    [normalizedDraftId, effectiveParticipantId, isGuest, guestSession]
+  );
+
+  const syncParticipantPresenceFromServer = useCallback(async () => {
+    if (!normalizedDraftId) return;
+
+    try {
+      if (guestSession) {
+        await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
+      }
+
+      const { data, error } = await supabase
+        .from('draft_participants')
+        .select('id, last_seen_at')
+        .eq('draft_id', normalizedDraftId);
+
+      if (error) {
+        console.warn('Draft presence sync failed:', error);
+        return;
+      }
+
+      if (!data?.length) return;
+
+      setParticipants((prev) => mergeParticipantPresenceRows(prev, data));
+    } catch (error) {
+      console.warn('Draft presence sync failed:', error);
+    }
+  }, [normalizedDraftId, guestSession]);
+
   // Join a draft by invite code
   const joinDraftByCode = useCallback(async (inviteCode: string, participantName: string) => {
     console.log('🔵 joinDraftByCode called with:', { inviteCode, participantName, participantId });
@@ -1020,6 +1116,28 @@ export const useMultiplayerDraft = (
         if (!isGuest) {
           stopPolling();
         }
+
+        if (
+          payload.eventType === 'UPDATE' &&
+          payload.new &&
+          typeof payload.new === 'object' &&
+          'id' in payload.new &&
+          'last_seen_at' in payload.new
+        ) {
+          const row = payload.new as { id: string; last_seen_at?: string | null };
+          setParticipants((prev) =>
+            patchParticipantLastSeenAt(prev, row.id, row.last_seen_at ?? null)
+          );
+
+          if (
+            isPresenceHeartbeatUpdate(
+              payload.old as Record<string, unknown> | undefined,
+              payload.new as Record<string, unknown> | undefined
+            )
+          ) {
+            return;
+          }
+        }
         
         // Reload participants when changes occur (debounced)
         debouncedReload(normalizedDraftId);
@@ -1161,6 +1279,79 @@ export const useMultiplayerDraft = (
     };
   }, [normalizedDraftId, participantId, updateLastActivity, reconnectSubscriptions, startPolling]);
 
+  // DB-backed presence heartbeat while this draft is open
+  useEffect(() => {
+    if (!normalizedDraftId || !effectiveParticipantId) return;
+    if (isGuest && !guestSession) return;
+
+    presencePausedRef.current = document.visibilityState === 'hidden';
+
+    const startHeartbeatLoop = () => {
+      if (presenceHeartbeatIntervalRef.current) return;
+      presenceHeartbeatIntervalRef.current = setInterval(() => {
+        void sendPresenceHeartbeat();
+      }, DRAFT_PRESENCE_HEARTBEAT_MS);
+    };
+
+    const stopHeartbeatLoop = () => {
+      if (!presenceHeartbeatIntervalRef.current) return;
+      clearInterval(presenceHeartbeatIntervalRef.current);
+      presenceHeartbeatIntervalRef.current = null;
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        presencePausedRef.current = true;
+        stopHeartbeatLoop();
+        void sendPresenceHeartbeat({ clear: true });
+        return;
+      }
+
+      presencePausedRef.current = false;
+      void sendPresenceHeartbeat();
+      startHeartbeatLoop();
+      void syncParticipantPresenceFromServer();
+    };
+
+    if (!presencePausedRef.current) {
+      void sendPresenceHeartbeat();
+      startHeartbeatLoop();
+    }
+
+    void syncParticipantPresenceFromServer();
+    presenceSyncIntervalRef.current = setInterval(() => {
+      void syncParticipantPresenceFromServer();
+    }, DRAFT_PRESENCE_SYNC_MS);
+
+    const handlePageHide = () => {
+      presencePausedRef.current = true;
+      stopHeartbeatLoop();
+      void sendPresenceHeartbeat({ clear: true });
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', handlePageHide);
+      stopHeartbeatLoop();
+      if (presenceSyncIntervalRef.current) {
+        clearInterval(presenceSyncIntervalRef.current);
+        presenceSyncIntervalRef.current = null;
+      }
+      presencePausedRef.current = true;
+      void sendPresenceHeartbeat({ clear: true });
+    };
+  }, [
+    normalizedDraftId,
+    effectiveParticipantId,
+    isGuest,
+    guestSession?.id,
+    sendPresenceHeartbeat,
+    syncParticipantPresenceFromServer,
+  ]);
+
   // Manual refresh function for UI
   const manualRefresh = useCallback(() => {
     if (normalizedDraftId && loadDraftRef.current) {
@@ -1168,7 +1359,9 @@ export const useMultiplayerDraft = (
       loadDraftRef.current(normalizedDraftId, { background: true });
       updateLastActivity();
     }
-  }, [normalizedDraftId, updateLastActivity]);
+    void sendPresenceHeartbeat();
+    void syncParticipantPresenceFromServer();
+  }, [normalizedDraftId, updateLastActivity, sendPresenceHeartbeat, syncParticipantPresenceFromServer]);
 
   return {
     draft,

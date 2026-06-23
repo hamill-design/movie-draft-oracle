@@ -41,13 +41,6 @@ export function getMovieSearchPlaceholder(theme: string, option: string): string
   return 'Search for movies...';
 }
 
-export function getMoviePickerTitle(theme: string, option: string): string {
-  if (theme === 'spec-draft') return 'Search Movies';
-  if (theme === 'year') return `Search Movies from ${option}`;
-  if (theme === 'people') return `Search Movies featuring ${getCleanActorName(option)}`;
-  return 'Search Movies';
-}
-
 export function shouldShowMovieSearchResults(theme: string, searchQuery: string): boolean {
   if (theme === 'year' || theme === 'people') return searchQuery.trim().length >= 2;
   return searchQuery.trim().length > 0;
@@ -206,7 +199,6 @@ export function DraftMovieSearchList({
   const [houseOverrideEnabled, setHouseOverrideEnabled] = useState(false);
   const filteredMovies = filterMoviesForSearch(movies, searchQuery, theme);
   const shouldShowResults = shouldShowMovieSearchResults(theme, searchQuery);
-  const title = getMoviePickerTitle(theme, option);
   const resultsMaxHeight = compact ? '180px' : '240px';
 
   useEffect(() => {
@@ -266,15 +258,6 @@ export function DraftMovieSearchList({
 
   return (
     <div className="inline-flex h-full w-full flex-col items-start justify-center gap-3 p-3">
-      <div className="inline-flex w-full items-center gap-2 self-stretch">
-        <div className="inline-flex h-6 w-6 shrink-0 flex-col items-center justify-center p-0.5">
-          <SearchIcon className="h-5 w-5 text-[hsl(var(--text-purple))]" />
-        </div>
-        <div className="flex flex-1 flex-col justify-center text-xl font-brockmann font-medium leading-7 text-greyscale-blue-100">
-          {title}
-        </div>
-      </div>
-
       <div className="flex w-full flex-col items-start gap-[18px] self-stretch">
         <div className="inline-flex w-full items-center gap-3 self-stretch overflow-hidden rounded-[2px] bg-greyscale-purp-850 px-4 py-3 outline outline-1 outline-offset-[-1px] outline-greyscale-blue-100">
           <div className="inline-flex w-6 shrink-0 flex-col items-center justify-center px-0.5 py-1">

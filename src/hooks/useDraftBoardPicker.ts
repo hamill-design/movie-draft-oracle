@@ -48,8 +48,6 @@ export function useDraftBoardPicker({
       if (!isMyTurn) return;
       if (!isCategoryAvailable(category)) return;
       setActiveCategory(category);
-      setSearchQuery('');
-      setSelectedMovie(null);
     },
     [isMyTurn, isCategoryAvailable]
   );

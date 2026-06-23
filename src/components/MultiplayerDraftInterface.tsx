@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
+import { isParticipantOnline } from '@/utils/draftPresence';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMovies } from '@/hooks/useMovies';
@@ -68,7 +69,7 @@ export const MultiplayerDraftInterface = ({
     createMultiplayerDraft,
     makePick,
     loadDraft,
-    startDraft
+    startDraft,
   } = useMultiplayerDraft(draftId, undefined, participantIdFromParent);
   // Use parent's participantId when available so we don't show "Authentication Required" while parent has session
   const effectiveParticipantId = participantIdFromParent ?? participantId;
@@ -849,11 +850,11 @@ export const MultiplayerDraftInterface = ({
           name: p.participant_name,
           avatarUrl: p.avatar_url,
           isCurrentTurn: Boolean(isCurrent),
-          showOnlineStatus: true,
-          isOnline: p.status === 'joined',
+          showOnlineStatus: !p.is_ai,
+          isOnline: isParticipantOnline(p, now),
         };
       }),
-    [draftBoardParticipants, currentTurnPlayer]
+    [draftBoardParticipants, currentTurnPlayer, now]
   );
 
   const canonicalDraftUrl = draftId ? `${SITE_ORIGIN}/draft/${draftId}` : `${SITE_ORIGIN}/draft`;
@@ -1015,7 +1016,7 @@ export const MultiplayerDraftInterface = ({
         />
       )}
 
-      <div className="max-w-6xl mx-auto p-4 space-y-6">
+      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
         <DraftLobbyStatusParticipants
           draft={draft}
           isComplete={isComplete}
@@ -1026,6 +1027,7 @@ export const MultiplayerDraftInterface = ({
           participants={participants}
           sortedParticipants={getParticipantsSortedByCreatedAt}
           joinedParticipantsCount={joinedParticipantsCount}
+          presenceNowMs={now}
           copySuccess={copySuccess}
           loading={loading}
           onCopyInviteCode={copyInviteCode}

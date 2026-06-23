@@ -1,4 +1,5 @@
 import { Copy, Check, Clock, Film } from 'lucide-react';
+import { isParticipantOnline } from '@/utils/draftPresence';
 import { MultiPersonIcon } from '@/components/icons/MultiPersonIcon';
 import { PersonIcon } from '@/components/icons/PersonIcon';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -14,6 +15,7 @@ interface LobbyParticipant {
   status: 'invited' | 'joined' | 'left' | string;
   email?: string | null;
   avatar_url?: string | null;
+  last_seen_at?: string | null;
 }
 
 function getParticipantInitials(name: string): string {
@@ -207,6 +209,7 @@ interface DraftLobbyStatusParticipantsProps {
   participants: LobbyParticipant[];
   sortedParticipants: LobbyParticipant[];
   joinedParticipantsCount: number;
+  presenceNowMs: number;
   copySuccess: boolean;
   loading: boolean;
   onCopyInviteCode: () => void;
@@ -223,6 +226,7 @@ export function DraftLobbyStatusParticipants({
   participants,
   sortedParticipants,
   joinedParticipantsCount,
+  presenceNowMs,
   copySuccess,
   loading,
   onCopyInviteCode,
@@ -559,8 +563,10 @@ export function DraftLobbyStatusParticipants({
               display: 'inline-flex',
               flexWrap: 'wrap',
               alignContent: 'center',
+              rowGap: '12px',
             }}>
               <div style={{
+                flex: '0 0 auto',
                 minWidth: '120px',
                 justifyContent: 'center',
                 display: 'flex',
@@ -577,8 +583,8 @@ export function DraftLobbyStatusParticipants({
               </div>
               {draft.invite_code && (
                 <div style={{
-                  flex: '1 1 0',
-                  minWidth: '295px',
+                  flex: '1 1 auto',
+                  minWidth: 'min(100%, 295px)',
                   flexDirection: 'column',
                   justifyContent: 'flex-start',
                   alignItems: 'flex-end',
@@ -735,7 +741,7 @@ export function DraftLobbyStatusParticipants({
                     avatarUrl={participant.avatar_url}
                     name={participant.participant_name}
                     email={participant.email}
-                    isOnline={participant.status === 'joined'}
+                    isOnline={isParticipantOnline(participant, presenceNowMs)}
                   />
                 ))}
               </div>

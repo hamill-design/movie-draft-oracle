@@ -105,6 +105,7 @@ export type Database = {
           is_ai: boolean | null
           is_host: boolean
           joined_at: string | null
+          last_seen_at: string | null
           participant_name: string
           status: Database["public"]["Enums"]["participant_status"]
           user_id: string | null
@@ -117,6 +118,7 @@ export type Database = {
           is_ai?: boolean | null
           is_host?: boolean
           joined_at?: string | null
+          last_seen_at?: string | null
           participant_name: string
           status?: Database["public"]["Enums"]["participant_status"]
           user_id?: string | null
@@ -129,6 +131,7 @@ export type Database = {
           is_ai?: boolean | null
           is_host?: boolean
           joined_at?: string | null
+          last_seen_at?: string | null
           participant_name?: string
           status?: Database["public"]["Enums"]["participant_status"]
           user_id?: string | null
@@ -1022,6 +1025,10 @@ export type Database = {
         Returns: boolean
       }
       cleanup_expired_guest_sessions: { Args: never; Returns: undefined }
+      clear_draft_presence: {
+        Args: { p_draft_id: string; p_participant_id: string }
+        Returns: undefined
+      }
       create_guest_multiplayer_draft: {
         Args: {
           p_categories: string[]
@@ -1134,6 +1141,10 @@ export type Database = {
       }
       generate_invite_code: { Args: never; Returns: string }
       generate_league_slug: { Args: { name_input: string }; Returns: string }
+      heartbeat_draft_presence: {
+        Args: { p_draft_id: string; p_participant_id: string }
+        Returns: undefined
+      }
       get_invite_code_for_draft: {
         Args: { p_draft_id: string }
         Returns: string
