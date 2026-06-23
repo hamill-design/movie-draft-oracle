@@ -1,12 +1,22 @@
 
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/atoms';
-import { HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { getInitials } from '@/utils/avatarUpload';
 import { NotificationBell } from '@/components/NotificationBell';
+import { cn } from '@/lib/utils';
+
+const HEADER_NAV_ITEMS = [
+  { label: 'How To Play', mobileLabel: 'How to Draft', to: '/how-to-draft' },
+  { label: 'Start a League', mobileLabel: 'Start A League', to: '/league/create' },
+  { label: 'Blog', mobileLabel: 'Blog', to: '/blog' },
+  { label: 'Movie News', mobileLabel: 'Movies News', to: '/news' },
+] as const;
+
+const navLinkClassName =
+  'px-3 py-2 rounded-sm text-sm font-brockmann font-medium leading-5 text-greyscale-blue-100 hover:bg-white/[0.07] transition-colors';
 
 const useHeaderProfile = (userId: string | undefined) => {
   const [profile, setProfile] = useState<{ name: string | null; avatar_url: string | null } | null>(null);
@@ -131,6 +141,47 @@ const UserAvatar = ({ name, email, avatarUrl, size = 32, onClick }: UserAvatarPr
   );
 };
 
+const HeaderNavLinks = ({
+  className,
+  onNavigate,
+}: {
+  className?: string;
+  onNavigate?: () => void;
+}) => (
+  <nav className={cn('flex items-center gap-1', className)}>
+    {HEADER_NAV_ITEMS.map(({ label, to }) => (
+      <Link key={to} to={to} onClick={onNavigate} className={navLinkClassName}>
+        {label}
+      </Link>
+    ))}
+  </nav>
+);
+
+const MobileMenuButton = ({
+  open,
+  onClick,
+}: {
+  open: boolean;
+  onClick: () => void;
+}) => (
+  <button
+    type="button"
+    aria-label={open ? 'Close menu' : 'Open menu'}
+    aria-expanded={open}
+    onClick={onClick}
+    className={cn(
+      'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md border-none p-1.5 transition-colors',
+      open ? 'bg-brand-primary' : 'bg-transparent hover:bg-white/[0.07]',
+    )}
+  >
+    <div className="flex flex-col gap-1">
+      <div className="w-[18px] h-0.5 bg-greyscale-blue-100" />
+      <div className="w-[18px] h-0.5 bg-greyscale-blue-100" />
+      <div className="w-[18px] h-0.5 bg-greyscale-blue-100" />
+    </div>
+  </button>
+);
+
 // Logo Components
 const LogoLong = ({ className }: { className?: string }) => (
   <svg className={`${className} text-brand-primary logo-hover`} viewBox="0 0 428 27" xmlns="http://www.w3.org/2000/svg">
@@ -175,161 +226,138 @@ const AppHeader = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const profile = useHeaderProfile(user?.id);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false);
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [mobileMenuOpen]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = () => {
+      if (mq.matches) setMobileMenuOpen(false);
+    };
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
+  const userActions = (
+    <>
+      {user ? (
+        <>
+          <NotificationBell />
+          <UserAvatar
+            name={profile?.name ?? null}
+            email={user.email ?? null}
+            avatarUrl={profile?.avatar_url ?? null}
+            size={36}
+            onClick={() => navigate('/profile')}
+          />
+        </>
+      ) : (
+        <Button
+          onClick={() => navigate('/auth')}
+          variant="default"
+          size="sm"
+          font="brockmann-medium"
+          className="bg-brand-primary hover:bg-brand-primary/90 text-brand-primary-foreground px-4 py-2 text-sm rounded-sm"
+        >
+          Login
+        </Button>
+      )}
+    </>
+  );
 
   return (
-    <>
-      <header className="bg-greyscale-blue-900 p-5 sticky top-0 z-50">
-        {/* Desktop Layout (lg+) */}
-        <div className="hidden lg:flex w-full items-center justify-between">
-          {/* Brand/Logo Section */}
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-start gap-2.5 w-full max-w-[647px]"
-          >
-            <LogoLong className="flex-1 h-10" />
-          </button>
+    <header className="relative bg-greyscale-blue-900 sticky top-0 z-50 p-[18px]">
+      {/* Desktop Layout (lg+) */}
+      <div className="hidden lg:flex w-full items-center justify-between">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-start gap-2.5 w-full max-w-[647px]"
+        >
+          <LogoLong className="flex-1 h-10" />
+        </button>
 
-          {/* Right side buttons */}
+        <div className="flex items-center gap-[18px]">
+          <HeaderNavLinks />
+          {userActions}
+        </div>
+      </div>
+
+      {/* Tablet Layout (md-lg) */}
+      <div className="hidden md:flex lg:hidden w-full items-center justify-between">
+        <button
+          onClick={() => navigate('/')}
+          className="overflow-hidden"
+        >
+          <LogoDefault className="w-[288.25px] h-auto" />
+        </button>
+
+        <div className="flex flex-col items-end gap-3">
           <div className="flex items-center gap-3">
-            {/* Learn More Button */}
-            <Button
-              onClick={() => navigate('/learn-more')}
-              variant="ghost"
-              size="sm"
-              font="brockmann-medium"
-              className="text-purple-150 hover:text-purple-200 hover:bg-transparent px-3 py-2 text-sm"
-            >
-              <HelpCircle size={16} className="mr-2" />
-              Learn More
-            </Button>
+            {userActions}
+          </div>
+          <HeaderNavLinks />
+        </div>
+      </div>
 
-            {/* Notifications + Profile/Login */}
-            {user ? (
-              <>
-                <NotificationBell />
-                <UserAvatar
-                  name={profile?.name ?? null}
-                  email={user.email ?? null}
-                  avatarUrl={profile?.avatar_url ?? null}
-                  size={36}
-                  onClick={() => navigate('/profile')}
-                />
-              </>
-            ) : (
-              <Button
-                onClick={() => navigate('/auth')}
-                variant="default"
-                size="sm"
-                font="brockmann-medium"
-                className="bg-brand-primary hover:bg-brand-primary/90 text-brand-primary-foreground px-4 py-2 text-sm rounded-sm"
-              >
-                Login
-              </Button>
-            )}
+      {/* Mobile Layout (sm) */}
+      <div className="flex md:hidden w-full flex-col gap-[18px]">
+        <button
+          onClick={() => navigate('/')}
+          className="block w-full"
+        >
+          <LogoLong className="block w-full aspect-[428/27] h-auto" />
+        </button>
+
+        <div className="self-stretch flex justify-between items-start">
+          <MobileMenuButton
+            open={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((prev) => !prev)}
+          />
+          <div className="flex items-start gap-3">
+            {userActions}
           </div>
         </div>
+      </div>
 
-        {/* Tablet Layout (md-lg) */}
-        <div className="hidden md:flex lg:hidden w-full items-center justify-between">
-          {/* Brand/Logo Section */}
-          <button
-            onClick={() => navigate('/')}
-            className="overflow-hidden"
-          >
-            <LogoDefault className="w-[288.25px] h-auto" />
-          </button>
-
-          {/* Right side buttons */}
-          <div className="flex flex-col items-end gap-3">
-            {/* Notifications + Profile/Login */}
-            {user ? (
-              <div className="flex items-center gap-2">
-                <NotificationBell />
-                <UserAvatar
-                  name={profile?.name ?? null}
-                  email={user.email ?? null}
-                  avatarUrl={profile?.avatar_url ?? null}
-                  size={36}
-                  onClick={() => navigate('/profile')}
-                />
-              </div>
-            ) : (
-              <Button
-                onClick={() => navigate('/auth')}
-                variant="default"
-                size="sm"
-                font="brockmann-medium"
-                className="bg-brand-primary hover:bg-brand-primary/90 text-brand-primary-foreground px-4 py-2 text-sm rounded-sm"
-              >
-                Login
-              </Button>
-            )}
-
-            {/* Learn More Button */}
-            <Button
-              onClick={() => navigate('/learn-more')}
-              variant="ghost"
-              size="sm"
-              font="brockmann-medium"
-              className="text-purple-150 hover:text-purple-200 hover:bg-transparent px-3 py-2 text-sm"
+      {/* Mobile menu overlay — slides down over page content */}
+      <nav
+        aria-hidden={!mobileMenuOpen}
+        inert={mobileMenuOpen ? undefined : true}
+        className={cn(
+          'md:hidden absolute inset-x-0 top-full z-50 grid bg-greyscale-blue-900',
+          'transition-[grid-template-rows] duration-300 ease-in-out',
+          mobileMenuOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr] pointer-events-none',
+        )}
+      >
+        <div
+          className={cn(
+            'overflow-hidden min-h-0 flex flex-col gap-0.5',
+            'transition-opacity duration-300 ease-in-out',
+            mobileMenuOpen ? 'opacity-100' : 'opacity-0',
+          )}
+        >
+          {HEADER_NAV_ITEMS.map(({ mobileLabel, to }) => (
+            <Link
+              key={to}
+              to={to}
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-[18px] py-3 bg-greyscale-purp-850 text-sm font-brockmann font-medium leading-5 text-greyscale-blue-100"
             >
-              <HelpCircle size={16} className="mr-2" />
-              Learn More
-            </Button>
-          </div>
+              {mobileLabel}
+            </Link>
+          ))}
         </div>
-
-        {/* Mobile Layout (sm) */}
-        <div className="flex md:hidden w-full flex-col gap-6">
-          {/* Brand/Logo Section */}
-          <button
-            onClick={() => navigate('/')}
-            className="self-stretch"
-          >
-            <LogoLong className="w-full h-[21.65px]" />
-          </button>
-
-          {/* Right side buttons */}
-          <div className="self-stretch flex justify-end items-center gap-3">
-            {/* Learn More Button */}
-            <Button
-              onClick={() => navigate('/learn-more')}
-              variant="ghost"
-              size="sm"
-              font="brockmann-medium"
-              className="text-purple-150 hover:text-purple-200 hover:bg-transparent px-3 py-2 text-sm"
-            >
-              <HelpCircle size={16} className="mr-2" />
-              Learn More
-            </Button>
-
-            {/* Notifications + Profile/Login */}
-            {user ? (
-              <>
-                <NotificationBell />
-                <UserAvatar
-                  name={profile?.name ?? null}
-                  email={user.email ?? null}
-                  avatarUrl={profile?.avatar_url ?? null}
-                  size={36}
-                  onClick={() => navigate('/profile')}
-                />
-              </>
-            ) : (
-              <Button
-                onClick={() => navigate('/auth')}
-                variant="default"
-                size="sm"
-                font="brockmann-medium"
-                className="bg-brand-primary hover:bg-brand-primary/90 text-brand-primary-foreground px-4 py-2 text-sm rounded-sm"
-              >
-                Login
-              </Button>
-            )}
-          </div>
-        </div>
-      </header>
-    </>
+      </nav>
+    </header>
   );
 };
 
