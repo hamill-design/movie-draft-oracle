@@ -10,11 +10,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { socialShareImageMetaNodes } from "@/components/seo/SocialShareImageMeta";
 import { breadcrumbListNode, graphJsonLd, webPageNode } from "@/components/seo/jsonLd";
-import { useNavigate } from "react-router-dom";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,10 +28,14 @@ interface ContactFormData {
 }
 
 const Contact = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Contact', path: '/contact' },
+  ];
+
   const {
     register,
     handleSubmit,
@@ -133,24 +136,14 @@ const Contact = () => {
                   'Contact Movie Drafter support for help with your account, fantasy movie drafts, or any questions about our movie drafting game.',
                 type: 'ContactPage',
               }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'Contact', path: '/contact' },
-              ])
+              breadcrumbListNode(crumbs)
             )
           )}
         </script>
       </Helmet>
       <div className="min-h-screen p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
       <div className="max-w-2xl mx-auto">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-          className="mb-6"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
+        <Breadcrumbs items={crumbs} className="mb-6" />
 
         <Card>
           <CardHeader>

@@ -4,11 +4,17 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { breadcrumbListNode, graphJsonLd, webPageNode } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 const LearnMore = () => {
   const pageName = 'How the movie drafting game works';
   const pageDesc =
     'Learn how the movie drafting game works on Movie Drafter: fantasy movie drafts, multiplayer picks, and scoring with our cinema drafting tool.';
+
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Learn more', path: '/learn-more' },
+  ];
 
   return (
     <>
@@ -30,10 +36,7 @@ const LearnMore = () => {
                 name: pageName,
                 description: pageDesc,
               }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'Learn more', path: '/learn-more' },
-              ])
+              breadcrumbListNode(crumbs)
             )
           )}
         </script>
@@ -72,6 +75,7 @@ const LearnMore = () => {
             gap: '24px',
             display: 'flex'
           }}>
+            <Breadcrumbs items={crumbs} className="w-full" />
             <div style={{
               alignSelf: 'stretch',
               flexDirection: 'column',
@@ -155,7 +159,7 @@ const LearnMore = () => {
               justifyContent: 'center',
               display: 'flex',
               flexDirection: 'column',
-              color: 'var(--Brand-Primary, #7142FF)',
+              color: 'var(--Purple-300, #907AFF)',
               fontSize: '29.53px',
               fontFamily: 'Brockmann',
               fontWeight: '700',
@@ -203,7 +207,7 @@ const LearnMore = () => {
                     justifyContent: 'center',
                     display: 'flex',
                     flexDirection: 'column',
-                    color: 'var(--Brand-Primary, #7142FF)',
+                    color: 'var(--Purple-300, #907AFF)',
                     fontSize: '18.59px',
                     fontFamily: 'Brockmann',
                     fontWeight: '400',
@@ -268,7 +272,7 @@ const LearnMore = () => {
                     justifyContent: 'center',
                     display: 'flex',
                     flexDirection: 'column',
-                    color: 'var(--Brand-Primary, #7142FF)',
+                    color: 'var(--Purple-300, #907AFF)',
                     fontSize: '18.44px',
                     fontFamily: 'Brockmann',
                     fontWeight: '400',
@@ -362,7 +366,7 @@ const LearnMore = () => {
                     justifyContent: 'center',
                     display: 'flex',
                     flexDirection: 'column',
-                    color: 'var(--Brand-Primary, #7142FF)',
+                    color: 'var(--Purple-300, #907AFF)',
                     fontSize: '17.97px',
                     fontFamily: 'Brockmann',
                     fontWeight: '400',
@@ -456,7 +460,7 @@ const LearnMore = () => {
                     justifyContent: 'center',
                     display: 'flex',
                     flexDirection: 'column',
-                    color: 'var(--Brand-Primary, #7142FF)',
+                    color: 'var(--Purple-300, #907AFF)',
                     fontSize: '18.13px',
                     fontFamily: 'Brockmann',
                     fontWeight: '400',
@@ -514,7 +518,7 @@ const LearnMore = () => {
                   justifyContent: 'center',
                   display: 'flex',
                   flexDirection: 'column',
-                  color: 'var(--Brand-Primary, #7142FF)',
+                  color: 'var(--Purple-300, #907AFF)',
                   fontSize: '18.75px',
                   fontFamily: 'Brockmann',
                   fontWeight: '400',

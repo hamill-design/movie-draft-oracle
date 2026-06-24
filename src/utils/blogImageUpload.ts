@@ -9,26 +9,36 @@ const MAX_DIMENSIONS: Record<'cover' | 'content', number> = {
   content: 1200,
 };
 
+/** WebP encoding quality (0–1). 0.85 is visually near-lossless with a big size win. */
+const WEBP_QUALITY = 0.85;
+
+/** Maps an image MIME type to a file extension for the stored object name. */
+const EXT_BY_TYPE: Record<string, string> = {
+  'image/webp': 'webp',
+  'image/png': 'png',
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/gif': 'gif',
+};
+
 /**
- * Resizes an image so its longest side is at most `maxDimension`, preserving aspect ratio.
- * Returns the original file untouched if it's already small enough.
+ * Loads an image, downscales it so its longest side is at most `maxDimension`
+ * (preserving aspect ratio; never upscales), and re-encodes it as WebP.
+ *
+ * Always returns a WebP blob, even when no resize is needed. If the browser
+ * can't encode WebP, `canvas.toBlob` falls back to PNG — `blob.type` reflects
+ * whatever was actually produced, so callers should trust it over the request.
  */
-const resizeImageToMaxDimension = (file: File, maxDimension: number): Promise<Blob> => {
+const resizeAndConvertToWebp = (file: File, maxDimension: number): Promise<Blob> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
         const { width, height } = img;
-
-        if (width <= maxDimension && height <= maxDimension) {
-          resolve(file);
-          return;
-        }
-
-        const scale = maxDimension / Math.max(width, height);
-        const targetWidth = Math.round(width * scale);
-        const targetHeight = Math.round(height * scale);
+        const scale = Math.min(1, maxDimension / Math.max(width, height));
+        const targetWidth = Math.max(1, Math.round(width * scale));
+        const targetHeight = Math.max(1, Math.round(height * scale));
 
         const canvas = document.createElement('canvas');
         canvas.width = targetWidth;
@@ -47,11 +57,11 @@ const resizeImageToMaxDimension = (file: File, maxDimension: number): Promise<Bl
             if (blob) {
               resolve(blob);
             } else {
-              reject(new Error('Failed to create blob from canvas'));
+              reject(new Error('Failed to convert image to WebP'));
             }
           },
-          file.type || 'image/jpeg',
-          0.9
+          'image/webp',
+          WEBP_QUALITY
         );
       };
       img.onerror = () => reject(new Error('Failed to load image'));
@@ -80,16 +90,22 @@ export const uploadBlogImage = async (
     throw new Error('File size exceeds 5MB limit. Please upload a smaller image.');
   }
 
-  const resizedBlob = await resizeImageToMaxDimension(file, MAX_DIMENSIONS[kind]);
+  // Animated GIFs are uploaded untouched — a canvas only captures one frame, so
+  // converting them to WebP here would silently drop the animation. Everything
+  // else is resized and re-encoded to WebP for a smaller, faster-loading file.
+  const isGif = file.type === 'image/gif';
+  const uploadBlob: Blob = isGif
+    ? file
+    : await resizeAndConvertToWebp(file, MAX_DIMENSIONS[kind]);
 
-  const fileExt = file.name.split('.').pop() || 'jpg';
+  const contentType = uploadBlob.type || 'image/webp';
+  const fileExt = EXT_BY_TYPE[contentType] || 'webp';
   const fileName = `${kind}-${Date.now()}.${fileExt}`;
   const filePath = `${postId}/${fileName}`;
-  const contentType = file.type || 'image/jpeg';
 
   const { error } = await supabase.storage
     .from('blog-images')
-    .upload(filePath, resizedBlob, {
+    .upload(filePath, uploadBlob, {
       contentType,
       upsert: false,
       cacheControl: '3600',

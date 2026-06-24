@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { breadcrumbListNode, faqPageNode, graphJsonLd, webPageNode } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 const SITE = 'https://moviedrafter.com';
 
@@ -73,6 +74,11 @@ const FAQ = () => {
   const pageDesc =
     'Answers to common questions about Movie Drafter: how the movie draft game works, scoring rules, multiplayer, draft formats, and how to play with friends online.';
 
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'FAQ', path: '/faq' },
+  ];
+
   return (
     <>
       <Helmet>
@@ -89,10 +95,7 @@ const FAQ = () => {
           {JSON.stringify(
             graphJsonLd(
               webPageNode({ path: '/faq', name: pageTitle, description: pageDesc }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'FAQ', path: '/faq' },
-              ]),
+              breadcrumbListNode(crumbs),
               faqPageNode(faqs)
             )
           )}
@@ -104,12 +107,9 @@ const FAQ = () => {
         style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}
       >
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col gap-10">
+          <Breadcrumbs items={crumbs} />
+
           <header className="flex flex-col gap-4">
-            <p className="m-0 text-sm font-brockmann text-purple-300">
-              <Link to="/" className="underline hover:text-purple-200">
-                ← Back to Movie Drafter
-              </Link>
-            </p>
             <h1 className="m-0 font-chaney text-3xl sm:text-5xl text-greyscale-blue-50 leading-tight">
               Frequently asked questions
             </h1>

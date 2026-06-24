@@ -1,7 +1,14 @@
 import { Helmet } from "react-helmet-async";
 import { socialShareImageMetaNodes } from "@/components/seo/SocialShareImageMeta";
+import { breadcrumbListNode, graphJsonLd, webPageNode } from "@/components/seo/jsonLd";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 const PrivacyPolicy = () => {
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Privacy Policy', path: '/privacy-policy' },
+  ];
+
   return (
     <>
       <Helmet>
@@ -14,6 +21,19 @@ const PrivacyPolicy = () => {
         {socialShareImageMetaNodes()}
         <meta name="twitter:title" content="Movie Drafter - Privacy Policy" />
         <meta name="twitter:description" content="Read Movie Drafter's Privacy Policy to understand how we collect, use, and protect your personal information." />
+        <script type="application/ld+json">
+          {JSON.stringify(
+            graphJsonLd(
+              webPageNode({
+                path: '/privacy-policy',
+                name: 'Privacy Policy',
+                description:
+                  "Read Movie Drafter's Privacy Policy to understand how we collect, use, and protect your personal information.",
+              }),
+              breadcrumbListNode(crumbs)
+            )
+          )}
+        </script>
       </Helmet>
       <div 
         className="min-h-screen w-full flex flex-col items-center justify-start"
@@ -26,6 +46,8 @@ const PrivacyPolicy = () => {
         }}
       >
         <div className="w-full max-w-[880px] flex flex-col items-start justify-start gap-5">
+          <Breadcrumbs items={crumbs} />
+
           {/* Main Content */}
           <div className="w-full flex flex-col items-start justify-start gap-10">
             {/* Header Section */}

@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { articleNode, breadcrumbListNode, graphJsonLd } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 const SITE = 'https://moviedrafter.com';
 
@@ -11,6 +12,12 @@ const HowToDraftPage = () => {
   const pageDesc =
     'Complete guide to the movie drafting game: how picks work, category rules, scoring ideas, multiplayer flow, and why fantasy movie drafts are fun with friends.';
   const articleHeadline = 'How to draft movies (rules, scoring & tips)';
+
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Learn more', path: '/learn-more' },
+    { name: 'How to draft movies', path: '/how-to-draft' },
+  ];
 
   return (
     <>
@@ -32,10 +39,7 @@ const HowToDraftPage = () => {
                 headline: articleHeadline,
                 description: pageDesc,
               }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'How to draft movies', path: '/how-to-draft' },
-              ])
+              breadcrumbListNode(crumbs)
             )
           )}
         </script>
@@ -48,12 +52,9 @@ const HowToDraftPage = () => {
         }}
       >
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col gap-10">
+          <Breadcrumbs items={crumbs} />
+
           <header className="flex flex-col gap-4">
-            <p className="m-0 text-sm font-brockmann text-purple-300">
-              <Link to="/learn-more" className="underline hover:text-purple-200">
-                ← Back to Learn More
-              </Link>
-            </p>
             <h1 className="m-0 font-chaney text-3xl sm:text-5xl text-greyscale-blue-50 leading-tight">
               How to draft movies
             </h1>

@@ -2,9 +2,15 @@ import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
 import { socialShareImageMetaNodes } from "@/components/seo/SocialShareImageMeta";
 import { breadcrumbListNode, graphJsonLd, webPageNode } from "@/components/seo/jsonLd";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 const About = () => {
   const navigate = useNavigate();
+
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'About', path: '/about' },
+  ];
 
   return (
     <>
@@ -37,10 +43,7 @@ const About = () => {
                   'Movie Drafter is a competitive movie drafting game and cinema drafting tool where fantasy movie drafts meet strategy and film taste.',
                 type: 'AboutPage',
               }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'About', path: '/about' },
-              ])
+              breadcrumbListNode(crumbs)
             )
           )}
         </script>
@@ -56,6 +59,8 @@ const About = () => {
         }}
       >
         <div className="w-full max-w-[880px] flex flex-col items-start justify-start gap-5">
+          <Breadcrumbs items={crumbs} />
+
           {/* Main Content */}
           <div className="w-full flex flex-col items-start justify-start gap-10">
             {/* Header Section */}

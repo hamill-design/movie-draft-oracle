@@ -1,7 +1,14 @@
 import { Helmet } from "react-helmet-async";
 import { socialShareImageMetaNodes } from "@/components/seo/SocialShareImageMeta";
+import { breadcrumbListNode, graphJsonLd, webPageNode } from "@/components/seo/jsonLd";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 const TermsOfService = () => {
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Terms of Service', path: '/terms-of-service' },
+  ];
+
   return (
     <>
       <Helmet>
@@ -14,6 +21,19 @@ const TermsOfService = () => {
         {socialShareImageMetaNodes()}
         <meta name="twitter:title" content="Movie Drafter - Terms of Service" />
         <meta name="twitter:description" content="Read Movie Drafter's Terms of Service to understand the rules and guidelines for using our movie draft platform." />
+        <script type="application/ld+json">
+          {JSON.stringify(
+            graphJsonLd(
+              webPageNode({
+                path: '/terms-of-service',
+                name: 'Terms of Service',
+                description:
+                  "Read Movie Drafter's Terms of Service to understand the rules and guidelines for using our movie draft platform.",
+              }),
+              breadcrumbListNode(crumbs)
+            )
+          )}
+        </script>
       </Helmet>
       <div 
         className="min-h-screen w-full flex flex-col items-center justify-start"
@@ -26,6 +46,8 @@ const TermsOfService = () => {
         }}
       >
         <div className="w-full max-w-[880px] flex flex-col items-start justify-start gap-5">
+          <Breadcrumbs items={crumbs} />
+
           {/* Main Content */}
           <div className="w-full flex flex-col items-start justify-start gap-10">
             {/* Header Section */}

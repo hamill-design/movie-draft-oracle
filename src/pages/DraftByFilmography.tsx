@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { articleNode, breadcrumbListNode, graphJsonLd } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 const SITE = 'https://moviedrafter.com';
 
@@ -9,6 +10,11 @@ const DraftByFilmography = () => {
   const pageTitle = 'Draft Movies by Filmography – Pick Films From Any Director or Actor';
   const pageDesc =
     'Draft movies from any actor, director, or writer\'s full filmography. A competitive movie draft game where friends compete to claim the best films in a filmmaker\'s catalog.';
+
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Draft by Filmography', path: '/draft-by-filmography' },
+  ];
 
   return (
     <>
@@ -30,10 +36,7 @@ const DraftByFilmography = () => {
                 headline: 'Draft movies by filmography — pick films from any director or actor',
                 description: pageDesc,
               }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'Draft by Filmography', path: '/draft-by-filmography' },
-              ])
+              breadcrumbListNode(crumbs)
             )
           )}
         </script>
@@ -44,13 +47,9 @@ const DraftByFilmography = () => {
         style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}
       >
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col gap-12">
+          <Breadcrumbs items={crumbs} />
 
           <header className="flex flex-col gap-4">
-            <p className="m-0 text-sm font-brockmann text-purple-300">
-              <Link to="/" className="underline hover:text-purple-200">
-                ← Back to Movie Drafter
-              </Link>
-            </p>
             <h1 className="m-0 font-chaney text-3xl sm:text-5xl text-greyscale-blue-50 leading-tight">
               Draft movies by filmography
             </h1>

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
+import { breadcrumbListNode, graphJsonLd } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import {
   fetchPublicSpecDraftBySlug,
   posterUrl,
@@ -139,6 +140,12 @@ const ThemeLandingPage = () => {
   const pageDesc = truncateMeta(`${intro} Full eligible film list, alphabetically.`, 158);
   const pageTitle = `Movie Drafter - ${draft.name} | Eligible films`;
 
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Special Drafts', path: '/special-draft' },
+    { name: draft.name, path: `/special-draft/${draft.slug}` },
+  ];
+
   return (
     <>
       <Helmet>
@@ -154,6 +161,9 @@ const ThemeLandingPage = () => {
         {itemListJson ? (
           <script type="application/ld+json">{JSON.stringify(itemListJson)}</script>
         ) : null}
+        <script type="application/ld+json">
+          {JSON.stringify(graphJsonLd(breadcrumbListNode(crumbs)))}
+        </script>
       </Helmet>
 
       <div
@@ -163,18 +173,7 @@ const ThemeLandingPage = () => {
         }}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14 flex flex-col gap-10">
-          <nav aria-label="Back to special drafts">
-            <Button
-              asChild
-              variant="ghost"
-              className="font-brockmann text-greyscale-blue-200 hover:text-greyscale-blue-50 hover:bg-greyscale-purp-800/80 -ml-2 px-2"
-            >
-              <Link to="/special-draft" className="inline-flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden />
-                Back to special drafts
-              </Link>
-            </Button>
-          </nav>
+          <Breadcrumbs items={crumbs} />
 
           <header className="flex flex-col gap-4">
             <h1 className="m-0 font-chaney text-3xl sm:text-5xl text-greyscale-blue-50 leading-tight">

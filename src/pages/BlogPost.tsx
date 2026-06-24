@@ -3,10 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Helmet } from 'react-helmet-async';
 import { format } from 'date-fns';
 import DOMPurify from 'dompurify';
-import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { articleNode, breadcrumbListNode, graphJsonLd } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { DEFAULT_OG_IMAGE_URL, SITE_ORIGIN } from '@/config/socialShareMeta';
 import { fetchPublishedBlogPostBySlug, blogPostPreview } from '@/services/publicBlog';
 
@@ -69,6 +69,12 @@ const BlogPost = () => {
   const dateLabel = post.published_at ? format(new Date(post.published_at), 'MMM d, yyyy') : '';
   const sanitizedContent = DOMPurify.sanitize(post.content);
 
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Blog', path: '/blog' },
+    { name: post.title, path: `/blog/${post.slug}` },
+  ];
+
   return (
     <>
       <Helmet>
@@ -95,11 +101,7 @@ const BlogPost = () => {
                 datePublished: post.published_at ?? undefined,
                 dateModified: post.updated_at,
               }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'Blog', path: '/blog' },
-                { name: post.title, path: `/blog/${post.slug}` },
-              ])
+              breadcrumbListNode(crumbs)
             )
           )}
         </script>
@@ -112,18 +114,7 @@ const BlogPost = () => {
         }}
       >
         <article className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14 flex flex-col gap-8">
-          <nav aria-label="Back to blog">
-            <Button
-              asChild
-              variant="ghost"
-              className="font-brockmann text-greyscale-blue-200 hover:text-greyscale-blue-50 hover:bg-greyscale-purp-800/80 -ml-2 px-2"
-            >
-              <Link to="/blog" className="inline-flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden />
-                Back to blog
-              </Link>
-            </Button>
-          </nav>
+          <Breadcrumbs items={crumbs} />
 
           <header className="flex flex-col gap-4">
             {post.cover_image_url && (

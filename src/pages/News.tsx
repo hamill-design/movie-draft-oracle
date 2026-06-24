@@ -4,6 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { LinkOutIcon } from '@/components/icons';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { breadcrumbListNode, graphJsonLd, webPageNode } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -203,6 +204,11 @@ const News = () => {
 
   const items = data?.items ?? [];
 
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'News', path: '/news' },
+  ];
+
   return (
     <>
       <Helmet>
@@ -233,10 +239,7 @@ const News = () => {
                 description:
                   'The latest film news, box office updates, and cinema stories — curated for Movie Drafter.',
               }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'News', path: '/news' },
-              ])
+              breadcrumbListNode(crumbs)
             )
           )}
         </script>
@@ -249,6 +252,7 @@ const News = () => {
         }}
       >
         <div className="max-w-[1200px] mx-auto px-6 py-12 flex flex-col gap-10">
+          <Breadcrumbs items={crumbs} />
 
           {/* Header */}
           <div className="flex flex-col gap-3">

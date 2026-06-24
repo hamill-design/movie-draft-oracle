@@ -8,9 +8,15 @@ import {
   type PublicSpecDraftSummary,
 } from '@/services/publicSpecDrafts';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
-import { graphJsonLd, themeHubItemListNode } from '@/components/seo/jsonLd';
+import { breadcrumbListNode, graphJsonLd, themeHubItemListNode } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 const SITE = 'https://moviedrafter.com';
+
+const CRUMBS = [
+  { name: 'Home', path: '/' },
+  { name: 'Special Drafts', path: '/special-draft' },
+];
 
 const INTRO_COPY =
   'Looking for a new theme to your movie game night? Each special draft has a curated pool of eligible films (listed alphabetically). Browse titles or begin setting up your draft here.';
@@ -38,8 +44,8 @@ const ThemeHubPage = () => {
     'Browse public special drafts and see which films are in each pool, or start a fantasy movie draft on Movie Drafter.';
 
   const hubJsonLd = useMemo(() => {
-    if (!drafts.length) return null;
-    return graphJsonLd(themeHubItemListNode(drafts, pageDesc));
+    const nodes = drafts.length ? [themeHubItemListNode(drafts, pageDesc)] : [];
+    return graphJsonLd(...nodes, breadcrumbListNode(CRUMBS));
   }, [drafts, pageDesc]);
 
   return (
@@ -66,6 +72,8 @@ const ThemeHubPage = () => {
         }}
       >
         <div className="w-full max-w-[1200px] py-8 flex flex-col items-start gap-8">
+          <Breadcrumbs items={CRUMBS} />
+
           <header className="flex w-full flex-col items-start gap-[18px]">
             <h1 className="m-0 w-full font-chaney text-[48px] font-normal leading-[52px] tracking-[1.92px] text-[#FCFFFF]">
               Special Drafts

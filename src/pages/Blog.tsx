@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { format } from 'date-fns';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { breadcrumbListNode, graphJsonLd, webPageNode } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import {
   fetchPublishedBlogPosts,
   blogPostPreview,
@@ -85,6 +86,11 @@ const Blog = () => {
 
   const items = posts ?? [];
 
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Blog', path: '/blog' },
+  ];
+
   return (
     <>
       <Helmet>
@@ -105,10 +111,7 @@ const Blog = () => {
                 name: 'Blog – Movie Drafter',
                 description: PAGE_DESCRIPTION,
               }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'Blog', path: '/blog' },
-              ])
+              breadcrumbListNode(crumbs)
             )
           )}
         </script>
@@ -121,6 +124,8 @@ const Blog = () => {
         }}
       >
         <div className="max-w-[1200px] mx-auto px-6 py-12 flex flex-col gap-10">
+          <Breadcrumbs items={crumbs} />
+
           {/* Header */}
           <div className="flex flex-col gap-3">
             <h1
@@ -130,7 +135,7 @@ const Blog = () => {
               Blog
             </h1>
             <p
-              className="font-brockmann text-base max-w-xl"
+              className="font-brockmann text-base w-full"
               style={{ color: '#BBC3BF' }}
             >
               {PAGE_DESCRIPTION}

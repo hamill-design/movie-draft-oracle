@@ -56,11 +56,15 @@ const BASE_ROUTES = [
   "/contact",
   "/learn-more",
   "/how-to-draft",
+  "/faq",
+  "/draft-by-filmography",
+  "/draft-by-year",
   "/special-draft",
   "/privacy-policy",
   "/terms-of-service",
   "/draft",
   "/blog",
+  "/news",
 ];
 
 async function fetchThemeSlugRoutes() {

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { articleNode, breadcrumbListNode, graphJsonLd } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 const SITE = 'https://moviedrafter.com';
 
@@ -20,6 +21,11 @@ const DraftByYear = () => {
   const pageTitle = 'Draft Movies by Year – Pick Films From Any Year in Cinema History';
   const pageDesc =
     'Draft movies from any year in cinema history. Compete with friends to claim the best films of 1994, 1999, 2007, or any release year. The ultimate movie year draft game.';
+
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Draft by Year', path: '/draft-by-year' },
+  ];
 
   return (
     <>
@@ -41,10 +47,7 @@ const DraftByYear = () => {
                 headline: 'Draft movies by year — pick films from any year in cinema history',
                 description: pageDesc,
               }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'Draft by Year', path: '/draft-by-year' },
-              ])
+              breadcrumbListNode(crumbs)
             )
           )}
         </script>
@@ -55,13 +58,9 @@ const DraftByYear = () => {
         style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}
       >
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col gap-12">
+          <Breadcrumbs items={crumbs} />
 
           <header className="flex flex-col gap-4">
-            <p className="m-0 text-sm font-brockmann text-purple-300">
-              <Link to="/" className="underline hover:text-purple-200">
-                ← Back to Movie Drafter
-              </Link>
-            </p>
             <h1 className="m-0 font-chaney text-3xl sm:text-5xl text-greyscale-blue-50 leading-tight">
               Draft movies by year
             </h1>
