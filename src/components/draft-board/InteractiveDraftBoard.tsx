@@ -103,11 +103,11 @@ export function InteractiveDraftBoard({
             >
               <User className="w-4 h-4 text-[hsl(var(--text-purple))]" />
             </div>
-            <div className="flex flex-1 min-w-0">
+            <div className="flex flex-1 min-w-0 p-1">
               {categories.map((category) => (
                 <div
                   key={category}
-                  className="flex-1 min-w-[150px] px-4 flex items-center justify-center text-center text-[hsl(var(--text-purple))] text-sm font-brockmann font-medium"
+                  className="flex flex-1 min-w-[150px] p-2 items-center justify-center text-center text-[hsl(var(--text-purple))] text-sm font-brockmann font-medium"
                 >
                   {getCategoryDisplayName(category)}
                 </div>
@@ -188,7 +188,7 @@ export function InteractiveDraftBoard({
                     <div className="flex">
                       <div className={railCellClassName} style={{ ...railCellStyle, ...railBorderStyle }} aria-hidden />
                       <div
-                        className="min-w-0 max-w-full p-1 max-sm:sticky max-sm:z-20 max-sm:w-[calc(100vw-3.5rem)] max-sm:pr-0 sm:flex-1"
+                        className="sticky z-20 min-w-0 p-1 max-sm:flex-none max-sm:w-[calc(100vw-3.5rem)] max-sm:max-w-none max-sm:pr-0 sm:flex-1 sm:w-full sm:max-w-[calc(100vw-3.5rem-3rem)]"
                         style={{ left: RAIL_WIDTH }}
                       >
                         <DraftBoardInlinePicker

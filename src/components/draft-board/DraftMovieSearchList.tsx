@@ -225,8 +225,8 @@ export function DraftMovieSearchList({
       ? 'text-left text-sm font-brockmann font-semibold leading-5 tracking-[0.28px] text-greyscale-blue-100'
       : 'text-left text-base font-brockmann font-semibold leading-6 tracking-[0.32px] text-greyscale-blue-100';
     const genreClass = compact
-      ? 'text-left text-[10px] font-brockmann leading-[14px] tracking-[0.30px] text-greyscale-blue-100 opacity-75'
-      : 'text-left text-xs font-brockmann leading-4 tracking-[0.36px] text-greyscale-blue-100 opacity-75';
+      ? 'text-left text-[10px] leading-[14px] tracking-[0.30px] sm:text-[12px] sm:leading-[16px] sm:tracking-[0.36px] font-brockmann text-greyscale-blue-100 opacity-75'
+      : 'text-left text-[12px] font-brockmann leading-[16px] tracking-[0.36px] text-greyscale-blue-100 opacity-75';
 
     return (
       <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
@@ -265,7 +265,7 @@ export function DraftMovieSearchList({
 
   return (
     <div
-      className="flex h-full w-full min-w-0 max-w-full flex-col items-end justify-start gap-3 p-3"
+      className="flex h-full w-full min-w-0 max-w-full flex-col items-start justify-start gap-3 p-3"
     >
       <div className="flex w-full min-w-0 flex-col items-start gap-3 self-stretch sm:gap-[18px]">
         <div className="inline-flex w-full items-center gap-3 self-stretch overflow-hidden rounded-[2px] bg-greyscale-purp-850 px-4 py-3 outline outline-1 outline-offset-[-1px] outline-greyscale-blue-100">
@@ -318,8 +318,8 @@ export function DraftMovieSearchList({
                   ? 'text-left text-sm font-brockmann font-semibold leading-5 tracking-[0.28px] text-greyscale-blue-100'
                   : 'text-left text-base font-brockmann font-semibold leading-6 tracking-[0.32px] text-greyscale-blue-100';
                 const genreClass = compact
-                  ? 'text-left text-[10px] font-brockmann leading-[14px] tracking-[0.30px] text-greyscale-blue-100 opacity-75'
-                  : 'text-left text-xs font-brockmann leading-4 tracking-[0.36px] text-greyscale-blue-100 opacity-75';
+                  ? 'text-left text-[10px] leading-[14px] tracking-[0.30px] sm:text-[12px] sm:leading-[16px] sm:tracking-[0.36px] font-brockmann text-greyscale-blue-100 opacity-75'
+                  : 'text-left text-[12px] font-brockmann leading-[16px] tracking-[0.36px] text-greyscale-blue-100 opacity-75';
 
                 return (
                   <div
