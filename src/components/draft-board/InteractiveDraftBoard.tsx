@@ -187,7 +187,10 @@ export function InteractiveDraftBoard({
                   {showPicker && (
                     <div className="flex">
                       <div className={railCellClassName} style={{ ...railCellStyle, ...railBorderStyle }} aria-hidden />
-                      <div className="flex-1 min-w-0 p-1">
+                      <div
+                        className="min-w-0 max-w-full p-1 max-sm:sticky max-sm:z-20 max-sm:w-[calc(100vw-3.5rem)] max-sm:pr-0 sm:flex-1"
+                        style={{ left: RAIL_WIDTH }}
+                      >
                         <DraftBoardInlinePicker
                           theme={theme}
                           draftOption={draftOption}

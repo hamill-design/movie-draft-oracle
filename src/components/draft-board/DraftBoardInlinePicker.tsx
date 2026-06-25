@@ -32,7 +32,7 @@ export function DraftBoardInlinePicker({
   if (!pickerState.activeCategory) return null;
 
   return (
-    <div className="col-span-full w-full border-t border-[hsl(var(--greyscale-blue-800))]">
+    <div className="col-span-full w-full min-w-0 max-w-full border-t border-[hsl(var(--greyscale-blue-800))]">
       <DraftMovieSearchList
         theme={theme}
         option={draftOption}

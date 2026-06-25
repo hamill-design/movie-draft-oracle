@@ -115,11 +115,13 @@ function ConfirmPickButton({
   confirming,
   houseOverride,
   onConfirm,
+  className,
 }: {
   activeCategory: string;
   confirming: boolean;
   houseOverride: boolean;
   onConfirm: (houseOverride?: boolean) => void;
+  className?: string;
 }) {
   return (
     <button
@@ -129,7 +131,7 @@ function ConfirmPickButton({
         onConfirm(houseOverride);
       }}
       disabled={confirming}
-      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-[2px] bg-[hsl(var(--gold-primary))] px-3 py-2 text-sm font-brockmann font-medium leading-5 text-[hsl(var(--text-dark))] hover:opacity-90 disabled:opacity-60"
+      className={`inline-flex w-full items-center justify-center gap-2 rounded-[2px] bg-[hsl(var(--gold-primary))] px-3 py-2 text-sm font-brockmann font-medium leading-5 text-[hsl(var(--text-dark))] hover:opacity-90 disabled:opacity-60 sm:w-auto sm:shrink-0 ${className ?? ''}`}
     >
       {confirming ? (
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -147,7 +149,7 @@ function ConfirmPickButton({
 
 function CategoryMismatchBadge() {
   return (
-    <div className="inline-flex min-w-[188px] shrink-0 items-center justify-center gap-2 rounded-[2px] bg-purple-800 px-3 py-2 opacity-80">
+    <div className="inline-flex w-full min-w-0 items-center justify-center gap-2 rounded-[2px] bg-purple-800 px-3 py-2 opacity-80 sm:w-auto sm:min-w-[188px] sm:shrink-0">
       <span className="text-center text-sm font-brockmann font-medium leading-5 text-greyscale-blue-100">
         Category Mismatch
       </span>
@@ -165,7 +167,7 @@ function HouseOverrideToggle({
 }) {
   return (
     <div
-      className="flex shrink-0 items-center gap-[13px]"
+      className="flex shrink-0 items-center justify-end gap-[13px] px-3 max-sm:w-full max-sm:items-end"
       onClick={(e) => e.stopPropagation()}
     >
       <span className="w-[106px] text-center text-sm font-brockmann font-medium leading-5 text-greyscale-blue-100">
@@ -219,32 +221,37 @@ export function DraftMovieSearchList({
     const showMismatch = !canConfirm && !houseOverrideEnabled;
     const showConfirm = canConfirm || houseOverrideEnabled;
 
+    const titleClass = compact
+      ? 'text-left text-sm font-brockmann font-semibold leading-5 tracking-[0.28px] text-greyscale-blue-100'
+      : 'text-left text-base font-brockmann font-semibold leading-6 tracking-[0.32px] text-greyscale-blue-100';
+    const genreClass = compact
+      ? 'text-left text-[10px] font-brockmann leading-[14px] tracking-[0.30px] text-greyscale-blue-100 opacity-75'
+      : 'text-left text-xs font-brockmann leading-4 tracking-[0.36px] text-greyscale-blue-100 opacity-75';
+
     return (
-      <div className="flex w-full min-w-0 items-center gap-[18px]">
+      <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
         <div
-          className="flex min-h-[70px] min-w-0 flex-1 cursor-pointer flex-wrap content-center items-center justify-between gap-3 rounded bg-brand-primary px-4 py-3"
+          className="flex min-w-0 flex-1 cursor-pointer flex-col gap-3 rounded bg-brand-primary px-3 py-2 sm:min-h-[70px] sm:flex-row sm:flex-wrap sm:content-center sm:items-center sm:justify-between sm:px-4 sm:py-3"
           onClick={() => onMovieSelect(movie)}
         >
           <div className="inline-flex min-w-0 flex-1 flex-col items-start gap-1 pb-0.5">
-            <div className="text-left text-base font-brockmann font-semibold leading-6 tracking-[0.32px] text-greyscale-blue-100">
-              {movie.title}
-            </div>
-            <div className="text-left text-xs font-brockmann leading-4 tracking-[0.36px] text-greyscale-blue-100 opacity-75">
-              {getGenreText(movie)}
-            </div>
+            <div className={titleClass}>{movie.title}</div>
+            <div className={genreClass}>{getGenreText(movie)}</div>
           </div>
-          <div className="flex shrink-0 items-center justify-end">
-            {showMismatch ? (
-              <CategoryMismatchBadge />
-            ) : showConfirm ? (
-              <ConfirmPickButton
-                activeCategory={activeCategory!}
-                confirming={confirming}
-                houseOverride={houseOverrideEnabled}
-                onConfirm={onConfirm}
-              />
-            ) : null}
-          </div>
+          {(showMismatch || showConfirm) && (
+            <div className="flex w-full min-w-0 items-stretch sm:w-auto sm:shrink-0 sm:justify-end">
+              {showMismatch ? (
+                <CategoryMismatchBadge />
+              ) : (
+                <ConfirmPickButton
+                  activeCategory={activeCategory!}
+                  confirming={confirming}
+                  houseOverride={houseOverrideEnabled}
+                  onConfirm={onConfirm}
+                />
+              )}
+            </div>
+          )}
         </div>
         {!canConfirm && (
           <HouseOverrideToggle
@@ -257,8 +264,10 @@ export function DraftMovieSearchList({
   };
 
   return (
-    <div className="inline-flex h-full w-full flex-col items-start justify-center gap-3 p-3">
-      <div className="flex w-full flex-col items-start gap-[18px] self-stretch">
+    <div
+      className="flex h-full w-full min-w-0 max-w-full flex-col items-end justify-start gap-3 p-3"
+    >
+      <div className="flex w-full min-w-0 flex-col items-start gap-3 self-stretch sm:gap-[18px]">
         <div className="inline-flex w-full items-center gap-3 self-stretch overflow-hidden rounded-[2px] bg-greyscale-purp-850 px-4 py-3 outline outline-1 outline-offset-[-1px] outline-greyscale-blue-100">
           <div className="inline-flex w-6 shrink-0 flex-col items-center justify-center px-0.5 py-1">
             <SearchIcon className="h-4 w-4 text-greyscale-blue-300" />
@@ -305,19 +314,22 @@ export function DraftMovieSearchList({
                   );
                 }
 
+                const titleClass = compact
+                  ? 'text-left text-sm font-brockmann font-semibold leading-5 tracking-[0.28px] text-greyscale-blue-100'
+                  : 'text-left text-base font-brockmann font-semibold leading-6 tracking-[0.32px] text-greyscale-blue-100';
+                const genreClass = compact
+                  ? 'text-left text-[10px] font-brockmann leading-[14px] tracking-[0.30px] text-greyscale-blue-100 opacity-75'
+                  : 'text-left text-xs font-brockmann leading-4 tracking-[0.36px] text-greyscale-blue-100 opacity-75';
+
                 return (
                   <div
                     key={movie.id}
                     onClick={() => onMovieSelect(movie)}
-                    className="inline-flex w-full min-w-0 cursor-pointer flex-wrap content-center items-center justify-between gap-3 self-stretch rounded bg-greyscale-purp-850 px-4 py-3 outline outline-1 outline-offset-[-1px] outline-greyscale-purp-600"
+                    className="inline-flex w-full min-w-0 cursor-pointer flex-wrap content-center items-center justify-between gap-3 self-stretch rounded bg-greyscale-purp-850 px-3 py-2 outline outline-1 outline-offset-[-1px] outline-greyscale-purp-600 sm:px-4 sm:py-3"
                   >
-                    <div className="inline-flex flex-col items-start gap-1 pb-0.5">
-                      <div className="text-left text-base font-brockmann font-semibold leading-6 tracking-[0.32px] text-greyscale-blue-100">
-                        {movie.title}
-                      </div>
-                      <div className="text-left text-xs font-brockmann leading-4 tracking-[0.36px] text-greyscale-blue-100 opacity-75">
-                        {getGenreText(movie)}
-                      </div>
+                    <div className="inline-flex min-w-0 flex-col items-start gap-1 pb-0.5">
+                      <div className={titleClass}>{movie.title}</div>
+                      <div className={genreClass}>{getGenreText(movie)}</div>
                     </div>
                   </div>
                 );
