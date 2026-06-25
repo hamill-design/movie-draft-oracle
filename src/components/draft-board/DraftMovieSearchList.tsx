@@ -325,7 +325,7 @@ export function DraftMovieSearchList({
                   <div
                     key={movie.id}
                     onClick={() => onMovieSelect(movie)}
-                    className="inline-flex w-full min-w-0 cursor-pointer flex-wrap content-center items-center justify-between gap-3 self-stretch rounded bg-greyscale-purp-850 px-3 py-2 outline outline-1 outline-offset-[-1px] outline-greyscale-purp-600 sm:px-4 sm:py-3"
+                    className="inline-flex w-full min-w-0 cursor-pointer flex-wrap content-center items-center justify-between gap-3 self-stretch rounded bg-greyscale-purp-850 px-3 py-2 outline outline-1 outline-offset-[-1px] outline-greyscale-purp-600 sm:min-h-[70px] sm:px-4 sm:py-3"
                   >
                     <div className="inline-flex min-w-0 flex-col items-start gap-1 pb-0.5">
                       <div className={titleClass}>{movie.title}</div>
