@@ -153,17 +153,15 @@ export function buildBoardCategories(
  */
 function multiplayerLayoutFromFirstCategoryPicks(
   picks: DraftPick[],
-  boardCategories: string[]
+  boardCategories: string[],
+  expectedPlayers: number
 ): { boardPlayers: BoardPlayer[]; backendPlayerIdToRowId: Map<number, number> } | null {
-  if (!boardCategories.length || !picks.length) return null;
+  if (!boardCategories.length || !picks.length || expectedPlayers <= 0) return null;
 
   const firstCat = boardCategories[0];
   const round1 = picks
     .filter((p) => p.category === firstCat)
     .sort((a, b) => a.pick_order - b.pick_order);
-
-  const uniqueBackendIds = new Set(picks.map((p) => Number(p.player_id)));
-  const expectedPlayers = uniqueBackendIds.size;
 
   const seen = new Set<number>();
   const orderedRound1: DraftPick[] = [];
@@ -174,6 +172,9 @@ function multiplayerLayoutFromFirstCategoryPicks(
     orderedRound1.push(p);
   }
 
+  // Only trust the picks-derived layout once every participant has made their
+  // round-1 (first category) pick. Before that, fall back to turn/join order so
+  // participants who haven't picked yet still get a board row.
   if (orderedRound1.length !== expectedPlayers) return null;
 
   const boardPlayers: BoardPlayer[] = orderedRound1.map((p, i) => ({
@@ -217,7 +218,11 @@ export function buildDraftBoardModel(
 
   if (draft?.is_multiplayer && participants.length > 0) {
     const sorted = sortParticipantsByCreatedAt(participants);
-    const fromPicks = multiplayerLayoutFromFirstCategoryPicks(picks, boardCategories);
+    const fromPicks = multiplayerLayoutFromFirstCategoryPicks(
+      picks,
+      boardCategories,
+      sorted.length
+    );
 
     let boardPlayers: BoardPlayer[];
     let idMap: Map<number, number>;
