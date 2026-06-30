@@ -7,6 +7,7 @@ import { breadcrumbListNode, graphJsonLd } from '@/components/seo/jsonLd';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import {
   fetchPublicSpecDraftBySlug,
+  fetchPublicSpecDraftSummaries,
   posterUrl,
   themeMovieDisplayText,
   type PublicSpecDraftMovie,
@@ -34,6 +35,18 @@ const ThemeLandingPage = () => {
     draft: PublicSpecDraftSummary;
     movies: PublicSpecDraftMovie[];
   } | null>(null);
+  const [allThemes, setAllThemes] = useState<PublicSpecDraftSummary[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const summaries = await fetchPublicSpecDraftSummaries();
+      if (!cancelled) setAllThemes(summaries);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!slug) {
@@ -88,6 +101,10 @@ const ThemeLandingPage = () => {
       }),
     };
   }, [payload, sortedMovies]);
+
+  const relatedThemes = useMemo(() => {
+    return allThemes.filter((t) => t.slug !== slug).slice(0, 5);
+  }, [allThemes, slug]);
 
   if (!slug) {
     return null;
@@ -263,6 +280,57 @@ const ThemeLandingPage = () => {
               </ul>
             )}
           </section>
+
+          {relatedThemes.length > 0 ? (
+            <section aria-labelledby="related-heading" className="border-t border-greyscale-purp-700 pt-8">
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 mb-6">
+                <h2
+                  id="related-heading"
+                  className="m-0 font-brockmann font-semibold text-xl text-greyscale-blue-50"
+                >
+                  More special drafts
+                </h2>
+                <Link
+                  to="/special-draft"
+                  className="font-brockmann text-sm text-purple-300 underline hover:text-purple-200"
+                >
+                  Browse all special drafts
+                </Link>
+              </div>
+              <ul className="list-none m-0 p-0 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-3 gap-y-6 sm:gap-x-4 sm:gap-y-8">
+                {relatedThemes.map((theme) => {
+                  const img = posterUrl(theme.photo_url);
+                  return (
+                    <li key={theme.id} className="min-w-0">
+                      <Link
+                        to={`/special-draft/${theme.slug}`}
+                        className="group flex h-full flex-col gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#100029]"
+                      >
+                        <div className="relative aspect-[4/3] w-full overflow-hidden rounded-md border border-purple-500/90 bg-greyscale-purp-800">
+                          {img ? (
+                            <img
+                              src={img}
+                              alt=""
+                              className="h-full w-full object-cover transition-transform duration-300 ease-out will-change-transform group-hover:scale-[1.045] group-focus-visible:scale-[1.045] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                              width={268}
+                              height={201}
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          ) : (
+                            <div className="h-full w-full bg-greyscale-purp-800" aria-hidden />
+                          )}
+                        </div>
+                        <span className="font-brockmann text-sm font-semibold leading-snug text-greyscale-blue-50 transition-colors group-hover:text-white">
+                          {theme.name}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
 
           <footer className="border-t border-greyscale-purp-700 pt-8">
             <p className="m-0 text-sm text-greyscale-blue-300 font-brockmann leading-relaxed">

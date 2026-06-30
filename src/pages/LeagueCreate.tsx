@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Mail, Tag, X } from 'lucide-react';
@@ -11,7 +11,7 @@ import leagueTrophyIllustration from '@/assets/illustrations/illus/league-trophy
 
 const LeagueCreate = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { createLeague } = useLeagueActions();
   const { toast } = useToast();
   const [name, setName] = useState('');
@@ -19,8 +19,24 @@ const LeagueCreate = () => {
   const [emailList, setEmailList] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/auth');
+    }
+  }, [loading, user, navigate]);
+
+  if (loading) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: MOVIE_DRAFTER_PURPLE_SHELL }}
+      >
+        <div style={{ color: 'var(--Text-Primary, #FCFFFF)', fontSize: '20px' }}>Loading...</div>
+      </div>
+    );
+  }
+
   if (!user) {
-    navigate('/auth');
     return null;
   }
 

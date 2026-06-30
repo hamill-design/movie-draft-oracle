@@ -21,6 +21,7 @@ const footerColumns: FooterColumn[] = [
   {
     title: "Get Started",
     links: [
+      { label: "Start a Draft", to: "/draft" },
       { label: "About", to: "/about" },
       { label: "How To Play", to: "/how-to-draft" },
       { label: "Create League", to: "/league/create" },
@@ -40,6 +41,7 @@ const footerColumns: FooterColumn[] = [
       { label: "Blog", to: "/blog" },
       { label: "Movie News", to: "/news" },
       { label: "FAQs", to: "/faq" },
+      { label: "Contact", to: "/contact" },
     ],
   },
   {

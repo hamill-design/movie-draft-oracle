@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "./contexts/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -41,10 +41,21 @@ import LeagueDraftLobbyPage from "./pages/LeagueDraftLobbyPage";
 import News from "./pages/News";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
+import DraftSetup from "./pages/DraftSetup";
 
 function LegacyThemesSlugRedirect() {
   const { slug } = useParams<{ slug: string }>();
   return <Navigate to={`/special-draft/${slug}`} replace />;
+}
+
+/**
+ * Bare `/draft`: a started draft arrives here via `navigate('/draft', { state })`, so when
+ * location state is present we render the live board (`Index`); a plain visit (no state) gets
+ * the indexable setup landing instead of bouncing to the homepage.
+ */
+function DraftEntry() {
+  const location = useLocation();
+  return location.state ? <Index /> : <DraftSetup />;
 }
 
 const queryClient = new QueryClient({
@@ -74,7 +85,7 @@ const App = () => (
               <Route path="/" element={<Home />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/draft" element={<Index />} />
+              <Route path="/draft" element={<DraftEntry />} />
               <Route path="/draft/people/:name/setup" element={<ThemeDraftSetup theme="people" />} />
               <Route path="/draft/year/:year/setup" element={<ThemeDraftSetup theme="year" />} />
               <Route path="/draft/:draftId" element={<Index />} />

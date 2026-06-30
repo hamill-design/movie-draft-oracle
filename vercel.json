@@ -8,6 +8,7 @@
     { "source": "/themes/:slug", "destination": "/special-draft/:slug", "permanent": true }
   ],
   "rewrites": [
+    { "source": "/final-scores/:id", "destination": "/api/scores-preview?id=:id" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

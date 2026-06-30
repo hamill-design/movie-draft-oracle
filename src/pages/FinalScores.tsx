@@ -1047,6 +1047,7 @@ const FinalScores = () => {
               picks={picks}
               draftId={draftId!}
               isPublicView={isPublicView}
+              votingOpen={votingOpen}
             />
           )}
         </div>
