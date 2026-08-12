@@ -3,6 +3,8 @@ import {
   Trophy,
   Users,
   LayoutGrid,
+  ListOrdered,
+  Images,
   Share2,
   Download,
   Link as LinkIcon,
@@ -25,6 +27,7 @@ import { downloadImage } from '@/utils/imageGenerator';
 import {
   buildShareContent,
   buildRosterCarousel,
+  buildPickOrderCarousel,
   type SharePick,
   type ShareTeamScore,
   type ShareFormat,
@@ -43,7 +46,7 @@ import {
   buildRedditUrl,
 } from '@/utils/shareTargets';
 
-type ShareMode = 'leaderboard' | 'my-team' | 'roster';
+type ShareMode = 'leaderboard' | 'my-team' | 'board' | 'pick-order' | 'roster';
 
 interface ShareResultsDialogProps {
   isOpen: boolean;
@@ -70,33 +73,79 @@ const WA_PATH =
 const REDDIT_PATH =
   'M24 11.779c0-1.459-1.192-2.645-2.657-2.645-.715 0-1.363.286-1.84.746-1.81-1.191-4.259-1.949-6.971-2.046l1.483-4.669 4.016.941-.006.058c0 1.193.975 2.163 2.174 2.163 1.198 0 2.172-.97 2.172-2.163s-.975-2.164-2.172-2.164c-.92 0-1.704.574-2.021 1.379l-4.329-1.015c-.189-.046-.381.063-.44.249l-1.654 5.207c-2.759.052-5.245.809-7.075 2.013-.475-.438-1.107-.712-1.808-.712C1.192 9.134 0 10.32 0 11.779c0 .629.224 1.215.591 1.671-.097.413-.146.838-.146 1.27 0 3.687 4.123 6.685 9.197 6.685s9.197-2.998 9.197-6.685c0-.43-.049-.853-.146-1.265.379-.453.616-1.045.616-1.696zm-17.957 1.66c0-.831.628-1.508 1.396-1.508.766 0 1.392.677 1.392 1.508 0 .832-.626 1.509-1.392 1.509-.768 0-1.396-.677-1.396-1.509zm9.802 4.402c-1.213 1.214-3.527 1.307-4.207 1.307-.681 0-2.995-.093-4.208-1.307-.18-.181-.18-.474 0-.654.181-.181.474-.181.654 0 .764.764 2.405.918 3.554.918 1.148 0 2.79-.154 3.553-.918.181-.181.474-.181.654 0 .181.18.181.473 0 .654zm-.027-2.893c-.768 0-1.394-.677-1.394-1.509 0-.831.626-1.508 1.394-1.508s1.394.677 1.394 1.508c0 .832-.626 1.509-1.394 1.509z';
 
+// --- destinations ("where") ------------------------------------------------
+type DestKind = 'image' | 'link';
+interface Destination {
+  id: string;
+  label: string;
+  kind: DestKind;
+  icon: React.ReactNode;
+  /** image destinations auto-select this size (undefined = user may choose) */
+  format?: ShareFormat;
+  /** show only when the Web Share API can share files */
+  nativeOnly?: boolean;
+}
+
+const DESTINATIONS: Destination[] = [
+  { id: 'ig-feed', label: 'Instagram Feed', kind: 'image', format: 'portrait', icon: <InstagramIcon className="w-5 h-5" /> },
+  { id: 'ig-story', label: 'Instagram Story', kind: 'image', format: 'story', icon: <InstagramIcon className="w-5 h-5" /> },
+  { id: 'more', label: 'Share…', kind: 'image', nativeOnly: true, icon: <Share2 size={20} /> },
+  { id: 'save', label: 'Save to device', kind: 'image', icon: <Download size={20} /> },
+  { id: 'x', label: 'X', kind: 'link', icon: <Glyph path={X_PATH} label="X" /> },
+  { id: 'facebook', label: 'Facebook', kind: 'link', icon: <Glyph path={FB_PATH} label="Facebook" /> },
+  { id: 'whatsapp', label: 'WhatsApp', kind: 'link', icon: <Glyph path={WA_PATH} label="WhatsApp" /> },
+  { id: 'reddit', label: 'Reddit', kind: 'link', icon: <Glyph path={REDDIT_PATH} label="Reddit" /> },
+  { id: 'copy', label: 'Copy link', kind: 'link', icon: <LinkIcon size={18} /> },
+];
+
 // --- small UI helpers ------------------------------------------------------
-const segmentBase =
-  'flex-1 flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-[4px] cursor-pointer transition-colors font-brockmann text-sm';
-const destBtn =
-  'flex items-center justify-center gap-2 py-2.5 px-3 rounded-[2px] cursor-pointer transition-colors font-brockmann font-medium text-sm text-[var(--Text-Primary,#FCFFFF)] disabled:opacity-50 disabled:cursor-not-allowed';
-const destBtnStyle: React.CSSProperties = {
-  background: 'var(--UI-Primary, #1D1D1F)',
-  outline: '1px solid var(--Button-Stroke, #666469)',
+const chip =
+  'flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-[4px] cursor-pointer transition-colors font-brockmann text-xs text-center disabled:opacity-40';
+const chipStyle = (active: boolean): React.CSSProperties => ({
+  color: 'var(--Text-Primary, #FCFFFF)',
+  background: active ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
+  outline: active ? '1px solid var(--Brand-Primary, #7142FF)' : '1px solid var(--Button-Stroke, #666469)',
   outlineOffset: -1,
-};
+});
 
 const slugify = (s: string) => s.replace(/[^a-z0-9]/gi, '_').toLowerCase().replace(/_+/g, '_');
 
 const FORMAT_ORDER: ShareFormat[] = ['portrait', 'square', 'story'];
-const FORMAT_LABELS: Record<ShareFormat, string> = {
-  portrait: 'Post 4:5',
-  square: 'Square 1:1',
-  story: 'Story 9:16',
-};
+const FORMAT_LABELS: Record<ShareFormat, string> = { portrait: 'Post 4:5', square: 'Square 1:1', story: 'Story 9:16' };
 const FORMAT_SIZE_TEXT: Record<ShareFormat, string> = {
-  portrait: '1080×1350 (Post)',
-  square: '1080×1080 (Square)',
-  story: '1080×1920 (Story)',
+  portrait: '1080×1350',
+  square: '1080×1080',
+  story: '1080×1920',
 };
 
-const slideLabel = (slide: ShareContent): string =>
-  slide.imageData.variant === 'my-team' ? slide.imageData.focusPlayer || 'Player' : 'Leaderboard';
+const slideLabel = (slide: ShareContent): string => {
+  const d = slide.imageData;
+  if (d.variant === 'my-team') return d.focusPlayer || 'Player';
+  if (d.variant === 'pick-order') return d.roundLabel || 'Pick order';
+  return 'Leaderboard';
+};
+
+/** "THE [NAME] DRAFT", uppercased, with the middle name words flagged for the purple highlight. */
+const formatTitleWords = (raw: string): { word: string; hi: boolean }[] => {
+  const parts = raw.split(' ').filter(Boolean);
+  let processed: string;
+  let start: number;
+  let end: number;
+  if (!parts.length || parts[0].toUpperCase() !== 'THE' || parts[parts.length - 1].toUpperCase() !== 'DRAFT') {
+    const names = parts.filter((w) => w.toUpperCase() !== 'THE' && w.toUpperCase() !== 'DRAFT');
+    processed = `THE ${names.join(' ')} DRAFT`;
+    start = 1;
+    end = names.length;
+  } else {
+    processed = raw;
+    start = 1;
+    end = parts.length - 2;
+  }
+  return processed
+    .split(' ')
+    .filter(Boolean)
+    .map((w, i) => ({ word: w.toUpperCase(), hi: i >= start && i <= end }));
+};
 
 const ShareResultsDialog: React.FC<ShareResultsDialogProps> = ({
   isOpen,
@@ -112,6 +161,12 @@ const ShareResultsDialog: React.FC<ShareResultsDialogProps> = ({
   const { makeDraftPublic } = useDraftOperations();
 
   const players = useMemo(() => teamScores.map((t) => t.playerName), [teamScores]);
+  const top3 = useMemo(() => [...teamScores].sort((a, b) => b.averageScore - a.averageScore).slice(0, 3), [teamScores]);
+  const titleWords = useMemo(() => formatTitleWords(draftTitle), [draftTitle]);
+  const nativeShareable = canNativeShare();
+  const destinations = useMemo(() => DESTINATIONS.filter((d) => !d.nativeOnly || nativeShareable), [nativeShareable]);
+
+  const [destId, setDestId] = useState('ig-feed');
   const [mode, setMode] = useState<ShareMode>('leaderboard');
   const [format, setFormat] = useState<ShareFormat>('portrait');
   const [focusPlayer, setFocusPlayer] = useState<string>(players[0] ?? '');
@@ -121,15 +176,23 @@ const ShareResultsDialog: React.FC<ShareResultsDialogProps> = ({
   const [bundling, setBundling] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
+  const dest = destinations.find((d) => d.id === destId) ?? destinations[0];
+  const isImageDest = dest.kind === 'image';
+  const allowSizeChoice = dest.id === 'save' || dest.id === 'more';
+
+  // Auto-select the best size for the chosen destination.
+  useEffect(() => {
+    if (dest.format) setFormat(dest.format);
+  }, [dest.format]);
+
   useEffect(() => {
     if (!focusPlayer && players[0]) setFocusPlayer(players[0]);
   }, [players, focusPlayer]);
 
-  // Slides: one for single stories; the leaderboard + one-per-player for the roster carousel.
+  // Slides: single stories are one slide; roster and pick-order are carousels.
   const slides = useMemo<ShareContent[]>(() => {
-    if (mode === 'roster') {
-      return buildRosterCarousel({ draftTitle, draftId, picks, teamScores, votingOpen });
-    }
+    if (mode === 'roster') return buildRosterCarousel({ draftTitle, draftId, picks, teamScores, votingOpen });
+    if (mode === 'pick-order') return buildPickOrderCarousel({ draftTitle, draftId, picks, teamScores, votingOpen });
     return [buildShareContent({ variant: mode, draftTitle, draftId, picks, teamScores, focusPlayer, votingOpen })];
   }, [mode, draftTitle, draftId, picks, teamScores, focusPlayer, votingOpen]);
 
@@ -142,12 +205,11 @@ const ShareResultsDialog: React.FC<ShareResultsDialogProps> = ({
     setCurrentSlide(0);
   }, [mode]);
 
-  // Reset caption to the primary slide's default when the story changes.
   useEffect(() => {
     setCaption(primary.caption);
   }, [primary.caption]);
 
-  // Make the draft public when the dialog opens (link works for everyone + crawlable previews).
+  // Publish the draft as soon as the dialog opens (link works + previews crawlable).
   const publicizedRef = useRef(false);
   useEffect(() => {
     if (isOpen && !publicizedRef.current) {
@@ -156,9 +218,9 @@ const ShareResultsDialog: React.FC<ShareResultsDialogProps> = ({
     }
   }, [isOpen, draftId, makeDraftPublic]);
 
-  // Render the currently-visible slide for the live preview.
+  // Render the visible slide (only image destinations need the picture).
   useEffect(() => {
-    if (!isOpen || !activeSlide) return;
+    if (!isOpen || !isImageDest || !activeSlide) return;
     let cancelled = false;
     setRendering(true);
     renderToCanvas(activeSlide.imageData, { format, variant: activeSlide.imageData.variant ?? 'leaderboard' })
@@ -176,15 +238,12 @@ const ShareResultsDialog: React.FC<ShareResultsDialogProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [isOpen, activeSlide, format, renderToCanvas, toast]);
+  }, [isOpen, isImageDest, activeSlide, format, renderToCanvas, toast]);
 
   const baseName = slugify(draftTitle || 'movie_draft');
 
-  /** Rendered images for the current action: the live preview for single stories, or all slides. */
   const buildAssets = async (): Promise<{ url: string; name: string }[]> => {
-    if (!isCarousel) {
-      return preview ? [{ url: preview, name: `${baseName}_${mode}_${format}.png` }] : [];
-    }
+    if (!isCarousel) return preview ? [{ url: preview, name: `${baseName}_${mode}_${format}.png` }] : [];
     const assets: { url: string; name: string }[] = [];
     for (let i = 0; i < slides.length; i++) {
       const s = slides[i];
@@ -204,19 +263,41 @@ const ShareResultsDialog: React.FC<ShareResultsDialogProps> = ({
     }
   };
 
-  const handleNativeShare = async () => {
-    const assets = await withBundling(buildAssets);
-    if (!assets.length) return;
-    const files = assets.map((a) => dataUrlToFile(a.url, a.name));
-    const result = await nativeShare({ title: primary.shareTitle, text: caption, url: primary.url, files });
-    if (result === 'error') {
-      toast({ title: 'Share failed', description: 'Something went wrong opening the share menu.', variant: 'destructive' });
+  const handlePrimary = async () => {
+    // Link destinations: share the URL; its preview card is the visual.
+    if (dest.kind === 'link') {
+      if (dest.id === 'x') openShareWindow(buildXUrl(caption, primary.url));
+      else if (dest.id === 'facebook') openShareWindow(buildFacebookUrl(primary.url));
+      else if (dest.id === 'whatsapp') openShareWindow(buildWhatsAppUrl(caption, primary.url));
+      else if (dest.id === 'reddit') openShareWindow(buildRedditUrl(primary.shareTitle, primary.url));
+      else if (dest.id === 'copy') {
+        const ok = await copyToClipboard(primary.url);
+        toast(
+          ok
+            ? { title: 'Link copied!', description: 'Public link copied to clipboard.' }
+            : { title: 'Copy failed', description: 'Could not access the clipboard.', variant: 'destructive' }
+        );
+      }
+      return;
     }
-  };
 
-  const handleInstagram = async () => {
+    // Image destinations: produce the sized image(s).
     const assets = await withBundling(buildAssets);
     if (!assets.length) return;
+
+    if (dest.id === 'save') {
+      for (const a of assets) {
+        downloadImage(a.url, a.name);
+        if (assets.length > 1) await new Promise((r) => setTimeout(r, 250));
+      }
+      toast({
+        title: isCarousel ? `Saved ${assets.length} images` : 'Image saved',
+        description: FORMAT_SIZE_TEXT[format],
+      });
+      return;
+    }
+
+    // ig-feed / ig-story / more → native share the file(s), else download + guidance.
     const files = assets.map((a) => dataUrlToFile(a.url, a.name));
     if (canNativeShare() && canShareFiles(files)) {
       const result = await nativeShare({ title: primary.shareTitle, text: caption, url: primary.url, files });
@@ -224,180 +305,196 @@ const ShareResultsDialog: React.FC<ShareResultsDialogProps> = ({
         toast({ title: 'Share failed', description: 'Could not open the share menu.', variant: 'destructive' });
       return;
     }
-    // Desktop / unsupported: download the image(s) and explain the manual step.
     assets.forEach((a) => downloadImage(a.url, a.name));
     toast({
-      title: isCarousel ? `Downloaded ${assets.length} slides for Instagram` : 'Image downloaded for Instagram',
-      description: "Open Instagram and post from your photos. Direct posting isn't possible from a desktop browser.",
+      title: dest.id.startsWith('ig') ? `Saved for Instagram` : 'Image saved',
+      description: "Open the app and post it from your photos — direct posting isn't possible from a desktop browser.",
     });
-  };
-
-  const handleDownload = async () => {
-    const assets = await withBundling(buildAssets);
-    if (!assets.length) return;
-    for (const a of assets) {
-      downloadImage(a.url, a.name);
-      if (assets.length > 1) await new Promise((r) => setTimeout(r, 250)); // avoid browser multi-download throttling
-    }
-    toast({
-      title: isCarousel ? `Downloaded ${assets.length} slides` : 'Image downloaded',
-      description: `Saved as ${FORMAT_SIZE_TEXT[format]}.`,
-    });
-  };
-
-  const handleCopyLink = async () => {
-    const ok = await copyToClipboard(primary.url);
-    toast(
-      ok
-        ? { title: 'Link copied!', description: 'Public link copied to clipboard.' }
-        : { title: 'Copy failed', description: 'Could not access the clipboard.', variant: 'destructive' }
-    );
   };
 
   const segments: { id: ShareMode; label: string; icon: React.ReactNode }[] = [
-    { id: 'leaderboard', label: 'Who won', icon: <Trophy size={20} /> },
-    { id: 'my-team', label: 'My team', icon: <Users size={20} /> },
-    { id: 'roster', label: 'Full roster', icon: <LayoutGrid size={20} /> },
+    { id: 'leaderboard', label: 'Who won', icon: <Trophy size={18} /> },
+    { id: 'my-team', label: 'My team', icon: <Users size={18} /> },
+    { id: 'board', label: 'Draft board', icon: <LayoutGrid size={18} /> },
+    { id: 'pick-order', label: 'Pick order', icon: <ListOrdered size={18} /> },
+    { id: 'roster', label: 'Full roster', icon: <Images size={18} /> },
   ];
 
-  const showNative = canNativeShare();
   const busy = rendering || bundling;
+  const imageDests = destinations.filter((d) => d.kind === 'image');
+  const linkDests = destinations.filter((d) => d.kind === 'link');
+
+  const primaryLabel =
+    dest.kind === 'link'
+      ? dest.id === 'copy'
+        ? 'Copy link'
+        : `Share to ${dest.label}`
+      : dest.id === 'save'
+        ? isCarousel
+          ? `Save ${slides.length} images`
+          : 'Save image'
+        : isCarousel
+          ? `Share ${slides.length} slides`
+          : `Share to ${dest.label.replace('Share…', 'your apps')}`;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-[560px] max-h-[90vh] overflow-y-auto border-none p-6"
+        className="max-w-[560px] max-h-[92vh] overflow-y-auto border-none p-6"
         style={{ background: '#0E0E0F', boxShadow: '0px 0px 12px #3B0394' }}
       >
         <DialogHeader>
-          <DialogTitle className="font-brockmann text-xl text-[var(--Text-Primary,#FCFFFF)]">
-            Share your draft
-          </DialogTitle>
+          <DialogTitle className="font-brockmann text-xl text-[var(--Text-Primary,#FCFFFF)]">Share your draft</DialogTitle>
           <DialogDescription className="font-brockmann text-sm text-greyscale-blue-200">
-            Pick a story, choose a size, then send it anywhere.
+            Pick where you're sharing — we'll size it right automatically.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Story picker */}
-        <div className="flex gap-2">
-          {segments.map((seg) => {
-            const active = mode === seg.id;
-            return (
-              <button
-                key={seg.id}
-                type="button"
-                onClick={() => setMode(seg.id)}
-                className={segmentBase}
-                style={{
-                  color: 'var(--Text-Primary, #FCFFFF)',
-                  background: active ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                  outline: active ? '1px solid var(--Brand-Primary, #7142FF)' : '1px solid var(--Button-Stroke, #666469)',
-                  outlineOffset: -1,
-                }}
-              >
-                {seg.icon}
-                {seg.label}
+        {/* STEP 1 — destination */}
+        <div className="flex flex-col gap-2">
+          <div className="font-brockmann text-xs uppercase tracking-wide text-greyscale-blue-300">Post an image</div>
+          <div className="grid grid-cols-4 gap-2">
+            {imageDests.map((d) => (
+              <button key={d.id} type="button" onClick={() => setDestId(d.id)} className={chip} style={chipStyle(destId === d.id)}>
+                {d.icon}
+                <span>{d.label}</span>
+                {d.format && <span className="text-[10px] text-greyscale-blue-300">{FORMAT_LABELS[d.format].split(' ')[1]}</span>}
               </button>
-            );
-          })}
+            ))}
+          </div>
+          <div className="font-brockmann text-xs uppercase tracking-wide text-greyscale-blue-300 mt-1">Share a link</div>
+          <div className="grid grid-cols-5 gap-2">
+            {linkDests.map((d) => (
+              <button key={d.id} type="button" onClick={() => setDestId(d.id)} className={chip} style={chipStyle(destId === d.id)}>
+                {d.icon}
+                <span>{d.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* My-team player selector */}
-        {mode === 'my-team' && players.length > 1 && (
-          <label className="flex items-center gap-3 font-brockmann text-sm text-[var(--Text-Primary,#FCFFFF)]">
-            <span className="text-greyscale-blue-200">Player</span>
-            <select
-              value={focusPlayer}
-              onChange={(e) => setFocusPlayer(e.target.value)}
-              className="flex-1 rounded-[2px] px-3 py-2 font-brockmann text-sm text-[var(--Text-Primary,#FCFFFF)]"
-              style={{ background: 'var(--UI-Primary, #1D1D1F)', outline: '1px solid var(--Button-Stroke, #666469)', outlineOffset: -1 }}
-            >
-              {players.map((p) => (
-                <option key={p} value={p} style={{ background: '#1D1D1F' }}>
-                  {p}
-                </option>
+        <div className="h-px w-full" style={{ background: '#2A2A2E' }} />
+
+        {isImageDest ? (
+          <>
+            {/* STEP 2 — story */}
+            <div className="grid grid-cols-3 gap-2">
+              {segments.map((seg) => (
+                <button key={seg.id} type="button" onClick={() => setMode(seg.id)} className={chip} style={chipStyle(mode === seg.id)}>
+                  {seg.icon}
+                  <span>{seg.label}</span>
+                </button>
               ))}
-            </select>
-          </label>
-        )}
+            </div>
 
-        {mode === 'roster' && (
-          <p className="font-brockmann text-xs text-greyscale-blue-200">
-            {slides.length} slides — leaderboard + one per player. Post them as an Instagram carousel.
-          </p>
-        )}
+            {mode === 'my-team' && players.length > 1 && (
+              <label className="flex items-center gap-3 font-brockmann text-sm text-[var(--Text-Primary,#FCFFFF)]">
+                <span className="text-greyscale-blue-200">Player</span>
+                <select
+                  value={focusPlayer}
+                  onChange={(e) => setFocusPlayer(e.target.value)}
+                  className="flex-1 rounded-[2px] px-3 py-2 font-brockmann text-sm text-[var(--Text-Primary,#FCFFFF)]"
+                  style={{ background: 'var(--UI-Primary, #1D1D1F)', outline: '1px solid var(--Button-Stroke, #666469)', outlineOffset: -1 }}
+                >
+                  {players.map((p) => (
+                    <option key={p} value={p} style={{ background: '#1D1D1F' }}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
 
-        {/* Preview (+ carousel nav) */}
-        <div className="flex flex-col items-center gap-3">
-          <div
-            className="relative flex items-center justify-center w-full rounded-[4px] overflow-hidden"
-            style={{ background: '#000', minHeight: 220, maxHeight: 420 }}
-          >
-            {busy && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
-                <Loader2 className="animate-spin text-[var(--Text-Primary,#FCFFFF)]" size={32} />
+            {isCarousel && (mode === 'roster' || mode === 'pick-order') && (
+              <p className="font-brockmann text-xs text-greyscale-blue-200">
+                {slides.length} slides — {mode === 'roster' ? 'leaderboard + one per player' : 'one per round'}. Great as an
+                Instagram carousel.
+              </p>
+            )}
+
+            {/* preview */}
+            <div className="relative flex items-center justify-center w-full rounded-[4px] overflow-hidden" style={{ background: '#000', minHeight: 220, maxHeight: 400 }}>
+              {busy && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+                  <Loader2 className="animate-spin text-[var(--Text-Primary,#FCFFFF)]" size={32} />
+                </div>
+              )}
+              {preview ? (
+                <img src={preview} alt="Share preview" className="object-contain" style={{ maxHeight: 400, maxWidth: '100%' }} />
+              ) : (
+                !busy && <div className="py-16 text-greyscale-blue-200 font-brockmann text-sm">No preview</div>
+              )}
+              {isCarousel && (
+                <>
+                  <button type="button" aria-label="Previous slide" onClick={() => setCurrentSlide((i) => (i - 1 + slides.length) % slides.length)} className="absolute left-2 top-1/2 -translate-y-1/2 z-20 rounded-full p-1.5" style={{ background: 'rgba(0,0,0,0.55)' }}>
+                    <ChevronLeft className="text-white" size={22} />
+                  </button>
+                  <button type="button" aria-label="Next slide" onClick={() => setCurrentSlide((i) => (i + 1) % slides.length)} className="absolute right-2 top-1/2 -translate-y-1/2 z-20 rounded-full p-1.5" style={{ background: 'rgba(0,0,0,0.55)' }}>
+                    <ChevronRight className="text-white" size={22} />
+                  </button>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center justify-center gap-2 font-brockmann text-xs text-greyscale-blue-200">
+              {isCarousel && <span>Slide {safeIndex + 1} / {slides.length} · {slideLabel(activeSlide)} · </span>}
+              <span>{FORMAT_LABELS[format]} · {FORMAT_SIZE_TEXT[format]}</span>
+            </div>
+
+            {/* size choice only where it's a free choice */}
+            {allowSizeChoice && (
+              <div className="flex justify-center gap-2">
+                {FORMAT_ORDER.map((f) => (
+                  <button key={f} type="button" onClick={() => setFormat(f)} className="py-1.5 px-4 rounded-full font-brockmann text-xs cursor-pointer text-[var(--Text-Primary,#FCFFFF)]" style={chipStyle(format === f)}>
+                    {FORMAT_LABELS[f]}
+                  </button>
+                ))}
               </div>
             )}
-            {preview ? (
-              <img src={preview} alt="Share preview" className="object-contain" style={{ maxHeight: 420, maxWidth: '100%' }} />
-            ) : (
-              !busy && <div className="py-16 text-greyscale-blue-200 font-brockmann text-sm">No preview</div>
-            )}
-
-            {isCarousel && (
-              <>
-                <button
-                  type="button"
-                  aria-label="Previous slide"
-                  onClick={() => setCurrentSlide((i) => (i - 1 + slides.length) % slides.length)}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 rounded-full p-1.5"
-                  style={{ background: 'rgba(0,0,0,0.55)' }}
-                >
-                  <ChevronLeft className="text-white" size={22} />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Next slide"
-                  onClick={() => setCurrentSlide((i) => (i + 1) % slides.length)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 rounded-full p-1.5"
-                  style={{ background: 'rgba(0,0,0,0.55)' }}
-                >
-                  <ChevronRight className="text-white" size={22} />
-                </button>
-              </>
-            )}
-          </div>
-
-          {isCarousel && (
-            <div className="font-brockmann text-xs text-greyscale-blue-200">
-              Slide {safeIndex + 1} / {slides.length} · {slideLabel(activeSlide)}
+          </>
+        ) : (
+          /* link destinations: show what the shared link looks like when it unfurls */
+          <div className="flex flex-col gap-1.5">
+            <div className="rounded-[6px] overflow-hidden" style={{ border: '1px solid #2A2A2E' }}>
+              <div className="flex flex-col items-center gap-2.5 px-6 py-6" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 86%)' }}>
+                <div className="text-white text-[13px] tracking-[0.12em]" style={{ fontFamily: 'CHANEY' }}>
+                  MOVIE DRAFTER
+                </div>
+                <div className="font-brockmann text-[10px] font-bold tracking-[0.2em] text-[#C9B8FF]">FINAL SCORES</div>
+                <div className="text-center leading-none" style={{ fontFamily: 'CHANEY', fontSize: 22, letterSpacing: 1 }}>
+                  {titleWords.map((w, i) => (
+                    <span key={i} style={{ color: w.hi ? '#7142FF' : '#FCFFFF', marginRight: 6 }}>
+                      {w.word}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex flex-col gap-1.5 w-full max-w-[340px] mt-1">
+                  {top3.map((t, i) => (
+                    <div key={t.playerName} className="flex items-center gap-2.5">
+                      <div
+                        className="flex items-center justify-center rounded-full font-brockmann font-bold shrink-0"
+                        style={{ width: 22, height: 22, fontSize: 12, color: '#2B2D2D', background: ['#FFD60A', '#D9D9D9', '#E08A4B'][i] ?? '#907AFF' }}
+                      >
+                        {i + 1}
+                      </div>
+                      <div className="flex-1 min-w-0 font-brockmann text-sm font-medium text-white truncate">{t.playerName}</div>
+                      <div className="font-brockmann text-sm font-bold text-[#C9B8FF]">{t.averageScore.toFixed(1)}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="px-4 py-2.5" style={{ background: 'var(--UI-Primary, #1D1D1F)' }}>
+                <div className="font-brockmann text-[13px] text-white truncate">Final scores: {draftTitle}</div>
+                <div className="font-brockmann text-[11px] text-greyscale-blue-300">moviedrafter.com</div>
+              </div>
             </div>
-          )}
-
-          {/* Size toggle */}
-          <div className="flex gap-2">
-            {FORMAT_ORDER.map((f) => {
-              const active = format === f;
-              return (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setFormat(f)}
-                  className="py-1.5 px-4 rounded-full font-brockmann text-xs cursor-pointer transition-colors text-[var(--Text-Primary,#FCFFFF)]"
-                  style={{
-                    background: active ? 'var(--Brand-Primary, #7142FF)' : 'var(--UI-Primary, #1D1D1F)',
-                    outline: active ? '1px solid var(--Brand-Primary, #7142FF)' : '1px solid var(--Button-Stroke, #666469)',
-                    outlineOffset: -1,
-                  }}
-                >
-                  {FORMAT_LABELS[f]}
-                </button>
-              );
-            })}
+            <p className="font-brockmann text-[11px] text-greyscale-blue-300 text-center">
+              This is roughly how your link will look when pasted into X, Facebook, iMessage, etc.
+            </p>
           </div>
-        </div>
+        )}
 
-        {/* Editable caption */}
+        {/* caption */}
         <textarea
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
@@ -405,52 +502,19 @@ const ShareResultsDialog: React.FC<ShareResultsDialogProps> = ({
           className="w-full resize-none rounded-[2px] p-3 font-brockmann text-sm text-[var(--Text-Primary,#FCFFFF)]"
           style={{ background: 'var(--UI-Primary, #1D1D1F)', outline: '1px solid var(--Button-Stroke, #666469)', outlineOffset: -1 }}
           aria-label="Post caption"
+          placeholder="Add a caption…"
         />
 
-        {/* Primary: native share sheet (mobile → Instagram, Messages, etc.) */}
-        {showNative && (
-          <button
-            type="button"
-            onClick={handleNativeShare}
-            disabled={busy || !preview}
-            className={destBtn + ' w-full py-3'}
-            style={{ background: 'var(--Brand-Primary, #7142FF)', outline: 'none' }}
-          >
-            <Share2 size={20} />
-            {isCarousel ? `Share all ${slides.length}` : 'Share…'}
-          </button>
-        )}
-
-        {/* Destination grid */}
-        <div className="grid grid-cols-3 gap-2">
-          <button type="button" onClick={handleInstagram} disabled={busy || !preview} className={destBtn} style={destBtnStyle}>
-            <InstagramIcon className="w-5 h-5" />
-            Instagram
-          </button>
-          <button type="button" onClick={() => openShareWindow(buildXUrl(caption, primary.url))} className={destBtn} style={destBtnStyle}>
-            <Glyph path={X_PATH} label="X" />X
-          </button>
-          <button type="button" onClick={() => openShareWindow(buildFacebookUrl(primary.url))} className={destBtn} style={destBtnStyle}>
-            <Glyph path={FB_PATH} label="Facebook" />
-            Facebook
-          </button>
-          <button type="button" onClick={() => openShareWindow(buildWhatsAppUrl(caption, primary.url))} className={destBtn} style={destBtnStyle}>
-            <Glyph path={WA_PATH} label="WhatsApp" />
-            WhatsApp
-          </button>
-          <button type="button" onClick={() => openShareWindow(buildRedditUrl(primary.shareTitle, primary.url))} className={destBtn} style={destBtnStyle}>
-            <Glyph path={REDDIT_PATH} label="Reddit" />
-            Reddit
-          </button>
-          <button type="button" onClick={handleCopyLink} className={destBtn} style={destBtnStyle}>
-            <LinkIcon size={18} />
-            Copy link
-          </button>
-        </div>
-
-        <button type="button" onClick={handleDownload} disabled={busy || !preview} className={destBtn + ' w-full'} style={destBtnStyle}>
-          <Download size={18} />
-          {isCarousel ? `Download all ${slides.length}` : 'Download image'}
+        {/* primary action */}
+        <button
+          type="button"
+          onClick={handlePrimary}
+          disabled={busy || (isImageDest && !preview)}
+          className="flex items-center justify-center gap-2 w-full py-3 rounded-[2px] font-brockmann font-semibold text-sm text-white disabled:opacity-50"
+          style={{ background: 'var(--Brand-Primary, #7142FF)' }}
+        >
+          {busy ? <Loader2 className="animate-spin" size={18} /> : dest.icon}
+          {primaryLabel}
         </button>
       </DialogContent>
     </Dialog>

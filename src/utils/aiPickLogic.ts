@@ -130,7 +130,18 @@ export async function makeAIPick(options: AIPickOptions): Promise<Movie | null> 
     }
 
     // Filter out already picked movies
-    const unpickedMovies = movies.filter(movie => !alreadyPickedMovieIds.includes(movie.id));
+    const notYetPicked = movies.filter(movie => !alreadyPickedMovieIds.includes(movie.id));
+
+    // For year-themed drafts, enforce the exact year ourselves rather than trusting the
+    // upstream fetch. fetch-movies deliberately doesn't re-filter its "year" results (it
+    // trusts TMDB's release_date query), so movies with a re-release event in the requested
+    // year (e.g. Mad Max: Fury Road's 2019 "Black & Chrome" re-release, Spirited Away's GKIDS
+    // re-release) can slip through with their true year attached but not matching the draft.
+    // Human picks are already blocked from these via DraftInterface's handlePickSubmit check;
+    // this mirrors that guard for AI picks, which otherwise had no equivalent safety net.
+    const unpickedMovies = draftTheme === 'year' && draftOption
+      ? notYetPicked.filter(movie => movie.year === parseInt(draftOption, 10))
+      : notYetPicked;
     let availableMovies = unpickedMovies;
 
     // Filter movies to only include those eligible for the current category

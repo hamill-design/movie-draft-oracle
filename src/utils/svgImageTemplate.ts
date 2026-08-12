@@ -9,7 +9,7 @@ import { generateFontCSS } from './fontUtils';
 export type ShareFormat = 'portrait' | 'story' | 'square';
 
 /** Which story the image tells. */
-export type ShareVariant = 'leaderboard' | 'my-team' | 'full-list';
+export type ShareVariant = 'leaderboard' | 'my-team' | 'pick-order' | 'board';
 
 export interface ShareScoredMovie {
   title: string;
@@ -20,6 +20,21 @@ export interface ShareScoredMovie {
   genre?: string;
   category?: string;
   pickNumber?: number;
+}
+
+export interface ShareBoardCell {
+  title: string;
+  score: number;
+  poster?: string;
+}
+export interface ShareBoardRow {
+  player: string;
+  cells: (ShareBoardCell | null)[];
+}
+/** players × categories grid (matches the app's draft board) */
+export interface ShareBoard {
+  categories: string[];
+  rows: ShareBoardRow[];
 }
 
 export interface ShareImageData {
@@ -38,9 +53,13 @@ export interface ShareImageData {
   focusPlayer?: string;
   focusPlayerScore?: number;
   focusPlayerPicks?: ShareScoredMovie[];
-  /** full-list variant (ordered by pick) */
+  /** pick-order variant (all picks, chronological) */
   allPicks?: ShareScoredMovie[];
-  /** full-list "invite to vote" CTA */
+  /** pick-order round slides: overrides the "PICK ORDER" heading (e.g. "ROUND 1 · Action") */
+  roundLabel?: string;
+  /** board variant (players × categories grid) */
+  board?: ShareBoard;
+  /** pick-order / board "invite to vote" CTA */
   voteUrl?: string;
   votingOpen?: boolean;
 }
@@ -118,11 +137,21 @@ const esc = (value: unknown): string =>
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
-const convertImageToBase64 = async (url: string): Promise<string> => {
-  try {
-    if (!url || url.trim() === '') return POSTER_PLACEHOLDER;
-    if (url.startsWith('data:')) return url;
+/** Converted-poster cache (url → base64) so repeated renders (e.g. the sandbox) don't re-fetch. */
+const posterCache = new Map<string, string>();
 
+const convertImageToBase64 = async (url: string): Promise<string> => {
+  if (!url || url.trim() === '') return POSTER_PLACEHOLDER;
+  if (url.startsWith('data:')) return url;
+  const cached = posterCache.get(url);
+  if (cached) return cached;
+  const result = await convertImageToBase64Impl(url);
+  if (result && result !== POSTER_PLACEHOLDER) posterCache.set(url, result);
+  return result;
+};
+
+const convertImageToBase64Impl = async (url: string): Promise<string> => {
+  try {
     const testImg = new Image();
     testImg.crossOrigin = 'anonymous';
 
@@ -164,6 +193,29 @@ const convertImageToBase64 = async (url: string): Promise<string> => {
     console.warn('Failed to convert image to base64:', url, error);
     return POSTER_PLACEHOLDER;
   }
+};
+
+/** Convert every board cell poster URL to base64 (deduped + cached) so html2canvas/SVG can draw them. */
+const withBoardPosters = async (data: ShareImageData): Promise<ShareImageData> => {
+  if (!data.board) return data;
+  const urls = Array.from(
+    new Set(
+      data.board.rows.flatMap((r) => r.cells.map((c) => c?.poster).filter((u): u is string => Boolean(u)))
+    )
+  );
+  if (!urls.length) return data;
+  const entries = await Promise.all(urls.map(async (u) => [u, await convertImageToBase64(u)] as const));
+  const map = new Map(entries);
+  return {
+    ...data,
+    board: {
+      ...data.board,
+      rows: data.board.rows.map((r) => ({
+        ...r,
+        cells: r.cells.map((c) => (c && c.poster ? { ...c, poster: map.get(c.poster) } : c)),
+      })),
+    },
+  };
 };
 
 /** "THE [NAME] DRAFT" title with the middle words highlighted purple. */
@@ -231,8 +283,8 @@ const movieCard = (movie: ShareScoredMovie, sectionTitle: string, posterSrc: str
     </div>
   </div>`;
 
-/** Compact text row used by my-team and full-list (no posters → fast, many rows fit). */
-const listRow = (movie: ShareScoredMovie, showPlayer: boolean, fit: RowFit): string => {
+/** Compact text row used by my-team and pick-order (no posters → fast, many rows fit). */
+const listRow = (movie: ShareScoredMovie, sub: string, fit: RowFit): string => {
   const num = clampNum(fit.rowH * 0.6, 30, 44);
   const titleFont = clampNum(fit.rowH * 0.42, 18, 30);
   const subFont = clampNum(fit.rowH * 0.3, 13, 22);
@@ -243,7 +295,7 @@ const listRow = (movie: ShareScoredMovie, showPlayer: boolean, fit: RowFit): str
     <div class="list-num" style="width:${num}px;height:${num}px;font-size:${clampNum(num * 0.5, 14, 24)}px;">${esc(movie.pickNumber ?? '•')}</div>
     <div class="list-main">
       <div class="list-title" style="font-size:${titleFont}px;">${esc(movie.title)}</div>
-      <div class="list-sub" style="font-size:${subFont}px;">${showPlayer ? esc(movie.playerName) : esc(movie.category || '')}</div>
+      ${sub ? `<div class="list-sub" style="font-size:${subFont}px;">${esc(sub)}</div>` : ''}
     </div>
     <div class="list-score" style="font-size:${scoreFont}px;">${movie.score.toFixed(1)}</div>
   </div>`;
@@ -288,7 +340,7 @@ const renderMyTeamBody = (data: ShareImageData, format: ShareFormat): string => 
   const rows =
     all
       .slice(0, fit.shown)
-      .map((p) => listRow(p, false, fit))
+      .map((p) => listRow(p, p.category || '', fit))
       .join('') + (fit.more > 0 ? moreRow(fit.more, 'picks') : '');
 
   return `
@@ -302,31 +354,89 @@ const renderMyTeamBody = (data: ShareImageData, format: ShareFormat): string => 
     </div>`;
 };
 
-const renderFullListBody = (data: ShareImageData, format: ShareFormat): string => {
+const voteCtaHtml = (data: ShareImageData): string =>
+  data.votingOpen && data.voteUrl
+    ? `<div class="vote-cta">
+         <div class="vote-cta-title">VOTE NOW</div>
+         <div class="vote-cta-url">${esc(data.voteUrl.replace(/^https?:\/\//, ''))}</div>
+       </div>`
+    : '';
+
+const renderPickOrderBody = (data: ShareImageData, format: ShareFormat): string => {
   const all = data.allPicks || [];
+  const isRound = Boolean(data.roundLabel);
   const ctaReserve = data.votingOpen && data.voteUrl ? 140 : 0;
   const fit = fitRows(all.length, ROWS_BUDGET[format] - ctaReserve, 40, 68);
   const rows =
     all
       .slice(0, fit.shown)
-      .map((p) => listRow(p, true, fit))
+      // round slides are all one category → show just the player; the full list shows player · category
+      .map((p) => listRow(p, isRound ? p.playerName : `${p.playerName}${p.category ? ` · ${p.category}` : ''}`, fit))
       .join('') + (fit.more > 0 ? moreRow(fit.more, 'picks') : '');
 
-  const voteCta =
-    data.votingOpen && data.voteUrl
-      ? `<div class="vote-cta">
-           <div class="vote-cta-title">VOTE NOW</div>
-           <div class="vote-cta-url">${esc(data.voteUrl.replace(/^https?:\/\//, ''))}</div>
-         </div>`
-      : '';
+  return `
+    ${renderTitleHtml(data.title)}
+    <div class="section">
+      <h2 class="section-title">${esc(data.roundLabel || 'PICK ORDER')}</h2>
+      <div class="scores-container">${rows}</div>
+    </div>
+    ${voteCtaHtml(data)}`;
+};
+
+const renderBoardBody = (data: ShareImageData, format: ShareFormat): string => {
+  const board = data.board;
+  if (!board || !board.categories.length || !board.rows.length) {
+    return `${renderTitleHtml(data.title)}<div class="section"><h2 class="section-title">THE DRAFT BOARD</h2></div>`;
+  }
+  const nCats = board.categories.length;
+  const ctaReserve = data.votingOpen && data.voteUrl ? 140 : 0;
+  const HEADER_H = 52;
+  // Poster cells look best with taller rows, so allow a larger max height.
+  const fit = fitRows(board.rows.length, ROWS_BUDGET[format] - ctaReserve - HEADER_H, 56, 150);
+  const cols = `minmax(110px, 0.7fr) repeat(${nCats}, minmax(0, 1fr))`;
+  const catFont = clampNum(220 / nCats + 8, 11, 18);
+  const titleFont = clampNum(fit.rowH * 0.22, 11, 18);
+  const scoreFont = clampNum(fit.rowH * 0.18, 11, 15);
+  const playerFont = clampNum(fit.rowH * 0.24, 13, 22);
+
+  const head = `
+    <div class="board-row" style="grid-template-columns:${cols};">
+      <div class="board-cell board-corner"></div>
+      ${board.categories
+        .map((c) => `<div class="board-cell board-cat" style="font-size:${catFont}px;">${esc(c)}</div>`)
+        .join('')}
+    </div>`;
+
+  const rows = board.rows
+    .slice(0, fit.shown)
+    .map(
+      (r) => `
+    <div class="board-row" style="grid-template-columns:${cols};min-height:${fit.rowH}px;">
+      <div class="board-cell board-player" style="font-size:${playerFont}px;">${esc(r.player)}</div>
+      ${r.cells
+        .map((cell) =>
+          cell
+            ? `<div class="board-cell board-movie">${
+                cell.poster
+                  ? `<img class="board-poster" src="${cell.poster}" alt="${esc(cell.title)}"/>`
+                  : `<span class="board-title" style="font-size:${titleFont}px;">${esc(cell.title)}</span>`
+              }<span class="board-score" style="font-size:${scoreFont}px;">${cell.score.toFixed(1)}</span></div>`
+            : `<div class="board-cell board-empty"></div>`
+        )
+        .join('')}
+    </div>`
+    )
+    .join('');
+
+  const more = fit.more > 0 ? moreRow(fit.more, 'players') : '';
 
   return `
     ${renderTitleHtml(data.title)}
     <div class="section">
       <h2 class="section-title">THE DRAFT BOARD</h2>
-      <div class="scores-container">${rows}</div>
+      <div class="board">${head}${rows}${more}</div>
     </div>
-    ${voteCta}`;
+    ${voteCtaHtml(data)}`;
 };
 
 const buildStyles = (fontCSS: string, format: ShareFormat): string => {
@@ -370,6 +480,31 @@ const buildStyles = (fontCSS: string, format: ShareFormat): string => {
       padding: 8px; color: #BCB2FF; font-weight: 500; font-size: 24px;
       font-family: 'Brockmann', Arial, sans-serif;
     }
+
+    /* board (players × categories grid) */
+    .board { display: flex; flex-direction: column; gap: 6px; }
+    .board-row { display: grid; gap: 6px; align-items: stretch; }
+    .board-cell {
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 6px 8px; border-radius: 6px; overflow: hidden; min-width: 0;
+      font-family: 'Brockmann', Arial, sans-serif;
+    }
+    .board-corner { background: transparent; }
+    .board-cat {
+      background: #25015E; border: 1px solid #907AFF; color: #EDEBFF;
+      font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px;
+      text-align: center; align-items: center;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .board-player { background: #7142FF; color: #FCFFFF; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .board-movie { position: relative; padding: 0; background: #0E0E0F; border: 1px solid #49474B; }
+    .board-poster { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .board-title { padding: 4px 6px; color: #FCFFFF; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .board-score {
+      position: absolute; right: 3px; bottom: 3px; padding: 0 5px; border-radius: 5px;
+      background: rgba(0,0,0,0.72); color: #FCFFFF; font-weight: 700; line-height: 1.55;
+    }
+    .board-empty { background: #17171A; border: 1px solid #2A2A2E; }
 
     .score-card {
       display: flex; align-items: center; padding: 20px;
@@ -501,8 +636,10 @@ export const generateShareImageSVG = async (
   let body: string;
   if (variant === 'my-team') {
     body = renderMyTeamBody(data, format);
-  } else if (variant === 'full-list') {
-    body = renderFullListBody(data, format);
+  } else if (variant === 'pick-order') {
+    body = renderPickOrderBody(data, format);
+  } else if (variant === 'board') {
+    body = renderBoardBody(await withBoardPosters(data), format);
   } else {
     body = renderLeaderboardBody(data, format, firstPickPoster, bestMoviePoster);
   }
@@ -538,4 +675,72 @@ export const generateShareImageSVG = async (
   </g>
 </svg>
   `.trim();
+};
+
+/** @font-face pointing at the app's /fonts (used when the HTML export is served, e.g. via the dev server). */
+const URL_FONT_FACES = `
+  @font-face { font-family:'Brockmann'; src:url('/fonts/brockmann/brockmann-regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
+  @font-face { font-family:'Brockmann'; src:url('/fonts/brockmann/brockmann-medium.woff2') format('woff2'); font-weight:500; font-display:swap; }
+  @font-face { font-family:'Brockmann'; src:url('/fonts/brockmann/brockmann-semibold.woff2') format('woff2'); font-weight:600; font-display:swap; }
+  @font-face { font-family:'Brockmann'; src:url('/fonts/brockmann/brockmann-bold.woff2') format('woff2'); font-weight:700; font-display:swap; }
+  @font-face { font-family:'CHANEY'; src:url('/fonts/chaney/chaney-regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
+`;
+
+/**
+ * Standalone, editable HTML document for one design (same markup/CSS as the SVG, minus the SVG wrapper).
+ * Pure & synchronous: pass poster URLs on the data (no base64 conversion) and an optional `fontCss`
+ * (base64 @font-face for a fully self-contained file; defaults to /fonts URLs).
+ */
+export const generateShareImageHtml = (
+  data: ShareImageData,
+  options: GenerateOptions = {},
+  fontCss: string = URL_FONT_FACES
+): string => {
+  const format: ShareFormat = options.format ?? 'portrait';
+  const variant: ShareVariant = options.variant ?? 'leaderboard';
+  const { width, height } = FORMAT_DIMS[format];
+
+  let body: string;
+  if (variant === 'my-team') {
+    body = renderMyTeamBody(data, format);
+  } else if (variant === 'pick-order') {
+    body = renderPickOrderBody(data, format);
+  } else if (variant === 'board') {
+    body = renderBoardBody(data, format);
+  } else {
+    body = renderLeaderboardBody(
+      data,
+      format,
+      data.firstPick?.poster ?? POSTER_PLACEHOLDER,
+      data.bestMovie?.poster ?? POSTER_PLACEHOLDER
+    );
+  }
+
+  const logoX = Math.round((width - 828) / 2);
+  const logoY = height - 136;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>${esc(data.title)} — ${variant} (${width}×${height})</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #0b0b12; }
+  .frame {
+    position: relative; width: ${width}px; height: ${height}px; margin: 24px auto;
+    background: linear-gradient(140deg, #100029 16%, #160038 50%, #100029 86%);
+    overflow: hidden;
+  }
+  .logo { position: absolute; left: ${logoX}px; top: ${logoY}px; }
+  ${buildStyles(fontCss, format)}
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="main-container">${body}</div>
+    <div class="logo">${MOVIEDRAFTER_LOGO}</div>
+  </div>
+</body>
+</html>
+`;
 };

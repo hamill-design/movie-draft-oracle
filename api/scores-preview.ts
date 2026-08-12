@@ -42,6 +42,35 @@ async function fetchDraft(id: string): Promise<{ title: string; is_public: boole
   }
 }
 
+/** Top-3 standings from stored per-pick scores (avg of calculated_score per player). */
+async function fetchStandings(id: string): Promise<{ n: string; s: number }[]> {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/draft_picks?draft_id=eq.${encodeURIComponent(id)}&select=player_name,calculated_score`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+    );
+    if (!res.ok) return [];
+    const rows = await res.json();
+    if (!Array.isArray(rows)) return [];
+    const byPlayer = new Map<string, { sum: number; count: number }>();
+    for (const r of rows) {
+      const name = typeof r.player_name === 'string' ? r.player_name : null;
+      const s = Number(r.calculated_score);
+      if (!name || Number.isNaN(s)) continue;
+      const cur = byPlayer.get(name) || { sum: 0, count: 0 };
+      cur.sum += s;
+      cur.count += 1;
+      byPlayer.set(name, cur);
+    }
+    return [...byPlayer.entries()]
+      .map(([n, v]) => ({ n, s: Math.round((v.sum / v.count) * 10) / 10 }))
+      .sort((a, b) => b.s - a.s)
+      .slice(0, 3);
+  } catch {
+    return [];
+  }
+}
+
 function buildMetaBlock(opts: { title: string; description: string; image: string; url: string }): string {
   const t = attr(opts.title);
   const d = attr(opts.description);
@@ -91,9 +120,10 @@ export default async function handler(request: Request): Promise<Response> {
     const title = String(draft.title).slice(0, 90);
     ogTitle = `Final scores: ${title}`;
     ogDescription = `See who won the “${title}” movie draft on Movie Drafter.`;
+    const standings = await fetchStandings(id);
     const imgUrl = new URL(`${origin}/api/og-scores`);
-    imgUrl.searchParams.set('title', `Final scores: ${title}`);
-    imgUrl.searchParams.set('subtitle', 'See who won on Movie Drafter');
+    imgUrl.searchParams.set('title', title);
+    if (standings.length) imgUrl.searchParams.set('standings', JSON.stringify(standings));
     ogImage = imgUrl.toString();
   }
 

@@ -1,4 +1,5 @@
 
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -42,6 +43,9 @@ import News from "./pages/News";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import DraftSetup from "./pages/DraftSetup";
+
+/** DEV-only share-image design sandbox; lazy + gated so it's excluded from production builds. */
+const SharePreviewSandbox = import.meta.env.DEV ? lazy(() => import("./pages/SharePreviewSandbox")) : null;
 
 function LegacyThemesSlugRedirect() {
   const { slug } = useParams<{ slug: string }>();
@@ -118,6 +122,16 @@ const App = () => (
               <Route path="/news" element={<News />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
+              {SharePreviewSandbox && (
+                <Route
+                  path="/share-preview"
+                  element={
+                    <Suspense fallback={null}>
+                      <SharePreviewSandbox />
+                    </Suspense>
+                  }
+                />
+              )}
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
