@@ -24,5 +24,6 @@ export const ADSENSE_CONFIG = {
   }
 };
 
-// Environment check - disable ads in development if needed
-export const ADS_ENABLED = process.env.NODE_ENV === 'production';
+// Ads temporarily disabled — AdSense account/slots not fully configured yet.
+// Flip back to `process.env.NODE_ENV === 'production'` once set up.
+export const ADS_ENABLED = false;
