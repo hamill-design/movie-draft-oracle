@@ -104,10 +104,20 @@ function injectMeta(html: string, metaBlock: string): string {
 }
 
 export default async function handler(request: Request): Promise<Response> {
-  const reqUrl = new URL(request.url);
-  const id = reqUrl.searchParams.get('id') || '';
-  // Use the request origin so previews resolve their own assets/images on any deployment.
-  const origin = reqUrl.origin || SITE_ORIGIN;
+  // Every visit to /final-scores/:id (human or bot) routes through this function via the
+  // vercel.json rewrite, so any uncaught throw here crashes the page entirely. Everything
+  // below is best-effort: on any failure, fall back to a working (if generic) page rather
+  // than a 500.
+  let origin = SITE_ORIGIN;
+  let id = '';
+  try {
+    const reqUrl = new URL(request.url);
+    id = reqUrl.searchParams.get('id') || '';
+    // Use the request origin so previews resolve their own assets/images on any deployment.
+    origin = reqUrl.origin || SITE_ORIGIN;
+  } catch {
+    /* keep defaults */
+  }
 
   // Defaults (also used if the draft is private or not found — never leak private titles).
   let ogTitle = 'Movie Drafter – Final Scores';
@@ -115,16 +125,20 @@ export default async function handler(request: Request): Promise<Response> {
   let ogImage = `${origin}/og-image.jpg?v=2`;
   const pageUrl = `${origin}/final-scores/${id}`;
 
-  const draft = id ? await fetchDraft(id) : null;
-  if (draft?.is_public && draft.title) {
-    const title = String(draft.title).slice(0, 90);
-    ogTitle = `Final scores: ${title}`;
-    ogDescription = `See who won the “${title}” movie draft on Movie Drafter.`;
-    const standings = await fetchStandings(id);
-    const imgUrl = new URL(`${origin}/api/og-scores`);
-    imgUrl.searchParams.set('title', title);
-    if (standings.length) imgUrl.searchParams.set('standings', JSON.stringify(standings));
-    ogImage = imgUrl.toString();
+  try {
+    const draft = id ? await fetchDraft(id) : null;
+    if (draft?.is_public && draft.title) {
+      const title = String(draft.title).slice(0, 90);
+      ogTitle = `Final scores: ${title}`;
+      ogDescription = `See who won the “${title}” movie draft on Movie Drafter.`;
+      const standings = await fetchStandings(id);
+      const imgUrl = new URL(`${origin}/api/og-scores`);
+      imgUrl.searchParams.set('title', title);
+      if (standings.length) imgUrl.searchParams.set('standings', JSON.stringify(standings));
+      ogImage = imgUrl.toString();
+    }
+  } catch {
+    /* keep defaults */
   }
 
   const metaBlock = buildMetaBlock({
@@ -142,9 +156,14 @@ export default async function handler(request: Request): Promise<Response> {
     /* fall through to minimal shell */
   }
 
-  const body = html
-    ? injectMeta(html, metaBlock)
-    : `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" />${metaBlock}</head><body></body></html>`;
+  let body: string;
+  try {
+    body = html
+      ? injectMeta(html, metaBlock)
+      : `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" />${metaBlock}</head><body></body></html>`;
+  } catch {
+    body = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" />${metaBlock}</head><body></body></html>`;
+  }
 
   return new Response(body, {
     status: 200,
