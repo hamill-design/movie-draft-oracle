@@ -13,7 +13,7 @@ export function LeagueFeatureSection() {
 
         {/* ── Trophy column ── */}
         <div className="md:w-1/2 w-full flex items-center justify-center">
-          <div style={{ width: '100%', aspectRatio: '1 / 1' }}>
+          <div style={{ width: '75%', aspectRatio: '1 / 1' }}>
             <img
               src="/images/home/league-trophy.png"
               alt="Movie Drafter league trophy"

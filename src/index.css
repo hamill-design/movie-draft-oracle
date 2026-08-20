@@ -381,32 +381,6 @@ All colors MUST be HSL.
   }
 }
 
-/**
- * Hero parallax — runs on the compositor thread so it stays perfectly in sync
- * with scroll. A JS `scroll` handler can only update the transform on the main
- * thread one frame *after* the page has already scrolled, which reads as jumpy.
- *
- * `animation-range: 0 100vh` with a `50vh` end keyframe makes the drift exactly
- * `scrollY * 0.5` over the first viewport (where the hero is visible), matching
- * the JS fallback in Home.tsx that older browsers (e.g. Safari) still use.
- * Guarded by @supports so unsupported browsers never apply a 0s-duration
- * animation, and skipped entirely under prefers-reduced-motion.
- */
-@supports (animation-timeline: scroll()) {
-  @media (prefers-reduced-motion: no-preference) {
-    @keyframes hero-parallax {
-      from { transform: translateX(-50%) translateY(-50%); }
-      to   { transform: translateX(-50%) translateY(calc(-50% + 50vh)); }
-    }
-
-    .hero-parallax {
-      animation: hero-parallax linear both;
-      animation-timeline: scroll(root block);
-      animation-range: 0 100vh;
-    }
-  }
-}
-
 /* Custom logo hover effect */
 .logo-hover {
   transition: color 0.3s ease;

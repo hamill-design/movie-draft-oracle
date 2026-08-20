@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
@@ -13,43 +13,7 @@ import { RotatingYearDraftPortrait } from '@/components/home/RotatingYearDraftPo
 const Home = () => {
   const { loading } = useAuth();
   const location = useLocation();
-  const heroWrapperRef = useRef<HTMLDivElement>(null);
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
-
-  useEffect(() => {
-    // Skip the parallax entirely for users who prefer reduced motion.
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    // Modern browsers run the parallax on the compositor via the `.hero-parallax`
-    // CSS scroll-driven animation (see index.css), which stays perfectly in sync
-    // with scroll. Only fall back to this main-thread handler where that's
-    // unsupported (e.g. Safari), which lags ~1 frame and can look jumpy.
-    if (CSS.supports('animation-timeline', 'scroll()')) return;
-
-    let rafId: number | null = null;
-    let latestY = window.scrollY;
-
-    // Apply the transform once per frame instead of on every scroll event, so we
-    // never move the (heavy) hero scene more often than the screen can repaint.
-    const render = () => {
-      rafId = null;
-      const el = heroWrapperRef.current;
-      if (el) {
-        el.style.transform = `translateX(-50%) translateY(calc(-50% + ${latestY * 0.5}px))`;
-      }
-    };
-
-    const handleScroll = () => {
-      latestY = window.scrollY;
-      if (rafId === null) rafId = window.requestAnimationFrame(render);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (rafId !== null) window.cancelAnimationFrame(rafId);
-    };
-  }, []);
 
   useEffect(() => {
     const id = location.hash?.replace(/^#/, '');
@@ -101,13 +65,11 @@ const Home = () => {
       <div className="relative w-full min-h-screen overflow-hidden">
         <section className="w-full px-6 py-16 md:py-20 relative z-10 overflow-visible">
           <div
-            ref={heroWrapperRef}
-            className="hero-parallax absolute left-1/2 top-[calc(50%+180px)] md:top-[calc(50%+260px)] lg:top-[calc(50%+300px)] z-0 h-screen w-screen"
+            className="absolute left-1/2 top-[calc(50%+180px)] md:top-[calc(50%+260px)] lg:top-[calc(50%+300px)] z-0 h-screen w-screen"
             style={{
               transform: 'translateX(-50%) translateY(-50%)',
               opacity: heroImageLoaded ? 0.6 : 0,
               transition: 'opacity 0.8s ease',
-              willChange: 'transform',
               pointerEvents: 'none',
             }}
           >
