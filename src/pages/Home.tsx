@@ -9,16 +9,12 @@ import { LeagueFeatureSection } from '@/components/home/LeagueFeatureSection';
 import { HowItWorksSection } from '@/components/home/HowItWorksSection';
 import { RotatingFilmographyPortrait } from '@/components/home/RotatingFilmographyPortrait';
 import { RotatingYearDraftPortrait } from '@/components/home/RotatingYearDraftPortrait';
-import { useSplineViewportPause } from '@/hooks/useSplineViewportPause';
-import Spline from '@splinetool/react-spline';
 
 const Home = () => {
   const { loading } = useAuth();
   const location = useLocation();
-  const splineWrapperRef = useRef<HTMLDivElement>(null);
-  const [splineLoaded, setSplineLoaded] = useState(false);
-  const { containerRef: registerSplineContainer, handleLoad: pauseHeroOffscreen } =
-    useSplineViewportPause<HTMLDivElement>();
+  const heroWrapperRef = useRef<HTMLDivElement>(null);
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
 
   useEffect(() => {
     // Skip the parallax entirely for users who prefer reduced motion.
@@ -37,7 +33,7 @@ const Home = () => {
     // never move the (heavy) hero scene more often than the screen can repaint.
     const render = () => {
       rafId = null;
-      const el = splineWrapperRef.current;
+      const el = heroWrapperRef.current;
       if (el) {
         el.style.transform = `translateX(-50%) translateY(calc(-50% + ${latestY * 0.5}px))`;
       }
@@ -103,28 +99,23 @@ const Home = () => {
 
       {/* ── 1. Hero ── */}
       <div className="relative w-full min-h-screen overflow-hidden">
-        {/* pointer-events: none on the text section so hover passes through to Spline */}
         <section className="w-full px-6 py-16 md:py-20 relative z-10 overflow-visible">
           <div
-            ref={(node) => {
-              splineWrapperRef.current = node;
-              registerSplineContainer(node);
-            }}
+            ref={heroWrapperRef}
             className="hero-parallax absolute left-1/2 top-[calc(50%+180px)] md:top-[calc(50%+260px)] lg:top-[calc(50%+300px)] z-0 h-screen w-screen"
             style={{
               transform: 'translateX(-50%) translateY(-50%)',
-              opacity: splineLoaded ? 0.6 : 0,
+              opacity: heroImageLoaded ? 0.6 : 0,
               transition: 'opacity 0.8s ease',
               willChange: 'transform',
+              pointerEvents: 'none',
             }}
           >
-            <Spline
-              scene="https://prod.spline.design/K4NCn3QQ5YqLqGGU/scene.splinecode"
-              style={{ width: '100%', height: '100%' }}
-              onLoad={(app) => {
-                setSplineLoaded(true);
-                pauseHeroOffscreen(app);
-              }}
+            <img
+              src="/images/home/hero-stills.png"
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              onLoad={() => setHeroImageLoaded(true)}
             />
           </div>
           <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 flex flex-col items-center gap-6" style={{ pointerEvents: 'none' }}>
@@ -166,7 +157,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* ── 3. How it works (carousel + Spline) ── */}
+      {/* ── 3. How it works ── */}
       <HowItWorksSection />
 
       {/* ── 4. About section ── */}

@@ -1,68 +1,7 @@
-import { useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSplineViewportPause } from '@/hooks/useSplineViewportPause';
-import Spline from '@splinetool/react-spline';
-import type { Application } from '@splinetool/react-spline';
 
 export function LeagueFeatureSection() {
   const navigate = useNavigate();
-
-  const trophyRef = useRef<{ rotation: { x: number; y: number } } | null>(null);
-  const originalRot = useRef({ x: 0, y: 0 });
-  const targetRot = useRef({ x: 0, y: 0 });
-  const currentRot = useRef({ x: 0, y: 0 });
-  const rafRef = useRef<number | null>(null);
-
-  // The trophy's mouse-follow animation only needs to run while the scene is
-  // on-screen, so it's started/stopped together with the Spline render loop.
-  const stopTick = useCallback(() => {
-    if (rafRef.current !== null) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-  }, []);
-
-  const startTick = useCallback(() => {
-    if (rafRef.current !== null) return;
-    const tick = () => {
-      const t = trophyRef.current;
-      if (t) {
-        currentRot.current.x += (targetRot.current.x - currentRot.current.x) * 0.05;
-        currentRot.current.y += (targetRot.current.y - currentRot.current.y) * 0.05;
-        t.rotation.x = originalRot.current.x + currentRot.current.x;
-        t.rotation.y = originalRot.current.y + currentRot.current.y;
-      }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-  }, []);
-
-  const { containerRef: registerSplineContainer, handleLoad: pauseSplineOffscreen } =
-    useSplineViewportPause<HTMLDivElement>({
-      onVisibilityChange: (visible) => (visible ? startTick() : stopTick()),
-    });
-
-  useEffect(() => stopTick, [stopTick]);
-
-  function onLoad(spline: Application) {
-    const trophy = spline.findObjectByName('TROPHY');
-    if (trophy) {
-      trophyRef.current = trophy as { rotation: { x: number; y: number } };
-      originalRot.current = { x: trophy.rotation.x, y: trophy.rotation.y };
-    }
-    pauseSplineOffscreen(spline);
-  }
-
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const nx = ((e.clientX - rect.left) / rect.width - 0.5) * 2;
-    const ny = ((e.clientY - rect.top) / rect.height - 0.5) * 2;
-    targetRot.current = { x: ny * -0.209, y: nx * 0.209 };
-  }
-
-  function handleMouseLeave() {
-    targetRot.current = { x: 0, y: 0 };
-  }
 
   return (
     <section
@@ -72,17 +11,13 @@ export function LeagueFeatureSection() {
     >
       <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center gap-0">
 
-        {/* ── Spline column ── */}
-        <div
-          className="md:w-1/2 w-full flex items-center justify-center"
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseLeave}
-        >
-          <div ref={registerSplineContainer} style={{ width: '100%', aspectRatio: '1 / 1', mixBlendMode: 'screen', pointerEvents: 'none' }}>
-            <Spline
-              scene="https://prod.spline.design/JZV0l51zUqAIg-WW/scene.splinecode"
-              onLoad={onLoad}
-              style={{ width: '100%', height: '100%' }}
+        {/* ── Trophy column ── */}
+        <div className="md:w-1/2 w-full flex items-center justify-center">
+          <div style={{ width: '100%', aspectRatio: '1 / 1' }}>
+            <img
+              src="/images/home/league-trophy.png"
+              alt="Movie Drafter league trophy"
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           </div>
         </div>

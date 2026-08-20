@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSplineViewportPause } from '@/hooks/useSplineViewportPause';
-import Spline from '@splinetool/react-spline';
 
 const STEPS = [
   {
@@ -45,13 +43,11 @@ export function HowItWorksSection() {
     return () => clearTimeout(id);
   }, [active]);
 
-  const [showSpline, setShowSpline] = useState(false);
-  const { containerRef: registerSplineContainer, handleLoad: pauseSplineOffscreen } =
-    useSplineViewportPause<HTMLDivElement>();
+  const [showGrid, setShowGrid] = useState(false);
 
   useEffect(() => {
     const mql = window.matchMedia('(min-width: 1024px)');
-    const sync = () => setShowSpline(mql.matches);
+    const sync = () => setShowGrid(mql.matches);
     sync();
     mql.addEventListener('change', sync);
     return () => mql.removeEventListener('change', sync);
@@ -99,15 +95,14 @@ export function HowItWorksSection() {
           </div>
         </div>
 
-        {/* ── Right: Spline (desktop only) ── */}
-        {showSpline && (
-          <div ref={registerSplineContainer} className="relative w-full min-w-0 lg:flex-1 h-[580px]">
+        {/* ── Right: movie grid (desktop only) ── */}
+        {showGrid && (
+          <div className="relative w-full min-w-0 lg:flex-1 h-[580px]">
             <div className="absolute inset-0 lg:-top-20 lg:-bottom-20 lg:-left-20 lg:-right-12">
-              <Spline
-                className="how-it-works-spline"
-                scene="https://prod.spline.design/RowT8ilLMPFhNznc/scene.splinecode"
-                style={{ width: '100%', height: '100%', overflow: 'visible' }}
-                onLoad={pauseSplineOffscreen}
+              <img
+                src="/images/home/posters.png"
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               />
             </div>
           </div>
