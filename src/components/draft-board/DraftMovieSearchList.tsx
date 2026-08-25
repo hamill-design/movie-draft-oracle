@@ -201,7 +201,7 @@ export function DraftMovieSearchList({
   const [houseOverrideEnabled, setHouseOverrideEnabled] = useState(false);
   const filteredMovies = filterMoviesForSearch(movies, searchQuery, theme);
   const shouldShowResults = shouldShowMovieSearchResults(theme, searchQuery);
-  const resultsMaxHeight = compact ? '180px' : '240px';
+  const resultsMaxHeight = compact ? 'min(220px, 40dvh)' : 'min(320px, 45dvh)';
 
   useEffect(() => {
     setHouseOverrideEnabled(false);

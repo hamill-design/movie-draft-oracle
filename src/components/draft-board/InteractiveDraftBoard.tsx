@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react';
 import { User } from 'lucide-react';
 import { Movie } from '@/data/movies';
 import type { DraftBoardPickerState } from '@/hooks/useDraftBoardPicker';
@@ -76,6 +77,22 @@ export function InteractiveDraftBoard({
 
   const minGridWidth = RAIL_WIDTH + categories.length * 150;
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [scrollContainerWidth, setScrollContainerWidth] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const updateWidth = () => setScrollContainerWidth(el.clientWidth);
+    updateWidth();
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const pickerWidth =
+    scrollContainerWidth != null ? Math.max(scrollContainerWidth - RAIL_WIDTH, 0) : undefined;
+
   const railCellClassName =
     'sticky left-0 z-10 flex items-center justify-center bg-[hsl(var(--section-container))]';
 
@@ -90,7 +107,7 @@ export function InteractiveDraftBoard({
 
   return (
     <div className="w-full border-y border-[hsl(var(--greyscale-blue-800))] bg-[hsl(var(--section-container))] px-0 py-[12px] sm:px-6 sm:py-[18px]">
-      <div className="w-full overflow-x-auto">
+      <div ref={scrollContainerRef} className="w-full overflow-x-auto">
         <div style={{ minWidth: minGridWidth, width: '100%' }}>
           {/* Header row — rail + categories share one flex row so borders align */}
           <div
@@ -188,8 +205,8 @@ export function InteractiveDraftBoard({
                     <div className="flex">
                       <div className={railCellClassName} style={{ ...railCellStyle, ...railBorderStyle }} aria-hidden />
                       <div
-                        className="sticky z-20 min-w-0 p-1 max-sm:flex-none max-sm:w-[calc(100vw-3.5rem)] max-sm:max-w-none max-sm:pr-0 sm:flex-1 sm:w-full sm:max-w-[calc(100vw-3.5rem-3rem)]"
-                        style={{ left: RAIL_WIDTH }}
+                        className="sticky z-20 min-w-0 flex-none p-1"
+                        style={{ left: RAIL_WIDTH, width: pickerWidth }}
                       >
                         <DraftBoardInlinePicker
                           theme={theme}
