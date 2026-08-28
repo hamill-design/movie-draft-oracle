@@ -6,7 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, PendingDraftProcessor } from "./contexts/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AppHeader from "./components/AppHeader";
 import Footer from "./components/Footer";
@@ -82,6 +82,7 @@ const App = () => (
           <AuthProvider>
             <BrowserRouter>
             <ScrollToTop />
+            <PendingDraftProcessor />
             <div className="flex flex-col min-h-screen">
             <AppHeader />
               <main className="flex-1">

@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useGuestSession, GuestSession } from '@/hooks/useGuestSession';
@@ -59,6 +60,71 @@ const AuthContext = createContext<AuthContextType>({
   getOrCreateGuestSession: async () => null,
 });
 
+// Rendered inside BrowserRouter (see App.tsx) so it can both read auth state
+// (context from the ancestor AuthProvider) and navigate. This is the fallback
+// path for OAuth sign-ins (e.g. Google): the redirect round-trip to the
+// provider drops any in-page returnTo/saveDraft state, but the pending draft
+// stashed in localStorage beforehand (see FinalScores.tsx handleAuthRedirect)
+// survives it, including where to send the user back to.
+export const PendingDraftProcessor: React.FC = () => {
+  const { user } = useAuth();
+  const { saveDraft } = useDraftOperations();
+  const navigate = useNavigate();
+  const [hasProcessed, setHasProcessed] = useState(false);
+
+  useEffect(() => {
+    // Only process if user is authenticated and we haven't processed yet
+    if (!user || hasProcessed) return;
+
+    const processPendingDraft = async () => {
+      const pendingDraft = getPendingDraft();
+      if (!pendingDraft) {
+        setHasProcessed(true);
+        return;
+      }
+
+      try {
+        console.log('Processing pending draft in AuthContext fallback:', pendingDraft);
+
+        // Generate a default title with timestamp if not provided
+        const now = new Date();
+        const defaultTitle = pendingDraft.draftData.title ||
+          `Copy of ${pendingDraft.draftData.option || 'Draft'} - ${now.toLocaleDateString()}`;
+
+        // Save the draft
+        await saveDraft({
+          title: defaultTitle,
+          ...pendingDraft.draftData,
+        });
+
+        // Clear the pending draft
+        clearPendingDraft();
+        setHasProcessed(true);
+
+        console.log('Successfully processed pending draft in AuthContext');
+
+        // Send the user back to where they started the save (e.g. the
+        // final-scores page), instead of leaving them on the OAuth landing page.
+        if (pendingDraft.returnPath) {
+          navigate(pendingDraft.returnPath, { replace: true });
+        }
+      } catch (error) {
+        console.error('Failed to process pending draft in AuthContext:', error);
+        // Don't set hasProcessed to true on error - might want to retry
+      }
+    };
+
+    // Wait a bit for migration to complete, then check for pending drafts
+    const timer = setTimeout(() => {
+      processPendingDraft();
+    }, 1000); // 1 second delay to allow migration to complete
+
+    return () => clearTimeout(timer);
+  }, [user, hasProcessed, saveDraft, navigate]);
+
+  return null; // This component doesn't render anything
+};
+
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -93,58 +159,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, [user, hasProcessed]);
 
     return null;
-  };
-
-  // Component to handle pending draft processing after login
-  const PendingDraftProcessor: React.FC = () => {
-    const { saveDraft } = useDraftOperations();
-    const [hasProcessed, setHasProcessed] = useState(false);
-
-    useEffect(() => {
-      // Only process if user is authenticated and we haven't processed yet
-      if (!user || hasProcessed) return;
-
-      const processPendingDraft = async () => {
-        const pendingDraft = getPendingDraft();
-        if (!pendingDraft) {
-          setHasProcessed(true);
-          return;
-        }
-
-        try {
-          console.log('Processing pending draft in AuthContext fallback:', pendingDraft);
-          
-          // Generate a default title with timestamp if not provided
-          const now = new Date();
-          const defaultTitle = pendingDraft.draftData.title || 
-            `Copy of ${pendingDraft.draftData.option || 'Draft'} - ${now.toLocaleDateString()}`;
-          
-          // Save the draft
-          await saveDraft({
-            title: defaultTitle,
-            ...pendingDraft.draftData,
-          });
-
-          // Clear the pending draft
-          clearPendingDraft();
-          setHasProcessed(true);
-          
-          console.log('Successfully processed pending draft in AuthContext');
-        } catch (error) {
-          console.error('Failed to process pending draft in AuthContext:', error);
-          // Don't set hasProcessed to true on error - might want to retry
-        }
-      };
-
-      // Wait a bit for migration to complete, then check for pending drafts
-      const timer = setTimeout(() => {
-        processPendingDraft();
-      }, 1000); // 1 second delay to allow migration to complete
-
-      return () => clearTimeout(timer);
-    }, [user, hasProcessed, saveDraft]);
-
-    return null; // This component doesn't render anything
   };
 
   const MarketingAudienceSync: React.FC<{ user: User | null }> = ({ user }) => {
@@ -201,11 +215,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // session. On a flaky mobile connection that refresh can hang forever
     // and never release the lock, leaving the checks above unresolved. Fall
     // back to "logged out for now" so the app doesn't get stuck loading.
+    //
+    // Right after an OAuth or email-link redirect (e.g. Google sign-in),
+    // detectSessionInUrl has to exchange the code/token in the URL for a
+    // session before the checks above resolve — on a slow connection that
+    // can take longer than the usual 5s, and firing the "logged out"
+    // fallback mid-exchange makes a successful sign-in look like a failed
+    // one. Give that case more time.
+    const isAuthRedirect =
+      new URLSearchParams(window.location.search).has('code') ||
+      /access_token=/.test(window.location.hash);
     const timeoutId = setTimeout(() => {
       if (!initialCheckResolved) {
         setAuthLoading(false);
       }
-    }, 5000);
+    }, isAuthRedirect ? 15000 : 5000);
 
     return () => {
       subscription.unsubscribe();
@@ -238,7 +262,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider value={value}>
       <PendingAvatarProcessor />
-      <PendingDraftProcessor />
       <MarketingAudienceSync user={user} />
       {children}
     </AuthContext.Provider>
