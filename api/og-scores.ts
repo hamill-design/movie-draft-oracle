@@ -78,7 +78,7 @@ function titleWords(raw: string): { word: string; hi: boolean }[] {
     .map((w, i) => ({ word: w.toUpperCase(), hi: i >= start && i <= end }));
 }
 
-export default function handler(request: Request) {
+export function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const rawTitle = (searchParams.get('title') || 'Movie Draft').trim().slice(0, 70) || 'Movie Draft';

@@ -103,7 +103,7 @@ function injectMeta(html: string, metaBlock: string): string {
     .replace(/<head[^>]*>/i, (m) => `${m}\n${metaBlock}`);
 }
 
-export default async function handler(request: Request): Promise<Response> {
+export async function GET(request: Request): Promise<Response> {
   // Every visit to /final-scores/:id (human or bot) routes through this function via the
   // vercel.json rewrite, so any uncaught throw here crashes the page entirely. Everything
   // below is best-effort: on any failure, fall back to a working (if generic) page rather
