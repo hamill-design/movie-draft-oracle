@@ -7,6 +7,7 @@ import { useGuestSession, GuestSession } from '@/hooks/useGuestSession';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { getPendingDraft, clearPendingDraft } from '@/utils/draftStorage';
 import { uploadPendingAvatar } from '@/utils/avatarUpload';
+import { toast } from '@/hooks/use-toast';
 import {
   MARKETING_AUDIENCE_SYNC_LS_PREFIX,
   syncMarketingAudience,
@@ -148,6 +149,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Only include guest loading if user is not authenticated
   const loading = authLoading || (!user && guestLoading);
   const isGuest = !user && !!guestSession;
+
+  // Supabase reports OAuth/email-link failures (e.g. an unverified Google
+  // app, a rejected redirect URL) as `error`/`error_description` params on
+  // the callback URL rather than throwing anywhere our code awaits — left
+  // unhandled, a failed sign-in just looks like a silent bounce back to a
+  // logged-out homepage. Surface it once on load, then strip it from the URL.
+  useEffect(() => {
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+    const searchParams = new URLSearchParams(window.location.search);
+    const errorCode = hashParams.get('error') || searchParams.get('error');
+    const errorDescription =
+      hashParams.get('error_description') || searchParams.get('error_description');
+
+    if (!errorCode && !errorDescription) return;
+
+    toast({
+      title: 'Sign-in failed',
+      description: errorDescription
+        ? decodeURIComponent(errorDescription.replace(/\+/g, ' '))
+        : `Authentication error: ${errorCode}`,
+      variant: 'destructive',
+    });
+
+    const url = new URL(window.location.href);
+    url.hash = '';
+    ['error', 'error_description', 'error_code'].forEach((key) => url.searchParams.delete(key));
+    window.history.replaceState(window.history.state, '', url.toString());
+  }, []);
 
   const PendingAvatarProcessor: React.FC = () => {
     const [hasProcessed, setHasProcessed] = useState(false);

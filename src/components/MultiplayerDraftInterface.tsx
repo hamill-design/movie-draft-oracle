@@ -979,7 +979,7 @@ export const MultiplayerDraftInterface = ({
         background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
       }}
     >
-      <div className="max-w-6xl mx-auto px-4 pt-4 pb-4">
+      <div className="w-full px-4 pt-4 pb-4">
         <DraftPageHeaderSection className="mb-0" contentClassName="px-6 py-4">
           <DraftHeadingTitle
             option={draft.option}
@@ -1016,7 +1016,7 @@ export const MultiplayerDraftInterface = ({
         />
       )}
 
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+      <div className="w-full px-4 py-6 space-y-6">
         <DraftLobbyStatusParticipants
           draft={draft}
           isComplete={isComplete}
