@@ -368,7 +368,7 @@ const Index = () => {
         <meta name="twitter:description" content="Play the movie drafting game: pick films across categories, run fantasy movie drafts with friends, and compete on Movie Drafter." />
       </Helmet>
       <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-        <div className="container mx-auto px-4 py-8">
+        <div className="w-full px-4 py-8">
           <DraftHeader
             draftOption={finalDraftState.option}
             theme={finalDraftState.theme}
