@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 
 const HEADER_NAV_ITEMS = [
   { label: 'How To Play', mobileLabel: 'How to Draft', to: '/how-to-draft' },
-  { label: 'Start a League', mobileLabel: 'Start A League', to: '/league/create' },
+  { label: 'League', mobileLabel: 'League', to: '/league' },
   { label: 'Blog', mobileLabel: 'Blog', to: '/blog' },
   { label: 'Movie News', mobileLabel: 'Movies News', to: '/news' },
 ] as const;

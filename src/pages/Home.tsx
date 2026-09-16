@@ -65,7 +65,7 @@ const Home = () => {
       <div className="relative w-full min-h-screen overflow-hidden">
         <section className="w-full px-6 py-16 md:py-20 relative z-10 overflow-visible">
           <div
-            className="absolute left-1/2 top-[calc(50%+180px)] md:top-[calc(50%+260px)] lg:top-[calc(50%+300px)] z-0 h-screen w-screen"
+            className="absolute left-1/2 top-[calc(50%+100px)] md:top-[calc(50%+180px)] lg:top-[calc(50%+220px)] z-0 h-screen w-screen"
             style={{
               transform: 'translateX(-50%) translateY(-50%)',
               opacity: heroImageLoaded ? 0.6 : 0,

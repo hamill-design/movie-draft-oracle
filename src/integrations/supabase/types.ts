@@ -392,7 +392,6 @@ export type Database = {
           league_id: string
           notes: string | null
           scheduled_at: string | null
-          season_id: string | null
           theme: string | null
         }
         Insert: {
@@ -404,7 +403,6 @@ export type Database = {
           league_id: string
           notes?: string | null
           scheduled_at?: string | null
-          season_id?: string | null
           theme?: string | null
         }
         Update: {
@@ -416,7 +414,6 @@ export type Database = {
           league_id?: string
           notes?: string | null
           scheduled_at?: string | null
-          season_id?: string | null
           theme?: string | null
         }
         Relationships: [
@@ -432,13 +429,6 @@ export type Database = {
             columns: ["league_id"]
             isOneToOne: false
             referencedRelation: "leagues"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "league_drafts_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "league_seasons"
             referencedColumns: ["id"]
           },
         ]
@@ -567,41 +557,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      league_seasons: {
-        Row: {
-          created_at: string
-          ends_at: string
-          id: string
-          league_id: string
-          name: string
-          starts_at: string
-        }
-        Insert: {
-          created_at?: string
-          ends_at: string
-          id?: string
-          league_id: string
-          name: string
-          starts_at: string
-        }
-        Update: {
-          created_at?: string
-          ends_at?: string
-          id?: string
-          league_id?: string
-          name?: string
-          starts_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "league_seasons_league_id_fkey"
-            columns: ["league_id"]
-            isOneToOne: false
-            referencedRelation: "leagues"
             referencedColumns: ["id"]
           },
         ]
@@ -944,19 +899,14 @@ export type Database = {
           draft_count: number | null
           league_id: string | null
           photo_url: string | null
+          raw_score: number | null
           rank: number | null
-          season_id: string | null
+          season_quarter: number | null
+          season_year: number | null
           total_score: number | null
           user_id: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "league_drafts_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "league_seasons"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "league_members_league_id_fkey"
             columns: ["league_id"]

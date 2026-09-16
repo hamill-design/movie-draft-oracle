@@ -9,7 +9,6 @@ import {
   UserMinus,
   Send,
   X,
-  Plus,
   CalendarDays,
   Clock,
   Pencil,
@@ -40,14 +39,12 @@ import {
   useLeague,
   useLeagueDrafts,
   useLeagueMembers,
-  useLeagueSeasons,
   useLeagueActions,
-  type LeagueSeason,
 } from '@/hooks/useLeagues';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { MOVIE_DRAFTER_PURPLE_SHELL } from '@/lib/pageGradients';
-import { format, isAfter, isBefore } from 'date-fns';
+import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { usePeopleSearch } from '@/hooks/usePeopleSearch';
 import { ActorPortrait } from '@/components/ActorPortrait';
@@ -60,12 +57,11 @@ import {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TAB_IDS = ['general', 'seasons', 'schedule', 'invite'] as const;
+const TAB_IDS = ['general', 'schedule', 'invite'] as const;
 type TabId = (typeof TAB_IDS)[number];
 
 const NAV_ITEMS: { id: TabId; label: string }[] = [
   { id: 'general', label: 'General Information' },
-  { id: 'seasons', label: 'Seasons' },
   { id: 'schedule', label: 'Schedule Draft' },
   { id: 'invite', label: 'Invite Members' },
 ];
@@ -104,15 +100,6 @@ const draftSelectTriggerClass = cn(
 const getInitials = (name: string | null | undefined) =>
   !name ? '?' : name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
-const toLocalDateValue = (iso: string) => iso.slice(0, 10);
-
-const seasonStatus = (s: LeagueSeason): 'active' | 'upcoming' | 'past' => {
-  const now = new Date();
-  if (isBefore(now, new Date(s.starts_at))) return 'upcoming';
-  if (isAfter(now, new Date(s.ends_at))) return 'past';
-  return 'active';
-};
-
 function personSubtitle(p: {
   known_for_department?: string | null;
   known_for?: { title?: string; name?: string }[];
@@ -124,24 +111,6 @@ function personSubtitle(p: {
     .filter(Boolean)
     .join(', ');
   return titles ? `${dept} • Known for ${titles}` : dept;
-}
-
-function SectionDivider({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex w-full items-center justify-center gap-2">
-      <div
-        className="min-h-0 min-w-0 flex-1 border-t border-[#907AFF]"
-        aria-hidden
-      />
-      <div className="flex shrink-0 flex-col justify-center text-center text-[#907AFF] font-brockmann text-[12px] font-normal leading-4 tracking-[0.72px]">
-        {children}
-      </div>
-      <div
-        className="min-h-0 min-w-0 flex-1 border-t border-[#907AFF]"
-        aria-hidden
-      />
-    </div>
-  );
 }
 
 function NavButton({
@@ -203,13 +172,9 @@ const LeagueSettings = () => {
 
   const { league, loading: leagueLoading, refetch: refetchLeague } = useLeague(leagueId);
   const { members, loading: membersLoading, refetch: refetchMembers } = useLeagueMembers(leagueId);
-  const { seasons, loading: seasonsLoading, refetch: refetchSeasons } = useLeagueSeasons(leagueId);
   const { drafts, refetch: refetchDrafts } = useLeagueDrafts(leagueId);
   const {
     updateLeagueName,
-    createSeason,
-    updateSeason,
-    deleteSeason,
     scheduleDraft,
     updateScheduledDraft,
     removeScheduledDraft,
@@ -227,23 +192,9 @@ const LeagueSettings = () => {
   const [savingName, setSavingName] = useState(false);
   const [editingLeagueName, setEditingLeagueName] = useState(false);
 
-  // ── Seasons ──
-  const [showSeasonForm, setShowSeasonForm] = useState(false);
-  const [seasonName, setSeasonName] = useState('');
-  const [seasonStart, setSeasonStart] = useState('');
-  const [seasonEnd, setSeasonEnd] = useState('');
-  const [creatingSeason, setCreatingSeason] = useState(false);
-  const [editingSeasonId, setEditingSeasonId] = useState<string | null>(null);
-  const [editSeasonName, setEditSeasonName] = useState('');
-  const [editSeasonStart, setEditSeasonStart] = useState('');
-  const [editSeasonEnd, setEditSeasonEnd] = useState('');
-  const [savingSeason, setSavingSeason] = useState(false);
-  const [seasonToDelete, setSeasonToDelete] = useState<LeagueSeason | null>(null);
-
   // ── Schedule draft ──
   const [schedDatePart, setSchedDatePart] = useState('');
   const [schedTimePart, setSchedTimePart] = useState('');
-  const [schedSeason, setSchedSeason] = useState('none');
   const [schedNotes, setSchedNotes] = useState('');
   const [scheduling, setScheduling] = useState(false);
   const [scheduleSlice, setScheduleSlice] = useState<ScheduleSlice>('filmography');
@@ -351,9 +302,6 @@ const LeagueSettings = () => {
       setSchedTimePart(`${hh}:${mm}`);
     }
 
-    // Season
-    setSchedSeason(entry.season_id ?? 'none');
-
     // Multiplayer
     setSchedIsMultiplayer(!!entry.is_multiplayer);
 
@@ -394,16 +342,6 @@ const LeagueSettings = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.get('edit'), drafts.length, membersLoading]);
 
-  const groupedSeasons = useMemo(() => {
-    const currentLike = seasons.filter((s) => seasonStatus(s) !== 'past');
-    const prev = seasons.filter((s) => seasonStatus(s) === 'past');
-    const sortByStart = (a: LeagueSeason, b: LeagueSeason) =>
-      new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime();
-    currentLike.sort(sortByStart);
-    prev.sort(sortByStart);
-    return { currentLike, prev };
-  }, [seasons]);
-
   const scheduleTheme =
     scheduleSlice === 'year' ? 'year' : scheduleSlice === 'filmography' ? 'people' : null;
   const scheduleCategories = useDraftCategories(scheduleTheme);
@@ -430,7 +368,6 @@ const LeagueSettings = () => {
   const resetScheduleForm = useCallback(() => {
     setSchedDatePart('');
     setSchedTimePart('');
-    setSchedSeason('none');
     setSchedNotes('');
     setSchedIsMultiplayer(false);
     setScheduleSlice('filmography');
@@ -474,74 +411,6 @@ const LeagueSettings = () => {
     } else toast({ title: 'Could not rename league.', variant: 'destructive' });
   };
 
-  const handleCreateSeason = async () => {
-    if (!seasonName.trim() || !seasonStart || !seasonEnd) return;
-    if (seasonStart >= seasonEnd) {
-      toast({ title: 'End date must be after start date.', variant: 'destructive' });
-      return;
-    }
-    setCreatingSeason(true);
-    const result = await createSeason(
-      leagueId!,
-      seasonName.trim(),
-      new Date(seasonStart).toISOString(),
-      new Date(seasonEnd).toISOString(),
-    );
-    setCreatingSeason(false);
-    if (result) {
-      toast({ title: 'Season created.' });
-      setSeasonName('');
-      setSeasonStart('');
-      setSeasonEnd('');
-      setShowSeasonForm(false);
-      refetchSeasons();
-    } else {
-      toast({ title: 'Could not create season.', variant: 'destructive' });
-    }
-  };
-
-  const startEditSeason = (s: LeagueSeason) => {
-    setShowSeasonForm(false);
-    setEditingSeasonId(s.id);
-    setEditSeasonName(s.name);
-    setEditSeasonStart(toLocalDateValue(s.starts_at));
-    setEditSeasonEnd(toLocalDateValue(s.ends_at));
-  };
-
-  const handleSaveSeason = async () => {
-    if (!editingSeasonId || !editSeasonName.trim() || !editSeasonStart || !editSeasonEnd) return;
-    if (editSeasonStart >= editSeasonEnd) {
-      toast({ title: 'End date must be after start date.', variant: 'destructive' });
-      return;
-    }
-    setSavingSeason(true);
-    const ok = await updateSeason(editingSeasonId, {
-      name: editSeasonName.trim(),
-      starts_at: new Date(editSeasonStart).toISOString(),
-      ends_at: new Date(editSeasonEnd).toISOString(),
-    });
-    setSavingSeason(false);
-    if (ok) {
-      toast({ title: 'Season updated.' });
-      setEditingSeasonId(null);
-      refetchSeasons();
-    } else {
-      toast({ title: 'Could not update season.', variant: 'destructive' });
-    }
-  };
-
-  const handleDeleteSeason = async () => {
-    if (!seasonToDelete) return;
-    const id = seasonToDelete.id;
-    const wasEditing = editingSeasonId === id;
-    const ok = await deleteSeason(id);
-    setSeasonToDelete(null);
-    if (ok) {
-      refetchSeasons();
-      toast({ title: 'Season deleted.' });
-      if (wasEditing) setEditingSeasonId(null);
-    } else toast({ title: 'Could not delete season.', variant: 'destructive' });
-  };
 
   const handleScheduleDraft = async () => {
     if (!schedDatePart || !schedTimePart) {
@@ -603,14 +472,12 @@ const LeagueSettings = () => {
         notes: schedNotes.trim() || null,
         is_multiplayer: schedIsMultiplayer,
         player_ids: playerIdsOut,
-        season_id: schedSeason !== 'none' ? schedSeason : null,
       });
     } else {
       ok = await scheduleDraft(
         leagueId!,
         scheduledAt.toISOString(),
         draftType,
-        schedSeason !== 'none' ? schedSeason : undefined,
         schedNotes.trim() || undefined,
         themeValue,
         categoriesOut,
@@ -735,8 +602,6 @@ const LeagueSettings = () => {
 
   const shell = sectionShellProps();
 
-  const seasonsPanelEditing = !!editingSeasonId || showSeasonForm;
-
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -851,214 +716,6 @@ const LeagueSettings = () => {
                       </p>
                     </div>
                   </div>
-                </section>
-              )}
-
-              {activeTab === 'seasons' && (
-                <section {...shell}>
-                  {!seasonsPanelEditing && (
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-                      <h2 className="text-xl font-bold text-greyscale-blue-50 font-brockmann tracking-tight m-0">
-                        Your Seasons
-                      </h2>
-                      <button
-                        type="button"
-                        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-[2px] bg-[#7142FF] px-3 py-2 text-sm font-medium leading-5 text-greyscale-blue-100 transition-colors hover:bg-[#6338e0] font-brockmann"
-                        onClick={() => {
-                          setEditingSeasonId(null);
-                          setShowSeasonForm(true);
-                          setSeasonName('');
-                          setSeasonStart('');
-                          setSeasonEnd('');
-                        }}
-                      >
-                        <Plus className="size-4" aria-hidden />
-                        New Season
-                      </button>
-                    </div>
-                  )}
-
-                  {showSeasonForm && (
-                    <>
-                      <div className="flex items-start justify-between gap-4 mb-6">
-                        <h3 className="text-lg font-bold text-purple-300 font-brockmann uppercase tracking-wide m-0">
-                          New Season
-                        </h3>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-greyscale-blue-400"
-                          onClick={() => setShowSeasonForm(false)}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                      <div className="grid w-full min-w-0 gap-6">
-                        <div className="space-y-2">
-                          <Label className="text-greyscale-blue-200">Season name</Label>
-                          <Input
-                            placeholder="e.g. Summer 2026, 90s Icons"
-                            value={seasonName}
-                            onChange={(e) => setSeasonName(e.target.value)}
-                            className={inputDark}
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label className="text-greyscale-blue-200">Start Date</Label>
-                            <Input
-                              type="date"
-                              value={seasonStart}
-                              onChange={(e) => setSeasonStart(e.target.value)}
-                              className={inputDateDark}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-greyscale-blue-200">End Date</Label>
-                            <Input
-                              type="date"
-                              value={seasonEnd}
-                              onChange={(e) => setSeasonEnd(e.target.value)}
-                              className={inputDateDark}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-4 pt-2">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            className="text-purple-200 hover:text-white px-0"
-                            onClick={() => setShowSeasonForm(false)}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            onClick={handleCreateSeason}
-                            disabled={
-                              creatingSeason
-                              || !seasonName.trim()
-                              || !seasonStart
-                              || !seasonEnd
-                            }
-                          >
-                            {creatingSeason ? 'Saving…' : 'Save Season'}
-                          </Button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {editingSeasonId && (
-                    <>
-                      <div className="flex items-start justify-between gap-4 mb-6">
-                        <h3 className="text-lg font-bold text-purple-300 font-brockmann uppercase tracking-wide m-0">
-                          Edit Season
-                        </h3>
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            className="p-2 rounded text-greyscale-blue-400 hover:text-error-red-400 hover:bg-white/10"
-                            aria-label="Delete season"
-                            onClick={() => {
-                              const s = seasons.find((x) => x.id === editingSeasonId);
-                              if (s) setSeasonToDelete(s);
-                            }}
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-greyscale-blue-400"
-                            onClick={() => setEditingSeasonId(null)}
-                          >
-                            Close
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="grid w-full min-w-0 gap-6">
-                        <div className="space-y-2">
-                          <Label className="text-greyscale-blue-200">Season Name</Label>
-                          <Input
-                            value={editSeasonName}
-                            onChange={(e) => setEditSeasonName(e.target.value)}
-                            className={inputDark}
-                          />
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label className="text-greyscale-blue-200">Start Date</Label>
-                            <Input
-                              type="date"
-                              value={editSeasonStart}
-                              onChange={(e) => setEditSeasonStart(e.target.value)}
-                              className={inputDateDark}
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label className="text-greyscale-blue-200">End Date</Label>
-                            <Input
-                              type="date"
-                              value={editSeasonEnd}
-                              onChange={(e) => setEditSeasonEnd(e.target.value)}
-                              className={inputDateDark}
-                            />
-                          </div>
-                        </div>
-                        <div className="flex gap-4 pt-2">
-                          <button
-                            type="button"
-                            className="text-sm font-semibold text-purple-200 hover:text-white underline-offset-4 hover:underline px-0"
-                            onClick={() => setEditingSeasonId(null)}
-                          >
-                            Cancel
-                          </button>
-                          <Button onClick={handleSaveSeason} disabled={savingSeason}>
-                            {savingSeason ? 'Saving…' : 'Save Season'}
-                          </Button>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {!seasonsPanelEditing && (
-                    <>
-                      {seasonsLoading ? (
-                        <p className="text-sm text-greyscale-blue-300 py-10 text-center">Loading…</p>
-                      ) : seasons.length === 0 ? (
-                        <div className="text-center py-12 border border-dashed border-white/20 rounded-lg bg-black/20">
-                          <CalendarDays className="w-8 h-8 text-purple-400/80 mx-auto mb-3" />
-                          <p className="text-greyscale-blue-100 font-medium m-0">No seasons yet</p>
-                          <p className="text-xs text-greyscale-blue-400 mt-2 m-0 max-w-xs mx-auto">
-                            Create seasons to organise standings across time ranges.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-6">
-                          {groupedSeasons.currentLike.length > 0 && (
-                            <>
-                              <SectionDivider>Current Seasons</SectionDivider>
-                              <ul className="space-y-3 list-none p-0 m-0">
-                                {groupedSeasons.currentLike.map((s) => (
-                                  <SeasonRow key={s.id} s={s} onEdit={() => startEditSeason(s)} />
-                                ))}
-                              </ul>
-                            </>
-                          )}
-                          {groupedSeasons.prev.length > 0 && (
-                            <>
-                              <SectionDivider>Previous Seasons</SectionDivider>
-                              <ul className="space-y-3 list-none p-0 m-0">
-                                {groupedSeasons.prev.map((s) => (
-                                  <SeasonRow key={s.id} s={s} onEdit={() => startEditSeason(s)} />
-                                ))}
-                              </ul>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </>
-                  )}
                 </section>
               )}
 
@@ -1193,24 +850,6 @@ const LeagueSettings = () => {
                             />
                           </div>
                         </div>
-                        {seasons.length > 0 && (
-                          <div className="flex flex-col gap-[9px] pt-[3px] w-full lg:flex-1 lg:min-w-0">
-                            <Label className="text-[#BDC3C2] text-sm font-medium leading-5 font-brockmann m-0">
-                              Season <span className="font-normal text-greyscale-blue-500">Optional</span>
-                            </Label>
-                            <Select value={schedSeason} onValueChange={setSchedSeason}>
-                              <SelectTrigger className={draftSelectTriggerClass} style={draftFieldOutline}>
-                                <SelectValue placeholder="Previous Seasons" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-greyscale-purp-850 border-[#49474B] text-greyscale-blue-100">
-                                <SelectItem value="none">No season</SelectItem>
-                                {seasons.map((s) => (
-                                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
                       </div>
                     </div>
 
@@ -1900,65 +1539,8 @@ const LeagueSettings = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <AlertDialog open={!!seasonToDelete} onOpenChange={(o) => !o && setSeasonToDelete(null)}>
-        <AlertDialogContent className="bg-[#161618] border-[#49474B] text-greyscale-blue-50">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete "{seasonToDelete?.name}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Drafts linked to this season will stay in the league but won&apos;t roll up under this period anymore.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteSeason}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete season
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 };
-
-function SeasonRow({
-  s,
-  onEdit,
-}: {
-  s: LeagueSeason;
-  onEdit: () => void;
-}) {
-  return (
-    <li className="flex items-center gap-4 rounded-lg border border-[#49474B] bg-[#1D1D1F] px-4 py-4">
-      <div className="min-w-0 flex-1">
-        <p className="font-brockmann font-medium text-white text-[18px] leading-[26px] tracking-tight m-0 mb-2 truncate">
-          {s.name}
-        </p>
-        <div className="flex flex-wrap gap-x-2 gap-y-1 text-[13px] text-greyscale-blue-400">
-          <span className="text-greyscale-blue-500">Begins</span>
-          <span className="font-medium text-greyscale-blue-200">
-            {format(new Date(s.starts_at), 'MM/dd/y')}
-          </span>
-          <span className="text-greyscale-blue-600 mx-1">·</span>
-          <span className="text-greyscale-blue-500">Ends</span>
-          <span className="font-medium text-greyscale-blue-200">
-            {format(new Date(s.ends_at), 'MM/dd/y')}
-          </span>
-        </div>
-      </div>
-      <button
-        type="button"
-        className="p-2 shrink-0 rounded text-greyscale-blue-400 hover:text-purple-300 hover:bg-white/10"
-        aria-label={`Edit ${s.name}`}
-        onClick={onEdit}
-      >
-        <Pencil className="w-[18px] h-[18px]" />
-      </button>
-    </li>
-  );
-}
 
 export default LeagueSettings;

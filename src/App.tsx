@@ -34,6 +34,7 @@ import HowToDraftPage from "./pages/HowToDraftPage";
 import FAQ from "./pages/FAQ";
 import DraftByFilmography from "./pages/DraftByFilmography";
 import DraftByYear from "./pages/DraftByYear";
+import LeagueHub from "./pages/LeagueHub";
 import LeagueCreate from "./pages/LeagueCreate";
 import LeaguePage from "./pages/LeaguePage";
 import LeagueSettings from "./pages/LeagueSettings";
@@ -114,6 +115,7 @@ const App = () => (
               <Route path="/contact" element={<Contact />} />
               <Route path="/about" element={<About />} />
               <Route path="/spec-draft/:specDraftSlug/setup" element={<SpecDraftSetup />} />
+              <Route path="/league" element={<LeagueHub />} />
               <Route path="/league/create" element={<LeagueCreate />} />
               <Route path="/league/join" element={<LeagueJoin />} />
               <Route path="/league/:leagueId/settings" element={<LeagueSettings />} />

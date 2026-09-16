@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { type Quarter, getQuarter, currentQuarter, quarterId, compareQuartersDesc } from '@/lib/seasons';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -57,14 +58,14 @@ export interface LeagueStanding {
 }
 
 export interface LeagueSeasonStanding extends LeagueStanding {
-  season_id: string;
+  season_year: number;
+  season_quarter: number;
 }
 
 export interface LeagueDraftEntry {
   id: string;
   league_id: string;
   draft_id: string | null;
-  season_id: string | null;
   scheduled_at: string | null;
   draft_type: string | null;
   theme: string | null;
@@ -85,15 +86,6 @@ export interface LeagueDraftEntry {
     is_multiplayer?: boolean | null;
     categories?: string[] | null;
   };
-}
-
-export interface LeagueSeason {
-  id: string;
-  league_id: string;
-  name: string;
-  starts_at: string;
-  ends_at: string;
-  created_at: string;
 }
 
 export interface LeagueMessage {
@@ -294,52 +286,50 @@ export const useLeagueStandings = (leagueId: string | undefined) => {
 
 // ── Season standings ─────────────────────────────────────────────────────────
 
-export const useLeagueSeasonStandings = (leagueId: string | undefined, seasonId: string | undefined) => {
+export const useLeagueSeasonStandings = (leagueId: string | undefined, quarter: Quarter | undefined) => {
   const [standings, setStandings] = useState<LeagueSeasonStanding[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!leagueId || !seasonId) { setStandings([]); setLoading(false); return; }
+    if (!leagueId || !quarter) { setStandings([]); setLoading(false); return; }
     setLoading(true);
     supabase.from('league_season_standings').select('*')
       .eq('league_id', leagueId)
-      .eq('season_id', seasonId)
+      .eq('season_year', quarter.year)
+      .eq('season_quarter', quarter.quarter)
       .order('rank', { ascending: true })
       .then(({ data }) => {
         setStandings((data as unknown as LeagueSeasonStanding[]) ?? []);
         setLoading(false);
       });
-  }, [leagueId, seasonId]);
+  }, [leagueId, quarter?.year, quarter?.quarter]);
 
   return { standings, loading };
 };
 
-// ── Seasons ──────────────────────────────────────────────────────────────────
+// ── Seasons (universal calendar quarters, computed from draft dates) ─────────
 
-export const useLeagueSeasons = (leagueId: string | undefined) => {
-  const [seasons, setSeasons] = useState<LeagueSeason[]>([]);
-  const [loading, setLoading] = useState(true);
+/**
+ * Derives the set of quarters a league's drafts fall into — a draft's quarter
+ * is COALESCE(scheduled_at, draft.created_at), mirroring league_season_standings.
+ * Always includes the current quarter, even if it has no drafts yet.
+ */
+export const useLeagueQuarters = (drafts: LeagueDraftEntry[]) => {
+  return useMemo(() => {
+    const byId = new Map<string, Quarter>();
+    const now = currentQuarter();
+    byId.set(quarterId(now), now);
 
-  const fetchSeasons = useCallback(async () => {
-    if (!leagueId) { setLoading(false); return; }
-    const { data, error } = await supabase
-      .from('league_seasons')
-      .select('*')
-      .eq('league_id', leagueId)
-      .order('starts_at', { ascending: false });
-    if (!error && data) setSeasons(data as LeagueSeason[]);
-    setLoading(false);
-  }, [leagueId]);
+    for (const entry of drafts) {
+      const dateStr = entry.scheduled_at ?? entry.draft?.created_at;
+      if (!dateStr) continue;
+      const q = getQuarter(dateStr);
+      byId.set(quarterId(q), q);
+    }
 
-  useEffect(() => { fetchSeasons(); }, [fetchSeasons]);
-
-  /** The season whose date range contains today, if any. */
-  const activeSeason = seasons.find(s => {
-    const now = Date.now();
-    return new Date(s.starts_at).getTime() <= now && new Date(s.ends_at).getTime() >= now;
-  }) ?? null;
-
-  return { seasons, activeSeason, loading, refetch: fetchSeasons };
+    const quarters = Array.from(byId.values()).sort(compareQuartersDesc);
+    return { quarters, activeQuarter: now };
+  }, [drafts]);
 };
 
 // ── League drafts ────────────────────────────────────────────────────────────
@@ -610,29 +600,10 @@ export const useLeagueActions = () => {
     return !error;
   };
 
-  // ── Seasons ──
-  const createSeason = async (leagueId: string, name: string, startsAt: string, endsAt: string): Promise<LeagueSeason | null> => {
-    const { data, error } = await supabase.from('league_seasons')
-      .insert({ league_id: leagueId, name, starts_at: startsAt, ends_at: endsAt })
-      .select().single();
-    if (error) { console.error(error); return null; }
-    return data as LeagueSeason;
-  };
-
-  const updateSeason = async (seasonId: string, updates: Partial<Pick<LeagueSeason, 'name' | 'starts_at' | 'ends_at'>>): Promise<boolean> => {
-    const { error } = await supabase.from('league_seasons').update(updates).eq('id', seasonId);
-    return !error;
-  };
-
-  const deleteSeason = async (seasonId: string): Promise<boolean> => {
-    const { error } = await supabase.from('league_seasons').delete().eq('id', seasonId);
-    return !error;
-  };
-
   // ── Drafts ──
-  const addDraftToLeague = async (leagueId: string, draftId: string, seasonId?: string): Promise<boolean> => {
+  const addDraftToLeague = async (leagueId: string, draftId: string): Promise<boolean> => {
     const { error } = await supabase.from('league_drafts')
-      .insert({ league_id: leagueId, draft_id: draftId, season_id: seasonId ?? null });
+      .insert({ league_id: leagueId, draft_id: draftId });
     return !error;
   };
 
@@ -646,7 +617,6 @@ export const useLeagueActions = () => {
     leagueId: string,
     scheduledAt: string,
     draftType: string,
-    seasonId?: string,
     notes?: string,
     theme?: string,
     categories?: string[],
@@ -658,7 +628,6 @@ export const useLeagueActions = () => {
       draft_id: null,
       scheduled_at: scheduledAt,
       draft_type: draftType,
-      season_id: seasonId ?? null,
       notes: notes ?? null,
       theme: theme ?? null,
       categories: categories ?? [],
@@ -683,16 +652,9 @@ export const useLeagueActions = () => {
       notes?: string | null;
       is_multiplayer?: boolean;
       player_ids?: string[];
-      season_id?: string | null;
     },
   ): Promise<boolean> => {
     const { error } = await supabase.from('league_drafts').update(updates).eq('id', entryId);
-    return !error;
-  };
-
-  const assignDraftToSeason = async (leagueDraftId: string, seasonId: string | null): Promise<boolean> => {
-    const { error } = await supabase.from('league_drafts')
-      .update({ season_id: seasonId }).eq('id', leagueDraftId);
     return !error;
   };
 
@@ -731,8 +693,7 @@ export const useLeagueActions = () => {
 
   return {
     createLeague, updateLeagueName,
-    createSeason, updateSeason, deleteSeason,
-    addDraftToLeague, removeDraftFromLeague, scheduleDraft, removeScheduledDraft, updateScheduledDraft, assignDraftToSeason,
+    addDraftToLeague, removeDraftFromLeague, scheduleDraft, removeScheduledDraft, updateScheduledDraft,
     inviteByUsername, removeMember,
     acceptInvite, declineInvite, acceptInviteByToken,
   };

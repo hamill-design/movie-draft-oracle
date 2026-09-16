@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import {
-  Settings, Film, CalendarClock,
+  Settings, CalendarClock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,13 +12,15 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import {
   useLeague, useLeagueMembers, useLeagueStandings, useLeagueSeasonStandings,
-  useLeagueDrafts, useLeagueSeasons, useLeagueActions, usePendingLeagueInvites,
+  useLeagueDrafts, useLeagueQuarters, useLeagueActions, usePendingLeagueInvites,
   type LeagueStanding, type LeagueDraftEntry,
 } from '@/hooks/useLeagues';
+import {
+  type Quarter, getQuarter, currentQuarter, quarterId, parseQuarterId, quarterLabel, quartersEqual,
+} from '@/lib/seasons';
 import LeagueStandingsChart from '@/components/league/LeagueStandingsChart';
 import LeagueMessageBoard from '@/components/league/LeagueMessageBoard';
 import { LeagueDraftCard } from '@/components/league/LeagueDraftCard';
-import { LeagueUpcomingDraftCard } from '@/components/league/LeagueUpcomingDraftCard';
 import { ScheduledDraftDetailModal } from '@/components/league/ScheduledDraftDetailModal';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -62,9 +64,9 @@ function upcomingScheduledHeadline(
   return DRAFT_TYPE_LABELS[t ?? ''] ?? 'Draft';
 }
 
-type MainTab = 'standings' | 'drafts' | 'schedule';
+type MainTab = 'standings' | 'drafts' | 'messages';
 
-const MAIN_TABS: readonly MainTab[] = ['standings', 'drafts', 'schedule'];
+const MAIN_TABS: readonly MainTab[] = ['standings', 'drafts', 'messages'];
 
 function isMainTab(value: string | null): value is MainTab {
   return !!value && (MAIN_TABS as readonly string[]).includes(value);
@@ -196,8 +198,8 @@ const LeaguePage = () => {
 
   const { league, loading: leagueLoading } = useLeague(leagueId);
   const { members } = useLeagueMembers(leagueId);
-  const { seasons, activeSeason } = useLeagueSeasons(leagueId);
   const { drafts, loading: draftsLoading } = useLeagueDrafts(leagueId);
+  const { quarters, activeQuarter } = useLeagueQuarters(drafts);
   const { removeScheduledDraft, acceptInvite, declineInvite } = useLeagueActions();
   const { invites: pendingInvites, loading: invitesLoading } = usePendingLeagueInvites();
 
@@ -205,7 +207,7 @@ const LeaguePage = () => {
     const initialTab = searchParams.get('tab');
     return isMainTab(initialTab) ? initialTab : 'standings';
   });
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('all-time');
+  const [selectedQuarterId, setSelectedQuarterId] = useState<string>(() => quarterId(currentQuarter()));
   const [showNewDraftFlow, setShowNewDraftFlow] = useState(false);
 
   /** Pending invite for this league, if the current user hasn't joined yet */
@@ -232,34 +234,26 @@ const LeaguePage = () => {
     setShowNewDraftFlow(false);
   }, [leagueId]);
 
+  /** Keep selection valid if it ever falls outside the known quarters (falls back to current). */
   useEffect(() => {
-    if (activeSeason && selectedSeasonId === 'all-time') {
-      setSelectedSeasonId(activeSeason.id);
+    if (selectedQuarterId === 'all-time') return;
+    if (!quarters.some(q => quarterId(q) === selectedQuarterId)) {
+      setSelectedQuarterId(quarterId(activeQuarter));
     }
-  }, [activeSeason?.id]);
+  }, [quarters, selectedQuarterId, activeQuarter]);
 
-  /** Keep selection valid when seasons load/change (e.g. none yet, or current season deleted). */
-  useEffect(() => {
-    if (seasons.length === 0) {
-      if (selectedSeasonId !== 'all-time') setSelectedSeasonId('all-time');
-      return;
-    }
-    if (selectedSeasonId !== 'all-time' && !seasons.some(s => s.id === selectedSeasonId)) {
-      setSelectedSeasonId(activeSeason?.id ?? 'all-time');
-    }
-  }, [seasons, selectedSeasonId, activeSeason?.id]);
-
-  const effectiveSeasonId = selectedSeasonId === 'all-time' ? undefined : selectedSeasonId;
+  const effectiveQuarter: Quarter | undefined =
+    selectedQuarterId === 'all-time' ? undefined : parseQuarterId(selectedQuarterId);
 
   const { standings: allTimeStandings, loading: allTimeLoading } = useLeagueStandings(
-    effectiveSeasonId ? undefined : leagueId,
+    effectiveQuarter ? undefined : leagueId,
   );
   const { standings: seasonStandings, loading: seasonLoading } = useLeagueSeasonStandings(
-    leagueId, effectiveSeasonId,
+    leagueId, effectiveQuarter,
   );
 
-  const standings = effectiveSeasonId ? seasonStandings : allTimeStandings;
-  const standingsLoading = effectiveSeasonId ? seasonLoading : allTimeLoading;
+  const standings = effectiveQuarter ? seasonStandings : allTimeStandings;
+  const standingsLoading = effectiveQuarter ? seasonLoading : allTimeLoading;
 
   const isAdmin = league?.admin_id === user?.id;
 
@@ -323,14 +317,16 @@ const LeaguePage = () => {
 
   const draftInSelectedScope = useCallback(
     (d: LeagueDraftEntry) => {
-      if (!effectiveSeasonId) return true;
-      return d.season_id === effectiveSeasonId;
+      if (!effectiveQuarter) return true;
+      const dateStr = d.scheduled_at ?? d.draft?.created_at;
+      if (!dateStr) return false;
+      return quartersEqual(getQuarter(dateStr), effectiveQuarter);
     },
-    [effectiveSeasonId],
+    [effectiveQuarter],
   );
 
-  // Scheduled (upcoming) drafts are always shown regardless of season scope —
-  // they are future placeholders and may not have a season_id yet.
+  // Scheduled (upcoming) drafts are always shown regardless of quarter scope —
+  // they're future placeholders shown in their own "Scheduled" section.
   const scheduled = useMemo(
     () => drafts.filter(d => !d.draft_id && d.scheduled_at),
     [drafts],
@@ -550,7 +546,33 @@ const LeaguePage = () => {
     );
   }
 
-  const standingsHeading = effectiveSeasonId ? 'CURRENT SEASON STANDINGS' : 'ALL-TIME STANDINGS';
+  const standingsHeading = effectiveQuarter
+    ? `${quarterLabel(effectiveQuarter).toUpperCase()} STANDINGS`
+    : 'ALL-TIME STANDINGS';
+
+  const seasonSelect = (
+    <Select value={selectedQuarterId} onValueChange={setSelectedQuarterId}>
+      <SelectTrigger
+        className="h-auto w-full rounded-[2px] border-0 bg-[#1D1D1F] px-4 py-3 text-sm font-brockmann text-[#BDC3C2] outline outline-1 -outline-offset-1 outline-[#BDC3C2] focus:ring-0 focus:ring-offset-0 md:w-[min(100%,229px)]"
+      >
+        <SelectValue placeholder="Season" />
+      </SelectTrigger>
+      <SelectContent>
+        {quarters.map(q => {
+          const id = quarterId(q);
+          return (
+            <SelectItem key={id} value={id} className="font-brockmann">
+              {quarterLabel(q)}
+              {quartersEqual(q, activeQuarter) && (
+                <span className="ml-2 text-xs text-purple-400">· current</span>
+              )}
+            </SelectItem>
+          );
+        })}
+        <SelectItem value="all-time" className="font-brockmann">All time</SelectItem>
+      </SelectContent>
+    </Select>
+  );
 
   return (
     <>
@@ -604,8 +626,8 @@ const LeaguePage = () => {
             </div>
           </div>
 
-          {/* Pill tabs + season */}
-          <div className="flex w-full flex-col gap-4 px-3 md:flex-row md:flex-wrap md:items-center md:justify-between md:px-6">
+          {/* Pill tabs + draft actions */}
+          <div className="flex w-full flex-col gap-4 md:flex-row md:flex-wrap md:items-center md:justify-between">
             <div
               role="tablist"
               aria-label="League sections"
@@ -614,7 +636,7 @@ const LeaguePage = () => {
               {([
                 ['standings', 'Standings'],
                 ['drafts', 'Drafts'],
-                ['schedule', 'Schedule'],
+                ['messages', 'Messages'],
               ] as const).map(([key, label]) => (
                 <button
                   key={key}
@@ -636,24 +658,62 @@ const LeaguePage = () => {
               ))}
             </div>
 
-            <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
-              <SelectTrigger
-                className="h-auto w-full rounded-[2px] border-0 bg-[#1D1D1F] px-4 py-3 text-sm font-brockmann text-[#BDC3C2] outline outline-1 -outline-offset-1 outline-[#BDC3C2] focus:ring-0 focus:ring-offset-0 md:w-[min(100%,229px)]"
+            <div className="flex flex-wrap items-center gap-3">
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/league/${leagueId}/settings?tab=schedule`)}
+                  className="inline-flex items-center justify-center gap-2 rounded-[2px] bg-[#1D1D1F] px-6 py-3 text-center text-base font-semibold leading-6 tracking-[0.32px] text-greyscale-blue-100 outline outline-1 -outline-offset-1 outline-[#666469] transition-colors hover:bg-[#252528] font-brockmann"
+                >
+                  <CalendarClock className="size-5" aria-hidden />
+                  Schedule Draft
+                </button>
+              )}
+              <button
+                type="button"
+                aria-pressed={showNewDraftFlow}
+                onClick={() => setShowNewDraftFlow((v) => !v)}
+                className={cn(
+                  'inline-flex items-center justify-center gap-2 rounded-[2px] px-6 py-3 text-center text-base font-semibold leading-6 tracking-[0.32px] transition-colors font-brockmann',
+                  showNewDraftFlow
+                    ? 'bg-[#2B2510] text-[#FFD60A]'
+                    : 'bg-[#FFD60A] text-[#2B2D2D] hover:bg-[#e6c109]',
+                )}
               >
-                <SelectValue placeholder="Previous Seasons" />
-              </SelectTrigger>
-              <SelectContent>
-                {seasons.map(s => (
-                  <SelectItem key={s.id} value={s.id} className="font-brockmann">
-                    {s.name}
-                    {s.id === activeSeason?.id && (
-                      <span className="ml-2 text-xs text-purple-400">· active</span>
-                    )}
-                  </SelectItem>
-                ))}
-                <SelectItem value="all-time" className="font-brockmann">All time</SelectItem>
-              </SelectContent>
-            </Select>
+                Start New Draft
+              </button>
+            </div>
+          </div>
+
+          {/*
+            Stays mounted (not conditionally rendered) so the Special Drafts fetch
+            happens once up front and doesn't re-flicker every time this is reopened.
+            The grid-template-rows 0fr→1fr transition animates height without knowing
+            the content's size ahead of time — the overflow-hidden clip doubles as the
+            "mask" sliding down to reveal the panel as it expands.
+          */}
+          <div
+            className={cn(
+              'grid w-full transition-[grid-template-rows] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
+              showNewDraftFlow ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+            )}
+          >
+            <div className="overflow-hidden min-h-0" aria-hidden={!showNewDraftFlow} inert={!showNewDraftFlow}>
+              <div
+                className={cn(
+                  'flex w-full flex-col gap-4 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]',
+                  showNewDraftFlow ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2',
+                )}
+              >
+                <HomeDraftSection
+                  key={leagueId}
+                  leagueId={leagueId}
+                  showJoinDraft={false}
+                  className="w-full max-w-[1200px] mx-auto px-0 pb-8 pt-0"
+                  innerClassName="max-w-[1200px] mx-auto w-full space-y-8"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Tab bodies */}
@@ -665,10 +725,11 @@ const LeaguePage = () => {
                 boxShadow: '0px 0px 6px #3B0394',
               }}
             >
-              <div className="flex flex-col items-center gap-2 self-stretch">
-                <h2 className="m-0 text-center text-2xl font-bold leading-8 tracking-[0.96px] text-greyscale-blue-100">
+              <div className="flex w-full flex-col gap-4 self-stretch sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="m-0 text-left text-2xl font-bold leading-8 tracking-[0.96px] text-greyscale-blue-100">
                   {standingsHeading}
                 </h2>
+                <div className="w-full sm:w-auto">{seasonSelect}</div>
               </div>
 
               {standingsLoading ? (
@@ -699,10 +760,11 @@ const LeaguePage = () => {
                 boxShadow: '0px 0px 6px #3B0394',
               }}
             >
-              <div className="flex flex-col items-center gap-2 self-stretch">
-                <h2 className="m-0 text-center text-2xl font-bold leading-8 tracking-[0.96px] text-greyscale-blue-100 font-brockmann">
-                  {effectiveSeasonId ? 'CURRENT SEASON DRAFTS' : 'LEAGUE DRAFTS'}
+              <div className="flex w-full flex-col gap-4 self-stretch sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="m-0 text-left text-2xl font-bold leading-8 tracking-[0.96px] text-greyscale-blue-100 font-brockmann">
+                  {effectiveQuarter ? `${quarterLabel(effectiveQuarter).toUpperCase()} DRAFTS` : 'LEAGUE DRAFTS'}
                 </h2>
+                <div className="w-full sm:w-auto">{seasonSelect}</div>
               </div>
 
               <div className="flex flex-col gap-4">
@@ -712,7 +774,6 @@ const LeaguePage = () => {
 
                 {!draftsLoading && scheduled.length === 0 && active.length === 0 && completed.length === 0 && (
                   <div className="space-y-2 py-12 text-center">
-                    <Film className="mx-auto h-8 w-8 text-greyscale-blue-400" />
                     <p className="m-0 text-sm text-greyscale-blue-300 font-brockmann">No drafts yet.</p>
                     {isAdmin && (
                       <p className="m-0 text-xs text-greyscale-blue-400 font-brockmann">
@@ -861,105 +922,12 @@ const LeaguePage = () => {
             </div>
           )}
 
-          {mainTab === 'schedule' && (
-            <div
-              className="flex w-full flex-col gap-6 rounded-lg p-6"
-              style={{
-                background: 'var(--Section-Container, #0E0E0F)',
-                boxShadow: '0px 0px 6px #3B0394',
-              }}
-            >
-              <div className="flex flex-col items-stretch gap-2 self-stretch">
-                <h2 className="m-0 text-2xl font-bold leading-8 tracking-[0.96px] text-greyscale-blue-100 font-brockmann">
-                  UPCOMING DRAFTS
-                </h2>
-              </div>
-
-              {scheduled.length === 0 ? (
-                <div className="space-y-2 py-8 text-center">
-                  <CalendarClock className="mx-auto h-8 w-8 text-greyscale-blue-400" />
-                  <p className="m-0 text-sm text-greyscale-blue-300 font-brockmann">Nothing on the calendar yet.</p>
-                  {isAdmin && (
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/league/${leagueId}/settings`)}
-                      className="mt-2 inline-flex items-center justify-center rounded-[2px] bg-[#1D1D1F] px-3 py-2 text-sm font-medium leading-5 text-[#BDC3C2] outline outline-1 -outline-offset-1 outline-[#666469] transition-colors hover:bg-[#252528] font-brockmann"
-                    >
-                      Schedule in settings
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {scheduled.map(entry => {
-                    const specId =
-                      entry.draft_type === 'spec-draft' && entry.theme ? entry.theme : null;
-                    const specMeta = specId ? specDraftData.get(specId) : undefined;
-                    const headline = upcomingScheduledHeadline(entry, specMeta);
-                    const withinHour = entry.scheduled_at
-                      ? new Date(entry.scheduled_at).getTime() - Date.now() <= ONE_HOUR_MS
-                      : false;
-                    const isOpening = openingDraftId === entry.id;
-                    const adminLabel = withinHour
-                      ? (isOpening ? 'Opening…' : 'Open Draft Room')
-                      : 'Edit Draft';
-                    const adminHandler = withinHour
-                      ? () => handleOpenDraftRoom(entry)
-                      : () => navigate(`/league/${leagueId}/settings?tab=schedule&edit=${entry.id}`);
-                    return (
-                      <LeagueUpcomingDraftCard
-                        key={entry.id}
-                        entry={entry}
-                        headline={headline}
-                        specInfo={entry.draft_type === 'spec-draft' ? specMeta : undefined}
-                        canEdit={!!isAdmin}
-                        editLabel={adminLabel}
-                        editDisabled={isAdmin && isOpening}
-                        onEdit={adminHandler}
-                        onDetails={() => handleScheduledDraftClick(entry)}
-                      />
-                    );
-                  })}
-                </div>
-              )}
+          {mainTab === 'messages' && (
+            <div className="w-full max-w-[768px] self-center">
+              <LeagueMessageBoard leagueId={leagueId!} isAdmin={isAdmin} layout="dashboard" />
             </div>
           )}
 
-          <div className="flex w-full flex-col items-stretch self-stretch gap-4">
-            {!showNewDraftFlow ? (
-              <div className="flex w-full flex-col items-center self-stretch">
-                <button
-                  type="button"
-                  onClick={() => setShowNewDraftFlow(true)}
-                  className="inline-flex items-center justify-center rounded-[2px] bg-[#FFD60A] px-6 py-3 text-center text-base font-semibold leading-6 tracking-[0.32px] text-[#2B2D2D] transition-colors hover:bg-[#e6c109] font-brockmann"
-                >
-                  Start New Draft
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="flex w-full justify-center px-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowNewDraftFlow(false)}
-                    className="text-sm font-brockmann font-medium text-purple-300 hover:text-purple-200 underline underline-offset-4 decoration-purple-400/70"
-                  >
-                    Hide draft setup
-                  </button>
-                </div>
-                <HomeDraftSection
-                  key={leagueId}
-                  leagueId={leagueId}
-                  className="w-full max-w-[1200px] mx-auto px-0 pb-8 pt-0"
-                  innerClassName="max-w-[1200px] mx-auto w-full space-y-8"
-                />
-              </>
-            )}
-          </div>
-
-          <div className="w-full max-w-[768px] self-center">
-            <LeagueMessageBoard leagueId={leagueId!} isAdmin={isAdmin} layout="dashboard" />
-          </div>
         </div>
       </div>
 

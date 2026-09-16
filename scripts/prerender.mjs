@@ -60,6 +60,7 @@ const BASE_ROUTES = [
   "/draft-by-filmography",
   "/draft-by-year",
   "/special-draft",
+  "/league",
   "/privacy-policy",
   "/terms-of-service",
   "/draft",

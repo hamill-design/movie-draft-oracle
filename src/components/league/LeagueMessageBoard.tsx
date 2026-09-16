@@ -260,11 +260,20 @@ const LeagueMessageBoard: React.FC<Props> = ({ leagueId, isAdmin, layout = 'defa
   const [newPost, setNewPost] = useState('');
   const [posting, setPosting] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const initializedRef = useRef(false);
   const dash = layout === 'dashboard';
 
+  // Skip the scroll on the initial load (don't yank the whole page down when this
+  // board first mounts, e.g. switching to the Messages tab) — only auto-scroll once
+  // we're already viewing the board and a new post comes in.
   useEffect(() => {
+    if (loading) return;
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      return;
+    }
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [posts.length]);
+  }, [loading, posts.length]);
 
   const handlePost = async () => {
     if (!newPost.trim()) return;

@@ -31,6 +31,8 @@ export interface HomeDraftSectionProps {
   draftSetupAnchorId?: string | null;
   className?: string;
   innerClassName?: string;
+  /** Show the "Join a Draft" invite-code card alongside Special Drafts. Default true. */
+  showJoinDraft?: boolean;
 }
 
 export function themeDraftSetupLocation(
@@ -52,6 +54,7 @@ export function HomeDraftSection({
   draftSetupAnchorId = null,
   className,
   innerClassName,
+  showJoinDraft = true,
 }: HomeDraftSectionProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -153,77 +156,101 @@ export function HomeDraftSection({
 
   const shouldShowResults = theme === 'people' && searchQuery.trim().length > 0;
 
+  const setupOwnDraftCard = (extraClassName?: string) => (
+    <div
+      {...(draftSetupAnchorId ? { id: draftSetupAnchorId } : {})}
+      className={cn(
+        'w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6',
+        draftSetupAnchorId && 'scroll-mt-24',
+        extraClassName,
+      )}
+      style={{ boxShadow: '0px 0px 6px #3B0394' }}
+    >
+      <div className="self-stretch flex flex-col justify-center items-center gap-2">
+        <h2 className="m-0 text-xl font-medium leading-7 font-brockmann text-greyscale-blue-100">
+          Setup Your Own Draft Now
+        </h2>
+      </div>
+      <div
+        className={cn(
+          'self-stretch flex flex-col items-stretch gap-4',
+          showJoinDraft ? 'sm:flex-row sm:items-start' : 'flex-1',
+        )}
+      >
+        <button
+          onClick={() => {
+            setTheme('people');
+            setSelectedOption('');
+            setSearchQuery('');
+          }}
+          className={cn(
+            'flex-1 min-h-[80px] w-full sm:min-w-[294px] px-4 sm:px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors',
+            showJoinDraft && 'h-20',
+            theme === 'people'
+              ? 'bg-brand-primary text-greyscale-blue-100'
+              : 'bg-greyscale-purp-850 hover:bg-greyscale-purp-800 active:bg-purple-800 text-greyscale-blue-100',
+          )}
+          style={{
+            height: showJoinDraft ? '80px' : undefined,
+            ...(theme !== 'people' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : {})
+          }}
+        >
+          <div className="w-6 h-6 flex justify-center items-center">
+            <PersonIcon className="w-6 h-6" />
+          </div>
+          <span className="font-brockmann">Draft by Filmography</span>
+        </button>
+        <button
+          onClick={() => {
+            setTheme('year');
+            setSelectedOption('');
+            setSearchQuery('');
+          }}
+          className={cn(
+            'flex-1 min-h-[80px] w-full sm:min-w-[294px] px-4 sm:px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors',
+            showJoinDraft && 'h-20',
+            theme === 'year'
+              ? 'bg-brand-primary text-greyscale-blue-100'
+              : 'bg-greyscale-purp-850 hover:bg-greyscale-purp-800 active:bg-purple-800 text-greyscale-blue-100',
+          )}
+          style={{
+            height: showJoinDraft ? '80px' : undefined,
+            ...(theme !== 'year' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : {})
+          }}
+        >
+          <div className="w-6 h-6 flex justify-center items-center">
+            <CalendarIcon className="w-6 h-6" />
+          </div>
+          <span className="font-brockmann">Draft by Year</span>
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className={cn('container mx-auto px-4 pt-0 pb-8 relative z-10', className)}>
       <div className={cn('max-w-4xl mx-auto space-y-8', innerClassName)}>
-      {/* Join Existing Draft + Start a Special Draft */}
+      {/* Join Existing Draft (optional) + Start a Special Draft, or Special Draft + Setup Your Own */}
       {/* Grid: equal row heights; minmax(0,1fr) avoids overflow in narrow columns */}
       <div className="grid w-full grid-cols-1 gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-stretch">
-        <JoinDraftForm className="min-h-0 h-full min-w-0" />
+        {showJoinDraft && <JoinDraftForm className="min-h-0 h-full min-w-0" />}
         <SpecDraftSelector className="min-h-0 h-full min-w-0" />
+        {!showJoinDraft && setupOwnDraftCard('min-h-0 h-full min-w-0')}
       </div>
 
-      {/* Theme selection */}
+      {showJoinDraft && setupOwnDraftCard()}
+
+      {/* Option Selection — grid-rows 0fr→1fr transition doubles as a swipe-down reveal mask */}
       <div
-        {...(draftSetupAnchorId ? { id: draftSetupAnchorId } : {})}
-        className={cn('w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6', draftSetupAnchorId && 'scroll-mt-24')}
-        style={{ boxShadow: '0px 0px 6px #3B0394' }}
+        className={cn(
+          'grid w-full transition-[grid-template-rows] duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          isStepVisible('option') ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+        )}
       >
-        <div className="self-stretch flex flex-col justify-center items-center gap-2">
-          <h2 className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann text-center m-0">
-            Setup Your Own Draft Now
-          </h2>
-        </div>
-        <div className="self-stretch flex flex-col sm:flex-row items-stretch sm:items-start gap-4">
-          <button
-            onClick={() => {
-              setTheme('people');
-              setSelectedOption('');
-              setSearchQuery('');
-            }}
-            className={`flex-1 h-20 min-h-[80px] w-full sm:min-w-[294px] px-4 sm:px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
-              theme === 'people'
-                ? 'bg-brand-primary text-greyscale-blue-100'
-                : 'bg-greyscale-purp-850 hover:bg-greyscale-purp-800 active:bg-purple-800 text-greyscale-blue-100'
-            }`}
-            style={{
-              height: '80px',
-              ...(theme !== 'people' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : {})
-            }}
-          >
-            <div className="w-6 h-6 flex justify-center items-center">
-              <PersonIcon className="w-6 h-6" />
-            </div>
-            <span className="font-brockmann">Draft by Filmography</span>
-          </button>
-          <button
-            onClick={() => {
-              setTheme('year');
-              setSelectedOption('');
-              setSearchQuery('');
-            }}
-            className={`flex-1 h-20 min-h-[80px] w-full sm:min-w-[294px] px-4 sm:px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
-              theme === 'year'
-                ? 'bg-brand-primary text-greyscale-blue-100'
-                : 'bg-greyscale-purp-850 hover:bg-greyscale-purp-800 active:bg-purple-800 text-greyscale-blue-100'
-            }`}
-            style={{
-              height: '80px',
-              ...(theme !== 'year' ? {outline: '1px solid #49474B', outlineOffset: '-1px'} : {})
-            }}
-          >
-            <div className="w-6 h-6 flex justify-center items-center">
-              <CalendarIcon className="w-6 h-6" />
-            </div>
-            <span className="font-brockmann">Draft by Year</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Option Selection */}
-      {isStepVisible('option') && (
-        <div className="p-6 bg-greyscale-purp-900 rounded-[8px] space-y-4" style={{boxShadow: '0px 0px 6px #3B0394'}}>
-            <HeaderIcon3 
+        <div className="overflow-hidden min-h-0">
+        {isStepVisible('option') && (
+        <div className="p-6 bg-greyscale-purp-900 rounded-[8px] space-y-4 animate-in fade-in-0 slide-in-from-top-2 duration-500" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+            <HeaderIcon3
               title={theme === 'people' ? 'Search Actors, Directors, Writers...' : "Select the year of films you'll draft"} 
               icon={theme === 'people' ? 
                 <PersonIcon className="w-6 h-6 text-purple-300" /> : 
@@ -360,7 +387,9 @@ export function HomeDraftSection({
               </>
             )}
         </div>
-      )}
+        )}
+        </div>
+      </div>
 
       {/* Draft Mode Selection - only for non-theme flows (people/year use setup page) */}
       {theme !== 'people' && theme !== 'year' && isStepVisible('mode') && (

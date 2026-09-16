@@ -14,10 +14,7 @@ import { getCategoryConfig } from '@/config/categoryConfigs';
 import { Participant } from '@/types/participant';
 import { getRandomAIName } from '@/data/aiNames';
 import { isUuidParam } from '@/utils/specDraftSlug';
-import { useLeague, useLeagueActions, useLeagueSeasons, useLeagueMembers } from '@/hooks/useLeagues';
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
+import { useLeague, useLeagueActions, useLeagueMembers } from '@/hooks/useLeagues';
 // Simple checkbox component for category selection with live counter
 const CategoryCheckbox = ({
   category,
@@ -219,16 +216,7 @@ const SpecDraftSetup = () => {
   const leagueIdParam = searchParams.get('league') ?? undefined;
   const { league: assignedLeague } = useLeague(leagueIdParam);
   const { addDraftToLeague } = useLeagueActions();
-  const { seasons, activeSeason } = useLeagueSeasons(leagueIdParam);
   const { members: leagueMembers } = useLeagueMembers(leagueIdParam);
-  const [selectedSeasonId, setSelectedSeasonId] = useState<string>('none');
-
-  // Auto-select the active season when seasons load
-  useEffect(() => {
-    if (activeSeason && selectedSeasonId === 'none') {
-      setSelectedSeasonId(activeSeason.id);
-    }
-  }, [activeSeason?.id]);
 
   const [specDraft, setSpecDraft] = useState<SpecDraft | null>(null);
   const [, setCustomCategories] = useState<SpecDraftCategory[]>([]);
@@ -602,7 +590,7 @@ const SpecDraftSetup = () => {
         });
 
         if (leagueIdParam && draftId) {
-          await addDraftToLeague(leagueIdParam, draftId, selectedSeasonId !== 'none' ? selectedSeasonId : undefined);
+          await addDraftToLeague(leagueIdParam, draftId);
         }
         navigate(`/draft/${draftId}`);
       } else {
@@ -677,24 +665,6 @@ const SpecDraftSetup = () => {
                   <strong className="font-semibold text-greyscale-blue-50">{assignedLeague.name}</strong>.
                 </p>
               </div>
-              {seasons.length > 0 && (
-                <div className="flex items-center gap-3 pl-8">
-                  <label className="text-greyscale-blue-300 text-xs font-medium shrink-0">Season</label>
-                  <Select value={selectedSeasonId} onValueChange={setSelectedSeasonId}>
-                    <SelectTrigger className="h-8 rounded-[2px] bg-greyscale-purp-850 text-greyscale-blue-100 border-0 text-xs font-brockmann font-medium focus:ring-0 focus:ring-offset-0 w-[200px]" style={{ outline: '1px solid #49474B', outlineOffset: '-1px' }}>
-                      <SelectValue placeholder="No season" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none" className="font-brockmann text-xs">No season</SelectItem>
-                      {seasons.map(s => (
-                        <SelectItem key={s.id} value={s.id} className="font-brockmann text-xs">
-                          {s.name}{s.id === activeSeason?.id && <span className="ml-1 text-purple-400">· active</span>}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
             </div>
           )}
 

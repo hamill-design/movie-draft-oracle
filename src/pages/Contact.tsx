@@ -18,7 +18,7 @@ import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { MOVIE_DRAFTER_PURPLE_SHELL } from "@/lib/pageGradients";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 interface ContactFormData {
   name: string;
@@ -26,6 +26,7 @@ interface ContactFormData {
   category: string;
   subject: string;
   message: string;
+  website: string; // honeypot: hidden from people, bots fill it in
 }
 
 const labelClass = "text-greyscale-blue-200";
@@ -49,6 +50,7 @@ const categoryOptions = [
 const Contact = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const formLoadedAt = useRef(Date.now());
 
   const crumbs = [
     { name: 'Home', path: '/' },
@@ -80,7 +82,7 @@ const Contact = () => {
       const fullSubject = `${subjectPrefix}${data.subject}`;
       
       // Format the message to include name and category info
-      const formattedMessage = `From: ${data.name} (${data.email})\n\n${data.message}`;
+      const formattedMessage = `From: ${data.name} (${data.email})\nCategory: ${data.category}\n\n${data.message}`;
       const formattedHtml = `<p><strong>From:</strong> ${data.name} (${data.email})</p><p><strong>Category:</strong> ${data.category}</p><hr/><p>${data.message.replace(/\n/g, '<br/>')}</p>`;
       
       // Prepare payload matching Edge Function format
@@ -91,6 +93,9 @@ const Contact = () => {
         text: formattedMessage,
         html: formattedHtml,
         created_at: new Date().toISOString(),
+        source: 'contact-form',
+        website: data.website,
+        elapsed_ms: Date.now() - formLoadedAt.current,
       };
 
       // Submit to Edge Function
@@ -120,6 +125,7 @@ const Contact = () => {
         setValue("category", "general");
         setValue("subject", "");
         setValue("message", "");
+        formLoadedAt.current = Date.now();
       }
     } catch (error) {
       console.error('Exception submitting contact form:', error);
@@ -177,6 +183,10 @@ const Contact = () => {
           <Card className="bg-greyscale-purp-850 border-greyscale-purp-700 text-greyscale-blue-100">
             <CardContent className="p-6">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <div aria-hidden="true" className="absolute -left-[10000px] h-px w-px overflow-hidden">
+                  <label htmlFor="website">Leave this field empty</label>
+                  <input id="website" type="text" tabIndex={-1} autoComplete="off" {...register("website")} />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="name" className={labelClass}>
                     Name <span className="text-error-red-400">*</span>

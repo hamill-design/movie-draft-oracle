@@ -41,10 +41,10 @@ export function LeagueFeatureSection() {
 
           <div className="flex flex-wrap gap-3">
             <button
-              onClick={() => navigate('/league/create')}
+              onClick={() => navigate('/league')}
               className="px-6 py-3 rounded-[2px] bg-[#7142FF] hover:bg-[#5e32e0] font-brockmann font-semibold text-sm text-white transition-colors"
             >
-              Create a League
+              Learn More
             </button>
           </div>
         </div>
