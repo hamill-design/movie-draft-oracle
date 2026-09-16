@@ -53,6 +53,7 @@ const LeagueJoin = () => {
   return (
     <>
       <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
         <title>Join League — Movie Drafter</title>
       </Helmet>
 

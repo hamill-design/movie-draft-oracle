@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { breadcrumbListNode, graphJsonLd, webPageNode } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { useAuth } from '@/contexts/AuthContext';
 import { MOVIE_DRAFTER_PURPLE_SHELL } from '@/lib/pageGradients';
 import leagueTrophyIllustration from '@/assets/illustrations/illus/league-trophy.svg';
@@ -12,9 +13,9 @@ const SITE = 'https://moviedrafter.com';
 const LeagueHub = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const pageTitle = 'Movie Drafter - Leagues (rules, scoring & seasons)';
+  const pageTitle = 'Movie Drafter Leagues – Fantasy Movie League With Friends';
   const pageDesc =
-    'How Movie Drafter leagues work: F1-style scoring, all-time standings, and the universal quarterly season system. Create a league and compete with friends across every draft.';
+    'Start a free fantasy movie league with friends. Earn league points every draft, climb the all-time standings, and compete in automatic quarterly seasons.';
 
   const crumbs = [
     { name: 'Home', path: '/' },
@@ -59,6 +60,8 @@ const LeagueHub = () => {
 
       <div className="min-h-screen w-full" style={{ background: MOVIE_DRAFTER_PURPLE_SHELL }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col gap-10">
+          <Breadcrumbs items={crumbs} />
+
           <header className="flex flex-col sm:flex-row items-center justify-center gap-8 p-6">
             <div className="relative h-[148px] w-[156px] shrink-0">
               <img

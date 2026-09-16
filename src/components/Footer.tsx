@@ -24,7 +24,7 @@ const footerColumns: FooterColumn[] = [
       { label: "Start a Draft", to: "/draft" },
       { label: "About", to: "/about" },
       { label: "How To Play", to: "/how-to-draft" },
-      { label: "Create League", to: "/league/create" },
+      { label: "Leagues", to: "/league" },
     ],
   },
   {

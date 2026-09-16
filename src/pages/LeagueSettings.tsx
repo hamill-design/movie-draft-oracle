@@ -607,6 +607,7 @@ const LeagueSettings = () => {
   return (
     <>
       <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
         <title>{league.name} Settings — Movie Drafter</title>
       </Helmet>
 

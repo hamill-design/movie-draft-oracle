@@ -117,6 +117,7 @@ const LeagueCreate = () => {
   return (
     <>
       <Helmet>
+        <meta name="robots" content="noindex, nofollow" />
         <title>Create a League — Movie Drafter</title>
       </Helmet>
 

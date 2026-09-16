@@ -144,6 +144,22 @@ function waitForServer(url, { maxMs = 120_000, intervalMs = 250 } = {}) {
   });
 }
 
+/**
+ * Runs in the page. index.html ships homepage og:* / twitter:* tags as a fallback for
+ * routes that aren't prerendered (crawlers don't run JS). Helmet appends a page's own
+ * tags (marked data-rh) without removing those, so scrapers that read the first match
+ * (LinkedIn, Slack) would show the homepage. Drop each shell tag the page overrides.
+ */
+function removeShellMetaOverriddenByHelmet() {
+  const keyOf = (el) => el.getAttribute("property") || el.getAttribute("name");
+  const overridden = new Set(
+    [...document.head.querySelectorAll("meta[data-rh]")].map(keyOf).filter(Boolean)
+  );
+  for (const el of document.head.querySelectorAll("meta:not([data-rh])")) {
+    if (overridden.has(keyOf(el))) el.remove();
+  }
+}
+
 function writeRouteHtml(route, html) {
   if (route === "/") {
     fs.writeFileSync(path.join(dist, "index.html"), html, "utf8");
@@ -188,6 +204,7 @@ async function main() {
       const url = `${BASE}${route}`;
       await page.goto(url, { waitUntil: "domcontentloaded", timeout: 90_000 });
       await delay(2500);
+      await page.evaluate(removeShellMetaOverriddenByHelmet);
       const html = await page.content();
       writeRouteHtml(route, html);
       console.log("Prerendered", route);

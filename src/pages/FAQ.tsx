@@ -63,6 +63,16 @@ const faqs: { question: string; answer: string }[] = [
       'Any film in Movie Drafter\'s database — which pulls from a comprehensive movie database covering thousands of films across every genre, decade, and country. The eligible pool depends on your chosen format: filmography drafts are limited to one person\'s credits, year drafts to a single release year, and special drafts to a curated hand-picked list.',
   },
   {
+    question: 'What is a Movie Drafter league?',
+    answer:
+      'A league is a standing, invite-only group that runs as many drafts as it wants over time. Every completed draft awards league points by finishing position (10 for 1st, 7 for 2nd, 5 for 3rd, 3 for 4th, 2 for 5th, 1 for everyone else), and those points add up into shared league standings, with total movie score as the tiebreaker.',
+  },
+  {
+    question: 'How do league seasons work?',
+    answer:
+      'Every league uses the same universal quarterly seasons: Q1 (January–March), Q2 (April–June), Q3 (July–September), and Q4 (October–December). There is nothing to set up — each draft counts toward the quarter it is played in, and standings can be viewed for a single season or all-time.',
+  },
+  {
     question: 'Is Movie Drafter suitable for movie night or film club?',
     answer:
       'Absolutely. Movie Drafter is designed exactly for group movie nights, film clubs, and any social setting where everyone has opinions about cinema. A draft typically takes 10–20 minutes and generates plenty of debate about picks, strategy, and which films deserve their scores.',
@@ -72,7 +82,7 @@ const faqs: { question: string; answer: string }[] = [
 const FAQ = () => {
   const pageTitle = 'Movie Drafter FAQ – Movie draft game questions answered';
   const pageDesc =
-    'Answers to common questions about Movie Drafter: how the movie draft game works, scoring rules, multiplayer, draft formats, and how to play with friends online.';
+    'Answers to common Movie Drafter questions: how the movie draft game works, scoring, multiplayer, leagues and seasons, and draft formats.';
 
   const crumbs = [
     { name: 'Home', path: '/' },
