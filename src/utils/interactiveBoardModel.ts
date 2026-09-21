@@ -1,6 +1,6 @@
 import type { DraftPick } from '@/hooks/useDrafts';
 import {
-  buildDraftBoardModel,
+  buildBoardCategories,
   type BoardPlayer,
   type DraftBoardParticipant,
 } from '@/utils/finalScoresBoardModel';
@@ -44,59 +44,50 @@ type RawMultiplayerPick = {
   calculated_score?: number | null;
 };
 
+/**
+ * Live draft board. Rows are fixed to `boardParticipants` (turn order) for the
+ * whole draft, and row ids line up with the ids the picker/turn logic uses
+ * (index + 1 in the same list).
+ *
+ * Deliberately does NOT use buildDraftBoardModel: that re-orders rows by who
+ * picked the first category first, which is fine for a finished draft but
+ * mid-draft it shuffled rows while the turn/"already picked" checks kept the
+ * old order — picks looked swapped between players and the last pick showed
+ * as already taken.
+ */
 export function buildInteractiveBoardModelFromMultiplayer(
-  draft: {
-    categories?: string[] | null;
-    is_multiplayer?: boolean | null;
-    turn_order?: unknown;
-    player_id_to_display_row?: Record<string, number> | null;
-  } | null | undefined,
+  draft: { categories?: string[] | null } | null | undefined,
   rawPicks: RawMultiplayerPick[],
-  participants: DraftBoardParticipant[],
-  getDisplayIndexForPlayerId: (playerId: number | string) => number
+  boardParticipants: DraftBoardParticipant[],
+  getRowIdForPlayerId: (playerId: number | string) => number | undefined
 ): InteractiveBoardModel {
-  const draftPicks: DraftPick[] = rawPicks.map((p) => ({
-    ...p,
-    player_id: Number(p.player_id),
-    pick_order: 0,
-    movie_genre: null,
-    id: '',
-    draft_id: '',
-    created_at: '',
+  const boardCategories = buildBoardCategories(draft, rawPicks as unknown as DraftPick[]);
+
+  const boardPlayers: BoardPlayer[] = boardParticipants.map((p, i) => ({
+    id: i + 1,
+    name: p.participant_name,
   }));
 
-  const { boardCategories, boardPlayers, boardPicks } = buildDraftBoardModel(
-    draft,
-    draftPicks,
-    participants,
-    { includeMovieYear: false }
-  );
-
-  const rawByPlayerCategory = new Map<string, RawMultiplayerPick>();
-  rawPicks.forEach((p) => {
-    const displayIndex =
-      draft?.player_id_to_display_row &&
-      Object.keys(draft.player_id_to_display_row).length > 0
-        ? (draft.player_id_to_display_row[String(p.player_id)] ?? getDisplayIndexForPlayerId(p.player_id))
-        : getDisplayIndexForPlayerId(p.player_id);
-    rawByPlayerCategory.set(`${displayIndex + 1}:${p.category}`, p);
-  });
-
-  const enrichedPicks: InteractiveBoardPick[] = boardPicks.map((pick) => {
-    const raw = rawByPlayerCategory.get(`${pick.playerId}:${pick.category}`);
+  const boardPicks: InteractiveBoardPick[] = rawPicks.map((p) => {
+    const score = p.calculated_score;
     return {
-      ...pick,
+      playerId:
+        getRowIdForPlayerId(p.player_id) ??
+        boardPlayers.find((bp) => bp.name === p.player_name)?.id ??
+        0,
+      playerName: p.player_name,
       movie: {
-        id: raw?.movie_id,
-        title: pick.movie.title,
-        year: raw?.movie_year ?? undefined,
-        poster_path: raw?.poster_path,
-        calculated_score: pick.movie.calculated_score,
+        id: p.movie_id,
+        title: p.movie_title,
+        year: p.movie_year ?? undefined,
+        poster_path: p.poster_path,
+        calculated_score: score != null && !Number.isNaN(Number(score)) ? Number(score) : null,
       },
+      category: p.category,
     };
   });
 
-  return { boardCategories, boardPlayers, boardPicks: enrichedPicks };
+  return { boardCategories, boardPlayers, boardPicks };
 }
 
 export function buildInteractiveBoardModelFromLocal(

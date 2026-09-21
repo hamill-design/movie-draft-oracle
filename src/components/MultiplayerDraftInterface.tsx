@@ -97,7 +97,7 @@ export const MultiplayerDraftInterface = ({
   const aiCategoryOrderByParticipantIdRef = useRef<Map<string, string[]>>(new Map());
   // Stable row order: once draft has started, keep using last known turn order so rows don't flip on reload
   const lastStableTurnOrderIdsRef = useRef<{ draftId: string; participantIds: string[] } | null>(null);
-  const playerIdToDisplayIndexRef = useRef<Map<number, number> | null>(null);
+  const playerIdToRowIdRef = useRef<Map<number, number> | null>(null);
   const playerIdMapDraftIdRef = useRef<string | null>(null);
 
   // Fetch spec draft name if theme is spec-draft
@@ -652,13 +652,15 @@ export const MultiplayerDraftInterface = ({
     [getPlayersInTurnOrder]
   );
 
-  // Create mapping: database player_id -> display position
-  // Backend assigns player_id = row_number() OVER (ORDER BY created_at ASC NULLS LAST, id ASC).
-  // Freeze map in ref when draft has started so the same pick doesn't jump rows between subscription and reload.
-  const playerIdToDisplayIndex = useMemo(() => {
+  // Map database player_id -> board row id (1-based index in draftBoardParticipants,
+  // the same list currentPlayerBoardId uses, so rows and turn checks always agree).
+  // Backend assigns player_id = row_number() over ALL draft_participants
+  // (ORDER BY created_at ASC NULLS LAST, id ASC), so number from the unfiltered list.
+  // Keep the last good map if a reload briefly returns no participants, so picks don't jump rows.
+  const playerIdToRowId = useMemo(() => {
     const draftId = draft?.id ?? null;
     if (draftId !== playerIdMapDraftIdRef.current) {
-      playerIdToDisplayIndexRef.current = null;
+      playerIdToRowIdRef.current = null;
       playerIdMapDraftIdRef.current = draftId;
     }
     const map = new Map<number, number>();
@@ -668,26 +670,23 @@ export const MultiplayerDraftInterface = ({
       return aId != null && bId != null && String(aId) === String(bId);
     };
     getParticipantsSortedByCreatedAt.forEach((participant, i) => {
-      const playerId = i + 1; // 1-based, matches backend row_number() ORDER BY created_at NULLS LAST, id
-      const displayIndex = getPlayersInTurnOrder.findIndex(p => sameParticipant(p, participant));
-      if (displayIndex >= 0) map.set(playerId, displayIndex);
+      const rowIndex = draftBoardParticipants.findIndex(p => sameParticipant(p, participant));
+      if (rowIndex >= 0) map.set(i + 1, rowIndex + 1);
     });
-    if (draftHasStarted && map.size > 0) {
-      playerIdToDisplayIndexRef.current = new Map(map);
+    if (map.size > 0) {
+      playerIdToRowIdRef.current = map;
+      return map;
     }
-    return map;
-  }, [draft?.id, draftHasStarted, getPlayersInTurnOrder, getParticipantsSortedByCreatedAt]);
+    return playerIdToRowIdRef.current ?? map;
+  }, [draft?.id, draftBoardParticipants, getParticipantsSortedByCreatedAt]);
 
-  // Normalize player_id to number for map lookup (picks from API may have string player_id).
-  // Use frozen ref when draft has started so mapping is stable between subscription update and reload.
-  const getDisplayIndexForPlayerId = (playerId: number | string): number => {
-    const n = typeof playerId === 'number' ? playerId : parseInt(String(playerId), 10);
-    if (Number.isNaN(n)) return 0;
-    const map = draftHasStarted && playerIdToDisplayIndexRef.current
-      ? playerIdToDisplayIndexRef.current
-      : playerIdToDisplayIndex;
-    return map.get(n) ?? 0;
-  };
+  const getRowIdForPlayerId = useCallback(
+    (playerId: number | string): number | undefined => {
+      const n = typeof playerId === 'number' ? playerId : parseInt(String(playerId), 10);
+      return Number.isNaN(n) ? undefined : playerIdToRowId.get(n);
+    },
+    [playerIdToRowId]
+  );
 
   const actorNameForSpec =
     draft?.theme === 'people' ? getCleanActorName(draft.option || '') : null;
@@ -723,9 +722,9 @@ export const MultiplayerDraftInterface = ({
         created_at: p.created_at,
         participant_id: p.participant_id,
       })),
-      getDisplayIndexForPlayerId
+      getRowIdForPlayerId
     );
-  }, [draft, picks, draftBoardParticipants, getDisplayIndexForPlayerId]);
+  }, [draft, picks, draftBoardParticipants, getRowIdForPlayerId]);
 
   const boardPicksForPicker = useMemo(
     () =>
