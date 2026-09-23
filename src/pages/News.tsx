@@ -251,7 +251,7 @@ const News = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
-        <div className="max-w-[1200px] mx-auto px-6 py-12 flex flex-col gap-10">
+        <div className="max-w-[1400px] mx-auto px-6 py-12 flex flex-col gap-10">
           <Breadcrumbs items={crumbs} />
 
           {/* Header */}

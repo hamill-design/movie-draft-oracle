@@ -189,7 +189,7 @@ const ThemeLandingPage = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14 flex flex-col gap-10">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-10 sm:py-14 flex flex-col gap-10">
           <Breadcrumbs items={crumbs} />
 
           <header className="flex flex-col gap-4">

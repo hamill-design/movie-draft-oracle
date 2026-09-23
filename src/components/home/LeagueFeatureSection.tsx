@@ -9,7 +9,7 @@ export function LeagueFeatureSection() {
       className="w-full h-full py-6 px-6"
       style={{ background: 'linear-gradient(160deg, #0d0020 0%, #160038 50%, #0d0020 100%)' }}
     >
-      <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center gap-0">
+      <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row items-center gap-0">
 
         {/* ── Trophy column ── */}
         <div className="md:w-1/2 w-full flex items-center justify-center">

@@ -1016,22 +1016,24 @@ export const MultiplayerDraftInterface = ({
       )}
 
       <div className="w-full px-4 py-6 space-y-6">
-        <DraftLobbyStatusParticipants
-          draft={draft}
-          isComplete={isComplete}
-          draftHasStarted={Boolean(draftHasStarted)}
-          isHost={isHost}
-          isMyTurn={isMyTurn}
-          currentTurnPlayer={currentTurnPlayer}
-          participants={participants}
-          sortedParticipants={getParticipantsSortedByCreatedAt}
-          joinedParticipantsCount={joinedParticipantsCount}
-          presenceNowMs={now}
-          copySuccess={copySuccess}
-          loading={loading}
-          onCopyInviteCode={copyInviteCode}
-          onStartDraft={() => startDraft(draft.id)}
-        />
+        <div className="w-full max-w-[1400px] mx-auto">
+          <DraftLobbyStatusParticipants
+            draft={draft}
+            isComplete={isComplete}
+            draftHasStarted={Boolean(draftHasStarted)}
+            isHost={isHost}
+            isMyTurn={isMyTurn}
+            currentTurnPlayer={currentTurnPlayer}
+            participants={participants}
+            sortedParticipants={getParticipantsSortedByCreatedAt}
+            joinedParticipantsCount={joinedParticipantsCount}
+            presenceNowMs={now}
+            copySuccess={copySuccess}
+            loading={loading}
+            onCopyInviteCode={copyInviteCode}
+            onStartDraft={() => startDraft(draft.id)}
+          />
+        </div>
 
         {/* Draft Content */}
         <div className="space-y-6">

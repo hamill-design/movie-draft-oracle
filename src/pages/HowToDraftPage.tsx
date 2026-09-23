@@ -8,9 +8,9 @@ import { Breadcrumbs } from '@/components/Breadcrumbs';
 const SITE = 'https://moviedrafter.com';
 
 const HowToDraftPage = () => {
-  const pageTitle = 'Movie Drafter - How to draft movies (rules, scoring & tips)';
+  const pageTitle = 'How to Play a Movie Draft: Rules, Scoring & Tips | Movie Drafter';
   const pageDesc =
-    'Complete guide to the movie drafting game: how picks work, category rules, scoring ideas, multiplayer flow, and why fantasy movie drafts are fun with friends.';
+    'Learn how a movie draft works in five minutes: take turns picking films, fill categories, and score on box office and awards. Free to play online with friends.';
   const articleHeadline = 'How to draft movies (rules, scoring & tips)';
 
   const crumbs = [

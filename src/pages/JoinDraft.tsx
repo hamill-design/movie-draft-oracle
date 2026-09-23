@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,6 +52,9 @@ export const JoinDraft = () => {
   const { user, guestSession, loading: authLoading, getOrCreateGuestSession } = useAuth();
   const { toast } = useToast();
   const { joinDraftByCode, loading } = useMultiplayerDraft();
+  // The join hook throws without a participantId, and it resolves a beat after
+  // the auth context does, so auto-join has to wait for it too.
+  const { participantId } = useCurrentUser();
   const [isRetryingGuest, setIsRetryingGuest] = useState(false);
 
   const [inviteCode, setInviteCode] = useState('');
@@ -114,6 +118,12 @@ export const JoinDraft = () => {
   // Auto-join effect for email invitations (works for both authenticated and guest)
   useEffect(() => {
     // Early return if conditions aren't met or already attempted
+    // Wait for auth to settle: firing early joined invited users as a guest
+    // (named after their email), duplicating their pre-created invited row.
+    // Also wait for the participant-row check so we don't race it.
+    if (authLoading || checkingParticipation || !participantId) {
+      return;
+    }
     if (!autoJoin || !draftId || !invitedEmail || (!user && !guestSession) || isAutoJoining || hasAttemptedAutoJoin.current) {
       return;
     }
@@ -170,7 +180,7 @@ export const JoinDraft = () => {
     };
 
     performAutoJoin();
-  }, [autoJoin, draftId, user, guestSession, invitedEmail, isAutoJoining, participantName, joinDraftByCode, navigate, toast]);
+  }, [autoJoin, draftId, user, guestSession, authLoading, checkingParticipation, participantId, invitedEmail, isAutoJoining, participantName, joinDraftByCode, navigate, toast]);
 
   const handleJoinByCode = async (e: React.FormEvent) => {
     e.preventDefault();

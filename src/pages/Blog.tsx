@@ -12,7 +12,7 @@ import {
 } from '@/services/publicBlog';
 
 const PAGE_DESCRIPTION =
-  'Tips, strategy guides, and updates from Movie Drafter — the movie drafting game for friends.';
+  'Strategy guides, franchise breakdowns, cinema news, and product updates from Movie Drafter: the movie draft game for friends';
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
@@ -94,21 +94,21 @@ const Blog = () => {
   return (
     <>
       <Helmet>
-        <title>Blog – Movie Drafter</title>
+        <title>Movie Drafter Blog: Updates, Guides & Movie Draft Strategy</title>
         <meta name="description" content={PAGE_DESCRIPTION} />
         <link rel="canonical" href="https://moviedrafter.com/blog" />
-        <meta property="og:title" content="Blog – Movie Drafter" />
+        <meta property="og:title" content="Movie Drafter Blog: Updates, Guides & Movie Draft Strategy" />
         <meta property="og:description" content={PAGE_DESCRIPTION} />
         <meta property="og:url" content="https://moviedrafter.com/blog" />
         {socialShareImageMetaNodes()}
-        <meta name="twitter:title" content="Blog – Movie Drafter" />
+        <meta name="twitter:title" content="Movie Drafter Blog: Updates, Guides & Movie Draft Strategy" />
         <meta name="twitter:description" content={PAGE_DESCRIPTION} />
         <script type="application/ld+json">
           {JSON.stringify(
             graphJsonLd(
               webPageNode({
                 path: '/blog',
-                name: 'Blog – Movie Drafter',
+                name: 'Movie Drafter Blog: Updates, Guides & Movie Draft Strategy',
                 description: PAGE_DESCRIPTION,
               }),
               breadcrumbListNode(crumbs)
@@ -123,7 +123,7 @@ const Blog = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
-        <div className="max-w-[1200px] mx-auto px-6 py-12 flex flex-col gap-10">
+        <div className="max-w-[1400px] mx-auto px-6 py-12 flex flex-col gap-10">
           <Breadcrumbs items={crumbs} />
 
           {/* Header */}

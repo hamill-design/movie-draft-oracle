@@ -354,7 +354,7 @@ const Admin = () => {
       >
       <SidebarInset className="flex flex-col bg-transparent flex-1">
         <div className="flex-1">
-          <div className="container mx-auto px-6 py-6 max-w-7xl">
+          <div className="container mx-auto px-6 py-6 max-w-[1400px]">
             <div className="flex gap-6">
               {/* Sidebar Navigation - Inside Container - Matching Figma */}
               <div className="flex flex-col justify-start items-start gap-6">

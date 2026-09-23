@@ -297,7 +297,7 @@ const VotePage = () => {
         <meta name="twitter:description" content={pageDescription} />
       </Helmet>
       <div className="min-h-screen text-foreground" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
-        <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col gap-8">
+        <div className="max-w-[1400px] mx-auto px-4 py-8 flex flex-col gap-8">
           {/* Header – same style as draft interface */}
           <DraftPageHeaderSection label="VOTE ON">
             <DraftHeadingTitle

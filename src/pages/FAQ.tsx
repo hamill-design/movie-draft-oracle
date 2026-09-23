@@ -23,6 +23,16 @@ const faqs: { question: string; answer: string }[] = [
       'Yes — Movie Drafter is completely free. You can start a draft without creating an account. Create a free account to save your draft history and access multiplayer features.',
   },
   {
+    question: 'Is there a Movie Drafter app for Android or iPhone?',
+    answer:
+      'A native mobile app is on the way. In the meantime, Movie Drafter works in your phone\'s browser on both Android and iPhone — just open moviedrafter.com and start a draft.',
+  },
+  {
+    question: 'Is Movie Drafter the same as Cinema Draft?',
+    answer:
+      'No. Movie Drafter is its own movie draft game at moviedrafter.com and is not affiliated with any app called Cinema Draft. If you are looking for a free way to draft movies with friends, you are in the right place.',
+  },
+  {
     question: 'Can I play Movie Drafter online with friends who are not in the same room?',
     answer:
       'Yes. Multiplayer mode lets you invite friends via email. Each person receives a link to make their picks remotely. The draft progresses asynchronously so everyone can pick on their own schedule.',

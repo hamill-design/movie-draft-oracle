@@ -10,6 +10,9 @@
     { "source": "/themes", "destination": "/special-draft", "permanent": true },
     { "source": "/themes/:slug", "destination": "/special-draft/:slug", "permanent": true }
   ],
+  "headers": [
+    { "source": "/league/create", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
+  ],
   "rewrites": [
     { "source": "/final-scores/:id", "destination": "/api/scores-preview?id=:id" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }

@@ -57,7 +57,7 @@ export function HowItWorksSection() {
 
   return (
     <section aria-label="How Movie Drafter works" className="w-full overflow-x-hidden px-6 md:px-12 py-12 md:py-16">
-      <div className="max-w-[1200px] mx-auto flex flex-col lg:flex-row items-start gap-8 lg:gap-16">
+      <div className="max-w-[1400px] mx-auto flex flex-col lg:flex-row items-start gap-8 lg:gap-16">
 
         {/* ── Left: text + carousel ── */}
         <div className="flex w-full min-w-0 flex-col gap-6 lg:gap-8 lg:w-[520px] shrink-0 pt-0 lg:pt-8">

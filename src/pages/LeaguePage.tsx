@@ -585,7 +585,7 @@ const LeaguePage = () => {
         className="min-h-screen w-full inline-flex flex-col items-center px-3 pt-6 pb-12 font-brockmann md:px-6 md:pt-5"
         style={{ background: MOVIE_DRAFTER_PURPLE_SHELL }}
       >
-        <div className="flex w-full max-w-[1200px] flex-col items-center gap-6">
+        <div className="flex w-full max-w-[1400px] flex-col items-center gap-6">
           {/* Hero — mobile: trophy absolute left; copy + settings align bottom */}
           <div className="relative w-full px-3 py-6 md:flex md:flex-nowrap md:items-center md:gap-0 md:px-6">
             <div
@@ -709,8 +709,8 @@ const LeaguePage = () => {
                   key={leagueId}
                   leagueId={leagueId}
                   showJoinDraft={false}
-                  className="w-full max-w-[1200px] mx-auto px-0 pb-8 pt-0"
-                  innerClassName="max-w-[1200px] mx-auto w-full space-y-8"
+                  className="w-full max-w-[1400px] mx-auto px-0 pb-8 pt-0"
+                  innerClassName="max-w-[1400px] mx-auto w-full space-y-8"
                 />
               </div>
             </div>

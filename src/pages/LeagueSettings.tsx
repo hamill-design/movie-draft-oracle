@@ -617,7 +617,7 @@ const LeagueSettings = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
-        <div className="mx-auto w-full max-w-7xl">
+        <div className="mx-auto w-full max-w-[1400px]">
           <Button
             variant="ghost"
             onClick={() => navigate(`/league/${leagueId}`)}

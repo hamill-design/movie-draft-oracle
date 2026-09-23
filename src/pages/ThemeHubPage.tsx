@@ -71,7 +71,7 @@ const ThemeHubPage = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
-        <div className="w-full max-w-[1200px] py-8 flex flex-col items-start gap-8">
+        <div className="w-full max-w-[1400px] py-8 flex flex-col items-start gap-8">
           <Breadcrumbs items={CRUMBS} />
 
           <header className="flex w-full flex-col items-start gap-[18px]">
