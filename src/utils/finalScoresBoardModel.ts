@@ -22,15 +22,15 @@ export type BoardPick = {
 
 function participantCanonicalId(p: DraftBoardParticipant): string | null {
   const id =
-    p.participant_id ?? p.user_id ?? p.guest_participant_id ?? (p.is_ai ? p.id : null);
+    p.participant_id ?? p.user_id ?? p.guest_participant_id ?? p.id;
   return id != null ? String(id) : null;
 }
 
 function sameParticipant(a: DraftBoardParticipant, b: DraftBoardParticipant): boolean {
   const aId =
-    a.participant_id ?? a.user_id ?? a.guest_participant_id ?? (a.is_ai ? a.id : null);
+    a.participant_id ?? a.user_id ?? a.guest_participant_id ?? a.id;
   const bId =
-    b.participant_id ?? b.user_id ?? b.guest_participant_id ?? (b.is_ai ? b.id : null);
+    b.participant_id ?? b.user_id ?? b.guest_participant_id ?? b.id;
   return aId != null && bId != null && String(aId) === String(bId);
 }
 

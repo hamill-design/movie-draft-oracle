@@ -833,6 +833,15 @@ export const useMultiplayerDraft = (
     }
   }, [participantId, toast, loadDraft]);
 
+  // Attach the signed-in account to the spot it was invited to by email.
+  // Never creates a second participant row; throws (with a readable message)
+  // if the account's email isn't on the invite list.
+  const claimDraftInvite = useCallback(async (draftId: string): Promise<string> => {
+    const { error } = await supabase.rpc('claim_draft_invite', { p_draft_id: draftId });
+    if (error) throw new Error(error.message);
+    return draftId;
+  }, []);
+
   // Make a pick
   const makePick = useCallback(async (movieId: number, movieTitle: string, movieYear: number, movieGenre: string, category: string, posterPath?: string, participantIdOverride?: string, callerParticipantId?: string) => {
     // Use override if provided (for AI picks), otherwise use current user's participantId
@@ -1451,6 +1460,7 @@ export const useMultiplayerDraft = (
     isConnected,
     createMultiplayerDraft,
     joinDraftByCode,
+    claimDraftInvite,
     makePick,
     loadDraft,
     startDraft,

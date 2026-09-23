@@ -15,10 +15,18 @@ const PUBLIC_SITE_URL = (import.meta.env.VITE_APP_URL || 'https://moviedrafter.c
   ''
 );
 
+/** Only same-site relative paths are allowed as a post-auth destination (no open redirects). */
+const safeReturnTo = (value: string | null): string | null =>
+  value && value.startsWith('/') && !value.startsWith('//') ? value : null;
+
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [initialParams] = useSearchParams();
+  // Email invite links land here with ?email=<invited email>&mode=signup so a
+  // brand-new invitee registers with the address the invite was sent to.
+  const inviteEmail = initialParams.get('email') ?? '';
+  const [isLogin, setIsLogin] = useState(initialParams.get('mode') !== 'signup');
   const [isResetMode, setIsResetMode] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [marketingEmailsOptIn, setMarketingEmailsOptIn] = useState(false);
@@ -44,12 +52,12 @@ const Auth = () => {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        navigate('/');
+        navigate(safeReturnTo(searchParams.get('returnTo')) || '/');
       }
     };
     
     checkAuth();
-  }, [navigate]);
+  }, [navigate, searchParams]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,15 +92,14 @@ const Auth = () => {
           }
 
           // Get return path from URL params or default to home
-          const returnTo = searchParams.get('returnTo');
-          navigate(returnTo || '/');
+          navigate(safeReturnTo(searchParams.get('returnTo')) || '/');
         }
       } else {
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${PUBLIC_SITE_URL}/`,
+            emailRedirectTo: `${PUBLIC_SITE_URL}${safeReturnTo(searchParams.get('returnTo')) || '/'}`,
             data: {
               name: name.trim(),
               marketing_emails_opt_in: marketingEmailsOptIn,
@@ -152,7 +159,7 @@ const Auth = () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${PUBLIC_SITE_URL}/`,
+        redirectTo: `${PUBLIC_SITE_URL}${safeReturnTo(searchParams.get('returnTo')) || '/'}`,
       },
     });
     if (error) {

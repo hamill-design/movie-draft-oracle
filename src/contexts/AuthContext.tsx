@@ -221,6 +221,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           clearMarketingSyncFlags();
         }
 
+        // Attach this account to any draft it was invited to by email (covers
+        // invitees who signed up or in without coming back through the link).
+        if (event === 'SIGNED_IN' && session?.user) {
+          setTimeout(() => {
+            void supabase.rpc('claim_pending_draft_invites').then(({ error }) => {
+              if (error) console.warn('claim_pending_draft_invites failed:', error.message);
+            });
+          }, 0);
+        }
+
         // If user just signed in and we have a guest session, migrate drafts
         if (event === 'SIGNED_IN' && session?.user && guestSession) {
           try {

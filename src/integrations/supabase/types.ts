@@ -102,6 +102,7 @@ export type Database = {
           draft_id: string
           guest_participant_id: string | null
           id: string
+          invited_email: string | null
           is_ai: boolean | null
           is_host: boolean
           joined_at: string | null
@@ -1095,6 +1096,11 @@ export type Database = {
         Args: { p_draft_id: string; p_participant_id: string }
         Returns: undefined
       }
+      claim_draft_invite: {
+        Args: { p_draft_id: string; p_mark_joined?: boolean }
+        Returns: string
+      }
+      claim_pending_draft_invites: { Args: Record<PropertyKey, never>; Returns: number }
       get_invite_code_for_draft: {
         Args: { p_draft_id: string }
         Returns: string

@@ -3,7 +3,6 @@ import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,21 +50,18 @@ export const JoinDraft = () => {
   const navigate = useNavigate();
   const { user, guestSession, loading: authLoading, getOrCreateGuestSession } = useAuth();
   const { toast } = useToast();
-  const { joinDraftByCode, loading } = useMultiplayerDraft();
-  // The join hook throws without a participantId, and it resolves a beat after
-  // the auth context does, so auto-join has to wait for it too.
-  const { participantId } = useCurrentUser();
+  const { joinDraftByCode, claimDraftInvite, loading } = useMultiplayerDraft();
   const [isRetryingGuest, setIsRetryingGuest] = useState(false);
 
   const [inviteCode, setInviteCode] = useState('');
   const [participantName, setParticipantName] = useState('');
-  const [isEmailInvite, setIsEmailInvite] = useState(false);
-  const [isAutoJoining, setIsAutoJoining] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
   const [checkingParticipation, setCheckingParticipation] = useState(!!draftId);
   const hasAttemptedAutoJoin = useRef(false);
 
   const invitedEmail = searchParams.get('email');
-  const autoJoin = searchParams.get('auto') === 'true';
+  // Email invite links identify the invitee by account, never as a guest.
+  const isEmailInvite = !!draftId && !!invitedEmail;
 
   // ── Safety net: if user is already a participant (e.g. pre-joined via league
   // draft), skip the invite-code flow and go straight to the draft. ──────────
@@ -103,84 +99,29 @@ export const JoinDraft = () => {
   }, [user, draftId, authLoading, navigate]);
 
   useEffect(() => {
-    // Check if this is an email invitation
-    if (draftId && invitedEmail) {
-      setIsEmailInvite(true);
-      setParticipantName(invitedEmail);
-    }
-
     // Pre-fill participant name with user email if available
     if (user?.email && !participantName) {
       setParticipantName(user.email);
     }
-  }, [draftId, invitedEmail, user?.email, participantName]);
+  }, [user?.email, participantName]);
 
-  // Auto-join effect for email invitations (works for both authenticated and guest)
+  // Email invitations: attach the signed-in account to the spot it was invited
+  // to (never creates a second row) and go straight to the draft.
   useEffect(() => {
-    // Early return if conditions aren't met or already attempted
-    // Wait for auth to settle: firing early joined invited users as a guest
-    // (named after their email), duplicating their pre-created invited row.
-    // Also wait for the participant-row check so we don't race it.
-    if (authLoading || checkingParticipation || !participantId) {
-      return;
-    }
-    if (!autoJoin || !draftId || !invitedEmail || (!user && !guestSession) || isAutoJoining || hasAttemptedAutoJoin.current) {
-      return;
-    }
+    if (authLoading || checkingParticipation) return;
+    if (!isEmailInvite || !draftId || !user || hasAttemptedAutoJoin.current) return;
 
-    // Set the flag immediately to prevent duplicate calls
     hasAttemptedAutoJoin.current = true;
-    setIsAutoJoining(true);
 
-    const performAutoJoin = async () => {
-      // Safety timeout: if we're still here after 10 seconds, reset the state
-      const safetyTimeout = setTimeout(() => {
-        console.warn('Auto-join taking too long, resetting state');
-        setIsAutoJoining(false);
-        hasAttemptedAutoJoin.current = false; // Allow retry
-      }, 10000);
-
+    (async () => {
       try {
-        const { data: inviteCode, error } = await supabase.rpc('get_invite_code_for_draft', { p_draft_id: draftId });
-        if (error || !inviteCode) {
-          throw new Error('Invalid or expired invitation');
-        }
-
-        // Use participantName if set, otherwise fall back to invitedEmail
-        const nameToUse = participantName.trim() || invitedEmail;
-        const id = await joinDraftByCode(inviteCode, nameToUse);
-
-        if (id) {
-          // Clear safety timeout since we're navigating
-          clearTimeout(safetyTimeout);
-
-          // Navigate to the draft page
-          navigate(`/draft/${id}`, { replace: true });
-          // Reset loading state after a short delay to allow navigation to complete
-          // If navigation succeeds, the component will unmount, so this is safe
-          setTimeout(() => {
-            setIsAutoJoining(false);
-          }, 1000);
-        } else {
-          throw new Error('Failed to get draft ID after joining');
-        }
-      } catch (error) {
-        // Clear safety timeout on error
-        clearTimeout(safetyTimeout);
-
-        console.error('Auto-join failed:', error);
-        toast({
-          title: "Auto-join Failed",
-          description: "Unable to automatically join the draft. Please try manually.",
-          variant: "destructive",
-        });
-        setIsAutoJoining(false);
-        hasAttemptedAutoJoin.current = false; // Allow retry
+        const id = await claimDraftInvite(draftId);
+        navigate(`/draft/${id}`, { replace: true });
+      } catch (error: any) {
+        setClaimError(error?.message || 'We could not match this invitation to your account.');
       }
-    };
-
-    performAutoJoin();
-  }, [autoJoin, draftId, user, guestSession, authLoading, checkingParticipation, participantId, invitedEmail, isAutoJoining, participantName, joinDraftByCode, navigate, toast]);
+    })();
+  }, [authLoading, checkingParticipation, isEmailInvite, draftId, user, claimDraftInvite, navigate]);
 
   const handleJoinByCode = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,40 +143,84 @@ export const JoinDraft = () => {
     }
   };
 
-  const handleJoinByEmailInvite = async () => {
-    if (!draftId || !participantName.trim()) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter your name to join",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const { data: inviteCode, error } = await supabase.rpc('get_invite_code_for_draft', { p_draft_id: draftId });
-      if (error || !inviteCode) {
-        throw new Error('Invalid or expired invitation');
-      }
-
-      const id = await joinDraftByCode(inviteCode, participantName.trim());
-      if (id) navigate(`/draft/${id}`);
-    } catch (error) {
-      console.error('Failed to join draft via email:', error);
-      toast({
-        title: "Error",
-        description: "Failed to join draft. The invitation may be invalid or expired.",
-        variant: "destructive",
-      });
-    }
-  };
-
   if (authLoading || checkingParticipation) {
     return (
       <JoinDraftLoading
         message={checkingParticipation ? 'Opening draft…' : 'Loading…'}
       />
     );
+  }
+
+  if (isEmailInvite) {
+    const joinLink = `/join-draft/${draftId}?email=${encodeURIComponent(invitedEmail!)}&auto=true`;
+    const authUrl = (mode: 'signup' | 'signin') =>
+      `/auth?${mode === 'signup' ? 'mode=signup&' : ''}email=${encodeURIComponent(invitedEmail!)}&returnTo=${encodeURIComponent(joinLink)}`;
+
+    if (!user) {
+      return (
+        <JoinDraftShell>
+          <div className="space-y-1.5 p-6 text-center">
+            <h1 className="m-0 flex items-center justify-center gap-2 text-2xl font-semibold font-brockmann leading-none tracking-tight">
+              <Mail className="h-6 w-6 text-[#907AFF]" />
+              You're invited to a draft
+            </h1>
+          </div>
+          <div className="space-y-4 px-6 pb-6 text-center">
+            <p className="m-0 text-sm text-greyscale-blue-300 font-brockmann">
+              This invitation was sent to <span className="text-greyscale-blue-100">{invitedEmail}</span>.
+              Create a free account (or sign in) with that email to take your spot in the draft.
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button className="bg-brand-primary hover:bg-purple-300" onClick={() => navigate(authUrl('signup'))}>
+                Create account
+              </Button>
+              <Button
+                variant="outline"
+                className="border-[#666469] bg-greyscale-purp-900 text-greyscale-blue-100 hover:bg-greyscale-purp-800"
+                onClick={() => navigate(authUrl('signin'))}
+              >
+                I already have an account
+              </Button>
+            </div>
+          </div>
+        </JoinDraftShell>
+      );
+    }
+
+    if (claimError) {
+      return (
+        <JoinDraftShell>
+          <div className="space-y-1.5 p-6 text-center">
+            <h1 className="m-0 text-2xl font-semibold font-brockmann leading-none tracking-tight">
+              Can't join this draft
+            </h1>
+          </div>
+          <div className="space-y-4 px-6 pb-6 text-center">
+            <p className="m-0 text-sm text-greyscale-blue-300 font-brockmann">{claimError}</p>
+            <div className="flex flex-col gap-2">
+              <Button
+                className="bg-brand-primary hover:bg-purple-300"
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  navigate(authUrl('signin'));
+                }}
+              >
+                Sign in with {invitedEmail}
+              </Button>
+              <Button
+                variant="outline"
+                className="border-[#666469] bg-greyscale-purp-900 text-greyscale-blue-100 hover:bg-greyscale-purp-800"
+                onClick={() => navigate('/')}
+              >
+                Back to Home
+              </Button>
+            </div>
+          </div>
+        </JoinDraftShell>
+      );
+    }
+
+    return <JoinDraftLoading message="Joining the draft…" />;
   }
 
   if (!user && !guestSession) {
@@ -281,11 +266,6 @@ export const JoinDraft = () => {
     );
   }
 
-  // Show auto-joining state
-  if (isAutoJoining) {
-    return <JoinDraftLoading message="Automatically joining the draft…" />;
-  }
-
   const darkInputClass =
     'border-[#666469] bg-greyscale-purp-900 text-greyscale-blue-100 placeholder:text-greyscale-blue-500';
 
@@ -314,45 +294,6 @@ export const JoinDraft = () => {
         </div>
 
         <div className="space-y-6 px-6 pb-6">
-          {isEmailInvite && !autoJoin ? (
-            // Email invitation flow
-            <div className="space-y-4">
-              <h2 className="m-0 flex items-center gap-2 text-sm font-medium text-greyscale-blue-400 font-brockmann">
-                <Mail className="h-4 w-4" />
-                Email Invitation
-              </h2>
-
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-greyscale-blue-300">Invited Email</Label>
-                <Input
-                  id="email"
-                  value={invitedEmail || ''}
-                  disabled
-                  className={cn(darkInputClass, 'opacity-80')}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-greyscale-blue-300">Your Display Name</Label>
-                <Input
-                  id="name"
-                  value={participantName}
-                  onChange={(e) => setParticipantName(e.target.value)}
-                  placeholder="Enter your name"
-                  className={darkInputClass}
-                />
-              </div>
-
-              <Button
-                onClick={handleJoinByEmailInvite}
-                disabled={loading || !participantName.trim()}
-                className="w-full bg-brand-primary hover:bg-purple-300"
-              >
-                {loading ? 'Joining...' : 'Join Draft'}
-              </Button>
-            </div>
-          ) : (
-            // Invite code flow
             <form onSubmit={handleJoinByCode} className="space-y-4">
               <h2 className="m-0 flex items-center gap-2 text-sm font-medium text-greyscale-blue-400 font-brockmann">
                 <Hash className="h-4 w-4" />
@@ -390,7 +331,6 @@ export const JoinDraft = () => {
                 {loading ? 'Joining...' : 'Join Draft'}
               </Button>
             </form>
-          )}
 
           <Separator className="bg-white/10" />
 

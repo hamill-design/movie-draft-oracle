@@ -354,7 +354,7 @@ export const MultiplayerDraftInterface = ({
     if (!currentTurnId) return null;
     return participants.find(p => {
       // For AI participants, use the row id as participant_id
-      const participantId = p.participant_id || p.user_id || p.guest_participant_id || (p.is_ai ? p.id : null);
+      const participantId = p.participant_id || p.user_id || p.guest_participant_id || p.id;
       return participantId && String(participantId) === String(currentTurnId);
     });
   };
@@ -424,7 +424,7 @@ export const MultiplayerDraftInterface = ({
 
         const currentTurnId = freshDraft.current_turn_participant_id || freshDraft.current_turn_user_id;
         const findCurrentPlayer = (list: typeof participants) => currentTurnId ? list.find(p => {
-          const pid = p.participant_id || p.user_id || p.guest_participant_id || (p.is_ai ? p.id : null);
+          const pid = p.participant_id || p.user_id || p.guest_participant_id || p.id;
           return pid && String(pid) === String(currentTurnId);
         }) : null;
 
@@ -441,7 +441,7 @@ export const MultiplayerDraftInterface = ({
         const aiParticipantId = stillCurrentPlayer.participant_id ||
                                 stillCurrentPlayer.user_id ||
                                 stillCurrentPlayer.guest_participant_id ||
-                                (stillCurrentPlayer.is_ai ? stillCurrentPlayer.id : null);
+                                stillCurrentPlayer.id;
 
         // Use fresh draft/participants/picks so second+ AI turn uses server state (fixes multiplayer)
         const currentPickNumber = freshDraft.current_pick_number || 1;
@@ -603,14 +603,14 @@ export const MultiplayerDraftInterface = ({
       const turnOrderParticipants: any[] = [];
       orderedIds.forEach(pid => {
         const participant = participants.find(p => {
-          const pId = p.participant_id || p.user_id || p.guest_participant_id || (p.is_ai ? p.id : null);
+          const pId = p.participant_id || p.user_id || p.guest_participant_id || p.id;
           return pId && String(pId) === pid;
         });
         if (participant) turnOrderParticipants.push(participant);
       });
 
       participants.forEach(p => {
-        const pId = p.participant_id || p.user_id || p.guest_participant_id || (p.is_ai ? p.id : null);
+        const pId = p.participant_id || p.user_id || p.guest_participant_id || p.id;
         if (pId && !seenIds.has(String(pId))) turnOrderParticipants.push(p);
       });
 
@@ -624,7 +624,7 @@ export const MultiplayerDraftInterface = ({
       const seenIds = new Set<string>();
       orderedIds.forEach(pid => {
         const participant = participants.find(p => {
-          const pId = p.participant_id || p.user_id || p.guest_participant_id || (p.is_ai ? p.id : null);
+          const pId = p.participant_id || p.user_id || p.guest_participant_id || p.id;
           return pId && String(pId) === pid;
         });
         if (participant) {
@@ -633,7 +633,7 @@ export const MultiplayerDraftInterface = ({
         }
       });
       participants.forEach(p => {
-        const pId = p.participant_id || p.user_id || p.guest_participant_id || (p.is_ai ? p.id : null);
+        const pId = p.participant_id || p.user_id || p.guest_participant_id || p.id;
         if (pId && !seenIds.has(String(pId))) turnOrderParticipants.push(p);
       });
       return turnOrderParticipants;
@@ -665,8 +665,8 @@ export const MultiplayerDraftInterface = ({
     }
     const map = new Map<number, number>();
     const sameParticipant = (a: any, b: any) => {
-      const aId = a.participant_id ?? a.user_id ?? a.guest_participant_id ?? (a.is_ai ? a.id : null);
-      const bId = b.participant_id ?? b.user_id ?? b.guest_participant_id ?? (b.is_ai ? b.id : null);
+      const aId = a.participant_id ?? a.user_id ?? a.guest_participant_id ?? a.id;
+      const bId = b.participant_id ?? b.user_id ?? b.guest_participant_id ?? b.id;
       return aId != null && bId != null && String(aId) === String(bId);
     };
     getParticipantsSortedByCreatedAt.forEach((participant, i) => {
@@ -695,12 +695,12 @@ export const MultiplayerDraftInterface = ({
   const currentPlayerBoardId = useMemo(() => {
     if (!currentTurnPlayer || draftBoardParticipants.length === 0) return 1;
     const displayIndex = draftBoardParticipants.findIndex((p) => {
-      const pId = p.participant_id || p.user_id || p.guest_participant_id || (p.is_ai ? p.id : null);
+      const pId = p.participant_id || p.user_id || p.guest_participant_id || p.id;
       const currentPlayerId =
         currentTurnPlayer.participant_id ||
         currentTurnPlayer.user_id ||
         currentTurnPlayer.guest_participant_id ||
-        (currentTurnPlayer.is_ai ? currentTurnPlayer.id : null);
+        currentTurnPlayer.id;
       return pId && currentPlayerId && String(pId) === String(currentPlayerId);
     });
     return displayIndex >= 0 ? displayIndex + 1 : 1;
@@ -842,7 +842,7 @@ export const MultiplayerDraftInterface = ({
               currentTurnPlayer.participant_id ||
                 currentTurnPlayer.user_id ||
                 currentTurnPlayer.guest_participant_id ||
-                (currentTurnPlayer.is_ai ? currentTurnPlayer.id : null)
+                currentTurnPlayer.id
             );
         return {
           id: String(pId),
