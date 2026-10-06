@@ -62,7 +62,6 @@ const BlogPost = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
-        <Breadcrumbs items={crumbs} />
         Loading post…
       </div>
     );
@@ -146,6 +145,7 @@ const BlogPost = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
+        <Breadcrumbs items={crumbs} />
         <article className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-14 flex flex-col gap-8">
           <header className="flex flex-col gap-4">
             {post.cover_image_url && (
