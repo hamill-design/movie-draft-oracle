@@ -71,9 +71,8 @@ const ThemeHubPage = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
+        <Breadcrumbs items={CRUMBS} className="self-stretch w-auto -mx-6" />
         <div className="w-full max-w-[1400px] py-8 flex flex-col items-start gap-8">
-          <Breadcrumbs items={CRUMBS} />
-
           <header className="flex w-full flex-col items-start gap-[18px]">
             <h1 className="m-0 w-full font-chaney text-[48px] font-normal leading-[52px] tracking-[1.92px] text-[#FCFFFF]">
               Special Drafts
@@ -129,6 +128,8 @@ const ThemeHubPage = () => {
                           <img
                             src={img}
                             alt={draft.name}
+                            loading="lazy"
+                            decoding="async"
                             className="h-full w-full object-cover"
                             width={268}
                             height={240}

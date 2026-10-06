@@ -76,6 +76,9 @@ const Home = () => {
             <img
               src="/images/home/hero-stills.png"
               alt=""
+              width={2326}
+              height={1153}
+              decoding="async"
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               onLoad={() => setHeroImageLoaded(true)}
             />

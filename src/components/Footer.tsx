@@ -104,7 +104,15 @@ const Footer = () => {
           <div className="flex min-w-[320px] items-start justify-center gap-8 md:gap-12">
             <div className="flex flex-col items-center gap-6">
               <Link to="/" aria-label="Movie Drafter home">
-                <img src={shortTallLogo} alt="Movie Drafter" className="h-[57px] w-[45px]" />
+                <img
+                  src={shortTallLogo}
+                  alt="Movie Drafter"
+                  width={45}
+                  height={57}
+                  loading="lazy"
+                  decoding="async"
+                  className="h-[57px] w-[45px]"
+                />
               </Link>
               <a
                 href="https://www.instagram.com/moviedrafter/"

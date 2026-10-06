@@ -127,7 +127,9 @@ function NewsCard({ item }: { item: NewsItem }) {
         <div style={{ alignSelf: 'stretch', height: '168px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', flexShrink: 0 }}>
           <img
             src={item.image}
-            alt=""
+            alt={decodeEntities(item.title)}
+            loading="lazy"
+            decoding="async"
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             onError={(e) => {
               (e.currentTarget.parentElement as HTMLDivElement).style.display = 'none';
@@ -251,9 +253,8 @@ const News = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
+        <Breadcrumbs items={crumbs} />
         <div className="max-w-[1400px] mx-auto px-6 py-12 flex flex-col gap-10">
-          <Breadcrumbs items={crumbs} />
-
           {/* Header */}
           <div className="flex flex-col gap-3">
             <h1

@@ -52,6 +52,10 @@ function CubeFace({
         src={tile.src}
         alt={isFront ? `Draft by year: ${tile.label}` : ''}
         aria-hidden={!isFront}
+        width={SIZE}
+        height={SIZE}
+        loading="lazy"
+        decoding="async"
         className="h-full w-full object-contain p-1"
         draggable={false}
       />

@@ -52,6 +52,7 @@ const LearnMore = () => {
       display: 'flex'
     }}>
         {/* Hero Section */}
+        <Breadcrumbs items={crumbs} />
         <section style={{
           width: '100%',
           paddingLeft: '24px',
@@ -75,7 +76,6 @@ const LearnMore = () => {
             gap: '24px',
             display: 'flex'
           }}>
-            <Breadcrumbs items={crumbs} className="w-full" />
             <div style={{
               alignSelf: 'stretch',
               flexDirection: 'column',

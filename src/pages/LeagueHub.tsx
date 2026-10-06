@@ -59,9 +59,8 @@ const LeagueHub = () => {
       </Helmet>
 
       <div className="min-h-screen w-full" style={{ background: MOVIE_DRAFTER_PURPLE_SHELL }}>
+        <Breadcrumbs items={crumbs} />
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col gap-10">
-          <Breadcrumbs items={crumbs} />
-
           <header className="flex flex-col sm:flex-row items-center justify-center gap-8 p-6">
             <div className="relative h-[148px] w-[156px] shrink-0">
               <img
@@ -111,6 +110,7 @@ const LeagueHub = () => {
                 src={leagueStandingsIllustration}
                 alt=""
                 loading="lazy"
+                decoding="async"
                 className="w-full rounded-xl"
               />
               <div className="min-w-0">

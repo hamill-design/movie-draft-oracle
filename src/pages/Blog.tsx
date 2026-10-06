@@ -50,7 +50,9 @@ function BlogCard({ post }: { post: PublicBlogPostSummary }) {
         <div style={{ height: '168px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', flexShrink: 0 }}>
           <img
             src={post.cover_image_url}
-            alt={post.cover_image_alt || ''}
+            alt={post.cover_image_alt || post.title}
+            loading="lazy"
+            decoding="async"
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
         </div>
@@ -123,9 +125,8 @@ const Blog = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
+        <Breadcrumbs items={crumbs} />
         <div className="max-w-[1400px] mx-auto px-6 py-12 flex flex-col gap-10">
-          <Breadcrumbs items={crumbs} />
-
           {/* Header */}
           <div className="flex flex-col gap-3">
             <h1

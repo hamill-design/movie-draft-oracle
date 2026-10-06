@@ -102,6 +102,8 @@ export function HowItWorksSection() {
               <img
                 src="/images/home/posters.png"
                 alt=""
+                loading="lazy"
+                decoding="async"
                 style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               />
             </div>

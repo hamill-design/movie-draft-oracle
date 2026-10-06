@@ -176,7 +176,7 @@ export const JoinDraft = () => {
               </Button>
               <Button
                 variant="outline"
-                className="border-[#666469] bg-greyscale-purp-900 text-greyscale-blue-100 hover:bg-greyscale-purp-800"
+                className="border-[#666469] bg-greyscale-purp-900 text-greyscale-blue-100 hover:bg-greyscale-purp-800 hover:text-greyscale-blue-100"
                 onClick={() => navigate(authUrl('signin'))}
               >
                 I already have an account
@@ -209,7 +209,7 @@ export const JoinDraft = () => {
               </Button>
               <Button
                 variant="outline"
-                className="border-[#666469] bg-greyscale-purp-900 text-greyscale-blue-100 hover:bg-greyscale-purp-800"
+                className="border-[#666469] bg-greyscale-purp-900 text-greyscale-blue-100 hover:bg-greyscale-purp-800 hover:text-greyscale-blue-100"
                 onClick={() => navigate('/')}
               >
                 Back to Home
@@ -241,7 +241,7 @@ export const JoinDraft = () => {
             </Button>
             <Button
               variant="outline"
-              className="border-[#666469] bg-greyscale-purp-900 text-greyscale-blue-100 hover:bg-greyscale-purp-800"
+              className="border-[#666469] bg-greyscale-purp-900 text-greyscale-blue-100 hover:bg-greyscale-purp-800 hover:text-greyscale-blue-100"
               onClick={async () => {
                 setIsRetryingGuest(true);
                 try {
@@ -338,7 +338,7 @@ export const JoinDraft = () => {
             <Button
               variant="outline"
               onClick={() => navigate('/')}
-              className="w-full border-[#666469] bg-greyscale-purp-900 text-greyscale-blue-100 hover:bg-greyscale-purp-800"
+              className="w-full border-[#666469] bg-greyscale-purp-900 text-greyscale-blue-100 hover:bg-greyscale-purp-800 hover:text-greyscale-blue-100"
             >
               Back to Home
             </Button>

@@ -207,6 +207,10 @@ export function RotatingFilmographyPortrait({ className }: RotatingFilmographyPo
               src={portraitUrl(portrait.profile_path)}
               alt={slot === visibleSlot && !isFading ? portrait.name : ''}
               aria-hidden={slot !== visibleSlot || isFading}
+              width={124}
+              height={124}
+              loading="lazy"
+              decoding="async"
               className={cn(imgClass, slotOpacity(slot) === 1 ? 'opacity-100' : 'opacity-0')}
               style={{
                 transitionDuration: `${FADE_MS}ms`,

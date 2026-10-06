@@ -126,9 +126,8 @@ const FAQ = () => {
         className="min-h-screen w-full"
         style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}
       >
+        <Breadcrumbs items={crumbs} />
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col gap-10">
-          <Breadcrumbs items={crumbs} />
-
           <header className="flex flex-col gap-4">
             <h1 className="m-0 font-chaney text-3xl sm:text-5xl text-greyscale-blue-50 leading-tight">
               Frequently asked questions

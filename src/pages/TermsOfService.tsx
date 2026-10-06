@@ -45,9 +45,8 @@ const TermsOfService = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'
         }}
       >
+        <Breadcrumbs items={crumbs} className="self-stretch w-auto -mx-6 -mt-12" />
         <div className="w-full max-w-[880px] flex flex-col items-start justify-start gap-5">
-          <Breadcrumbs items={crumbs} />
-
           {/* Main Content */}
           <div className="w-full flex flex-col items-start justify-start gap-10">
             {/* Header Section */}

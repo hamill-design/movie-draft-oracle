@@ -118,6 +118,7 @@ const ThemeLandingPage = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
+        <Breadcrumbs items={crumbs} />
         Loading theme…
       </div>
     );
@@ -190,8 +191,6 @@ const ThemeLandingPage = () => {
         }}
       >
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-10 sm:py-14 flex flex-col gap-10">
-          <Breadcrumbs items={crumbs} />
-
           <header className="flex flex-col gap-4">
             <h1 className="m-0 font-chaney text-3xl sm:text-5xl text-greyscale-blue-50 leading-tight">
               {draft.name}

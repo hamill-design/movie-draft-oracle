@@ -17,6 +17,8 @@ export function LeagueFeatureSection() {
             <img
               src="/images/home/league-trophy.png"
               alt="Movie Drafter league trophy"
+              loading="lazy"
+              decoding="async"
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
             />
           </div>
