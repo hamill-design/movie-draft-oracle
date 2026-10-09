@@ -10,6 +10,8 @@ export type PublicSpecDraftSummary = {
   slug: string;
   description: string | null;
   photo_url: string | null;
+  /** Wide banner for the public page; falls back to photo_url when empty */
+  hero_image_url?: string | null;
   display_order: number | null;
 };
 
@@ -23,6 +25,8 @@ export type PublicSpecDraftMovie = {
   movie_overview: string | null;
   seo_blurb: string | null;
   created_at: string;
+  /** Eligible draft categories, straight from spec_draft_movie_categories */
+  categories: string[];
 };
 
 export function truncateForThemePage(text: string, max = THEME_OVERVIEW_MAX): string {
@@ -82,12 +86,19 @@ export async function fetchPublicSpecDraftBySlug(
   const trimmed = slug.trim();
   if (!trimmed) return null;
 
-  const queryResult = await supabase
-    .from('spec_drafts' as never)
-    .select('id, name, slug, description, photo_url, display_order')
-    .eq('slug', trimmed)
-    .eq('is_hidden', false)
-    .maybeSingle();
+  const selectDraft = (columns: string) =>
+    supabase
+      .from('spec_drafts' as never)
+      .select(columns)
+      .eq('slug', trimmed)
+      .eq('is_hidden', false)
+      .maybeSingle();
+
+  let queryResult = await selectDraft('id, name, slug, description, photo_url, hero_image_url, display_order');
+  // hero_image_url may not be migrated yet — retry without it so the page keeps working
+  if (queryResult.error) {
+    queryResult = await selectDraft('id, name, slug, description, photo_url, display_order');
+  }
 
   const { data: draft, error: draftErr } = queryResult as {
     data: PublicSpecDraftSummary | null;
@@ -101,13 +112,15 @@ export async function fetchPublicSpecDraftBySlug(
   const moviesResult = await supabase
     .from('spec_draft_movies' as never)
     .select(
-      'id, movie_tmdb_id, movie_title, movie_year, movie_poster_path, movie_genres, movie_overview, seo_blurb, created_at'
+      'id, movie_tmdb_id, movie_title, movie_year, movie_poster_path, movie_genres, movie_overview, seo_blurb, created_at, spec_draft_movie_categories(category_name)'
     )
     .eq('spec_draft_id', draft.id)
     .order('created_at', { ascending: true });
 
   const { data: movieRows, error: movieErr } = moviesResult as {
-    data: PublicSpecDraftMovie[] | null;
+    data: (Omit<PublicSpecDraftMovie, 'categories'> & {
+      spec_draft_movie_categories: { category_name: string }[] | null;
+    })[] | null;
     error: { message?: string } | null;
   };
 
@@ -116,7 +129,12 @@ export async function fetchPublicSpecDraftBySlug(
     return { draft, movies: [] };
   }
 
-  return { draft, movies: movieRows || [] };
+  const movies: PublicSpecDraftMovie[] = (movieRows || []).map(({ spec_draft_movie_categories, ...m }) => ({
+    ...m,
+    categories: (spec_draft_movie_categories || []).map((c) => c.category_name),
+  }));
+
+  return { draft, movies };
 }
 
 export function posterUrl(path: string | null): string | null {

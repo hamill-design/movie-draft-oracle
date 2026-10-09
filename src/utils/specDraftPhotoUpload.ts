@@ -130,6 +130,44 @@ export const uploadSpecDraftPhoto = async (
 };
 
 /**
+ * Uploads a wide hero/banner image for a spec draft. Unlike the card photo this is NOT cropped
+ * or resized, so the admin keeps full control over the framing.
+ */
+export const uploadSpecDraftHeroImage = async (
+  specDraftId: string,
+  file: File
+): Promise<string> => {
+  const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+  if (!validTypes.includes(file.type)) {
+    throw new Error('Invalid file type. Please upload a PNG, JPEG, or WebP image.');
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    throw new Error('File size exceeds 5MB limit. Please upload a smaller image.');
+  }
+
+  const fileExt = file.name.split('.').pop() || 'jpg';
+  const filePath = `${specDraftId}/hero-${Date.now()}.${fileExt}`;
+
+  const { error } = await supabase.storage.from('spec-draft-photos').upload(filePath, file, {
+    contentType: file.type,
+    upsert: false,
+    cacheControl: '3600',
+  });
+  if (error) {
+    if (error.message?.includes('new row violates row-level security policy')) {
+      throw new Error('Permission denied. Please ensure you are logged in and have admin access.');
+    }
+    throw error;
+  }
+
+  const { data: urlData } = supabase.storage.from('spec-draft-photos').getPublicUrl(filePath);
+  if (!urlData?.publicUrl) {
+    throw new Error('Failed to get public URL for uploaded hero image');
+  }
+  return urlData.publicUrl;
+};
+
+/**
  * Deletes a photo from storage
  * @param photoUrl The public URL of the photo to delete
  */

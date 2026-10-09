@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { SpecDraft } from '@/hooks/useSpecDraftsAdmin';
-import { uploadSpecDraftPhoto, deleteSpecDraftPhoto } from '@/utils/specDraftPhotoUpload';
+import { uploadSpecDraftPhoto, uploadSpecDraftHeroImage, deleteSpecDraftPhoto } from '@/utils/specDraftPhotoUpload';
 import { Upload, X, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,6 +16,9 @@ interface SpecDraftFormProps {
     description?: string;
     photoUrl?: string;
     photoFile?: File | null;
+    /** undefined = leave as is, null = cleared, string = new/kept URL */
+    heroImageUrl?: string | null;
+    heroFile?: File | null;
   }) => Promise<void>;
   onCancel?: () => void;
   loading?: boolean;
@@ -32,7 +35,10 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(specDraft?.photo_url || null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [heroFile, setHeroFile] = useState<File | null>(null);
+  const [heroPreview, setHeroPreview] = useState<string | null>(specDraft?.hero_image_url || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const heroInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Update form state when specDraft changes
@@ -46,14 +52,19 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
         const photoUrl = specDraft.photo_url || null;
         setPhotoPreview(photoUrl);
       }
+      if (!heroFile) {
+        setHeroPreview(specDraft.hero_image_url || null);
+      }
     } else {
       // Reset form for new draft
       setName('');
       setDescription('');
       setPhotoPreview(null);
       setPhotoFile(null);
+      setHeroPreview(null);
+      setHeroFile(null);
     }
-  }, [specDraft, photoFile]);
+  }, [specDraft, photoFile, heroFile]);
 
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -89,6 +100,42 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
       setPhotoPreview(e.target?.result as string);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleHeroChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please upload a PNG, JPEG, or WebP image.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'File size exceeds 5MB limit. Please upload a smaller image.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setHeroFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setHeroPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveHero = () => {
+    setHeroFile(null);
+    setHeroPreview(null);
+    if (heroInputRef.current) {
+      heroInputRef.current.value = '';
+    }
   };
 
   const handleRemovePhoto = () => {
@@ -161,6 +208,43 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
     }
     // For new drafts, photoFile will be stored and uploaded after draft creation
 
+    // Hero image: same rules as the photo, but stored/uploaded un-cropped
+    let heroImageUrl: string | null | undefined = undefined;
+    if (specDraft?.id) {
+      if (heroFile) {
+        setUploadingPhoto(true);
+        try {
+          if (specDraft.hero_image_url) {
+            try {
+              await deleteSpecDraftPhoto(specDraft.hero_image_url);
+            } catch (error) {
+              console.error('Error deleting old hero image:', error);
+            }
+          }
+          heroImageUrl = await uploadSpecDraftHeroImage(specDraft.id, heroFile);
+        } catch (error) {
+          toast({
+            title: 'Upload Error',
+            description: error instanceof Error ? error.message : 'Failed to upload hero image',
+            variant: 'destructive',
+          });
+          setUploadingPhoto(false);
+          return;
+        } finally {
+          setUploadingPhoto(false);
+        }
+      } else if (heroPreview && heroPreview === specDraft.hero_image_url) {
+        heroImageUrl = specDraft.hero_image_url;
+      } else if (!heroPreview && specDraft.hero_image_url) {
+        try {
+          await deleteSpecDraftPhoto(specDraft.hero_image_url);
+        } catch (error) {
+          console.error('Error deleting hero image:', error);
+        }
+        heroImageUrl = null;
+      }
+    }
+
     console.log('📤 Submitting form with photoUrl:', photoUrl);
     // Submit the form
     // For new drafts, pass the photoFile so parent can upload after creation
@@ -169,6 +253,8 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
       description: description.trim() || undefined,
       photoUrl,
       photoFile: !specDraft ? photoFile : null, // Only pass photoFile for new drafts
+      heroImageUrl,
+      heroFile: !specDraft ? heroFile : null,
     });
   };
 
@@ -289,6 +375,55 @@ export const SpecDraftForm: React.FC<SpecDraftFormProps> = ({
               </div>
             </div>
 
+            {/* Hero image (wide banner on the public page) */}
+            <div className="space-y-2">
+              <Label>Hero image (wide banner)</Label>
+              <div className="space-y-3">
+                {heroPreview ? (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">
+                      {heroFile ? 'New hero preview:' : 'Current hero image:'}
+                    </p>
+                    <div className="relative">
+                      <img
+                        src={heroPreview}
+                        alt="Hero image preview"
+                        className="h-40 w-full max-w-2xl rounded-md border border-gray-300 object-cover"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-2 right-2"
+                        onClick={handleRemoveHero}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center">
+                    <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-600">No hero image — the page falls back to the square photo</p>
+                  </div>
+                )}
+                <div>
+                  <Input
+                    ref={heroInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
+                    onChange={handleHeroChange}
+                    className="cursor-pointer"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Shown behind the breadcrumbs at the top of the special draft page (400px tall on desktop, 240px
+                    on mobile, centered and cropped to fill). Use a wide image, around 2400x800. It is not resized or
+                    cropped on upload. Max 5MB.
+                    {!specDraft && ' Hero image will be uploaded after draft creation.'}
+                  </p>
+                </div>
+              </div>
+            </div>
 
             {/* Actions */}
             <div className="flex gap-3 justify-end">

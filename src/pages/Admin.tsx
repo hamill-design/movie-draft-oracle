@@ -144,7 +144,7 @@ const Admin = () => {
   };
 
   // Spec Draft handlers
-  const handleSpecDraftCreate = async (data: { name: string; description?: string; photoUrl?: string; photoFile?: File | null }) => {
+  const handleSpecDraftCreate = async (data: { name: string; description?: string; photoUrl?: string; photoFile?: File | null; heroFile?: File | null }) => {
     try {
       // Create the draft first
       const newDraft = await createSpecDraft(data.name, data.description);
@@ -174,6 +174,28 @@ const Admin = () => {
         }
       }
       
+      // Same for the hero image
+      if (data.heroFile && newDraft) {
+        const draftId = typeof newDraft === 'object' && newDraft !== null && 'id' in newDraft
+          ? (newDraft as SpecDraft).id
+          : null;
+
+        if (draftId) {
+          const { uploadSpecDraftHeroImage } = await import('@/utils/specDraftPhotoUpload');
+          try {
+            const heroUrl = await uploadSpecDraftHeroImage(draftId, data.heroFile);
+            await updateSpecDraft(draftId, { hero_image_url: heroUrl });
+          } catch (error) {
+            console.error('Error uploading hero image:', error);
+            toast({
+              title: 'Hero Image Upload Error',
+              description: 'Draft created but hero image upload failed. You can add one later.',
+              variant: 'destructive',
+            });
+          }
+        }
+      }
+
       // Refresh the spec drafts list to ensure it has the latest data
       await fetchSpecDrafts();
       setSpecDraftSection('list');
@@ -183,7 +205,7 @@ const Admin = () => {
     }
   };
 
-  const handleSpecDraftUpdate = async (data: { name: string; description?: string; photoUrl?: string }) => {
+  const handleSpecDraftUpdate = async (data: { name: string; description?: string; photoUrl?: string; heroImageUrl?: string | null }) => {
     if (!editingSpecDraft) return;
 
     console.log('💾 Updating spec draft:', {
@@ -196,6 +218,8 @@ const Admin = () => {
         name: data.name,
         description: data.description,
         photo_url: data.photoUrl || null,
+        // undefined = untouched; null = cleared
+        ...(data.heroImageUrl !== undefined ? { hero_image_url: data.heroImageUrl } : {}),
       });
       console.log('✅ Update result:', result);
       

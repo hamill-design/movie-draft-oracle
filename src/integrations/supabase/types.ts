@@ -822,6 +822,7 @@ export type Database = {
           id: string
           is_hidden: boolean | null
           name: string
+          hero_image_url: string | null
           photo_url: string | null
           slug: string
           updated_at: string | null
@@ -833,6 +834,7 @@ export type Database = {
           id?: string
           is_hidden?: boolean | null
           name: string
+          hero_image_url?: string | null
           photo_url?: string | null
           slug: string
           updated_at?: string | null
@@ -844,6 +846,7 @@ export type Database = {
           id?: string
           is_hidden?: boolean | null
           name?: string
+          hero_image_url?: string | null
           photo_url?: string | null
           slug?: string
           updated_at?: string | null

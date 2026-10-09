@@ -432,3 +432,14 @@ All colors MUST be HSL.
     border-radius: 0.375rem;
   }
 }
+/* Steady side-scrolling poster row (special draft pages). Track holds two identical copies. */
+@keyframes poster-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.poster-marquee-track {
+  animation: poster-marquee linear infinite;
+}
+.poster-marquee:hover .poster-marquee-track {
+  animation-play-state: paused;
+}
