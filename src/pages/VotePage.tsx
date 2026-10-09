@@ -237,7 +237,7 @@ const VotePage = () => {
           <meta name="twitter:description" content={loadDesc} />
         </Helmet>
         <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
-          <div className="text-greyscale-blue-300 font-brockmann">Loading...</div>
+          <div className="text-[#FCFFFF] font-brockmann">Loading...</div>
         </div>
       </>
     );

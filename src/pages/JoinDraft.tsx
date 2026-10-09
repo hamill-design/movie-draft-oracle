@@ -39,7 +39,7 @@ function JoinDraftLoading({ message }: { message: string }) {
   return (
     <JoinDraftShell className="flex flex-col items-center gap-4 p-8">
       <Loader2 className="h-8 w-8 animate-spin text-purple-300" />
-      <p className="m-0 text-sm text-greyscale-blue-300 font-brockmann">{message}</p>
+      <p className="m-0 text-sm text-[#FCFFFF] font-brockmann">{message}</p>
     </JoinDraftShell>
   );
 }

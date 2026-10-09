@@ -918,7 +918,7 @@ const Profile = () => {
           </div>
 
           {leaguesLoading ? (
-            <p className="m-0 text-greyscale-blue-300 text-sm font-brockmann">Loading leagues…</p>
+            <p className="m-0 text-[#FCFFFF] text-sm font-brockmann">Loading leagues…</p>
           ) : leagues.length === 0 ? (
             <p className="m-0 text-greyscale-blue-300 text-sm font-brockmann leading-5">
               No leagues yet. Create one to compete with friends across multiple drafts.

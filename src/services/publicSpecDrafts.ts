@@ -50,6 +50,18 @@ export function themeMovieSeoLine(movie: PublicSpecDraftMovie, themeName: string
   return `${genrePart}${yearPart}. A curated pick in Movie Drafter’s “${themeName}” movie drafting game pool.`;
 }
 
+/**
+ * Real, human-written copy only (curated blurb, else stored synopsis). Null when neither exists,
+ * so visible UI can skip the generated filler line that `themeMovieDisplayText` falls back to.
+ */
+export function themeMovieRealText(movie: PublicSpecDraftMovie): string | null {
+  const blurb = movie.seo_blurb?.trim();
+  if (blurb) return blurb;
+  const overview = movie.movie_overview?.trim();
+  if (overview) return truncateForThemePage(overview);
+  return null;
+}
+
 /** Public theme page body copy: curated blurb wins, then TMDB-style overview, then generated line. */
 export function themeMovieDisplayText(movie: PublicSpecDraftMovie, themeName: string): string {
   const blurb = movie.seo_blurb?.trim();

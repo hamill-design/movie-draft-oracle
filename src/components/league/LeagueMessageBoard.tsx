@@ -288,7 +288,7 @@ const LeagueMessageBoard: React.FC<Props> = ({ leagueId, isAdmin, layout = 'defa
   };
 
   if (loading) {
-    return <p className="text-sm text-greyscale-blue-300 font-brockmann py-8 text-center">Loading…</p>;
+    return <p className="text-sm text-[#FCFFFF] font-brockmann py-8 text-center">Loading…</p>;
   }
 
   const composerShell = dash

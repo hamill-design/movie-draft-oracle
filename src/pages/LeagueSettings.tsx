@@ -390,7 +390,7 @@ const LeagueSettings = () => {
         className="min-h-screen flex items-center justify-center p-4 font-brockmann text-greyscale-blue-100"
         style={{ background: MOVIE_DRAFTER_PURPLE_SHELL }}
       >
-        <p className="text-sm text-greyscale-blue-200">Loading…</p>
+        <p className="text-sm text-[#FCFFFF]">Loading…</p>
       </div>
     );
   }
@@ -1152,7 +1152,7 @@ const LeagueSettings = () => {
                         </p>
                         <div className="flex flex-col gap-2">
                           {membersLoading ? (
-                            <p className="text-xs text-greyscale-blue-400 font-brockmann">Loading members…</p>
+                            <p className="text-xs text-[#FCFFFF] font-brockmann">Loading members…</p>
                           ) : (
                             members.map((member) => {
                               const name = member.profile?.name ?? member.profile?.email ?? 'Player';
@@ -1442,7 +1442,7 @@ const LeagueSettings = () => {
                       icon={<MultiPersonIcon className="w-5 h-5 text-[#907AFF]" aria-hidden />}
                     />
                     {membersLoading ? (
-                      <p className="text-sm text-greyscale-blue-300 m-0 font-brockmann">Loading…</p>
+                      <p className="text-sm text-[#FCFFFF] m-0 font-brockmann">Loading…</p>
                     ) : (
                       <div className="flex flex-col gap-2">
                         {members.map((member) => {

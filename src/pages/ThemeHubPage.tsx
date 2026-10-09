@@ -83,7 +83,7 @@ const ThemeHubPage = () => {
           </header>
 
           {loading ? (
-            <p className="w-full text-center font-brockmann text-greyscale-blue-200 py-12">
+            <p className="w-full text-center font-brockmann text-[#FCFFFF] py-12">
               Loading special drafts…
             </p>
           ) : drafts.length === 0 ? (

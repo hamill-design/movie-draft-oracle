@@ -57,7 +57,7 @@ const BlogPost = () => {
   if (isLoading) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center font-brockmann text-greyscale-blue-100"
+        className="min-h-screen flex items-center justify-center font-brockmann text-base font-medium text-[#FCFFFF]"
         style={{
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}

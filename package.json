@@ -25,7 +25,8 @@
     "deploy:functions:fetch-movies": "npx supabase functions deploy fetch-movies --use-api",
     "deploy:functions:enrich-spec-draft-sequels": "npx supabase functions deploy enrich-spec-draft-sequels --use-api",
     "deploy:functions:sequel": "npx supabase functions deploy fetch-movies --use-api && npx supabase functions deploy enrich-spec-draft-sequels --use-api",
-    "enrich:spec-sequel": "node scripts/enrich-sequel-spec-drafts.mjs"
+    "enrich:spec-sequel": "node scripts/enrich-sequel-spec-drafts.mjs",
+    "backfill:spec-overviews": "node --env-file-if-exists=.env scripts/backfill-spec-draft-overviews.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

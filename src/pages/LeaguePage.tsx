@@ -471,7 +471,7 @@ const LeaguePage = () => {
         className="flex min-h-screen items-center justify-center font-brockmann"
         style={{ background: MOVIE_DRAFTER_PURPLE_SHELL }}
       >
-        <p className="text-sm text-greyscale-blue-300">Loading…</p>
+        <p className="text-sm text-[#FCFFFF]">Loading…</p>
       </div>
     );
   }
@@ -733,7 +733,7 @@ const LeaguePage = () => {
               </div>
 
               {standingsLoading ? (
-                <p className="py-8 text-center text-sm text-greyscale-blue-300">Loading standings…</p>
+                <p className="py-8 text-center text-sm text-[#FCFFFF]">Loading standings…</p>
               ) : (
                 <>
                   <SeasonStandingRows standings={standings} currentUserId={user?.id} />
@@ -769,7 +769,7 @@ const LeaguePage = () => {
 
               <div className="flex flex-col gap-4">
                 {draftsLoading && (
-                  <p className="py-6 text-center text-sm text-greyscale-blue-300 font-brockmann">Loading drafts…</p>
+                  <p className="py-6 text-center text-sm text-[#FCFFFF] font-brockmann">Loading drafts…</p>
                 )}
 
                 {!draftsLoading && scheduled.length === 0 && active.length === 0 && completed.length === 0 && (

@@ -11,6 +11,7 @@ import {
   fetchPublicSpecDraftSummaries,
   posterUrl,
   themeMovieDisplayText,
+  themeMovieRealText,
   type PublicSpecDraftMovie,
   type PublicSpecDraftSummary,
 } from '@/services/publicSpecDrafts';
@@ -122,6 +123,16 @@ const ThemeLandingPage = () => {
     );
   }, [payload]);
 
+  // Random sample of posters for the slideshow; reshuffles per page load / draft, not per render.
+  const posterStrip = useMemo(() => {
+    const withPosters = (payload?.movies ?? []).filter((m) => m.movie_poster_path);
+    for (let i = withPosters.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [withPosters[i], withPosters[j]] = [withPosters[j], withPosters[i]];
+    }
+    return withPosters.slice(0, 24);
+  }, [payload]);
+
   // Visible list order only; structured data above stays alphabetical.
   const displayMovies = useMemo(() => {
     if (sortBy === 'title-asc') return sortedMovies;
@@ -185,7 +196,7 @@ const ThemeLandingPage = () => {
   if (loading) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center font-brockmann text-greyscale-blue-100"
+        className="min-h-screen flex items-center justify-center font-brockmann text-base font-medium text-[#FCFFFF]"
         style={{
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
@@ -236,7 +247,6 @@ const ThemeLandingPage = () => {
       ? bannerSource
       : `https://image.tmdb.org/t/p/w1280${bannerSource}`
     : null;
-  const posterStrip = movies.filter((m) => m.movie_poster_path).slice(0, 24);
 
   const crumbs = [
     { name: 'Home', path: '/' },
@@ -386,7 +396,7 @@ const ThemeLandingPage = () => {
                           onMouseEnter={() => img && preloadImage(img)}
                           onFocus={() => img && preloadImage(img)}
                           onTouchStart={() => img && preloadImage(img)}
-                          className={`grid w-full grid-cols-[minmax(0,1fr)_64px_44px] items-center rounded-lg text-left text-sm leading-5 text-[#FCFFFF] outline-none focus-visible:ring-2 focus-visible:ring-purple-400 sm:grid-cols-[minmax(0,1fr)_96px_44px] transition-colors duration-150 ease-out hover:bg-purple-800/60 ${open ? 'bg-purple-800/60' : i % 2 === 0 ? 'bg-[#2C2B2D]' : 'bg-[#1D1D1F]'}`}
+                          className={`grid w-full grid-cols-[minmax(0,1fr)_64px_44px] items-center rounded-lg text-left text-sm leading-5 text-[#FCFFFF] outline-none focus-visible:ring-2 focus-visible:ring-purple-400 sm:grid-cols-[minmax(0,1fr)_96px_44px] transition-colors duration-150 ease-out hover:bg-purple-800/60 ${i % 2 === 0 ? 'bg-[#2C2B2D]' : 'bg-[#1D1D1F]'}`}
                         >
                           <span className="px-4 py-3 font-medium">{movie.movie_title}</span>
                           <span className="px-2 py-3 text-right font-medium sm:px-4">{movie.movie_year ?? '—'}</span>
@@ -431,9 +441,9 @@ const ThemeLandingPage = () => {
                                     </div>
                                   </div>
                                 ) : null}
-                                <p className="m-0 text-sm leading-5 text-[#FCFFFF]">
-                                  {themeMovieDisplayText(movie, draft.name)}
-                                </p>
+                                {themeMovieRealText(movie) ? (
+                                  <p className="m-0 text-sm leading-5 text-[#FCFFFF]">{themeMovieRealText(movie)}</p>
+                                ) : null}
                               </div>
                             </div>
                             </div>

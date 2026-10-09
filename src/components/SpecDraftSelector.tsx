@@ -280,7 +280,7 @@ export const SpecDraftSelector = ({ className }: SpecDraftSelectorProps) => {
         >
           <div className="flex min-h-0 flex-1 flex-col" aria-live="polite">
             <div
-              className="bg-greyscale-purp-850 rounded-[6px] p-4 flex flex-col sm:flex-row gap-4 items-stretch w-full min-w-0 min-h-[192px] flex-1"
+              className="group relative bg-greyscale-purp-850 rounded-[6px] p-4 flex flex-col sm:flex-row gap-4 items-stretch w-full min-w-0 min-h-[192px] flex-1 transition-colors hover:bg-greyscale-purp-800 motion-reduce:transition-none"
               style={{ outline: '1px solid #49474B', outlineOffset: '-1px' }}
             >
               {/* Poster: dual absolute layers — decode inactive layer, then crossfade opacity only on images */}
@@ -323,7 +323,14 @@ export const SpecDraftSelector = ({ className }: SpecDraftSelectorProps) => {
               <div className="flex flex-col gap-4 items-start justify-between flex-1 w-full min-w-0 self-stretch">
                 <div className="flex flex-col gap-2 items-start w-full">
                   <h3 className="m-0 text-2xl font-semibold leading-[30px] tracking-wide font-brockmann text-greyscale-blue-100">
-                    {draft.name}
+                    {/* Stretched link: the ::after covers the whole card so the full card opens the details page.
+                        The Begin Setup button sits above it (relative z-10) and keeps its own action. */}
+                    <Link
+                      to={`/special-draft/${(draft.slug && String(draft.slug).trim()) || draft.id}`}
+                      className="outline-none after:absolute after:inset-0 after:z-[2] after:rounded-[6px] after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-purple-400"
+                    >
+                      {draft.name}
+                    </Link>
                   </h3>
                   {draft.description && (
                     <p className="m-0 text-sm font-normal leading-5 font-brockmann text-greyscale-blue-100">
@@ -334,7 +341,7 @@ export const SpecDraftSelector = ({ className }: SpecDraftSelectorProps) => {
 
                 <Button
                   onClick={() => handleBeginSetup(draft)}
-                  className="w-full bg-brand-primary hover:bg-brand-primary/90 text-greyscale-blue-100 h-9 px-4 py-2 rounded-[2px] self-stretch font-brockmann font-medium text-sm transition-colors"
+                  className="relative z-[3] w-full bg-brand-primary hover:bg-brand-primary/90 text-greyscale-blue-100 h-9 px-4 py-2 rounded-[2px] self-stretch font-brockmann font-medium text-sm transition-colors"
                 >
                   Begin Setup
                 </Button>

@@ -878,7 +878,7 @@ export const MultiplayerDraftInterface = ({
         </Helmet>
         <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
           <Loader2 className="h-8 w-8 animate-spin text-purple-300 mb-4" />
-          <p className="text-greyscale-blue-100 text-lg font-medium">Loading your draft...</p>
+          <p className="text-[#FCFFFF] text-lg font-medium">Loading your draft...</p>
         </div>
       </>
     );
