@@ -2,7 +2,7 @@
 /**
  * Backfill spec_draft_movies.movie_overview (and movie_genres when empty) from TMDB for films
  * that have no stored synopsis, so /special-draft/:slug pages show real copy instead of nothing.
- * Films that already have movie_overview or a curated seo_blurb are never touched.
+ * Existing movie_overview / seo_blurb / movie_genres values are never overwritten.
  *
  * Dry run by default (prints what it would change). Pass --write to save.
  *
@@ -44,7 +44,7 @@ async function fetchRows() {
   const pageSize = 1000;
   for (let from = 0; ; from += pageSize) {
     let q = `${url}/rest/v1/spec_draft_movies?select=id,movie_tmdb_id,movie_title,movie_overview,seo_blurb,movie_genres` +
-      `&or=(movie_overview.is.null,movie_overview.eq.)&order=created_at.asc`;
+      `&or=(movie_overview.is.null,movie_overview.eq.,movie_genres.is.null,movie_genres.eq.{})&order=created_at.asc`;
     if (specDraftId) q += `&spec_draft_id=eq.${specDraftId}`;
     const res = await fetch(q, { headers: { ...sbHeaders, Range: `${from}-${from + pageSize - 1}` } });
     if (!res.ok) throw new Error(`Supabase ${res.status}: ${await res.text()}`);
@@ -56,20 +56,21 @@ async function fetchRows() {
 }
 
 async function main() {
-  const rows = (await fetchRows()).filter((r) => !r.seo_blurb?.trim());
-  console.log(`${rows.length} films without a synopsis or curated blurb. ${write ? 'WRITING' : 'DRY RUN (add --write to save)'}`);
+  const rows = await fetchRows();
+  console.log(`${rows.length} films missing a synopsis and/or genres. ${write ? 'WRITING' : 'DRY RUN (add --write to save)'}`);
 
   let updated = 0, noOverview = 0, notFound = 0;
   for (const row of rows) {
     const movie = await tmdbMovie(row.movie_tmdb_id);
     if (!movie) { notFound++; console.log(`  not on TMDB: ${row.movie_title} (${row.movie_tmdb_id})`); continue; }
     const overview = (movie.overview || '').trim();
+    const needsOverview = !row.movie_overview?.trim() && !row.seo_blurb?.trim();
     const patch = {};
-    if (overview) patch.movie_overview = overview;
+    if (needsOverview && overview) patch.movie_overview = overview;
     if ((!row.movie_genres || row.movie_genres.length === 0) && movie.genres?.length) {
       patch.movie_genres = movie.genres.map((g) => g.id);
     }
-    if (!overview) noOverview++;
+    if (needsOverview && !overview) noOverview++;
     if (Object.keys(patch).length === 0) continue;
 
     console.log(`  ${row.movie_title}: ${Object.keys(patch).join(', ')}`);

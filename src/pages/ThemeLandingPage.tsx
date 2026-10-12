@@ -50,6 +50,54 @@ function CircleChevron({ open }: { open: boolean }) {
   );
 }
 
+/** Natural-language list: "A, B and C". */
+function joinList(items: string[]): string {
+  if (items.length <= 1) return items.join('');
+  return `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
+}
+
+/**
+ * Data-driven "about" paragraph so every draft page carries unique, factual body copy
+ * (counts, year span, busiest categories, sample titles) that updates itself as films change.
+ */
+function buildAboutParagraph(name: string, movies: PublicSpecDraftMovie[], sorted: PublicSpecDraftMovie[]): string {
+  if (movies.length === 0) return '';
+
+  const years = movies.map((m) => m.movie_year).filter((y): y is number => y != null);
+  const parts: string[] = [];
+
+  let lead = `${name} is a special draft on Movie Drafter with ${movies.length} eligible film${movies.length === 1 ? '' : 's'}`;
+  if (years.length > 0) {
+    const min = Math.min(...years);
+    const max = Math.max(...years);
+    lead += min === max ? ` from ${min}` : ` released between ${min} and ${max}`;
+  }
+  parts.push(`${lead}.`);
+
+  const counts = new Map<string, number>();
+  movies.forEach((m) => m.categories.forEach((c) => counts.set(c, (counts.get(c) ?? 0) + 1)));
+  const topCategories = [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 3)
+    .map(([c]) => c);
+  if (topCategories.length > 0) {
+    parts.push(`The most common draft categories in this pool are ${joinList(topCategories)}.`);
+  }
+
+  // Evenly spaced picks from the alphabetical list: stable between renders and varied across the pool.
+  const sampleCount = Math.min(5, sorted.length);
+  if (sampleCount > 0) {
+    const step = sorted.length / sampleCount;
+    const titles = Array.from({ length: sampleCount }, (_, i) => sorted[Math.floor(i * step)].movie_title);
+    parts.push(`Films you can draft include ${joinList(titles)}.`);
+  }
+
+  parts.push(
+    'Take turns picking films into categories with friends, then see how your roster scores on box office, critic ratings and awards.'
+  );
+  return parts.join(' ');
+}
+
 /** Descriptive alt for poster images (image search + accessibility). */
 function posterAlt(movie: PublicSpecDraftMovie): string {
   return movie.movie_year != null
@@ -241,6 +289,7 @@ const ThemeLandingPage = () => {
   const pageTitle = `Movie Drafter - ${draft.name} | Eligible films`;
 
   // Dedicated hero image wins; otherwise fall back to the draft's square photo
+  const aboutParagraph = buildAboutParagraph(draft.name, movies, sortedMovies);
   const bannerSource = draft.hero_image_url || draft.photo_url;
   const bannerImg = bannerSource
     ? bannerSource.startsWith('http')
@@ -456,6 +505,15 @@ const ThemeLandingPage = () => {
               </div>
             )}
           </section>
+
+          {aboutParagraph ? (
+            <section aria-labelledby="about-heading" className="flex w-full flex-col gap-3 border-t border-[#4A484B] pt-8">
+              <h2 id="about-heading" className="m-0 font-brockmann text-xl font-semibold leading-7 text-[#FAFEFF]">
+                About {draft.name}
+              </h2>
+              <p className="m-0 max-w-3xl font-brockmann text-base leading-6 text-[#FCFFFF]">{aboutParagraph}</p>
+            </section>
+          ) : null}
 
           {relatedThemes.length > 0 ? (
             <section aria-labelledby="related-heading" className="flex w-full flex-col gap-6 border-t border-[#4A484B] pt-8">
