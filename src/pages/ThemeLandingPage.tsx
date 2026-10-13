@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { breadcrumbListNode, graphJsonLd } from '@/components/seo/jsonLd';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
+import { resizedStorageUrl } from '@/utils/imageUrl';
 import {
   fetchPublicSpecDraftBySlug,
   fetchPublicSpecDraftSummaries,
@@ -132,6 +133,8 @@ const ThemeLandingPage = () => {
   const [allThemes, setAllThemes] = useState<PublicSpecDraftSummary[]>([]);
   const [sortBy, setSortBy] = useState<MovieSort>('title-asc');
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  // Posters inside collapsed rows only load once the row has been opened at least once.
+  const [openedIds, setOpenedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -229,13 +232,15 @@ const ThemeLandingPage = () => {
     return allThemes.filter((t) => t.slug !== slug).slice(0, 3);
   }, [allThemes, slug]);
 
-  const toggleExpanded = (id: string) =>
+  const toggleExpanded = (id: string) => {
+    setOpenedIds((prev) => (prev.has(id) ? prev : new Set(prev).add(id)));
     setExpandedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
+  };
 
   if (!slug) {
     return null;
@@ -333,10 +338,13 @@ const ThemeLandingPage = () => {
         <div className="relative isolate h-[240px] overflow-hidden sm:h-[400px]">
           {bannerImg ? (
             <img
-              src={bannerImg}
+              src={resizedStorageUrl(bannerImg, 1280)}
+              srcSet={`${resizedStorageUrl(bannerImg, 800)} 800w, ${resizedStorageUrl(bannerImg, 1280)} 1280w, ${resizedStorageUrl(bannerImg, 1920)} 1920w`}
+              sizes="100vw"
               alt={`${draft.name} — special movie draft`}
               className="absolute inset-0 -z-10 h-full w-full object-cover"
               decoding="async"
+              {...({ fetchpriority: 'high' } as Record<string, string>)} // React 18 only knows the lowercase attribute
             />
           ) : null}
           <Breadcrumbs items={crumbs} />
@@ -466,7 +474,7 @@ const ThemeLandingPage = () => {
                             <div
                               className={`flex gap-4 rounded-lg bg-[#0E0E0F] p-4 motion-reduce:transition-none ${open ? 'opacity-100 transition-opacity duration-300 delay-150 ease-out' : 'opacity-0 transition-opacity duration-150 ease-in'}`}
                             >
-                              {img ? (
+                              {img && openedIds.has(movie.id) ? (
                                 <img
                                   src={img}
                                   alt={posterAlt(movie)}

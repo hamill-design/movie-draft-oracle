@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { resizedStorageUrl } from '@/utils/imageUrl';
 import { getGenreName } from '@/utils/specDraftGenreMapper';
 
 /** Max length when showing stored movie_overview on theme pages */
@@ -151,6 +152,6 @@ export async function fetchPublicSpecDraftBySlug(
 
 export function posterUrl(path: string | null): string | null {
   if (!path) return null;
-  if (path.startsWith('http')) return path;
+  if (path.startsWith('http')) return resizedStorageUrl(path, 500);
   return `https://image.tmdb.org/t/p/w342${path}`;
 }

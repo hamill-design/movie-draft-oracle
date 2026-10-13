@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { resizedStorageUrl } from '@/utils/imageUrl';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -147,7 +148,7 @@ export const SpecDraftSelector = ({ className }: SpecDraftSelectorProps) => {
 
   const getPosterUrl = (posterPath: string | null) => {
     if (!posterPath) return null;
-    if (posterPath.startsWith('http')) return posterPath;
+    if (posterPath.startsWith('http')) return resizedStorageUrl(posterPath, 800);
     return `https://image.tmdb.org/t/p/w500${posterPath}`;
   };
 
