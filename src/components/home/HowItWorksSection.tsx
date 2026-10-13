@@ -100,7 +100,9 @@ export function HowItWorksSection() {
           <div className="relative w-full min-w-0 lg:flex-1 h-[580px]">
             <div className="absolute inset-0 lg:-top-20 lg:-bottom-20 lg:-left-20 lg:-right-12">
               <img
-                src="/images/home/posters.png"
+                src="/images/home/posters-1080.webp"
+                srcSet="/images/home/posters-540.webp 540w, /images/home/posters-1080.webp 1080w"
+                sizes="(min-width: 1024px) 50vw, 100vw"
                 alt=""
                 loading="lazy"
                 decoding="async"

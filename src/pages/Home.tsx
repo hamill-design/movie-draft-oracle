@@ -74,11 +74,14 @@ const Home = () => {
             }}
           >
             <img
-              src="/images/home/hero-stills.png"
+              src="/images/home/hero-stills-1600.webp"
+              srcSet="/images/home/hero-stills-800.webp 800w, /images/home/hero-stills-1600.webp 1600w"
+              sizes="100vw"
               alt=""
               width={2326}
               height={1153}
               decoding="async"
+              fetchPriority="high"
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               onLoad={() => setHeroImageLoaded(true)}
             />

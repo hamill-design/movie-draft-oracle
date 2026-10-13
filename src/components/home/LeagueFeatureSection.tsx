@@ -15,7 +15,11 @@ export function LeagueFeatureSection() {
         <div className="md:w-1/2 w-full flex items-center justify-center">
           <div style={{ width: '75%', aspectRatio: '1 / 1' }}>
             <img
-              src="/images/home/league-trophy.png"
+              src="/images/home/league-trophy-960.webp"
+              srcSet="/images/home/league-trophy-480.webp 480w, /images/home/league-trophy-960.webp 960w"
+              sizes="(min-width: 768px) 38vw, 75vw"
+              width={960}
+              height={960}
               alt="Movie Drafter league trophy"
               loading="lazy"
               decoding="async"
