@@ -67,8 +67,9 @@ export const getEligibleCategories = (
     }
   };
 
-  // Check spec categories first if this is a person-based theme
-  if (theme === 'people' && option && specCategoriesMap && specCategoriesMap.size > 0) {
+  // Custom (non-standard) categories: actor spec categories for person drafts, and the
+  // admin-tagged spec_draft_movie_categories (Aardman, Clay, ...) for spec drafts.
+  if ((theme === 'people' || theme === 'spec-draft') && option && specCategoriesMap && specCategoriesMap.size > 0) {
     const movieId = movie.tmdbId || movie.id;
     
     specCategoriesMap.forEach((movieIds, categoryName) => {

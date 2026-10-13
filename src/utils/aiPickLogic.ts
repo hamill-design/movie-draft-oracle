@@ -184,6 +184,27 @@ export async function makeAIPick(options: AIPickOptions): Promise<Movie | null> 
         }
       }
 
+      // For spec drafts, load the admin-tagged custom categories (Aardman, Clay, ...) so the
+      // eligibility check below can match them; otherwise they'd never count as eligible.
+      if (draftTheme === 'spec-draft' && draftOption) {
+        const { data: specRows, error: specRowsError } = await (supabase as any)
+          .from('spec_draft_movies')
+          .select('movie_tmdb_id, spec_draft_movie_categories(category_name)')
+          .eq('spec_draft_id', draftOption);
+        if (!specRowsError && specRows) {
+          specCategoriesMap = new Map<string, number[]>();
+          specRows.forEach(
+            (row: { movie_tmdb_id: number; spec_draft_movie_categories: { category_name: string }[] | null }) => {
+              (row.spec_draft_movie_categories || []).forEach(({ category_name }) => {
+                const ids = specCategoriesMap!.get(category_name);
+                if (ids) ids.push(row.movie_tmdb_id);
+                else specCategoriesMap!.set(category_name, [row.movie_tmdb_id]);
+              });
+            }
+          );
+        }
+      }
+
       // Filter movies to only include those eligible for the current category
       // This works for all themes: year-based (decades), genre-based, Oscar, Blockbuster, etc.
       const beforeFilterCount = availableMovies.length;

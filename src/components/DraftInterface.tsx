@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Participant, normalizeParticipants } from '@/types/participant';
 import { useAIPick } from '@/hooks/useAIPick';
 import { useDraftBoardPicker } from '@/hooks/useDraftBoardPicker';
+import { useSpecDraftCategories } from '@/hooks/useSpecDraftCategories';
 import { useActorSpecCategories } from '@/hooks/useActorSpecCategories';
 import { getEligibleCategories } from '@/utils/movieCategoryUtils';
 import { BOX_OFFICE_FLOP_PENALTY } from '@/utils/scoreCalculator';
@@ -512,7 +513,11 @@ const DraftInterface = ({ draftState, existingPicks }: DraftInterfaceProps) => {
 
   const actorNameForSpec =
     safeDraftState?.theme === 'people' ? getCleanActorName(safeDraftState.option || '') : null;
-  const { specCategories } = useActorSpecCategories(actorNameForSpec);
+  const { specCategories: actorSpecCategories } = useActorSpecCategories(actorNameForSpec);
+  const { specCategories: specDraftCategories } = useSpecDraftCategories(
+    safeDraftState?.theme === 'spec-draft' ? safeDraftState.option || null : null
+  );
+  const specCategories = safeDraftState?.theme === 'spec-draft' ? specDraftCategories : actorSpecCategories;
 
   const interactiveBoardModel = useMemo(
     () =>

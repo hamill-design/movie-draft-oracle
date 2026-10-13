@@ -8,6 +8,7 @@ import { useMovies } from '@/hooks/useMovies';
 import { useToast } from '@/hooks/use-toast';
 import { useAIPick } from '@/hooks/useAIPick';
 import { useDraftBoardPicker } from '@/hooks/useDraftBoardPicker';
+import { useSpecDraftCategories } from '@/hooks/useSpecDraftCategories';
 import { useActorSpecCategories } from '@/hooks/useActorSpecCategories';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -690,7 +691,11 @@ export const MultiplayerDraftInterface = ({
 
   const actorNameForSpec =
     draft?.theme === 'people' ? getCleanActorName(draft.option || '') : null;
-  const { specCategories } = useActorSpecCategories(actorNameForSpec);
+  const { specCategories: actorSpecCategories } = useActorSpecCategories(actorNameForSpec);
+  const { specCategories: specDraftCategories } = useSpecDraftCategories(
+    draft?.theme === 'spec-draft' ? draft.option || null : null
+  );
+  const specCategories = draft?.theme === 'spec-draft' ? specDraftCategories : actorSpecCategories;
 
   const currentPlayerBoardId = useMemo(() => {
     if (!currentTurnPlayer || draftBoardParticipants.length === 0) return 1;

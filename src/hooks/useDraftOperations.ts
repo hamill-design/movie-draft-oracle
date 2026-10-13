@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Participant, participantsToStrings, normalizeParticipants } from '@/types/participant';
+import { resolveDraftTitle } from '@/utils/resolveDraftTitle';
 
 export const useDraftOperations = () => {
   const { user, guestSession } = useAuth();
@@ -20,8 +21,10 @@ export const useDraftOperations = () => {
     const participantsForDB = participantsToStrings(normalizedParticipants);
     if (!user && !guestSession) throw new Error('No session available');
 
-    // Generate a simple title (just the option)
-    const title = draftData.option;
+    // Title is the option (year, actor, ...); for spec drafts that's an id, so use the draft's name
+    const title = existingDraftId
+      ? draftData.option
+      : await resolveDraftTitle(draftData.theme, draftData.option);
 
     if (existingDraftId) {
       // Update existing draft
@@ -211,10 +214,12 @@ export const useDraftOperations = () => {
     const normalizedParticipants = normalizeParticipants(draftData.participants);
     const participantsForDB = participantsToStrings(normalizedParticipants);
 
+    const title = await resolveDraftTitle(draftData.theme, draftData.option, draftData.title);
+
     const { data: draft, error: draftError } = await supabase
       .from('drafts')
       .insert({
-        title: draftData.title,
+        title,
         theme: draftData.theme,
         option: draftData.option,
         participants: participantsForDB,
