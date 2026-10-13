@@ -1,5 +1,6 @@
 
 import { lazy, Suspense } from "react";
+import { pages } from "./lazyPages";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,38 +13,9 @@ import AppHeader from "./components/AppHeader";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import Home from "./pages/Home";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
-import Profile from "./pages/Profile";
-import Admin from "./pages/Admin";
-import FinalScores from "./pages/FinalScores";
-import VotePage from "./pages/VotePage";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import Contact from "./pages/Contact";
-import About from "./pages/About";
 import NotFound from "./pages/NotFound";
-import { JoinDraft } from "./pages/JoinDraft";
-import LearnMore from "./pages/LearnMore";
-import SpecDraftSetup from "./pages/SpecDraftSetup";
-import ThemeDraftSetup from "./pages/ThemeDraftSetup";
-import ThemeHubPage from "./pages/ThemeHubPage";
-import ThemeLandingPage from "./pages/ThemeLandingPage";
-import HowToDraftPage from "./pages/HowToDraftPage";
-import FAQ from "./pages/FAQ";
-import DraftByFilmography from "./pages/DraftByFilmography";
-import DraftByYear from "./pages/DraftByYear";
-import LeagueHub from "./pages/LeagueHub";
-import LeagueCreate from "./pages/LeagueCreate";
-import LeaguePage from "./pages/LeaguePage";
-import LeagueSettings from "./pages/LeagueSettings";
-import LeagueJoin from "./pages/LeagueJoin";
-import LeagueDraftLobbyPage from "./pages/LeagueDraftLobbyPage";
-import News from "./pages/News";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
-import DraftSetup from "./pages/DraftSetup";
+
+const { Index, Auth, ResetPassword, Profile, Admin, FinalScores, VotePage, PrivacyPolicy, TermsOfService, Contact, About, LearnMore, SpecDraftSetup, ThemeDraftSetup, ThemeHubPage, ThemeLandingPage, HowToDraftPage, FAQ, DraftByFilmography, DraftByYear, LeagueHub, LeagueCreate, LeaguePage, LeagueSettings, LeagueJoin, LeagueDraftLobbyPage, News, Blog, BlogPost, DraftSetup, JoinDraft } = pages;
 
 /** DEV-only share-image design sandbox; lazy + gated so it's excluded from production builds. */
 const SharePreviewSandbox = import.meta.env.DEV ? lazy(() => import("./pages/SharePreviewSandbox")) : null;
@@ -61,6 +33,11 @@ function LegacyThemesSlugRedirect() {
 function DraftEntry() {
   const location = useLocation();
   return location.state ? <Index /> : <DraftSetup />;
+}
+
+/** Keeps the header/footer in place and holds the page's space while its code chunk loads. */
+function RouteFallback() {
+  return <div className="min-h-[60vh]" aria-busy="true" />;
 }
 
 const queryClient = new QueryClient({
@@ -87,6 +64,7 @@ const App = () => (
             <div className="flex flex-col min-h-screen">
             <AppHeader />
               <main className="flex-1">
+            <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/auth" element={<Auth />} />
@@ -138,6 +116,7 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
               </main>
             <Footer />
             </div>
