@@ -280,6 +280,7 @@ const AppHeader = () => {
       <div className="hidden lg:flex w-full items-center justify-between">
         <button
           onClick={() => navigate('/')}
+          aria-label="Movie Drafter home"
           className="flex items-start gap-2.5 w-full max-w-[647px]"
         >
           <LogoLong className="flex-1 h-10" />
@@ -295,6 +296,7 @@ const AppHeader = () => {
       <div className="hidden md:flex lg:hidden w-full items-center justify-between">
         <button
           onClick={() => navigate('/')}
+          aria-label="Movie Drafter home"
           className="overflow-hidden"
         >
           <LogoDefault className="w-[288.25px] h-auto" />
@@ -312,6 +314,7 @@ const AppHeader = () => {
       <div className="flex md:hidden w-full flex-col gap-[18px]">
         <button
           onClick={() => navigate('/')}
+          aria-label="Movie Drafter home"
           className="block w-full"
         >
           <LogoLong className="block w-full aspect-[428/27] h-auto" />
@@ -331,7 +334,8 @@ const AppHeader = () => {
       {/* Mobile menu overlay — slides down over page content */}
       <nav
         aria-hidden={!mobileMenuOpen}
-        inert={mobileMenuOpen ? undefined : true}
+        // React 18 drops boolean `inert`; the empty string renders the attribute.
+        {...(mobileMenuOpen ? {} : { inert: '' as unknown as boolean })}
         className={cn(
           'md:hidden absolute inset-x-0 top-full z-50 grid bg-greyscale-blue-900',
           'transition-[grid-template-rows] duration-300 ease-in-out',

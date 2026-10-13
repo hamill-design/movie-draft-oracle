@@ -305,7 +305,7 @@ export const SpecDraftSelector = ({ className }: SpecDraftSelectorProps) => {
                         alt=""
                         loading="eager"
                         decoding="async"
-                        fetchPriority={visiblePosterSlot === slot ? 'high' : 'low'}
+                        {...({ fetchpriority: visiblePosterSlot === slot ? 'high' : 'low' } as Record<string, string>)}
                         className="h-full w-full min-h-[160px] sm:min-h-0 object-cover rounded-[3px]"
                         onError={(e) => {
                           (e.target as HTMLImageElement).style.display = 'none';

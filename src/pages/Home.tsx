@@ -81,7 +81,7 @@ const Home = () => {
               width={2326}
               height={1153}
               decoding="async"
-              fetchPriority="high"
+              {...({ fetchpriority: 'high' } as Record<string, string>)} // React 18 only knows the lowercase attribute
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
               onLoad={() => setHeroImageLoaded(true)}
             />

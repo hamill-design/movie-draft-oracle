@@ -86,6 +86,8 @@ export function HowItWorksSection() {
                 <button
                   key={i}
                   onClick={() => goTo(i)}
+                  aria-label={`Go to step ${i + 1}`}
+                  aria-current={i === active ? 'step' : undefined}
                   className={`w-8 h-3 rounded-full border border-brand-primary transition-colors duration-300 p-0 cursor-pointer ${
                     i === active ? 'bg-brand-primary' : 'bg-transparent'
                   }`}
