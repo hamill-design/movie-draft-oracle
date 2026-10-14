@@ -5,30 +5,53 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DXTG605FYV"></script>
+    <!-- Analytics (Google tag, Meta Pixel, Crazy Egg).
+         The queues/stubs are set up immediately so early gtag()/fbq() calls aren't lost, but the
+         third-party scripts themselves load ~2s after the page's load event (or on first
+         interaction) so they don't compete with rendering. Skipped under automation, so the
+         build-time prerender doesn't bake the injected <script> tags into the static HTML. -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-DXTG605FYV');
-    </script>
 
-    <!-- Meta Pixel Code -->
-    <script>
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      // Meta Pixel stub (same queue the stock snippet creates), minus the immediate script insert.
+      !function(f,n){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
       n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window,document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];}(window);
       fbq('init', '1457902669385934');
       fbq('track', 'PageView');
+
+      (function () {
+        if (navigator.webdriver) return;
+        var started = false;
+        function add(src) {
+          var s = document.createElement('script');
+          s.async = true;
+          s.src = src;
+          document.head.appendChild(s);
+        }
+        function start() {
+          if (started) return;
+          started = true;
+          add('https://www.googletagmanager.com/gtag/js?id=G-DXTG605FYV');
+          add('https://connect.facebook.net/en_US/fbevents.js');
+          add('https://script.crazyegg.com/pages/scripts/0131/8350.js');
+        }
+        function schedule() {
+          setTimeout(function () {
+            if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 3000 });
+            else start();
+          }, 2000);
+        }
+        if (document.readyState === 'complete') schedule();
+        else window.addEventListener('load', schedule);
+        ['pointerdown', 'keydown', 'touchstart', 'scroll'].forEach(function (evt) {
+          window.addEventListener(evt, start, { once: true, passive: true });
+        });
+      })();
     </script>
-    <!-- End Meta Pixel Code -->
     
     <title>Movie Drafter – The Movie Draft Game for Friends</title>
     <meta name="author" content="Movie Drafter" />
@@ -60,8 +83,6 @@
     <meta name="twitter:image" content="https://moviedrafter.com/og-image.jpg?v=2" />
     <meta name="twitter:image:alt" content="Movie Drafter — movie drafting game for friends on a purple brand background" />
     
-    <!-- Crazy Egg -->
-    <script type="text/javascript" src="//script.crazyegg.com/pages/scripts/0131/8350.js" async="async"></script>
     
     <!-- Structured data: Organization + WebSite + WebApplication (@graph); page routes extend via react-helmet -->
     <script type="application/ld+json">
@@ -117,6 +138,10 @@
         document.head.appendChild(l);
       }
     </script>
+
+    <!-- Warm up the two image/API origins used on most pages -->
+    <link rel="preconnect" href="https://zduruulowyopdstihfwk.supabase.co" crossorigin>
+    <link rel="preconnect" href="https://image.tmdb.org">
 
     <!-- Font Preloading -->
     <link rel="preload" href="/fonts/brockmann/brockmann-regular.woff2" as="font" type="font/woff2" crossorigin>

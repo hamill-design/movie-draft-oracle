@@ -443,7 +443,11 @@ const ThemeLandingPage = () => {
                     const panelId = `movie-panel-${movie.id}`;
                     const categories = movie.categories;
                     return (
-                      <li key={movie.id} id={`movie-${movie.id}`} className="flex flex-col">
+                      <li
+                        key={movie.id}
+                        id={`movie-${movie.id}`}
+                        className="flex flex-col [content-visibility:auto] [contain-intrinsic-size:auto_56px]"
+                      >
                         <h3 className="m-0 text-base font-normal">
                         <button
                           type="button"
