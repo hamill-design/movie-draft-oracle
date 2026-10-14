@@ -7,9 +7,11 @@
     
     <!-- Analytics (Google tag, Meta Pixel, Crazy Egg).
          The queues/stubs are set up immediately so early gtag()/fbq() calls aren't lost, but the
-         third-party scripts themselves load ~2s after the page's load event (or on first
-         interaction) so they don't compete with rendering. Skipped under automation, so the
-         build-time prerender doesn't bake the injected <script> tags into the static HTML. -->
+         third-party scripts themselves only load once a visitor shows they're engaged: first
+         scroll / tap / keypress, or ANALYTICS_DWELL_MS after the page's load event if they're
+         just reading. Quick bounces and most bots are therefore not recorded (intentional).
+         Skipped under automation, so the build-time prerender doesn't bake the injected
+         <script> tags into the static HTML. -->
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
@@ -39,11 +41,9 @@
           add('https://connect.facebook.net/en_US/fbevents.js');
           add('https://script.crazyegg.com/pages/scripts/0131/8350.js');
         }
+        var ANALYTICS_DWELL_MS = 8000;
         function schedule() {
-          setTimeout(function () {
-            if ('requestIdleCallback' in window) requestIdleCallback(start, { timeout: 3000 });
-            else start();
-          }, 2000);
+          setTimeout(start, ANALYTICS_DWELL_MS);
         }
         if (document.readyState === 'complete') schedule();
         else window.addEventListener('load', schedule);
