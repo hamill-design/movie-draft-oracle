@@ -1,115 +1,25 @@
 import { useEffect, useRef, useState } from 'react';
 import { User } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { FEATURED_PORTRAITS, type FeaturedPortrait } from '@/data/featuredPortraits';
 import { cn } from '@/lib/utils';
 
-const TMDB_PROFILE_BASE = 'https://image.tmdb.org/t/p/w500';
-
-/** Resolved via search-people — 30 actors + 10 directors. */
-const FEATURED_ACTORS = [
-  'Tom Cruise',
-  'Meryl Streep',
-  'Ryan Gosling',
-  'Margot Robbie',
-  'Leonardo DiCaprio',
-  'Denzel Washington',
-  'Brad Pitt',
-  'Sandra Bullock',
-  'Demi Moore',
-  'Timothée Chalamet',
-  'Emma Stone',
-  'Robert Downey Jr.',
-  'Scarlett Johansson',
-  'Harrison Ford',
-  'Jennifer Lawrence',
-  'Pedro Pascal',
-  'Cate Blanchett',
-  'Mahershala Ali',
-  'Viola Davis',
-  'Florence Pugh',
-  'Willem Dafoe',
-  'Keanu Reeves',
-  'Charlize Theron',
-  'Idris Elba',
-  'Rami Malek',
-  'Saoirse Ronan',
-  'Daniel Kaluuya',
-  'Michelle Yeoh',
-  'Cary Grant',
-  'Katherine Hepburn',
-] as const;
-
-const FEATURED_DIRECTORS = [
-  'Christopher Nolan',
-  'Steven Spielberg',
-  'Martin Scorsese',
-  'Quentin Tarantino',
-  'Greta Gerwig',
-  'Denis Villeneuve',
-  'Paul Thomas Anderson',
-  'Peter Weir',
-  'Stanley Kubrick',
-  'Alfred Hitchcock',
-] as const;
-
-const FEATURED_FILMMAKERS = [...FEATURED_ACTORS, ...FEATURED_DIRECTORS];
+// Shown at 124px; w342 covers 2x screens without the ~50 KB w500 download.
+const TMDB_PROFILE_BASE = 'https://image.tmdb.org/t/p/w342';
 
 const ROTATE_MS = 4000;
 const FADE_MS = 500;
 
-type Portrait = { name: string; profile_path: string };
+type Portrait = FeaturedPortrait;
 
 function portraitUrl(profilePath: string) {
   return `${TMDB_PROFILE_BASE}${profilePath}`;
 }
 
-function preloadPortraits(portraits: Portrait[]) {
-  portraits.forEach((p) => {
-    const img = new Image();
-    img.src = portraitUrl(p.profile_path);
-  });
-}
-
-let cachedPortraits: Portrait[] | null = null;
-let cachePromise: Promise<Portrait[]> | null = null;
-
-async function fetchFeaturedPortraits(): Promise<Portrait[]> {
-  if (cachedPortraits) return cachedPortraits;
-  if (cachePromise) return cachePromise;
-
-  cachePromise = (async () => {
-    const settled = await Promise.all(
-      FEATURED_FILMMAKERS.map(async (name) => {
-        try {
-          const { data, error } = await supabase.functions.invoke('search-people', {
-            body: { searchQuery: name, searchType: 'person' },
-          });
-          if (error || !data?.results?.length) return null;
-
-          const exact = data.results.find(
-            (p: { name: string; profile_path: string | null }) =>
-              p.profile_path && p.name.toLowerCase() === name.toLowerCase(),
-          );
-          const withPhoto = data.results.find(
-            (p: { profile_path: string | null }) => p.profile_path,
-          );
-          const person = exact ?? withPhoto;
-          if (!person?.profile_path) return null;
-
-          return { name: person.name as string, profile_path: person.profile_path as string };
-        } catch {
-          return null;
-        }
-      }),
-    );
-
-    const portraits = settled.filter((p): p is Portrait => p != null);
-    preloadPortraits(portraits);
-    cachedPortraits = portraits;
-    return portraits;
-  })();
-
-  return cachePromise;
+/** Warm the browser cache for one portrait so it's ready when its turn comes. */
+function preloadPortrait(portrait: Portrait | undefined) {
+  if (!portrait) return;
+  const img = new Image();
+  img.src = portraitUrl(portrait.profile_path);
 }
 
 type RotatingFilmographyPortraitProps = {
@@ -117,7 +27,7 @@ type RotatingFilmographyPortraitProps = {
 };
 
 export function RotatingFilmographyPortrait({ className }: RotatingFilmographyPortraitProps) {
-  const [portraits, setPortraits] = useState<Portrait[]>(cachedPortraits ?? []);
+  const portraits = FEATURED_PORTRAITS;
   /** Which of the two image layers is currently visible when idle */
   const [visibleSlot, setVisibleSlot] = useState<0 | 1>(0);
   /** Portrait index shown in each layer */
@@ -130,16 +40,11 @@ export function RotatingFilmographyPortrait({ className }: RotatingFilmographyPo
   visibleSlotRef.current = visibleSlot;
   slotIndicesRef.current = slotIndices;
 
+  // Get the first transitions' images ready; later ones are fetched one step ahead (below).
   useEffect(() => {
-    let cancelled = false;
-    fetchFeaturedPortraits().then((list) => {
-      if (!cancelled && list.length > 0) {
-        preloadPortraits(list);
-        setPortraits(list);
-      }
-    });
-    return () => { cancelled = true; };
-  }, []);
+    preloadPortrait(portraits[1]);
+    preloadPortrait(portraits[2]);
+  }, [portraits]);
 
   useEffect(() => {
     if (portraits.length <= 1) return;
@@ -149,6 +54,8 @@ export function RotatingFilmographyPortrait({ className }: RotatingFilmographyPo
       const back: 0 | 1 = front === 0 ? 1 : 0;
       const currentIdx = slotIndicesRef.current[front];
       const nextIdx = (currentIdx + 1) % portraits.length;
+      // Fetch only the portrait after this one, instead of all 40 up front.
+      preloadPortrait(portraits[(nextIdx + 1) % portraits.length]);
 
       setSlotIndices((prev) => {
         const next: [number, number] = [...prev];
@@ -175,7 +82,7 @@ export function RotatingFilmographyPortrait({ className }: RotatingFilmographyPo
       window.clearInterval(id);
       if (fadeTimerRef.current != null) window.clearTimeout(fadeTimerRef.current);
     };
-  }, [portraits.length]);
+  }, [portraits]);
 
   const imgClass =
     'absolute inset-0 h-full w-full object-cover transition-opacity ease-in-out';

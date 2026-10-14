@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
@@ -13,7 +13,6 @@ import { RotatingYearDraftPortrait } from '@/components/home/RotatingYearDraftPo
 const Home = () => {
   const { loading } = useAuth();
   const location = useLocation();
-  const [heroImageLoaded, setHeroImageLoaded] = useState(false);
 
   useEffect(() => {
     const id = location.hash?.replace(/^#/, '');
@@ -68,8 +67,7 @@ const Home = () => {
             className="absolute left-1/2 top-[calc(50%+100px)] md:top-[calc(50%+180px)] lg:top-[calc(50%+220px)] z-0 h-screen w-screen"
             style={{
               transform: 'translateX(-50%) translateY(-50%)',
-              opacity: heroImageLoaded ? 0.6 : 0,
-              transition: 'opacity 0.8s ease',
+              opacity: 0.6,
               pointerEvents: 'none',
             }}
           >
@@ -81,9 +79,9 @@ const Home = () => {
               width={2326}
               height={1153}
               decoding="async"
+              className="hero-fade-in"
               {...({ fetchpriority: 'high' } as Record<string, string>)} // React 18 only knows the lowercase attribute
               style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-              onLoad={() => setHeroImageLoaded(true)}
             />
           </div>
           <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 flex flex-col items-center gap-6" style={{ pointerEvents: 'none' }}>
