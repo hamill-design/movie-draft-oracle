@@ -1,124 +1,182 @@
-import { Image, ScrollView, Text, Pressable, View } from "react-native";
-import { categoryLabel, posterUrl, type DraftBoard as Board } from "../lib/draftBoard";
+import { Pressable, ScrollView, View } from "react-native";
+import { categoryLabel, type DraftBoard as Board } from "../lib/draftBoard";
+import { isParticipantOnline } from "../hooks/useDraftRoom";
+import { colors } from "../lib/theme";
+import { ParticipantAvatar } from "./ParticipantAvatar";
+import { CategoryChip, GlowCard, SectionTitle, Text } from "./ui";
 
-const NAME_W = 92;
-const CELL_W = 88;
-const CELL_H = 132;
+const NAME_W = 120;
+const COL_W = 150;
 
-// The draft grid: one row per player (in turn order), one column per category.
-// On your turn, your own empty cells light up — tap one to pick for that category.
-export function DraftBoard({
-  board,
-  canPick,
-  onPickCategory,
-}: {
-  board: Board;
-  canPick: boolean;
-  onPickCategory: (category: string) => void;
-}) {
+// Read-only board: the website's DraftBoard table (glow card, purple header, current player's row tinted).
+export function DraftBoardTable({ board, showScores = false, scoreOf }: { board: Board; showScores?: boolean; scoreOf?: (pick: any) => number | null }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <View>
-        {/* Category headers */}
-        <View className="flex-row">
-          <View style={{ width: NAME_W }} />
-          {board.categories.map((c) => (
-            <View key={c} style={{ width: CELL_W }} className="px-1 pb-2">
-              <Text numberOfLines={2} className="text-center text-[11px] font-semibold uppercase text-white/50">
-                {categoryLabel(c)}
-              </Text>
+    <GlowCard gap={16} padding={16}>
+      <SectionTitle center>Draft Board</SectionTitle>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <View>
+          <View className="flex-row" style={{ borderBottomWidth: 1, borderBottomColor: colors.accent }}>
+            <View style={{ width: NAME_W, padding: 8 }}>
+              <Text className="font-brockmann-medium text-sm text-purple-300">Player</Text>
             </View>
-          ))}
-        </View>
-
-        {board.rows.map((row, r) => {
-          const isCurrent = r === board.currentRowIndex;
-          const isMine = r === board.myRowIndex;
-          return (
-            <View key={row.key} className="mb-2 flex-row">
-              <View style={{ width: NAME_W }} className="justify-center pr-2">
-                <Text numberOfLines={2} className={`text-sm font-semibold ${isCurrent ? "text-gold" : "text-white"}`}>
+            {board.categories.map((c) => (
+              <View key={c} style={{ width: COL_W, padding: 8 }}>
+                <Text className="text-center font-brockmann-medium text-sm text-purple-300">{categoryLabel(c)}</Text>
+              </View>
+            ))}
+          </View>
+          {board.rows.map((row, r) => (
+            <View
+              key={row.key}
+              className="flex-row"
+              style={{ backgroundColor: r === board.currentRowIndex ? colors.purple800 : "transparent", borderBottomWidth: 1, borderBottomColor: "rgba(144,122,255,0.35)" }}
+            >
+              <View style={{ width: NAME_W, padding: 8, justifyContent: "center" }}>
+                <Text numberOfLines={2} className="font-brockmann-medium text-sm">
                   {row.participant.participant_name}
                 </Text>
-                {isMine && <Text className="text-[10px] text-accent">You</Text>}
-                {isCurrent && <Text className="text-[10px] text-gold">On the clock</Text>}
               </View>
               {board.categories.map((c) => {
                 const pick = board.cells.get(`${r}|${c}`);
-                const uri = posterUrl(pick?.poster_path, "w185");
-                const open = !pick && isMine && canPick;
+                const score = showScores && pick ? (scoreOf ? scoreOf(pick) : (pick.calculated_score ?? null)) : null;
                 return (
-                  <Pressable
-                    key={c}
-                    disabled={!open}
-                    onPress={() => onPickCategory(c)}
-                    style={{ width: CELL_W - 6, height: CELL_H, marginRight: 6 }}
-                    className={`overflow-hidden rounded-md ${
-                      open
-                        ? "items-center justify-center border-2 border-dashed border-gold bg-[#2B2510] active:opacity-80"
-                        : pick
-                          ? "bg-card"
-                          : "border border-white/10 bg-surface"
-                    }`}
-                  >
+                  <View key={c} style={{ width: COL_W, padding: 8, minHeight: 56, alignItems: "center", justifyContent: "center" }}>
                     {pick ? (
                       <>
-                        {uri ? (
-                          <Image source={{ uri }} style={{ width: "100%", height: 100 }} resizeMode="cover" />
-                        ) : (
-                          <View style={{ height: 100 }} className="bg-white/10" />
-                        )}
-                        <Text numberOfLines={2} className="px-1 pt-1 text-[10px] leading-3 text-white">
+                        <Text numberOfLines={2} className="text-center text-sm leading-4">
                           {pick.movie_title}
                         </Text>
+                        {score != null && (
+                          <Text className="font-brockmann-semibold" style={{ fontSize: 13, lineHeight: 18, color: "#B794FF" }}>
+                            {Number(score).toFixed(1)}
+                          </Text>
+                        )}
                       </>
-                    ) : open ? (
-                      <Text className="text-center text-sm font-semibold text-gold">+ Pick</Text>
-                    ) : null}
-                  </Pressable>
+                    ) : (
+                      <Text className="text-sm text-greyscale-blue-500">-</Text>
+                    )}
+                  </View>
                 );
               })}
             </View>
+          ))}
+        </View>
+      </ScrollView>
+    </GlowCard>
+  );
+}
+
+// One person's slots at a time (phone-friendly version of the board's row), styled with the web cell states.
+export function PlayerSlots({
+  board,
+  rowIndex,
+  canPick,
+  activeCategory,
+  onPickCategory,
+  onCancel,
+}: {
+  board: Board;
+  rowIndex: number;
+  canPick: boolean;
+  activeCategory: string | null;
+  onPickCategory: (category: string) => void;
+  onCancel: () => void;
+}) {
+  const isCurrent = rowIndex === board.currentRowIndex;
+  const isMine = rowIndex === board.myRowIndex;
+  return (
+    <View style={{ gap: 12 }}>
+      {board.categories.map((c) => {
+        const pick = board.cells.get(`${rowIndex}|${c}`);
+        const open = !pick && isMine && isCurrent && canPick;
+        const selecting = activeCategory === c;
+        let body: React.ReactNode;
+        let bg = "#1A1D29";
+        if (pick) {
+          bg = "transparent";
+          body = (
+            <Text numberOfLines={2} className="text-center text-sm leading-4">
+              {pick.movie_title}
+            </Text>
           );
-        })}
-      </View>
+        } else if (selecting) {
+          bg = colors.purple800;
+          body = <Text className="text-center text-sm text-purple-300">Cancel</Text>;
+        } else if (open) {
+          bg = colors.brand;
+          body = <Text className="text-center font-brockmann-bold text-2xl leading-6">+</Text>;
+        } else if (isCurrent) {
+          bg = colors.purple800;
+          body = null;
+        }
+        return (
+          <View key={c} className="flex-row items-center" style={{ gap: 12 }}>
+            <View style={{ width: 104 }}>
+              <Text className="font-brockmann-medium text-sm text-purple-300">{categoryLabel(c)}</Text>
+            </View>
+            <Pressable
+              disabled={!(open || selecting)}
+              onPress={() => (selecting ? onCancel() : onPickCategory(c))}
+              style={{ flex: 1, minHeight: 44, borderRadius: 4, backgroundColor: bg, alignItems: "center", justifyContent: "center", paddingHorizontal: 8, paddingVertical: 8, borderWidth: pick ? 1 : 0, borderColor: colors.itemStroke }}
+            >
+              {body}
+            </Pressable>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+// Avatar rail: pick whose picks you're looking at. Ring = on the clock, dot = online.
+export function PlayerRail({ board, selected, onSelect, now }: { board: Board; selected: number; onSelect: (i: number) => void; now: number }) {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 16, paddingVertical: 4 }}>
+      {board.rows.map((row, i) => {
+        const p = row.participant;
+        const isSel = i === selected;
+        return (
+          <Pressable key={row.key} onPress={() => onSelect(i)} className="items-center" style={{ width: 64, opacity: isSel ? 1 : 0.6 }}>
+            <ParticipantAvatar
+              name={p.participant_name}
+              avatarUrl={p.avatar_url}
+              size={44}
+              ring={i === board.currentRowIndex}
+              online={isParticipantOnline(p, now)}
+            />
+            <Text numberOfLines={1} className={`mt-1 text-[11px] ${isSel ? "font-brockmann-semibold" : ""}`}>
+              {i === board.myRowIndex ? "You" : p.participant_name}
+            </Text>
+            {isSel && <View style={{ height: 2, width: 24, backgroundColor: colors.brand, marginTop: 2 }} />}
+          </Pressable>
+        );
+      })}
     </ScrollView>
   );
 }
 
-// Simple per-player list — easier to read than the grid on a small screen.
+// Per-player list with category chips (phone-friendly roster view, in the website's card style).
 export function RosterList({ board }: { board: Board }) {
   return (
-    <View className="gap-3">
+    <View style={{ gap: 16 }}>
       {board.rows.map((row, r) => (
-        <View key={row.key} className="rounded-lg bg-surface p-4">
-          <Text className="mb-2 text-base font-semibold text-white">
+        <GlowCard key={row.key} gap={12} padding={16}>
+          <Text className="font-brockmann-semibold text-lg">
             {row.participant.participant_name}
             {r === board.myRowIndex ? "  (you)" : ""}
           </Text>
           {board.categories.map((c) => {
             const pick = board.cells.get(`${r}|${c}`);
-            const uri = posterUrl(pick?.poster_path, "w92");
             return (
-              <View key={c} className="flex-row items-center gap-3 border-t border-white/10 py-2">
-                {uri ? (
-                  <Image source={{ uri }} style={{ width: 28, height: 42, borderRadius: 2 }} />
-                ) : (
-                  <View style={{ width: 28, height: 42 }} className="rounded-sm bg-white/10" />
-                )}
-                <View className="flex-1">
-                  <Text className="text-[11px] uppercase text-white/40">{categoryLabel(c)}</Text>
-                  <Text numberOfLines={1} className={`text-sm ${pick ? "text-white" : "text-white/30"}`}>
-                    {pick ? `${pick.movie_title}${pick.movie_year ? ` (${pick.movie_year})` : ""}` : "Not picked yet"}
-                  </Text>
-                </View>
-                {pick?.calculated_score != null && (
-                  <Text className="text-sm font-semibold text-accent">{Number(pick.calculated_score).toFixed(1)}</Text>
-                )}
+              <View key={c} className="gap-1.5 rounded bg-card p-3">
+                <CategoryChip label={categoryLabel(c)} />
+                <Text numberOfLines={2} className={`text-sm ${pick ? "font-brockmann-semibold" : "text-greyscale-blue-500"}`}>
+                  {pick ? `${pick.movie_title}${pick.movie_year ? ` (${pick.movie_year})` : ""}` : "Not picked yet"}
+                </Text>
               </View>
             );
           })}
-        </View>
+        </GlowCard>
       ))}
     </View>
   );

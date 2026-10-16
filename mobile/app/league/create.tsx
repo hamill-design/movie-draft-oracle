@@ -1,20 +1,14 @@
 import { useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
+import { Mail, Tag, X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../contexts/AuthContext";
 import { useLeagueActions } from "../../hooks/useLeagues";
 import { supabase } from "../../lib/supabase";
-import { Button, Card, ScreenHeader } from "../../components/ui";
+import { colors } from "../../lib/theme";
+import { LeagueTrophy } from "../../components/brand";
+import { AppHeader, Button, Field, GlowCard, SectionHeader, Text } from "../../components/ui";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -68,7 +62,7 @@ export default function CreateLeague() {
     const league = await createLeague(trimmed);
     if (!league) {
       setSubmitting(false);
-      Alert.alert("Something went wrong", "Could not create the league. Try again.");
+      Alert.alert("Something went wrong", "Could not create league. Try again.");
       return;
     }
 
@@ -81,10 +75,7 @@ export default function CreateLeague() {
           emails,
         );
       } catch {
-        Alert.alert(
-          "League created",
-          "Invites could not be sent. You can add people from the league later.",
-        );
+        Alert.alert("League created", "Invites could not be sent. Add them from league settings.");
       }
     }
 
@@ -93,77 +84,90 @@ export default function CreateLeague() {
   };
 
   return (
-    <View className="flex-1 bg-ink">
-      <ScreenHeader title="Create a league" />
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        className="flex-1"
-      >
+    <View className="flex-1">
+      <AppHeader backHref="/leagues" />
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1">
         <ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 24, gap: 16 }}
+          contentContainerStyle={{ padding: 24, paddingBottom: insets.bottom + 48, gap: 24 }}
         >
-          <Text className="text-base leading-6 text-white/70">
-            Compete with friends across multiple drafts. You'll be the league admin and can invite
-            members now or later.
-          </Text>
+          {/* Hero */}
+          <View className="items-center gap-6 py-6">
+            <LeagueTrophy width={124} />
+            <View className="gap-4">
+              <Text className="text-center font-chaney" style={{ fontSize: 44, lineHeight: 50, letterSpacing: 1 }}>
+                CREATE A LEAGUE
+              </Text>
+              <Text className="text-center font-brockmann-medium text-xl leading-7">
+                Take your movie competitions to the next level. Compete with friends across multiple drafts. You'll
+                be the league admin and can invite members after setup.
+              </Text>
+            </View>
+          </View>
 
-          <Card>
-            <Text className="mb-3 text-lg font-medium text-white">League name</Text>
-            <TextInput
+          <GlowCard>
+            <SectionHeader icon={<Tag size={20} color={colors.accent} />} title="League Name" />
+            <Field
               value={name}
               onChangeText={setName}
               maxLength={60}
-              placeholder="e.g. The Cinephiles"
-              placeholderTextColor="#BDC3C2"
-              className="rounded-sm border border-white/30 bg-card px-4 py-3 text-base text-white"
+              autoFocus
+              strokeColor={colors.textPrimary}
+              placeholder="e.g. The Cinephiles, Friday Night Drafts"
             />
-          </Card>
+          </GlowCard>
 
-          <Card>
-            <Text className="mb-3 text-lg font-medium text-white">Invite members</Text>
-            <View className="flex-row gap-2">
-              <TextInput
-                value={emailInput}
-                onChangeText={setEmailInput}
-                onSubmitEditing={addEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                placeholder="Email address"
-                placeholderTextColor="#BDC3C2"
-                className="flex-1 rounded-sm border border-white/30 bg-card px-4 py-3 text-base text-white"
-              />
+          <GlowCard>
+            <SectionHeader icon={<Mail size={20} color={colors.accent} />} title="Invite Members" />
+            <View className="flex-row items-stretch gap-2">
+              <View className="flex-1">
+                <Field
+                  value={emailInput}
+                  onChangeText={setEmailInput}
+                  onSubmitEditing={addEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  strokeColor={colors.textGrey}
+                  placeholder="Enter email address of players you want to add"
+                />
+              </View>
               <Pressable
                 onPress={addEmail}
-                className="items-center justify-center rounded-sm bg-brand px-5 active:opacity-80"
+                className="justify-center rounded-control bg-brand px-3 active:opacity-80"
               >
-                <Text className="text-base font-medium text-white">Add</Text>
+                <Text className="font-brockmann-medium text-sm">Add</Text>
               </Pressable>
             </View>
 
-            <Text className="mb-2 mt-4 text-sm text-white/40">
-              Participants ({emails.length})
-            </Text>
-            <View className="flex-row flex-wrap gap-2">
-              {emails.map((email) => (
-                <Pressable
-                  key={email}
-                  onPress={() => setEmails((prev) => prev.filter((x) => x !== email))}
-                  className="flex-row items-center gap-2 rounded bg-brand py-2 pl-4 pr-3 active:opacity-80"
-                >
-                  <Text className="text-sm font-medium text-white">{email}</Text>
-                  <Text className="text-base text-white">×</Text>
-                </Pressable>
-              ))}
+            <View className="gap-3">
+              <Text className="text-base leading-6 text-greyscale-blue-600">Participants ({emails.length}):</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {emails.map((email) => (
+                  <View
+                    key={email}
+                    className="flex-row items-center gap-2 rounded bg-brand"
+                    style={{ paddingVertical: 8, paddingLeft: 16, paddingRight: 10 }}
+                  >
+                    <Text className="shrink font-brockmann-medium text-sm leading-5">{email}</Text>
+                    <Pressable
+                      onPress={() => setEmails((prev) => prev.filter((x) => x !== email))}
+                      hitSlop={8}
+                      accessibilityLabel={`Remove ${email}`}
+                    >
+                      <X size={16} color={colors.textPrimary} />
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
             </View>
-          </Card>
+          </GlowCard>
 
           <Button
-            label={submitting ? "Creating…" : "Create league"}
+            label={submitting ? "Creating…" : "Create League"}
+            inline
+            disabled={!name.trim() || submitting}
             onPress={submit}
-            disabled={!name.trim()}
-            loading={submitting}
           />
         </ScrollView>
       </KeyboardAvoidingView>

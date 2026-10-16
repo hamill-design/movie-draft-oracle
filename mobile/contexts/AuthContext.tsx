@@ -11,6 +11,9 @@ import * as WebBrowser from "expo-web-browser";
 import { makeRedirectUri } from "expo-auth-session";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
+import { uploadPendingAvatar } from "../lib/avatar";
+
+const PUBLIC_SITE_URL = "https://moviedrafter.com";
 
 // Lets the in-app browser dismiss itself once the OAuth redirect returns.
 WebBrowser.maybeCompleteAuthSession();
@@ -57,7 +60,13 @@ type AuthContextValue = {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUp: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (
+    email: string,
+    password: string,
+    name: string,
+    marketingOptIn: boolean,
+  ) => Promise<{ error: string | null }>;
+  resetPassword: (email: string) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 };
@@ -84,8 +93,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, next) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
       setSession(next);
+      // A profile photo picked at sign-up is uploaded once the account has a session.
+      if (event === "SIGNED_IN" && next?.user) {
+        setTimeout(() => uploadPendingAvatar(next.user.id), 0);
+      }
     });
 
     const appState = AppState.addEventListener("change", (state) => {
@@ -104,8 +117,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   };
 
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+  // Same metadata the website sends, so the profile gets the name and the marketing choice.
+  const signUp = async (email: string, password: string, name: string, marketingOptIn: boolean) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${PUBLIC_SITE_URL}/`,
+        data: { name: name.trim(), marketing_emails_opt_in: marketingOptIn },
+      },
+    });
+    if (error) {
+      return {
+        error: error.message.includes("User already registered")
+          ? "An account with this email already exists. Please sign in instead."
+          : error.message,
+      };
+    }
+    return { error: null };
+  };
+
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${PUBLIC_SITE_URL}/reset-password`,
+    });
     return { error: error?.message ?? null };
   };
 
@@ -141,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         signIn,
         signUp,
+        resetPassword,
         signInWithGoogle,
         signOut,
       }}

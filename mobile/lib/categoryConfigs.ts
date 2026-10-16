@@ -299,3 +299,7 @@ export const getCategoryConfig = (categoryName: string): CategoryConfig | undefi
   return CATEGORY_CONFIGS[categoryName];
 };
 
+
+export const getCategoriesForTheme = (theme: string): CategoryConfig[] => {
+  return Object.values(CATEGORY_CONFIGS).filter((config) => config.themes.includes(theme));
+};

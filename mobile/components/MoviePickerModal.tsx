@@ -1,21 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Image,
-  Modal,
-  Pressable,
-  Switch,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Modal, Pressable, Switch, TextInput, View } from "react-native";
+import { Check, X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { supabase } from "../lib/supabase";
 import { getEligibleCategories, mergeOscarStatusFromSources } from "../lib/movieCategoryUtils";
-import { categoryLabel, posterUrl } from "../lib/draftBoard";
+import { categoryLabel } from "../lib/draftBoard";
+import { colors } from "../lib/theme";
 import { useMovieSearch, type PickerMovie } from "../hooks/useMovieSearch";
-import { Button } from "./ui";
+import { SearchIcon } from "./icons";
+import { Text } from "./ui";
+
+const MAX_RESULTS = 50;
+const cleanActor = (s: string) => (s.includes("|") ? s.split("|")[0] : s);
 
 const normalize = (s: string) =>
   s
@@ -27,16 +23,22 @@ const normalize = (s: string) =>
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "");
 
-const movieYear = (m: PickerMovie) =>
-  m.releaseDate ? new Date(m.releaseDate).getFullYear() : m.year || new Date().getFullYear();
+const movieYear = (m: PickerMovie) => (m.releaseDate ? new Date(m.releaseDate).getFullYear() : m.year || new Date().getFullYear());
 
 function placeholder(theme: string, option: string) {
-  if (theme === "spec-draft") return "Search movies…";
-  if (theme === "year") return `Search within ${option} movies…`;
-  if (theme === "people") return `Search within ${option.split("|")[0]} movies…`;
-  return "Search for movies…";
+  if (theme === "spec-draft") return "Search movies...";
+  if (theme === "year") return `Search within ${option} movies...`;
+  if (theme === "people") return `Search within ${cleanActor(option)} movies...`;
+  return "Search for movies...";
 }
 
+function emptyMessage(theme: string, option: string, q: string) {
+  const suffix = theme === "year" ? ` from ${option}` : theme === "people" ? ` featuring ${cleanActor(option)}` : "";
+  return `No movies found matching "${q}"${suffix}`;
+}
+
+// Movie search + confirm, styled like the website's inline picker (text rows, brand selected row,
+// gold "Confirm in {Category}", purple "Category Mismatch" with House Override).
 export function MoviePickerModal({
   visible,
   category,
@@ -67,7 +69,6 @@ export function MoviePickerModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Start fresh each time the picker opens.
   useEffect(() => {
     if (visible) {
       setQuery("");
@@ -77,31 +78,25 @@ export function MoviePickerModal({
     }
   }, [visible, category]);
 
-  const { movies, loading, error: loadError } = useMovieSearch(theme, option, query, visible);
+  const { movies, loading } = useMovieSearch(theme, option, query, visible);
 
   const q = query.trim();
   const showResults = theme === "year" || theme === "people" ? q.length >= 2 : q.length > 0;
-  const results = useMemo(() => {
+  const filtered = useMemo(() => {
     if (!showResults) return [];
-    const list =
-      theme === "year"
-        ? movies
-        : movies.filter((m) => normalize(m.title).includes(normalize(q)));
-    return list.slice(0, 60);
+    return theme === "year" ? movies : movies.filter((m) => normalize(m.title).includes(normalize(q)));
   }, [movies, showResults, theme, q]);
+  const results = filtered.slice(0, MAX_RESULTS);
 
   const select = async (movie: PickerMovie) => {
     setSelected(movie);
+    setHouseOverride(false);
     setError(null);
     // The Academy Award category needs fresh Oscar data for the chosen movie.
     if (category?.startsWith("Academy Award") && movie.id) {
       setCheckingOscar(true);
       try {
-        const { data: cached } = await supabase
-          .from("oscar_cache")
-          .select("oscar_status")
-          .eq("tmdb_id", movie.id)
-          .maybeSingle();
+        const { data: cached } = await supabase.from("oscar_cache").select("oscar_status").eq("tmdb_id", movie.id).maybeSingle();
         let status: string | undefined = cached?.oscar_status;
         if (!cached) {
           const { data } = await supabase.functions.invoke("enrich-movie-data", {
@@ -110,11 +105,7 @@ export function MoviePickerModal({
           status = data?.enrichmentData?.oscarStatus ?? data?.enrichmentData?.oscar_status;
         }
         const merged = mergeOscarStatusFromSources(movie.oscar_status, status);
-        setSelected((cur) =>
-          cur && cur.id === movie.id
-            ? { ...cur, oscar_status: merged.oscar_status, hasOscar: merged.hasOscar }
-            : cur,
-        );
+        setSelected((cur) => (cur && cur.id === movie.id ? { ...cur, oscar_status: merged.oscar_status, hasOscar: merged.hasOscar } : cur));
       } catch {
         /* keep what we have */
       } finally {
@@ -125,13 +116,7 @@ export function MoviePickerModal({
 
   const eligible = (m: PickerMovie) => {
     if (!category) return false;
-    const inCategory = getEligibleCategories(
-      { ...m, year: movieYear(m) },
-      categories,
-      theme,
-      option,
-      specCategories,
-    ).includes(category);
+    const inCategory = getEligibleCategories({ ...m, year: movieYear(m) }, categories, theme, option, specCategories).includes(category);
     if (!inCategory) return false;
     if (theme === "year" && option) {
       const expected = parseInt(option, 10);
@@ -149,130 +134,132 @@ export function MoviePickerModal({
     if (err) setError(err);
   };
 
-  const taken = selected ? takenMovieIds.has(selected.id) : false;
-  const matches = selected ? eligible(selected) : false;
-
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-      <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
+      <View style={{ flex: 1, backgroundColor: "#0E0E0F", paddingTop: insets.top }}>
         <View className="flex-row items-center justify-between px-5 pb-3 pt-3">
           <Pressable onPress={onClose} hitSlop={12} className="w-16 active:opacity-70">
-            <Text className="text-base text-white/70">Cancel</Text>
+            <Text className="text-base text-greyscale-blue-300">Cancel</Text>
           </Pressable>
-          <Text className="text-base font-semibold text-white">
-            Pick for {category ? categoryLabel(category) : ""}
-          </Text>
+          <Text className="font-brockmann-semibold text-base">Pick for {category ? categoryLabel(category) : ""}</Text>
           <View className="w-16" />
         </View>
 
-        <View className="px-5 pb-3">
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            autoFocus
-            autoCorrect={false}
-            placeholder={placeholder(theme, option)}
-            placeholderTextColor="#BDC3C2"
-            className="rounded-sm border border-white/30 bg-card px-4 py-3 text-base text-white"
-          />
+        {/* Search */}
+        <View className="px-4 pb-3">
+          <View
+            className="flex-row items-center gap-2"
+            style={{ backgroundColor: colors.uiPrimary, borderWidth: 1, borderColor: colors.textPrimary, borderRadius: 2, paddingHorizontal: 16, paddingVertical: 12 }}
+          >
+            <SearchIcon size={16} color={colors.textGrey} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              autoFocus
+              autoCorrect={false}
+              placeholder={placeholder(theme, option)}
+              placeholderTextColor={colors.textGrey}
+              style={{ flex: 1, fontFamily: "Brockmann-Medium", fontSize: 14, lineHeight: 20, color: colors.textPrimary, padding: 0 }}
+            />
+          </View>
         </View>
 
         <FlatList
           data={results}
           keyExtractor={(m) => String(m.id)}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24, gap: 8 }}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 24, gap: 8 }}
           ListEmptyComponent={
             loading ? (
-              <ActivityIndicator color="#7142FF" style={{ marginTop: 32 }} />
-            ) : (
-              <Text className="mt-10 text-center text-sm text-white/50">
-                {loadError
-                  ? loadError
-                  : showResults
-                    ? `No movies found matching "${q}"`
-                    : theme === "year" || theme === "people"
-                      ? "Type at least 2 letters to search."
-                      : "Start typing a movie title."}
+              <View className="items-center gap-2 py-8">
+                <ActivityIndicator color={colors.brand} />
+                <Text className="text-sm text-greyscale-blue-300">Loading movies...</Text>
+              </View>
+            ) : showResults ? (
+              <Text className="py-8 text-center text-sm text-greyscale-blue-300">{emptyMessage(theme, option, q)}</Text>
+            ) : null
+          }
+          ListFooterComponent={
+            filtered.length > MAX_RESULTS ? (
+              <Text className="pt-2 text-center text-xs text-greyscale-blue-400">
+                Showing first {MAX_RESULTS} results of {filtered.length} movies. Use search to narrow down.
               </Text>
-            )
+            ) : null
           }
           renderItem={({ item }) => {
             const isSel = selected?.id === item.id;
             const isTaken = takenMovieIds.has(item.id);
-            const uri = posterUrl(item.poster_path ?? item.posterPath, "w92");
+            const matches = isSel ? eligible(item) : false;
             return (
-              <Pressable
-                onPress={() => !isTaken && select(item)}
-                className={`flex-row items-center gap-3 rounded-lg p-2 ${
-                  isSel ? "border-2 border-accent bg-[#160038]" : "border border-white/10 bg-card"
-                } ${isTaken ? "opacity-40" : "active:opacity-80"}`}
-              >
-                {uri ? (
-                  <Image source={{ uri }} style={{ width: 44, height: 66, borderRadius: 3 }} />
-                ) : (
-                  <View style={{ width: 44, height: 66 }} className="rounded-sm bg-white/10" />
-                )}
-                <View className="flex-1">
-                  <Text numberOfLines={2} className="text-base font-semibold text-white">
+              <View>
+                <Pressable
+                  onPress={() => !isTaken && select(item)}
+                  style={{
+                    backgroundColor: isSel ? colors.brand : colors.uiPrimary,
+                    borderRadius: 4,
+                    borderWidth: isSel ? 0 : 1,
+                    borderColor: colors.buttonStroke,
+                    paddingHorizontal: 16,
+                    paddingVertical: 12,
+                    minHeight: 56,
+                    opacity: isTaken ? 0.4 : 1,
+                    justifyContent: "center",
+                  }}
+                >
+                  <Text className="font-brockmann-semibold text-sm leading-5" style={{ letterSpacing: 0.28 }}>
                     {item.title}
                   </Text>
-                  <Text className="text-sm text-white/50">
+                  <Text className="text-xs leading-[14px]" style={{ opacity: 0.75 }}>
                     {movieYear(item)}
                     {item.genre ? ` • ${item.genre}` : ""}
+                    {isTaken ? " • Already drafted" : ""}
                   </Text>
-                  {isTaken && <Text className="mt-0.5 text-xs text-accent">Already drafted</Text>}
-                </View>
-              </Pressable>
+                </Pressable>
+
+                {isSel && category && (
+                  <View className="gap-3 pt-3">
+                    {error && <Text className="text-sm text-[#FF6C6C]">{error}</Text>}
+                    {checkingOscar ? (
+                      <View className="flex-row items-center justify-center gap-2 py-2">
+                        <ActivityIndicator color={colors.brand} />
+                        <Text className="text-sm text-greyscale-blue-300">Checking Oscar status…</Text>
+                      </View>
+                    ) : matches || houseOverride ? (
+                      <Pressable
+                        onPress={confirm}
+                        disabled={submitting}
+                        className="flex-row items-center justify-center gap-2 rounded-control bg-gold px-3 py-3"
+                        style={{ opacity: submitting ? 0.6 : 1 }}
+                      >
+                        {submitting ? (
+                          <ActivityIndicator color="#2B2D2D" />
+                        ) : (
+                          <>
+                            <Text className="font-brockmann-medium text-sm text-greyscale-blue-800">
+                              Confirm in <Text className="font-brockmann-bold text-sm text-greyscale-blue-800">{categoryLabel(category)}</Text>
+                            </Text>
+                            <Check size={12} color="#2B2D2D" strokeWidth={2.5} />
+                          </>
+                        )}
+                      </Pressable>
+                    ) : (
+                      <>
+                        <View className="flex-row items-center justify-center gap-2 rounded-control bg-purple-800 px-3 py-3" style={{ opacity: 0.8 }}>
+                          <Text className="font-brockmann-medium text-sm">Category Mismatch</Text>
+                          <X size={12} color={colors.textPrimary} strokeWidth={2.5} />
+                        </View>
+                        <View className="flex-row items-center justify-end gap-3 px-3">
+                          <Text className="font-brockmann-medium text-sm text-greyscale-blue-300">House Override</Text>
+                          <Switch value={houseOverride} onValueChange={setHouseOverride} trackColor={{ true: colors.brand, false: "#49474B" }} />
+                        </View>
+                      </>
+                    )}
+                  </View>
+                )}
+              </View>
             );
           }}
         />
-
-        {/* Confirm bar */}
-        {selected && category && (
-          <View
-            className="gap-3 border-t border-white/10 bg-surface px-5 pt-4"
-            style={{ paddingBottom: insets.bottom + 16 }}
-          >
-            <Text numberOfLines={1} className="text-sm text-white/60">
-              {selected.title} ({movieYear(selected)})
-            </Text>
-            {error && <Text className="text-sm text-red-400">{error}</Text>}
-            {taken ? (
-              <Text className="text-center text-sm text-white/60">This movie was already drafted.</Text>
-            ) : checkingOscar ? (
-              <View className="flex-row items-center justify-center gap-2 py-3">
-                <ActivityIndicator color="#7142FF" />
-                <Text className="text-sm text-white/60">Checking Oscar status…</Text>
-              </View>
-            ) : matches || houseOverride ? (
-              <Button
-                label={`Confirm in ${categoryLabel(category)}`}
-                onPress={confirm}
-                loading={submitting}
-              />
-            ) : (
-              <View className="gap-3">
-                <View className="items-center rounded-sm bg-purple-900/60 px-3 py-3">
-                  <Text className="text-sm font-medium text-white">Category mismatch</Text>
-                  <Text className="mt-0.5 text-center text-xs text-white/60">
-                    {selected.title} doesn't qualify for {categoryLabel(category)}.
-                  </Text>
-                </View>
-                <View className="flex-row items-center justify-between">
-                  <Text className="flex-1 pr-3 text-sm text-white/70">
-                    House rule: allow it anyway
-                  </Text>
-                  <Switch
-                    value={houseOverride}
-                    onValueChange={setHouseOverride}
-                    trackColor={{ true: "#7142FF", false: "#49474B" }}
-                  />
-                </View>
-              </View>
-            )}
-          </View>
-        )}
       </View>
     </Modal>
   );

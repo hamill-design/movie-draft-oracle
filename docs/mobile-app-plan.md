@@ -110,6 +110,9 @@ We build one working flow at a time, so there's always something real on a phone
 - [ ] Submit for review
 - [ ] EAS Update set up for future JS-only updates (no re-review)
 
+## 6b. Design pass (2026-10-16)
+Every screen was re-skinned to match the website: Brockmann + Chaney fonts, pinned purple gradient, glow cards, ring rank badges, pill tabs, gold/brand/outline buttons, generated SVG logos/icons (`mobile/components/brand.tsx`, `icons.tsx` — regenerated from `src/components/icons` + `src/assets/logos`). Shared building blocks live in `mobile/components/ui.tsx`. Live draft shows one player at a time (avatar rail + slots) with Board and Rosters tabs.
+
 ## 7. Known hard parts (budget extra time)
 
 1. **Google sign-in (the #1 item).** On the web it's a simple redirect. In a native app the OAuth result has to come *back into the app* via a deep link (custom URL scheme / universal link), and the redirect URL must be registered in the Supabase dashboard. Email/password is easy; Google needs this native plumbing.
