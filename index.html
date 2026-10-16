@@ -127,18 +127,6 @@
     }
     </script>
 
-    <!-- Preload the homepage hero image only on "/" so other routes don't download it -->
-    <script>
-      if (location.pathname === '/') {
-        var l = document.createElement('link');
-        l.rel = 'preload'; l.as = 'image';
-        l.setAttribute('imagesrcset', '/images/home/hero-stills-800.webp 800w, /images/home/hero-stills-1600.webp 1600w');
-        l.setAttribute('imagesizes', '100vw');
-        l.setAttribute('fetchpriority', 'high');
-        document.head.appendChild(l);
-      }
-    </script>
-
     <!-- Warm up the two image/API origins used on most pages -->
     <link rel="preconnect" href="https://zduruulowyopdstihfwk.supabase.co" crossorigin>
     <link rel="preconnect" href="https://image.tmdb.org">

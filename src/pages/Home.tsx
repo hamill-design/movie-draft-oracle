@@ -63,34 +63,13 @@ const Home = () => {
       {/* ── 1. Hero ── */}
       <div className="relative w-full min-h-screen overflow-hidden">
         <section className="w-full px-6 py-16 md:py-20 relative z-10 overflow-visible">
-          <div
-            className="absolute left-1/2 top-[calc(50%+100px)] md:top-[calc(50%+180px)] lg:top-[calc(50%+220px)] z-0 h-screen w-screen"
-            style={{
-              transform: 'translateX(-50%) translateY(-50%)',
-              opacity: 0.6,
-              pointerEvents: 'none',
-            }}
-          >
-            <img
-              src="/images/home/hero-stills-1600.webp"
-              srcSet="/images/home/hero-stills-800.webp 800w, /images/home/hero-stills-1600.webp 1600w"
-              sizes="100vw"
-              alt=""
-              width={2326}
-              height={1153}
-              decoding="async"
-              className="hero-fade-in"
-              {...({ fetchpriority: 'high' } as Record<string, string>)} // React 18 only knows the lowercase attribute
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            />
-          </div>
           <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 flex flex-col items-center gap-6" style={{ pointerEvents: 'none' }}>
             <div className="w-full flex flex-col items-center">
               <h1
                 className="w-full text-center text-6xl md:text-7xl lg:text-[90px] leading-[70px] md:leading-normal lg:leading-[90px] font-chaney font-normal text-greyscale-blue-100"
                 style={{ wordWrap: 'break-word' }}
               >
-                Your Picks.<br /> Your glory.
+                Your fantasy movie draft starts here.
               </h1>
             </div>
             <div className="w-full max-w-[768px] pt-2 flex flex-col items-center">
