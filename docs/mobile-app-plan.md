@@ -91,7 +91,7 @@ We build one working flow at a time, so there's always something real on a phone
 - [x] The live draft: movie search, draft board, roster (built — needs a real two-player test on devices; AI players not supported yet)
 - [ ] Draft setup modes (year, filmography, theme, spec)
 - [x] Final scores & results (leaderboard, rosters, pick order, vote points, share text — verified with a real completed draft in the web preview)
-- [ ] Voting
+- [x] Voting (host setup, cast vote, live results, countdown, public link route /vote/:id — built; needs a signed-in two-player test)
 
 ### Phase 3 — Native polish (~2–3 weeks)
 - [ ] Push notifications (expo-notifications) wired to the existing notification system

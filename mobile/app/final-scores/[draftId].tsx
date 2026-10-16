@@ -6,6 +6,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useFinalScores, type ScoredPick, type TeamScore } from "../../hooks/useFinalScores";
 import { categoryLabel, posterUrl } from "../../lib/draftBoard";
 import { Button, Centered, ScreenHeader } from "../../components/ui";
+import { VotingPanel } from "../../components/VotingPanel";
 
 const RANK_COLORS = ["#FFD60A", "#CCCCCC", "#DE7E3E"];
 
@@ -142,6 +143,8 @@ export default function FinalScores() {
           <Text className="text-3xl font-bold text-white">FINAL SCORES</Text>
           {!!draft.optionLabel && <Text className="mt-1 text-base text-white/60">{draft.optionLabel}</Text>}
         </View>
+
+        <VotingPanel draftId={draft.id} hideWhenIdle />
 
         {enriching && (
           <View className="flex-row items-center gap-2 rounded-lg bg-surface px-4 py-3">

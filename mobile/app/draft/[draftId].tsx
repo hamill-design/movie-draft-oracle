@@ -12,6 +12,7 @@ import { Button, Card, Centered, ScreenHeader } from "../../components/ui";
 import { buildBoard } from "../../lib/draftBoard";
 import { useSpecCategories } from "../../hooks/useSpecCategories";
 import { DraftBoard, RosterList } from "../../components/DraftBoard";
+import { VotingPanel } from "../../components/VotingPanel";
 import { MoviePickerModal } from "../../components/MoviePickerModal";
 import type { PickerMovie } from "../../hooks/useMovieSearch";
 
@@ -229,6 +230,8 @@ export default function DraftRoom() {
           )}
         </Card>
         )}
+
+        {draft.is_complete && <VotingPanel draftId={draft.id} />}
 
         {/* Join code */}
         {!!draft.invite_code && !draft.is_complete && !hasStarted && (
