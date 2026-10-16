@@ -7,7 +7,11 @@ module.exports = {
     extend: {
       colors: {
         ink: "#100029",
-        brand: "#680AFF",
+        brand: "#7142FF",
+        accent: "#907AFF",
+        gold: "#FFD60A",
+        card: "#1D1D1F",
+        surface: "#0E0E0F",
       },
     },
   },

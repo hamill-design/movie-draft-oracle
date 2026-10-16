@@ -86,11 +86,11 @@ We build one working flow at a time, so there's always something real on a phone
 - [~] Google sign-in — built (in-app browser + deep-link, PKCE); needs the redirect URL added in Supabase + a dev build to test end-to-end
 
 ### Phase 2 — The core loop (~4–8 weeks)
-- [ ] Create / join a league
-- [ ] Draft lobby
-- [ ] The live draft: movie search, draft board, roster (the big one)
+- [x] Create / join a league (+ league detail: standings, drafts, messages — built, needs signed-in device check)
+- [x] Draft lobby (waiting room: players + presence, join code share, host start — built, needs signed-in two-device check)
+- [x] The live draft: movie search, draft board, roster (built — needs a real two-player test on devices; AI players not supported yet)
 - [ ] Draft setup modes (year, filmography, theme, spec)
-- [ ] Final scores & results
+- [x] Final scores & results (leaderboard, rosters, pick order, vote points, share text — verified with a real completed draft in the web preview)
 - [ ] Voting
 
 ### Phase 3 — Native polish (~2–3 weeks)

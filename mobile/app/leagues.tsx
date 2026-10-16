@@ -1,67 +1,33 @@
-import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  RefreshControl,
-  Text,
-  View,
-} from "react-native";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../contexts/AuthContext";
-import { supabase } from "../lib/supabase";
-
-type League = {
-  id: string;
-  name: string;
-  slug: string;
-  member_count: number;
-  draft_count: number;
-};
+import { usePendingLeagueInvites, useUserLeagues } from "../hooks/useLeagues";
+import { Button } from "../components/ui";
 
 export default function Leagues() {
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [leagues, setLeagues] = useState<League[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { leagues, loading, refetch } = useUserLeagues();
+  const { invites, refetch: refetchInvites } = usePendingLeagueInvites();
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Mirrors useUserLeagues() in the web app: the leagues the signed-in user is
-  // a member of, with member + draft counts.
-  const fetchLeagues = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("league_members")
-      .select(
-        `league_id, joined_at,
-         leagues ( id, name, slug, admin_id, created_at, updated_at,
-                   league_members (count), league_drafts (count) )`
-      )
-      .eq("user_id", user.id)
-      .order("joined_at", { ascending: false });
+  // Refresh whenever we come back to this screen (e.g. after creating or
+  // joining a league) so the new league shows up without a manual pull.
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+      refetchInvites();
+    }, [refetch, refetchInvites]),
+  );
 
-    if (!error && data) {
-      const mapped = data
-        .map((row: any) => {
-          const L = row.leagues;
-          if (!L) return null;
-          return {
-            id: L.id,
-            name: L.name,
-            slug: L.slug,
-            member_count: Number(L.league_members?.[0]?.count ?? 0),
-            draft_count: Number(L.league_drafts?.[0]?.count ?? 0),
-          } as League;
-        })
-        .filter(Boolean) as League[];
-      setLeagues(mapped);
-    }
-    setLoading(false);
-  }, [user]);
-
-  useEffect(() => {
-    fetchLeagues();
-  }, [fetchLeagues]);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await Promise.all([refetch(), refetchInvites()]);
+    setRefreshing(false);
+  };
 
   return (
     <View className="flex-1 bg-ink" style={{ paddingTop: insets.top }}>
@@ -72,36 +38,68 @@ export default function Leagues() {
         </Pressable>
       </View>
 
-      {loading ? (
+      {loading && leagues.length === 0 ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#680AFF" />
+          <ActivityIndicator color="#7142FF" />
         </View>
       ) : (
         <FlatList
           data={leagues}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 24, paddingTop: 0 }}
+          contentContainerStyle={{ padding: 24, paddingTop: 0, paddingBottom: insets.bottom + 24 }}
           refreshControl={
-            <RefreshControl
-              refreshing={loading}
-              onRefresh={fetchLeagues}
-              tintColor="#680AFF"
-            />
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7142FF" />
+          }
+          ListHeaderComponent={
+            <View>
+              <View className="mb-4 flex-row gap-3">
+                <View className="flex-1">
+                  <Button label="Create league" onPress={() => router.push("/league/create")} />
+                </View>
+                <View className="flex-1">
+                  <Button
+                    label="Join league"
+                    variant="outline"
+                    onPress={() => router.push("/league/join")}
+                  />
+                </View>
+              </View>
+
+              {invites.map((invite) => (
+                <Pressable
+                  key={invite.id}
+                  onPress={() => router.push(`/league/${invite.league_id}`)}
+                  className="mb-3 rounded-lg border-l-4 border-brand bg-surface p-5 active:opacity-80"
+                >
+                  <Text className="text-xs font-semibold uppercase tracking-widest text-accent">
+                    League invite
+                  </Text>
+                  <Text className="mt-1 text-lg font-semibold text-white">
+                    {invite.league?.name ?? "A league"}
+                  </Text>
+                  <Text className="mt-1 text-sm text-white/50">
+                    {invite.inviter?.name ?? "Someone"} invited you · tap to respond
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
           }
           ListEmptyComponent={
             <Text className="mt-10 text-center text-base text-white/50">
-              You're not in any leagues yet.
+              You're not in any leagues yet. Create one or join with an invite.
             </Text>
           }
           renderItem={({ item }) => (
-            <View className="mb-3 rounded-2xl bg-white/5 p-5">
+            <Pressable
+              onPress={() => router.push(`/league/${item.id}`)}
+              className="mb-3 rounded-2xl bg-white/5 p-5 active:opacity-80"
+            >
               <Text className="text-lg font-semibold text-white">{item.name}</Text>
               <Text className="mt-1 text-sm text-white/50">
-                {item.member_count}{" "}
-                {item.member_count === 1 ? "member" : "members"} · {item.draft_count}{" "}
-                {item.draft_count === 1 ? "draft" : "drafts"}
+                {item.member_count} {item.member_count === 1 ? "member" : "members"} ·{" "}
+                {item.draft_count} {item.draft_count === 1 ? "draft" : "drafts"}
               </Text>
-            </View>
+            </Pressable>
           )}
         />
       )}
