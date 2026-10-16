@@ -1,9 +1,16 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useCurrentUser } from './useCurrentUser';
 import { useGuestSession } from './useGuestSession';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DRAFT_PRESENCE_HEARTBEAT_MS,
+  DRAFT_PRESENCE_SYNC_MS,
+  isPresenceHeartbeatUpdate,
+  mergeParticipantPresenceRows,
+} from '@/utils/draftPresence';
+import { clearDraftPresenceKeepalive } from '@/utils/draftPresenceRpc';
 
 // Helper function to extract detailed error information (Supabase RPC, PostgrestError, etc.)
 const getErrorMessage = (error: any): string => {
@@ -54,6 +61,8 @@ interface DraftParticipant {
   joined_at: string | null;
   created_at?: string | null; // Used for sorting to match player_id calculation
   email?: string | null; // User's email from profiles
+  avatar_url?: string | null;
+  last_seen_at?: string | null;
 }
 
 interface MultiplayerDraft {
@@ -77,6 +86,30 @@ interface MultiplayerDraft {
   allow_public_voting?: boolean;
 }
 
+function patchParticipantLastSeenAt(
+  participants: DraftParticipant[],
+  rowId: string,
+  lastSeenAt: string | null
+): DraftParticipant[] {
+  return participants.map((participant) =>
+    participant.id === rowId ? { ...participant, last_seen_at: lastSeenAt } : participant
+  );
+}
+
+function patchOwnParticipantLastSeenAt(
+  participants: DraftParticipant[],
+  sessionParticipantId: string,
+  lastSeenAt: string | null
+): DraftParticipant[] {
+  return participants.map((participant) => {
+    const isSelf =
+      participant.participant_id === sessionParticipantId ||
+      participant.user_id === sessionParticipantId ||
+      participant.guest_participant_id === sessionParticipantId;
+    return isSelf ? { ...participant, last_seen_at: lastSeenAt } : participant;
+  });
+}
+
 export const useMultiplayerDraft = (
   draftId?: string,
   initialDraftData?: { draft: any; participants: any[]; picks: any[] },
@@ -87,6 +120,7 @@ export const useMultiplayerDraft = (
   
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // When parent (e.g. Index) passes participantId, use it so load-draft can run before child's session is ready
   const effectiveParticipantId = participantIdOverride ?? participantId;
@@ -109,10 +143,38 @@ export const useMultiplayerDraft = (
     participantIdRef.current = participantId;
   }, [participantId]);
 
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!cancelled) {
+        accessTokenRef.current = data.session?.access_token ?? null;
+      }
+    });
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      accessTokenRef.current = session?.access_token ?? null;
+    });
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
+  }, []);
+
   // Database subscription channels for real-time updates
   const draftChannelRef = useRef<any>(null);
   const picksChannelRef = useRef<any>(null);
   const participantsChannelRef = useRef<any>(null);
+  const presenceHeartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const presenceSyncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const presencePausedRef = useRef(false);
+  const hasLeftDraftRef = useRef(false);
+  const presenceGenerationRef = useRef(0);
+  const accessTokenRef = useRef<string | null>(null);
+  const normalizedDraftIdRef = useRef(normalizedDraftId);
+  const effectiveParticipantIdRef = useRef(effectiveParticipantId);
+  normalizedDraftIdRef.current = normalizedDraftId;
+  effectiveParticipantIdRef.current = effectiveParticipantId ?? undefined;
   
   // Connection monitoring and health checks
   const [isConnected, setIsConnected] = useState(true);
@@ -143,10 +205,12 @@ export const useMultiplayerDraft = (
 
   // Debounced reload function to prevent excessive reloads. Optional longer delay after picks to reduce flicker.
   const debouncedReload = useCallback((draftId: string, delayMs: number = 500) => {
+    if (hasLeftDraftRef.current) return;
     if (debounceReloadTimeoutRef.current) {
       clearTimeout(debounceReloadTimeoutRef.current);
     }
     debounceReloadTimeoutRef.current = setTimeout(() => {
+      if (hasLeftDraftRef.current) return;
       console.log('🔄 Debounced reload triggered');
       if (loadDraftRef.current) {
         loadDraftRef.current(draftId, { background: true });
@@ -174,6 +238,7 @@ export const useMultiplayerDraft = (
       const threshold = isGuest ? 8000 : 10000; // 8s for guests, 10s for authenticated
       if (timeSinceLastUpdate > threshold) {
         console.log('📡 Polling: No updates received, reloading draft');
+        if (hasLeftDraftRef.current) return;
         if (loadDraftRef.current) {
           loadDraftRef.current(draftId, { background: true });
         }
@@ -193,6 +258,7 @@ export const useMultiplayerDraft = (
   // Reconnect subscriptions
   const reconnectSubscriptions = useCallback((draftId: string) => {
     if (isReconnectingRef.current) return;
+    if (hasLeftDraftRef.current) return;
     isReconnectingRef.current = true;
     
     console.log('🔄 Reconnecting subscriptions...');
@@ -237,7 +303,7 @@ export const useMultiplayerDraft = (
     // Fetch emails from profiles
     const { data: profiles, error } = await supabase
       .from('profiles')
-      .select('id, email')
+      .select('id, email, avatar_url')
       .in('id', userIds);
 
     if (error) {
@@ -247,20 +313,24 @@ export const useMultiplayerDraft = (
     }
 
     // Create a map of user_id -> email
-    const emailMap = new Map<string, string>();
+    const profileMap = new Map<string, { email?: string; avatar_url?: string | null }>();
     if (profiles) {
       profiles.forEach(profile => {
-        if (profile.email) {
-          emailMap.set(profile.id, profile.email);
-        }
+        profileMap.set(profile.id, {
+          email: profile.email ?? undefined,
+          avatar_url: profile.avatar_url,
+        });
       });
     }
 
-    // Enrich participants with emails
-    return participants.map(participant => ({
-      ...participant,
-      email: participant.user_id ? emailMap.get(participant.user_id) || null : null
-    }));
+    return participants.map(participant => {
+      const profile = participant.user_id ? profileMap.get(participant.user_id) : undefined;
+      return {
+        ...participant,
+        email: profile?.email ?? null,
+        avatar_url: profile?.avatar_url ?? null,
+      };
+    });
   }, []);
 
   // Create a multiplayer draft with email invitations
@@ -486,6 +556,7 @@ export const useMultiplayerDraft = (
     id: string,
     options?: { background?: boolean; returnData?: boolean }
   ): Promise<{ draft: MultiplayerDraft; participants: DraftParticipant[]; picks: any[] } | void> => {
+    if (hasLeftDraftRef.current && options?.background) return;
     if (!effectiveParticipantId) throw new Error('No participant ID available');
     
     // Ensure id is a string, not an object
@@ -572,6 +643,105 @@ export const useMultiplayerDraft = (
   useEffect(() => {
     loadDraftRef.current = loadDraft;
   }, [loadDraft]);
+
+  const leaveDraftPresence = useCallback(() => {
+    if (hasLeftDraftRef.current) return;
+    hasLeftDraftRef.current = true;
+    presencePausedRef.current = true;
+    presenceGenerationRef.current += 1;
+
+    if (presenceHeartbeatIntervalRef.current) {
+      clearInterval(presenceHeartbeatIntervalRef.current);
+      presenceHeartbeatIntervalRef.current = null;
+    }
+    if (presenceSyncIntervalRef.current) {
+      clearInterval(presenceSyncIntervalRef.current);
+      presenceSyncIntervalRef.current = null;
+    }
+    if (debounceReloadTimeoutRef.current) {
+      clearTimeout(debounceReloadTimeoutRef.current);
+      debounceReloadTimeoutRef.current = null;
+    }
+
+    const draftId = normalizedDraftIdRef.current;
+    const participantId = effectiveParticipantIdRef.current;
+    if (draftId && participantId) {
+      clearDraftPresenceKeepalive(draftId, participantId, accessTokenRef.current);
+      setParticipants((prev) => patchOwnParticipantLastSeenAt(prev, participantId, null));
+    }
+  }, []);
+
+  const sendPresenceHeartbeat = useCallback(
+    async (options?: { clear?: boolean }) => {
+      if (!normalizedDraftId || !effectiveParticipantId) return;
+      if (isGuest && !guestSession) return;
+      if (hasLeftDraftRef.current && !options?.clear) return;
+      if (presencePausedRef.current && !options?.clear) return;
+
+      const generation = presenceGenerationRef.current;
+
+      if (options?.clear) {
+        const draftId = normalizedDraftIdRef.current;
+        const participantId = effectiveParticipantIdRef.current;
+        if (draftId && participantId) {
+          clearDraftPresenceKeepalive(draftId, participantId, accessTokenRef.current);
+          if (!hasLeftDraftRef.current) {
+            setParticipants((prev) =>
+              patchOwnParticipantLastSeenAt(prev, participantId, null)
+            );
+          }
+        }
+        return;
+      }
+
+      try {
+        if (guestSession) {
+          await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
+        }
+        if (hasLeftDraftRef.current || generation !== presenceGenerationRef.current) return;
+
+        await supabase.rpc('heartbeat_draft_presence', {
+          p_draft_id: normalizedDraftId,
+          p_participant_id: effectiveParticipantId,
+        });
+        if (hasLeftDraftRef.current || generation !== presenceGenerationRef.current) return;
+
+        setParticipants((prev) =>
+          patchOwnParticipantLastSeenAt(prev, effectiveParticipantId, new Date().toISOString())
+        );
+      } catch (error) {
+        console.warn('Draft presence heartbeat failed:', error);
+      }
+    },
+    [normalizedDraftId, effectiveParticipantId, isGuest, guestSession]
+  );
+
+  const syncParticipantPresenceFromServer = useCallback(async () => {
+    if (!normalizedDraftId) return;
+    if (hasLeftDraftRef.current) return;
+
+    try {
+      if (guestSession) {
+        await supabase.rpc('set_guest_session_context', { session_id: guestSession.id });
+      }
+
+      const { data, error } = await supabase
+        .from('draft_participants')
+        .select('id, last_seen_at')
+        .eq('draft_id', normalizedDraftId);
+
+      if (error) {
+        console.warn('Draft presence sync failed:', error);
+        return;
+      }
+
+      if (!data?.length) return;
+
+      setParticipants((prev) => mergeParticipantPresenceRows(prev, data));
+    } catch (error) {
+      console.warn('Draft presence sync failed:', error);
+    }
+  }, [normalizedDraftId, guestSession]);
 
   // Join a draft by invite code
   const joinDraftByCode = useCallback(async (inviteCode: string, participantName: string) => {
@@ -662,6 +832,15 @@ export const useMultiplayerDraft = (
       setLoading(false);
     }
   }, [participantId, toast, loadDraft]);
+
+  // Attach the signed-in account to the spot it was invited to by email.
+  // Never creates a second participant row; throws (with a readable message)
+  // if the account's email isn't on the invite list.
+  const claimDraftInvite = useCallback(async (draftId: string): Promise<string> => {
+    const { error } = await supabase.rpc('claim_draft_invite', { p_draft_id: draftId });
+    if (error) throw new Error(error.message);
+    return draftId;
+  }, []);
 
   // Make a pick
   const makePick = useCallback(async (movieId: number, movieTitle: string, movieYear: number, movieGenre: string, category: string, posterPath?: string, participantIdOverride?: string, callerParticipantId?: string) => {
@@ -1015,6 +1194,28 @@ export const useMultiplayerDraft = (
         if (!isGuest) {
           stopPolling();
         }
+
+        if (
+          payload.eventType === 'UPDATE' &&
+          payload.new &&
+          typeof payload.new === 'object' &&
+          'id' in payload.new &&
+          'last_seen_at' in payload.new
+        ) {
+          const row = payload.new as { id: string; last_seen_at?: string | null };
+          setParticipants((prev) =>
+            patchParticipantLastSeenAt(prev, row.id, row.last_seen_at ?? null)
+          );
+
+          if (
+            isPresenceHeartbeatUpdate(
+              payload.old as Record<string, unknown> | undefined,
+              payload.new as Record<string, unknown> | undefined
+            )
+          ) {
+            return;
+          }
+        }
         
         // Reload participants when changes occur (debounced)
         debouncedReload(normalizedDraftId);
@@ -1156,14 +1357,99 @@ export const useMultiplayerDraft = (
     };
   }, [normalizedDraftId, participantId, updateLastActivity, reconnectSubscriptions, startPolling]);
 
+  // Reset leave flag when opening a different draft in the same hook instance.
+  useEffect(() => {
+    hasLeftDraftRef.current = false;
+    presenceGenerationRef.current += 1;
+  }, [normalizedDraftId]);
+
+  // Clear presence as soon as the route leaves this draft (SPA navigation).
+  useLayoutEffect(() => {
+    if (!normalizedDraftId) return;
+    const onThisDraftRoute = location.pathname === `/draft/${normalizedDraftId}`;
+    if (!onThisDraftRoute) {
+      leaveDraftPresence();
+    }
+  }, [location.pathname, normalizedDraftId, leaveDraftPresence]);
+
+  // DB-backed presence heartbeat while this draft is open
+  useEffect(() => {
+    if (!normalizedDraftId || !effectiveParticipantId) return;
+    if (isGuest && !guestSession) return;
+    if (hasLeftDraftRef.current) return;
+
+    presencePausedRef.current = document.visibilityState === 'hidden';
+
+    const startHeartbeatLoop = () => {
+      if (presenceHeartbeatIntervalRef.current) return;
+      presenceHeartbeatIntervalRef.current = setInterval(() => {
+        void sendPresenceHeartbeat();
+      }, DRAFT_PRESENCE_HEARTBEAT_MS);
+    };
+
+    const stopHeartbeatLoop = () => {
+      if (!presenceHeartbeatIntervalRef.current) return;
+      clearInterval(presenceHeartbeatIntervalRef.current);
+      presenceHeartbeatIntervalRef.current = null;
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        presencePausedRef.current = true;
+        stopHeartbeatLoop();
+        void sendPresenceHeartbeat({ clear: true });
+        return;
+      }
+
+      presencePausedRef.current = false;
+      void sendPresenceHeartbeat();
+      startHeartbeatLoop();
+      void syncParticipantPresenceFromServer();
+    };
+
+    if (!presencePausedRef.current) {
+      void sendPresenceHeartbeat();
+      startHeartbeatLoop();
+    }
+
+    void syncParticipantPresenceFromServer();
+    presenceSyncIntervalRef.current = setInterval(() => {
+      void syncParticipantPresenceFromServer();
+    }, DRAFT_PRESENCE_SYNC_MS);
+
+    const handlePageHide = () => {
+      leaveDraftPresence();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('pagehide', handlePageHide);
+      leaveDraftPresence();
+    };
+  }, [
+    normalizedDraftId,
+    effectiveParticipantId,
+    isGuest,
+    guestSession?.id,
+    sendPresenceHeartbeat,
+    syncParticipantPresenceFromServer,
+    leaveDraftPresence,
+  ]);
+
   // Manual refresh function for UI
   const manualRefresh = useCallback(() => {
+    if (hasLeftDraftRef.current) return;
     if (normalizedDraftId && loadDraftRef.current) {
       console.log('🔄 Manual refresh triggered');
       loadDraftRef.current(normalizedDraftId, { background: true });
       updateLastActivity();
     }
-  }, [normalizedDraftId, updateLastActivity]);
+    void sendPresenceHeartbeat();
+    void syncParticipantPresenceFromServer();
+  }, [normalizedDraftId, updateLastActivity, sendPresenceHeartbeat, syncParticipantPresenceFromServer]);
 
   return {
     draft,
@@ -1174,6 +1460,7 @@ export const useMultiplayerDraft = (
     isConnected,
     createMultiplayerDraft,
     joinDraftByCode,
+    claimDraftInvite,
     makePick,
     loadDraft,
     startDraft,

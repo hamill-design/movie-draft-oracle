@@ -1,5 +1,5 @@
 import { cn, getCleanActorName } from '@/lib/utils';
-import { DRAFT_TITLE_FONT_STYLE } from '@/lib/draftTitleTypography';
+import { formatDraftHeadingTitle, getDraftTitleFontStyle } from '@/lib/draftTitleTypography';
 
 interface DraftHeadingTitleProps {
   option: string;
@@ -21,13 +21,15 @@ export function DraftHeadingTitle({
         ? getCleanActorName(option || '').toUpperCase()
         : (option ?? '').toString().toUpperCase();
 
+  const fullTitle = formatDraftHeadingTitle(option, theme, specDraftName);
+
   return (
-    <h1
+    <h2
       className={cn(
         'font-chaney font-normal text-center m-0 max-w-full break-normal',
         className,
       )}
-      style={DRAFT_TITLE_FONT_STYLE}
+      style={getDraftTitleFontStyle(fullTitle)}
     >
       {theme === 'spec-draft' ? (
         <span className="text-greyscale-blue-100">{primaryLabel}</span>
@@ -38,6 +40,6 @@ export function DraftHeadingTitle({
           <span className="text-purple-300">MOVIES</span>
         </>
       )}
-    </h1>
+    </h2>
   );
 }

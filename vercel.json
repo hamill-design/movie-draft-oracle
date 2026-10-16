@@ -3,11 +3,20 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "framework": "vite",
+  "functions": {
+    "api/og-scores.ts": { "includeFiles": "api/_fonts/**" }
+  },
   "redirects": [
     { "source": "/themes", "destination": "/special-draft", "permanent": true },
     { "source": "/themes/:slug", "destination": "/special-draft/:slug", "permanent": true }
   ],
+  "headers": [
+    { "source": "/images/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/fonts/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/league/create", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
+  ],
   "rewrites": [
+    { "source": "/final-scores/:id", "destination": "/api/scores-preview?id=:id" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

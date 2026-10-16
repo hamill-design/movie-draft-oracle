@@ -387,7 +387,7 @@ const DraftComplete = ({ draftId: propDraftId, draftData: propDraftData, picks: 
         )}
 
         {draftId && !draft && !draftData && (
-          <div className="text-greyscale-blue-300 text-sm">Loading...</div>
+          <div className="text-[#FCFFFF] text-sm">Loading...</div>
         )}
 
         {addVoting === false && ((draftId && draft && !votingConfigured) || (isLocal && draftData)) && (

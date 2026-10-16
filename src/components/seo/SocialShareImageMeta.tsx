@@ -17,21 +17,21 @@ export type SocialShareImageMetaProps = {
  * Open Graph + Twitter image tags for use inside react-helmet-async's `<Helmet>`.
  *
  * Call as `{socialShareImageMetaNodes()}` — not `<SocialShareImageMeta />`. Helmet only
- * accepts native head elements (or fragments of them); custom components as direct
- * children throw a misleading "nested Helmet" invariant.
+ * accepts native head elements; custom components as direct children throw a misleading
+ * "nested Helmet" invariant.
  */
 export function socialShareImageMetaNodes({
   imageUrl = DEFAULT_OG_IMAGE_URL,
   imageAlt = OG_IMAGE_ALT,
 }: SocialShareImageMetaProps = {}): ReactNode {
-  return (
-    <>
-      <meta property="og:image" content={imageUrl} />
-      <meta property="og:image:width" content={String(OG_IMAGE_WIDTH)} />
-      <meta property="og:image:height" content={String(OG_IMAGE_HEIGHT)} />
-      <meta property="og:image:alt" content={imageAlt} />
-      <meta name="twitter:image" content={imageUrl} />
-      <meta name="twitter:image:alt" content={imageAlt} />
-    </>
-  );
+  // An array, not a fragment: Helmet only walks direct children, so tags wrapped in
+  // <></> are silently dropped and the index.html default image wins.
+  return [
+    <meta key="og:image" property="og:image" content={imageUrl} />,
+    <meta key="og:image:width" property="og:image:width" content={String(OG_IMAGE_WIDTH)} />,
+    <meta key="og:image:height" property="og:image:height" content={String(OG_IMAGE_HEIGHT)} />,
+    <meta key="og:image:alt" property="og:image:alt" content={imageAlt} />,
+    <meta key="twitter:image" name="twitter:image" content={imageUrl} />,
+    <meta key="twitter:image:alt" name="twitter:image:alt" content={imageAlt} />,
+  ];
 }

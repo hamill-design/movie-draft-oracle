@@ -1,5 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
@@ -9,45 +9,10 @@ import { LeagueFeatureSection } from '@/components/home/LeagueFeatureSection';
 import { HowItWorksSection } from '@/components/home/HowItWorksSection';
 import { RotatingFilmographyPortrait } from '@/components/home/RotatingFilmographyPortrait';
 import { RotatingYearDraftPortrait } from '@/components/home/RotatingYearDraftPortrait';
-import { useSplineViewportPause } from '@/hooks/useSplineViewportPause';
-import Spline from '@splinetool/react-spline';
 
 const Home = () => {
   const { loading } = useAuth();
   const location = useLocation();
-  const splineWrapperRef = useRef<HTMLDivElement>(null);
-  const [splineLoaded, setSplineLoaded] = useState(false);
-  const { containerRef: registerSplineContainer, handleLoad: pauseHeroOffscreen } =
-    useSplineViewportPause<HTMLDivElement>();
-
-  useEffect(() => {
-    // Skip the parallax entirely for users who prefer reduced motion.
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    let rafId: number | null = null;
-    let latestY = window.scrollY;
-
-    // Apply the transform once per frame instead of on every scroll event, so we
-    // never move the (heavy) hero scene more often than the screen can repaint.
-    const render = () => {
-      rafId = null;
-      const el = splineWrapperRef.current;
-      if (el) {
-        el.style.transform = `translateX(-50%) translateY(calc(-50% + ${latestY * 0.5}px))`;
-      }
-    };
-
-    const handleScroll = () => {
-      latestY = window.scrollY;
-      if (rafId === null) rafId = window.requestAnimationFrame(render);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (rafId !== null) window.cancelAnimationFrame(rafId);
-    };
-  }, []);
 
   useEffect(() => {
     const id = location.hash?.replace(/^#/, '');
@@ -97,37 +62,14 @@ const Home = () => {
 
       {/* ── 1. Hero ── */}
       <div className="relative w-full min-h-screen overflow-hidden">
-        {/* pointer-events: none on the text section so hover passes through to Spline */}
         <section className="w-full px-6 py-16 md:py-20 relative z-10 overflow-visible">
-          <div
-            ref={(node) => {
-              splineWrapperRef.current = node;
-              registerSplineContainer(node);
-            }}
-            className="absolute left-1/2 top-[calc(50%+180px)] md:top-[calc(50%+260px)] lg:top-[calc(50%+300px)] z-0 h-screen w-screen"
-            style={{
-              transform: 'translateX(-50%) translateY(-50%)',
-              opacity: splineLoaded ? 0.6 : 0,
-              transition: 'opacity 0.8s ease',
-              willChange: 'transform',
-            }}
-          >
-            <Spline
-              scene="https://prod.spline.design/K4NCn3QQ5YqLqGGU/scene.splinecode"
-              style={{ width: '100%', height: '100%' }}
-              onLoad={(app) => {
-                setSplineLoaded(true);
-                pauseHeroOffscreen(app);
-              }}
-            />
-          </div>
           <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 flex flex-col items-center gap-6" style={{ pointerEvents: 'none' }}>
             <div className="w-full flex flex-col items-center">
               <h1
                 className="w-full text-center text-6xl md:text-7xl lg:text-[90px] leading-[70px] md:leading-normal lg:leading-[90px] font-chaney font-normal text-greyscale-blue-100"
                 style={{ wordWrap: 'break-word' }}
               >
-                Your Picks.<br /> Your glory.
+                Your fantasy movie draft starts here.
               </h1>
             </div>
             <div className="w-full max-w-[768px] pt-2 flex flex-col items-center">
@@ -160,7 +102,7 @@ const Home = () => {
         </div>
       </div>
 
-      {/* ── 3. How it works (carousel + Spline) ── */}
+      {/* ── 3. How it works ── */}
       <HowItWorksSection />
 
       {/* ── 4. About section ── */}

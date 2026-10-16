@@ -1,4 +1,4 @@
-import { isGlobalStandardCategory } from '@/config/categoryConfigs';
+import { getCategoryConfig, isGlobalStandardCategory } from '@/config/categoryConfigs';
 
 interface Movie {
   id: number;
@@ -67,8 +67,9 @@ export const getEligibleCategories = (
     }
   };
 
-  // Check spec categories first if this is a person-based theme
-  if (theme === 'people' && option && specCategoriesMap && specCategoriesMap.size > 0) {
+  // Custom (non-standard) categories: actor spec categories for person drafts, and the
+  // admin-tagged spec_draft_movie_categories (Aardman, Clay, ...) for spec drafts.
+  if ((theme === 'people' || theme === 'spec-draft') && option && specCategoriesMap && specCategoriesMap.size > 0) {
     const movieId = movie.tmdbId || movie.id;
     
     specCategoriesMap.forEach((movieIds, categoryName) => {
@@ -191,6 +192,14 @@ export const getEligibleCategories = (
   if (movie.isSequel === true && allCategories.includes('Sequel')) {
     eligibleCategories.push('Sequel');
   }
+
+  // Wild Card and other always-available slots accept any movie in the draft pool
+  allCategories.forEach((category) => {
+    const config = getCategoryConfig(category);
+    if (config?.alwaysAvailable) {
+      eligibleCategories.push(category);
+    }
+  });
 
   // Filter to only return categories that exist in the draft's category list
   const filtered = eligibleCategories.filter(category => allCategories.includes(category));

@@ -25,8 +25,9 @@ function escapeXml(s) {
     .replace(/'/g, "&apos;");
 }
 
-async function fetchThemeSlugs() {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/spec_drafts?select=slug&is_hidden=eq.false`, {
+/** Returns [{ slug, updated_at }]. */
+async function fetchThemes() {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/spec_drafts?select=slug,updated_at&is_hidden=eq.false`, {
     headers: {
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
@@ -38,7 +39,12 @@ async function fetchThemeSlugs() {
   }
   const rows = await res.json();
   if (!Array.isArray(rows)) return [];
-  return rows.map((r) => (typeof r.slug === "string" ? r.slug.trim() : "")).filter(Boolean);
+  return rows
+    .map((r) => ({
+      slug: typeof r.slug === "string" ? r.slug.trim() : "",
+      updated_at: typeof r.updated_at === "string" ? r.updated_at : "",
+    }))
+    .filter((r) => r.slug);
 }
 
 if (!fs.existsSync(dist)) {
@@ -46,16 +52,19 @@ if (!fs.existsSync(dist)) {
   process.exit(1);
 }
 
-const lastmod = new Date().toISOString().slice(0, 10);
-const slugs = await fetchThemeSlugs();
-const urlEntries = slugs.map(
-  (slug) => `  <url>
-    <loc>${SITE}/special-draft/${escapeXml(slug)}</loc>
-    <lastmod>${lastmod}</lastmod>
+// lastmod is each draft's real last-edit date. We never stamp the build date: a date that changes
+// on every deploy teaches Google to ignore lastmod. No known date -> omit the tag entirely.
+const themes = await fetchThemes();
+const slugs = themes.map((t) => t.slug);
+const urlEntries = themes.map(({ slug, updated_at }) => {
+  const lastmod = updated_at ? updated_at.slice(0, 10) : "";
+  return `  <url>
+    <loc>${SITE}/special-draft/${escapeXml(slug)}</loc>${lastmod ? `
+    <lastmod>${lastmod}</lastmod>` : ""}
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
-  </url>`
-);
+  </url>`;
+});
 
 const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

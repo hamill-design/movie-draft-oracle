@@ -1,50 +1,43 @@
 
+import { lazy, Suspense } from "react";
+import { pages } from "./lazyPages";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
-import { AuthProvider } from "./contexts/AuthContext";
+import { AuthProvider, PendingDraftProcessor } from "./contexts/AuthContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AppHeader from "./components/AppHeader";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import Home from "./pages/Home";
-import Index from "./pages/Index";
-import Auth from "./pages/Auth";
-import ResetPassword from "./pages/ResetPassword";
-import Profile from "./pages/Profile";
-import Admin from "./pages/Admin";
-import FinalScores from "./pages/FinalScores";
-import VotePage from "./pages/VotePage";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import Contact from "./pages/Contact";
-import About from "./pages/About";
 import NotFound from "./pages/NotFound";
-import { JoinDraft } from "./pages/JoinDraft";
-import LearnMore from "./pages/LearnMore";
-import SpecDraftSetup from "./pages/SpecDraftSetup";
-import ThemeDraftSetup from "./pages/ThemeDraftSetup";
-import ThemeHubPage from "./pages/ThemeHubPage";
-import ThemeLandingPage from "./pages/ThemeLandingPage";
-import HowToDraftPage from "./pages/HowToDraftPage";
-import FAQ from "./pages/FAQ";
-import DraftByFilmography from "./pages/DraftByFilmography";
-import DraftByYear from "./pages/DraftByYear";
-import LeagueCreate from "./pages/LeagueCreate";
-import LeaguePage from "./pages/LeaguePage";
-import LeagueSettings from "./pages/LeagueSettings";
-import LeagueJoin from "./pages/LeagueJoin";
-import LeagueDraftLobbyPage from "./pages/LeagueDraftLobbyPage";
-import News from "./pages/News";
-import Blog from "./pages/Blog";
-import BlogPost from "./pages/BlogPost";
+
+const { Index, Auth, ResetPassword, Profile, Admin, FinalScores, VotePage, PrivacyPolicy, TermsOfService, Contact, About, LearnMore, SpecDraftSetup, ThemeDraftSetup, ThemeHubPage, ThemeLandingPage, HowToDraftPage, FAQ, DraftByFilmography, DraftByYear, LeagueHub, LeagueCreate, LeaguePage, LeagueSettings, LeagueJoin, LeagueDraftLobbyPage, News, Blog, BlogPost, DraftSetup, JoinDraft } = pages;
+
+/** DEV-only share-image design sandbox; lazy + gated so it's excluded from production builds. */
+const SharePreviewSandbox = import.meta.env.DEV ? lazy(() => import("./pages/SharePreviewSandbox")) : null;
 
 function LegacyThemesSlugRedirect() {
   const { slug } = useParams<{ slug: string }>();
   return <Navigate to={`/special-draft/${slug}`} replace />;
+}
+
+/**
+ * Bare `/draft`: a started draft arrives here via `navigate('/draft', { state })`, so when
+ * location state is present we render the live board (`Index`); a plain visit (no state) gets
+ * the indexable setup landing instead of bouncing to the homepage.
+ */
+function DraftEntry() {
+  const location = useLocation();
+  return location.state ? <Index /> : <DraftSetup />;
+}
+
+/** Keeps the header/footer in place and holds the page's space while its code chunk loads. */
+function RouteFallback() {
+  return <div className="min-h-[60vh]" aria-busy="true" />;
 }
 
 const queryClient = new QueryClient({
@@ -67,14 +60,16 @@ const App = () => (
           <AuthProvider>
             <BrowserRouter>
             <ScrollToTop />
+            <PendingDraftProcessor />
             <div className="flex flex-col min-h-screen">
             <AppHeader />
               <main className="flex-1">
+            <Suspense fallback={<RouteFallback />}>
             <Routes>
               <Route path="/" element={<Home />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/draft" element={<Index />} />
+              <Route path="/draft" element={<DraftEntry />} />
               <Route path="/draft/people/:name/setup" element={<ThemeDraftSetup theme="people" />} />
               <Route path="/draft/year/:year/setup" element={<ThemeDraftSetup theme="year" />} />
               <Route path="/draft/:draftId" element={<Index />} />
@@ -98,6 +93,7 @@ const App = () => (
               <Route path="/contact" element={<Contact />} />
               <Route path="/about" element={<About />} />
               <Route path="/spec-draft/:specDraftSlug/setup" element={<SpecDraftSetup />} />
+              <Route path="/league" element={<LeagueHub />} />
               <Route path="/league/create" element={<LeagueCreate />} />
               <Route path="/league/join" element={<LeagueJoin />} />
               <Route path="/league/:leagueId/settings" element={<LeagueSettings />} />
@@ -107,9 +103,20 @@ const App = () => (
               <Route path="/news" element={<News />} />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
+              {SharePreviewSandbox && (
+                <Route
+                  path="/share-preview"
+                  element={
+                    <Suspense fallback={null}>
+                      <SharePreviewSandbox />
+                    </Suspense>
+                  }
+                />
+              )}
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
               </main>
             <Footer />
             </div>

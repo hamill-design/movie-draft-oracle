@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -10,15 +10,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { socialShareImageMetaNodes } from "@/components/seo/SocialShareImageMeta";
 import { breadcrumbListNode, graphJsonLd, webPageNode } from "@/components/seo/jsonLd";
-import { useNavigate } from "react-router-dom";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { MOVIE_DRAFTER_PURPLE_SHELL } from "@/lib/pageGradients";
+import { useRef, useState } from "react";
 
 interface ContactFormData {
   name: string;
@@ -26,13 +26,37 @@ interface ContactFormData {
   category: string;
   subject: string;
   message: string;
+  website: string; // honeypot: hidden from people, bots fill it in
 }
 
+const labelClass = "text-greyscale-blue-200";
+
+const controlClass =
+  "bg-greyscale-purp-800 border-greyscale-purp-600 text-greyscale-blue-100 placeholder:text-greyscale-purp-400 focus:border-greyscale-blue-100 focus:ring-0 focus:ring-offset-0";
+
+const errorControlClass = "border-error-red-500";
+
+const errorTextClass = "text-sm text-error-red-400 font-brockmann";
+
+const categoryOptions = [
+  { value: "general", label: "General Question" },
+  { value: "bug-report", label: "Bug Report" },
+  { value: "feature-request", label: "Feature Request" },
+  { value: "account-issue", label: "Account Issue" },
+  { value: "billing", label: "Billing" },
+  { value: "other", label: "Other" },
+];
+
 const Contact = () => {
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const formLoadedAt = useRef(Date.now());
+
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Contact', path: '/contact' },
+  ];
+
   const {
     register,
     handleSubmit,
@@ -58,7 +82,7 @@ const Contact = () => {
       const fullSubject = `${subjectPrefix}${data.subject}`;
       
       // Format the message to include name and category info
-      const formattedMessage = `From: ${data.name} (${data.email})\n\n${data.message}`;
+      const formattedMessage = `From: ${data.name} (${data.email})\nCategory: ${data.category}\n\n${data.message}`;
       const formattedHtml = `<p><strong>From:</strong> ${data.name} (${data.email})</p><p><strong>Category:</strong> ${data.category}</p><hr/><p>${data.message.replace(/\n/g, '<br/>')}</p>`;
       
       // Prepare payload matching Edge Function format
@@ -69,6 +93,9 @@ const Contact = () => {
         text: formattedMessage,
         html: formattedHtml,
         created_at: new Date().toISOString(),
+        source: 'contact-form',
+        website: data.website,
+        elapsed_ms: Date.now() - formLoadedAt.current,
       };
 
       // Submit to Edge Function
@@ -98,6 +125,7 @@ const Contact = () => {
         setValue("category", "general");
         setValue("subject", "");
         setValue("message", "");
+        formLoadedAt.current = Date.now();
       }
     } catch (error) {
       console.error('Exception submitting contact form:', error);
@@ -133,163 +161,164 @@ const Contact = () => {
                   'Contact Movie Drafter support for help with your account, fantasy movie drafts, or any questions about our movie drafting game.',
                 type: 'ContactPage',
               }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'Contact', path: '/contact' },
-              ])
+              breadcrumbListNode(crumbs)
             )
           )}
         </script>
       </Helmet>
-      <div className="min-h-screen p-4" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
-      <div className="max-w-2xl mx-auto">
-        <Button
-          variant="ghost"
-          onClick={() => navigate(-1)}
-          className="mb-6"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
 
-        <Card>
-          <CardHeader>
-            <h1 className="text-3xl font-semibold font-brockmann leading-none tracking-tight">Contact Support</h1>
-            <CardDescription>
+      <div className="min-h-screen w-full" style={{ background: MOVIE_DRAFTER_PURPLE_SHELL }}>
+        <Breadcrumbs items={crumbs} />
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col gap-10">
+          <header className="flex flex-col gap-4">
+            <h1 className="m-0 font-chaney text-3xl sm:text-5xl text-greyscale-blue-50 leading-tight">
+              Contact Support
+            </h1>
+            <p className="m-0 text-greyscale-blue-100 font-brockmann text-base sm:text-lg leading-relaxed">
               Have a question or need help? Send us a message and we'll get back to you as soon as possible.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="name">
-                  Name <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  {...register("name", {
-                    required: "Name is required",
-                    minLength: {
-                      value: 2,
-                      message: "Name must be at least 2 characters",
-                    },
-                  })}
-                  placeholder="Your name"
-                  className={errors.name ? "border-destructive" : ""}
-                />
-                {errors.name && (
-                  <p className="text-sm text-destructive font-brockmann">
-                    {errors.name.message}
-                  </p>
-                )}
-              </div>
+            </p>
+          </header>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">
-                  Email <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  {...register("email", {
-                    required: "Email is required",
-                    pattern: {
-                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                      message: "Please enter a valid email address",
-                    },
-                  })}
-                  placeholder="your.email@example.com"
-                  className={errors.email ? "border-destructive" : ""}
-                />
-                {errors.email && (
-                  <p className="text-sm text-destructive font-brockmann">
-                    {errors.email.message}
-                  </p>
-                )}
-              </div>
+          <Card className="bg-greyscale-purp-850 border-greyscale-purp-700 text-greyscale-blue-100">
+            <CardContent className="p-6">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <div aria-hidden="true" className="absolute -left-[10000px] h-px w-px overflow-hidden">
+                  <label htmlFor="website">Leave this field empty</label>
+                  <input id="website" type="text" tabIndex={-1} autoComplete="off" {...register("website")} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name" className={labelClass}>
+                    Name <span className="text-error-red-400">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    {...register("name", {
+                      required: "Name is required",
+                      minLength: {
+                        value: 2,
+                        message: "Name must be at least 2 characters",
+                      },
+                    })}
+                    placeholder="Your name"
+                    className={`${controlClass} ${errors.name ? errorControlClass : ""}`}
+                  />
+                  {errors.name && (
+                    <p className={errorTextClass}>
+                      {errors.name.message}
+                    </p>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
-                <Select
-                  value={category}
-                  onValueChange={(value) => setValue("category", value)}
+                <div className="space-y-2">
+                  <Label htmlFor="email" className={labelClass}>
+                    Email <span className="text-error-red-400">*</span>
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    {...register("email", {
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message: "Please enter a valid email address",
+                      },
+                    })}
+                    placeholder="your.email@example.com"
+                    className={`${controlClass} ${errors.email ? errorControlClass : ""}`}
+                  />
+                  {errors.email && (
+                    <p className={errorTextClass}>
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="category" className={labelClass}>
+                    Category
+                  </Label>
+                  <Select
+                    value={category}
+                    onValueChange={(value) => setValue("category", value)}
+                  >
+                    <SelectTrigger id="category" className={controlClass}>
+                      <SelectValue placeholder="Select a category" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-greyscale-purp-800 border-greyscale-purp-600 text-greyscale-blue-100">
+                      {categoryOptions.map(({ value, label }) => (
+                        <SelectItem
+                          key={value}
+                          value={value}
+                          className="focus:bg-greyscale-purp-700 focus:text-greyscale-blue-50"
+                        >
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="subject" className={labelClass}>
+                    Subject <span className="text-error-red-400">*</span>
+                  </Label>
+                  <Input
+                    id="subject"
+                    {...register("subject", {
+                      required: "Subject is required",
+                      minLength: {
+                        value: 3,
+                        message: "Subject must be at least 3 characters",
+                      },
+                    })}
+                    placeholder="What is this regarding?"
+                    className={`${controlClass} ${errors.subject ? errorControlClass : ""}`}
+                  />
+                  {errors.subject && (
+                    <p className={errorTextClass}>
+                      {errors.subject.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="message" className={labelClass}>
+                    Message <span className="text-error-red-400">*</span>
+                  </Label>
+                  <Textarea
+                    id="message"
+                    {...register("message", {
+                      required: "Message is required",
+                      minLength: {
+                        value: 10,
+                        message: "Message must be at least 10 characters",
+                      },
+                    })}
+                    placeholder="Please provide details about your question or issue..."
+                    rows={6}
+                    className={`${controlClass} ${errors.message ? errorControlClass : ""}`}
+                  />
+                  {errors.message && (
+                    <p className={errorTextClass}>
+                      {errors.message.message}
+                    </p>
+                  )}
+                </div>
+
+                <Button
+                  type="submit"
+                  className="w-full bg-brand-primary hover:bg-purple-400 text-white font-brockmann-semibold"
+                  disabled={isSubmitting}
                 >
-                  <SelectTrigger id="category">
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="general">General Question</SelectItem>
-                    <SelectItem value="bug-report">Bug Report</SelectItem>
-                    <SelectItem value="feature-request">Feature Request</SelectItem>
-                    <SelectItem value="account-issue">Account Issue</SelectItem>
-                    <SelectItem value="billing">Billing</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="subject">
-                  Subject <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="subject"
-                  {...register("subject", {
-                    required: "Subject is required",
-                    minLength: {
-                      value: 3,
-                      message: "Subject must be at least 3 characters",
-                    },
-                  })}
-                  placeholder="What is this regarding?"
-                  className={errors.subject ? "border-destructive" : ""}
-                />
-                {errors.subject && (
-                  <p className="text-sm text-destructive font-brockmann">
-                    {errors.subject.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="message">
-                  Message <span className="text-destructive">*</span>
-                </Label>
-                <Textarea
-                  id="message"
-                  {...register("message", {
-                    required: "Message is required",
-                    minLength: {
-                      value: 10,
-                      message: "Message must be at least 10 characters",
-                    },
-                  })}
-                  placeholder="Please provide details about your question or issue..."
-                  rows={6}
-                  className={errors.message ? "border-destructive" : ""}
-                />
-                {errors.message && (
-                  <p className="text-sm text-destructive font-brockmann">
-                    {errors.message.message}
-                  </p>
-                )}
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Sending..." : "Send Message"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+                  {isSubmitting ? "Sending..." : "Send Message"}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </div>
     </>
   );
 };
 
 export default Contact;
-

@@ -2,15 +2,22 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
-import { articleNode, breadcrumbListNode, graphJsonLd } from '@/components/seo/jsonLd';
+import { articleNode, breadcrumbListNode, graphJsonLd, howToNode } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 const SITE = 'https://moviedrafter.com';
 
 const HowToDraftPage = () => {
-  const pageTitle = 'Movie Drafter - How to draft movies (rules, scoring & tips)';
+  const pageTitle = 'How to Play a Movie Draft: Rules, Scoring & Tips | Movie Drafter';
   const pageDesc =
-    'Complete guide to the movie drafting game: how picks work, category rules, scoring ideas, multiplayer flow, and why fantasy movie drafts are fun with friends.';
+    'Learn how a movie draft works in five minutes: take turns picking films, fill categories, and score on box office and awards. Free to play online with friends.';
   const articleHeadline = 'How to draft movies (rules, scoring & tips)';
+
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Learn more', path: '/learn-more' },
+    { name: 'How to draft movies', path: '/how-to-draft' },
+  ];
 
   return (
     <>
@@ -32,10 +39,30 @@ const HowToDraftPage = () => {
                 headline: articleHeadline,
                 description: pageDesc,
               }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'How to draft movies', path: '/how-to-draft' },
-              ])
+              howToNode({
+                path: '/how-to-draft',
+                name: 'How to draft movies',
+                description: pageDesc,
+                steps: [
+                  {
+                    name: 'Choose players and categories',
+                    text: 'The host picks how many people are playing (AI seats are fine as filler) and which categories each roster must fill, from broad ("Comedy") to narrow ("Academy Award Nominee or Winner").',
+                  },
+                  {
+                    name: 'Set the snake draft order',
+                    text: 'Movie Drafter uses a snake draft: if Player A picks first in round one, they pick last in round two, then first again in round three, keeping early picks powerful without letting one person run away with every slot.',
+                  },
+                  {
+                    name: 'Take turns picking eligible movies',
+                    text: 'On your turn, choose from the movies eligible for the active category. The app blocks picks that don’t qualify, so arguments shift from "does that count?" to strategy and taste.',
+                  },
+                  {
+                    name: 'Score the board',
+                    text: 'Once every roster is full, Movie Drafter scores each film using signals tied to the active categories — audience ratings, box office, and critic aggregates — and the highest combined total wins.',
+                  },
+                ],
+              }),
+              breadcrumbListNode(crumbs)
             )
           )}
         </script>
@@ -47,13 +74,9 @@ const HowToDraftPage = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
+        <Breadcrumbs items={crumbs} />
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col gap-10">
           <header className="flex flex-col gap-4">
-            <p className="m-0 text-sm font-brockmann text-purple-300">
-              <Link to="/learn-more" className="underline hover:text-purple-200">
-                ← Back to Learn More
-              </Link>
-            </p>
             <h1 className="m-0 font-chaney text-3xl sm:text-5xl text-greyscale-blue-50 leading-tight">
               How to draft movies
             </h1>

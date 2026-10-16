@@ -506,8 +506,8 @@ export const NotificationBell = () => {
         aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
-          'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border-none transition-colors',
-          open ? 'bg-white/[0.08] text-[#FCFFFF]' : 'bg-transparent text-white/70 hover:bg-white/[0.07] hover:text-[#FCFFFF]',
+          'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-md border-none p-1.5 transition-colors',
+          open ? 'bg-white/[0.08] text-greyscale-blue-100' : 'bg-transparent text-greyscale-blue-100 hover:bg-white/[0.07]',
         )}
       >
         <Bell size={20} />

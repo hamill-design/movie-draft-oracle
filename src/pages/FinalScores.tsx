@@ -1,3 +1,4 @@
+import { resolveDraftTitle } from '@/utils/resolveDraftTitle';
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -259,7 +260,7 @@ const FinalScores = () => {
               console.log('Using local draft data from localStorage');
               setDraft({
                 id: localDraft.id,
-                title: localDraft.option || localDraft.title,
+                title: await resolveDraftTitle(localDraft.theme, localDraft.option, localDraft.option || localDraft.title),
                 theme: localDraft.theme,
                 option: localDraft.option,
                 participants: localDraft.participants,
@@ -1047,6 +1048,7 @@ const FinalScores = () => {
               picks={picks}
               draftId={draftId!}
               isPublicView={isPublicView}
+              votingOpen={votingOpen}
             />
           )}
         </div>

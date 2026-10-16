@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { breadcrumbListNode, faqPageNode, graphJsonLd, webPageNode } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 const SITE = 'https://moviedrafter.com';
 
@@ -20,6 +21,16 @@ const faqs: { question: string; answer: string }[] = [
     question: 'Is Movie Drafter free to play?',
     answer:
       'Yes — Movie Drafter is completely free. You can start a draft without creating an account. Create a free account to save your draft history and access multiplayer features.',
+  },
+  {
+    question: 'Is there a Movie Drafter app for Android or iPhone?',
+    answer:
+      'A native mobile app is on the way. In the meantime, Movie Drafter works in your phone\'s browser on both Android and iPhone — just open moviedrafter.com and start a draft.',
+  },
+  {
+    question: 'Is Movie Drafter the same as Cinema Draft?',
+    answer:
+      'No. Movie Drafter is its own movie draft game at moviedrafter.com and is not affiliated with any app called Cinema Draft. If you are looking for a free way to draft movies with friends, you are in the right place.',
   },
   {
     question: 'Can I play Movie Drafter online with friends who are not in the same room?',
@@ -62,6 +73,16 @@ const faqs: { question: string; answer: string }[] = [
       'Any film in Movie Drafter\'s database — which pulls from a comprehensive movie database covering thousands of films across every genre, decade, and country. The eligible pool depends on your chosen format: filmography drafts are limited to one person\'s credits, year drafts to a single release year, and special drafts to a curated hand-picked list.',
   },
   {
+    question: 'What is a Movie Drafter league?',
+    answer:
+      'A league is a standing, invite-only group that runs as many drafts as it wants over time. Every completed draft awards league points by finishing position (10 for 1st, 7 for 2nd, 5 for 3rd, 3 for 4th, 2 for 5th, 1 for everyone else), and those points add up into shared league standings, with total movie score as the tiebreaker.',
+  },
+  {
+    question: 'How do league seasons work?',
+    answer:
+      'Every league uses the same universal quarterly seasons: Q1 (January–March), Q2 (April–June), Q3 (July–September), and Q4 (October–December). There is nothing to set up — each draft counts toward the quarter it is played in, and standings can be viewed for a single season or all-time.',
+  },
+  {
     question: 'Is Movie Drafter suitable for movie night or film club?',
     answer:
       'Absolutely. Movie Drafter is designed exactly for group movie nights, film clubs, and any social setting where everyone has opinions about cinema. A draft typically takes 10–20 minutes and generates plenty of debate about picks, strategy, and which films deserve their scores.',
@@ -71,7 +92,12 @@ const faqs: { question: string; answer: string }[] = [
 const FAQ = () => {
   const pageTitle = 'Movie Drafter FAQ – Movie draft game questions answered';
   const pageDesc =
-    'Answers to common questions about Movie Drafter: how the movie draft game works, scoring rules, multiplayer, draft formats, and how to play with friends online.';
+    'Answers to common Movie Drafter questions: how the movie draft game works, scoring, multiplayer, leagues and seasons, and draft formats.';
+
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'FAQ', path: '/faq' },
+  ];
 
   return (
     <>
@@ -89,10 +115,7 @@ const FAQ = () => {
           {JSON.stringify(
             graphJsonLd(
               webPageNode({ path: '/faq', name: pageTitle, description: pageDesc }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'FAQ', path: '/faq' },
-              ]),
+              breadcrumbListNode(crumbs),
               faqPageNode(faqs)
             )
           )}
@@ -103,13 +126,9 @@ const FAQ = () => {
         className="min-h-screen w-full"
         style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}
       >
+        <Breadcrumbs items={crumbs} />
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 sm:py-16 flex flex-col gap-10">
           <header className="flex flex-col gap-4">
-            <p className="m-0 text-sm font-brockmann text-purple-300">
-              <Link to="/" className="underline hover:text-purple-200">
-                ← Back to Movie Drafter
-              </Link>
-            </p>
             <h1 className="m-0 font-chaney text-3xl sm:text-5xl text-greyscale-blue-50 leading-tight">
               Frequently asked questions
             </h1>

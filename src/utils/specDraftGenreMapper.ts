@@ -144,3 +144,34 @@ export function getGenreIdsByName(genreName: string): number[] {
     .map(([id]) => parseInt(id, 10));
 }
 
+
+/**
+ * Converts a genre string (e.g. "Action Adventure Science Fiction") back into TMDB genre IDs.
+ * fetch-movies search results only return the string form, so this is how we get IDs to store.
+ */
+export function getGenreIdsFromString(genreString: string): number[] {
+  const lower = genreString.toLowerCase();
+  return Object.entries(TMDB_GENRE_MAP)
+    .filter(([, name]) => lower.includes(name.toLowerCase()))
+    .map(([id]) => parseInt(id, 10));
+}
+
+const CATEGORY_TO_GENRE_STRING: Record<string, string> = {
+  'Action/Adventure': 'Action Adventure',
+  'Animated': 'Animation',
+  'Comedy': 'Comedy',
+  'Drama/Romance': 'Drama Romance',
+  'Sci-Fi/Fantasy': 'Science Fiction Fantasy',
+  'Horror/Thriller': 'Horror Thriller',
+};
+
+/**
+ * Rebuilds a genre string from a movie's stored genre-based categories.
+ * Fallback for spec draft movies saved with empty movie_genres.
+ */
+export function genreStringFromCategories(categoryNames: string[]): string {
+  return categoryNames
+    .map(name => CATEGORY_TO_GENRE_STRING[name])
+    .filter(Boolean)
+    .join(' ');
+}

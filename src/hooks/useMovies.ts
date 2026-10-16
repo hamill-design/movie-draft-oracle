@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Movie } from '@/data/movies';
 import { getCleanActorName } from '@/lib/utils';
-import { getGenreName } from '@/utils/specDraftGenreMapper';
+import { getGenreName, genreStringFromCategories } from '@/utils/specDraftGenreMapper';
 import { mergeOscarStatusFromSources } from '@/utils/movieCategoryUtils';
 
 export const useMovies = (category?: string, themeOption?: string, userSearchQuery?: string) => {
@@ -40,7 +40,7 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
       if (category === 'spec-draft' && themeOption) {
         let { data: moviesData, error: moviesError } = await (supabase as any)
           .from('spec_draft_movies')
-          .select('movie_tmdb_id, movie_title, movie_year, movie_poster_path, movie_genres, is_sequel, sequel_enriched_at')
+          .select('id, movie_tmdb_id, movie_title, movie_year, movie_poster_path, movie_genres, is_sequel, sequel_enriched_at')
           .eq('spec_draft_id', themeOption)
           .order('movie_title', { ascending: true });
 
@@ -66,13 +66,31 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
           } else {
             const refetch = await (supabase as any)
               .from('spec_draft_movies')
-              .select('movie_tmdb_id, movie_title, movie_year, movie_poster_path, movie_genres, is_sequel, sequel_enriched_at')
+              .select('id, movie_tmdb_id, movie_title, movie_year, movie_poster_path, movie_genres, is_sequel, sequel_enriched_at')
               .eq('spec_draft_id', themeOption)
               .order('movie_title', { ascending: true });
             if (!refetch.error && refetch.data) {
               moviesData = refetch.data;
             }
           }
+        }
+
+        // Older spec draft movies were saved with empty movie_genres; rebuild genres
+        // from their stored (auto-detected) categories so category eligibility works.
+        const missingGenreIds = (moviesData || [])
+          .filter((m: any) => !Array.isArray(m.movie_genres) || m.movie_genres.length === 0)
+          .map((m: any) => m.id);
+        const fallbackGenres = new Map<string, string>();
+        if (missingGenreIds.length > 0) {
+          const { data: catRows } = await (supabase as any)
+            .from('spec_draft_movie_categories')
+            .select('spec_draft_movie_id, category_name')
+            .in('spec_draft_movie_id', missingGenreIds);
+          const byMovie = new Map<string, string[]>();
+          (catRows || []).forEach((r: any) => {
+            byMovie.set(r.spec_draft_movie_id, [...(byMovie.get(r.spec_draft_movie_id) || []), r.category_name]);
+          });
+          byMovie.forEach((cats, id) => fallbackGenres.set(id, genreStringFromCategories(cats)));
         }
 
         // Transform spec draft movies to Movie format
@@ -86,7 +104,7 @@ export const useMovies = (category?: string, themeOption?: string, userSearchQue
             genreString = genreNames.join(' ');
             console.log(`useMovies - Movie "${movie.movie_title}": genres=${JSON.stringify(movie.movie_genres)}, converted to="${genreString}"`);
           } else {
-            console.warn(`useMovies - Movie "${movie.movie_title}" has no genres:`, movie.movie_genres);
+            genreString = fallbackGenres.get(movie.id) || '';
           }
 
           return {

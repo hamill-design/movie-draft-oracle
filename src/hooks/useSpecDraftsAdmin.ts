@@ -10,6 +10,8 @@ export interface SpecDraft {
   slug: string;
   description: string | null;
   photo_url: string | null;
+  /** Wide banner for the public special draft page; falls back to photo_url when empty */
+  hero_image_url?: string | null;
   display_order: number | null;
   is_hidden: boolean;
   created_at: string;
@@ -74,7 +76,7 @@ export const useSpecDraftsAdmin = () => {
       // First try with display_order in the order clause
       const { data, error: fetchError } = await (supabase
         .from('spec_drafts' as any)
-        .select('id, name, slug, description, photo_url, display_order, is_hidden, created_at, updated_at')
+        .select('id, name, slug, description, photo_url, hero_image_url, display_order, is_hidden, created_at, updated_at')
         .order('display_order', { ascending: true, nullsFirst: false })
         .order('created_at', { ascending: false }) as any);
 
@@ -157,7 +159,7 @@ export const useSpecDraftsAdmin = () => {
       let draftData: any;
       const { data: initialDraftData, error: draftError } = await (supabase
         .from('spec_drafts' as any)
-        .select('id, name, slug, description, photo_url, display_order, is_hidden, created_at, updated_at')
+        .select('id, name, slug, description, photo_url, hero_image_url, display_order, is_hidden, created_at, updated_at')
         .eq('id', specDraftId)
         .single() as any);
       
@@ -308,7 +310,7 @@ export const useSpecDraftsAdmin = () => {
           description: description?.trim() || null,
           photo_url: photoUrl || null,
         } as any)
-        .select('id, name, slug, description, photo_url, display_order, is_hidden, created_at, updated_at')
+        .select('id, name, slug, description, photo_url, hero_image_url, display_order, is_hidden, created_at, updated_at')
         .single() as any);
 
       if (createError) throw createError;
@@ -359,6 +361,7 @@ export const useSpecDraftsAdmin = () => {
       name?: string;
       description?: string | null;
       photo_url?: string | null;
+      hero_image_url?: string | null;
     }
   ) => {
     setLoading(true);
@@ -398,7 +401,7 @@ export const useSpecDraftsAdmin = () => {
         .from('spec_drafts' as any)
         .update(updateData as any)
         .eq('id', id)
-        .select('id, name, slug, description, photo_url, display_order, is_hidden, created_at, updated_at')
+        .select('id, name, slug, description, photo_url, hero_image_url, display_order, is_hidden, created_at, updated_at')
         .single() as any);
       
       data = updateResult;
@@ -930,7 +933,7 @@ export const useSpecDraftsAdmin = () => {
           updated_at: new Date().toISOString() 
         } as any)
         .eq('id', id)
-        .select('id, name, slug, description, photo_url, display_order, is_hidden, created_at, updated_at')
+        .select('id, name, slug, description, photo_url, hero_image_url, display_order, is_hidden, created_at, updated_at')
         .single() as any);
 
       if (updateError) {

@@ -46,22 +46,27 @@ if (!fs.existsSync(dist)) {
   process.exit(1);
 }
 
-const lastmod = new Date().toISOString().slice(0, 10);
 const posts = await fetchBlogPosts();
+// Real dates only (never the build date). /blog is "last modified" when its newest post was.
+const postDates = posts
+  .map((p) => (typeof p.updated_at === "string" ? p.updated_at.slice(0, 10) : ""))
+  .filter(Boolean)
+  .sort();
+const lastmod = postDates.length ? postDates[postDates.length - 1] : "";
 
 const urlEntries = [
   `  <url>
-    <loc>${SITE}/blog</loc>
-    <lastmod>${lastmod}</lastmod>
+    <loc>${SITE}/blog</loc>${lastmod ? `
+    <lastmod>${lastmod}</lastmod>` : ""}
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>`,
   ...posts.map((post) => {
     const postLastmod =
-      typeof post.updated_at === "string" && post.updated_at ? post.updated_at.slice(0, 10) : lastmod;
+      typeof post.updated_at === "string" && post.updated_at ? post.updated_at.slice(0, 10) : "";
     return `  <url>
-    <loc>${SITE}/blog/${escapeXml(post.slug.trim())}</loc>
-    <lastmod>${postLastmod}</lastmod>
+    <loc>${SITE}/blog/${escapeXml(post.slug.trim())}</loc>${postLastmod ? `
+    <lastmod>${postLastmod}</lastmod>` : ""}
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>`;

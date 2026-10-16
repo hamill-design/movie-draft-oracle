@@ -4,6 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { LinkOutIcon } from '@/components/icons';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { breadcrumbListNode, graphJsonLd, webPageNode } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -126,7 +127,9 @@ function NewsCard({ item }: { item: NewsItem }) {
         <div style={{ alignSelf: 'stretch', height: '168px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', flexShrink: 0 }}>
           <img
             src={item.image}
-            alt=""
+            alt={decodeEntities(item.title)}
+            loading="lazy"
+            decoding="async"
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             onError={(e) => {
               (e.currentTarget.parentElement as HTMLDivElement).style.display = 'none';
@@ -203,6 +206,11 @@ const News = () => {
 
   const items = data?.items ?? [];
 
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'News', path: '/news' },
+  ];
+
   return (
     <>
       <Helmet>
@@ -233,10 +241,7 @@ const News = () => {
                 description:
                   'The latest film news, box office updates, and cinema stories — curated for Movie Drafter.',
               }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'News', path: '/news' },
-              ])
+              breadcrumbListNode(crumbs)
             )
           )}
         </script>
@@ -248,8 +253,8 @@ const News = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
-        <div className="max-w-[1200px] mx-auto px-6 py-12 flex flex-col gap-10">
-
+        <Breadcrumbs items={crumbs} />
+        <div className="max-w-[1400px] mx-auto px-6 py-12 flex flex-col gap-10">
           {/* Header */}
           <div className="flex flex-col gap-3">
             <h1

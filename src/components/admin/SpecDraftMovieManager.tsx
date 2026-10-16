@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Search, X, Loader2, CheckCircle2, Film, CheckSquare2, Edit2, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { SpecDraftWithMovies, SpecDraftMovie } from '@/hooks/useSpecDraftsAdmin';
-import { mapGenresToCategories, getGenreName } from '@/utils/specDraftGenreMapper';
+import { mapGenresToCategories, getGenreName, getGenreIdsFromString } from '@/utils/specDraftGenreMapper';
 import { useToast } from '@/hooks/use-toast';
 
 interface SpecDraftMovieManagerProps {
@@ -417,7 +417,9 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
           movie_title: movie.title,
           movie_year: movie.year ?? null,
           movie_poster_path: movie.posterPath ?? null,
-          movie_genres: movie.genres || [],
+          movie_genres: movie.genres && movie.genres.length > 0
+            ? movie.genres
+            : getGenreIdsFromString(movie.genre || ''),
           movie_overview: normalizeMovieOverview(movie.description ?? null),
           seo_blurb: null,
           oscar_status: movie.oscarStatus ?? null,

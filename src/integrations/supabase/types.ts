@@ -102,9 +102,11 @@ export type Database = {
           draft_id: string
           guest_participant_id: string | null
           id: string
+          invited_email: string | null
           is_ai: boolean | null
           is_host: boolean
           joined_at: string | null
+          last_seen_at: string | null
           participant_name: string
           status: Database["public"]["Enums"]["participant_status"]
           user_id: string | null
@@ -117,6 +119,7 @@ export type Database = {
           is_ai?: boolean | null
           is_host?: boolean
           joined_at?: string | null
+          last_seen_at?: string | null
           participant_name: string
           status?: Database["public"]["Enums"]["participant_status"]
           user_id?: string | null
@@ -129,6 +132,7 @@ export type Database = {
           is_ai?: boolean | null
           is_host?: boolean
           joined_at?: string | null
+          last_seen_at?: string | null
           participant_name?: string
           status?: Database["public"]["Enums"]["participant_status"]
           user_id?: string | null
@@ -389,7 +393,6 @@ export type Database = {
           league_id: string
           notes: string | null
           scheduled_at: string | null
-          season_id: string | null
           theme: string | null
         }
         Insert: {
@@ -401,7 +404,6 @@ export type Database = {
           league_id: string
           notes?: string | null
           scheduled_at?: string | null
-          season_id?: string | null
           theme?: string | null
         }
         Update: {
@@ -413,7 +415,6 @@ export type Database = {
           league_id?: string
           notes?: string | null
           scheduled_at?: string | null
-          season_id?: string | null
           theme?: string | null
         }
         Relationships: [
@@ -429,13 +430,6 @@ export type Database = {
             columns: ["league_id"]
             isOneToOne: false
             referencedRelation: "leagues"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "league_drafts_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "league_seasons"
             referencedColumns: ["id"]
           },
         ]
@@ -564,41 +558,6 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      league_seasons: {
-        Row: {
-          created_at: string
-          ends_at: string
-          id: string
-          league_id: string
-          name: string
-          starts_at: string
-        }
-        Insert: {
-          created_at?: string
-          ends_at: string
-          id?: string
-          league_id: string
-          name: string
-          starts_at: string
-        }
-        Update: {
-          created_at?: string
-          ends_at?: string
-          id?: string
-          league_id?: string
-          name?: string
-          starts_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "league_seasons_league_id_fkey"
-            columns: ["league_id"]
-            isOneToOne: false
-            referencedRelation: "leagues"
             referencedColumns: ["id"]
           },
         ]
@@ -863,6 +822,7 @@ export type Database = {
           id: string
           is_hidden: boolean | null
           name: string
+          hero_image_url: string | null
           photo_url: string | null
           slug: string
           updated_at: string | null
@@ -874,6 +834,7 @@ export type Database = {
           id?: string
           is_hidden?: boolean | null
           name: string
+          hero_image_url?: string | null
           photo_url?: string | null
           slug: string
           updated_at?: string | null
@@ -885,6 +846,7 @@ export type Database = {
           id?: string
           is_hidden?: boolean | null
           name?: string
+          hero_image_url?: string | null
           photo_url?: string | null
           slug?: string
           updated_at?: string | null
@@ -941,19 +903,14 @@ export type Database = {
           draft_count: number | null
           league_id: string | null
           photo_url: string | null
+          raw_score: number | null
           rank: number | null
-          season_id: string | null
+          season_quarter: number | null
+          season_year: number | null
           total_score: number | null
           user_id: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "league_drafts_season_id_fkey"
-            columns: ["season_id"]
-            isOneToOne: false
-            referencedRelation: "league_seasons"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "league_members_league_id_fkey"
             columns: ["league_id"]
@@ -1022,6 +979,10 @@ export type Database = {
         Returns: boolean
       }
       cleanup_expired_guest_sessions: { Args: never; Returns: undefined }
+      clear_draft_presence: {
+        Args: { p_draft_id: string; p_participant_id: string }
+        Returns: undefined
+      }
       create_guest_multiplayer_draft: {
         Args: {
           p_categories: string[]
@@ -1134,6 +1095,15 @@ export type Database = {
       }
       generate_invite_code: { Args: never; Returns: string }
       generate_league_slug: { Args: { name_input: string }; Returns: string }
+      heartbeat_draft_presence: {
+        Args: { p_draft_id: string; p_participant_id: string }
+        Returns: undefined
+      }
+      claim_draft_invite: {
+        Args: { p_draft_id: string; p_mark_joined?: boolean }
+        Returns: string
+      }
+      claim_pending_draft_invites: { Args: Record<PropertyKey, never>; Returns: number }
       get_invite_code_for_draft: {
         Args: { p_draft_id: string }
         Returns: string

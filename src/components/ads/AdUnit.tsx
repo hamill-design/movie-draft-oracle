@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { ADSENSE_CONFIG } from '@/config/ads';
+import { ADSENSE_CONFIG, ADS_ENABLED } from '@/config/ads';
 
 interface AdUnitProps {
   adSlot: string;
@@ -18,6 +18,7 @@ const AdUnit: React.FC<AdUnitProps> = ({
   responsive = true
 }) => {
   useEffect(() => {
+    if (!ADS_ENABLED) return;
     try {
       // Push ad to Google AdSense
       if (typeof window !== 'undefined' && (window as any).adsbygoogle) {
@@ -27,6 +28,8 @@ const AdUnit: React.FC<AdUnitProps> = ({
       console.error('AdSense error:', error);
     }
   }, []);
+
+  if (!ADS_ENABLED) return null;
 
   return (
     <div className={`ad-container ${className}`} style={style}>

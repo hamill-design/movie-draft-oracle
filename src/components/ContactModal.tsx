@@ -12,13 +12,14 @@ import {
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ContactFormData {
   name: string;
   email: string;
   subject: string;
   message: string;
+  website: string; // honeypot: hidden from people, bots fill it in
 }
 
 interface ContactModalProps {
@@ -29,6 +30,11 @@ interface ContactModalProps {
 const ContactModal = ({ open, onOpenChange }: ContactModalProps) => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const formOpenedAt = useRef(Date.now());
+
+  useEffect(() => {
+    if (open) formOpenedAt.current = Date.now();
+  }, [open]);
   
   const {
     register,
@@ -53,6 +59,9 @@ const ContactModal = ({ open, onOpenChange }: ContactModalProps) => {
         text: formattedMessage,
         html: formattedHtml,
         created_at: new Date().toISOString(),
+        source: 'contact-form',
+        website: data.website,
+        elapsed_ms: Date.now() - formOpenedAt.current,
       };
 
       // Submit to Edge Function
@@ -82,6 +91,7 @@ const ContactModal = ({ open, onOpenChange }: ContactModalProps) => {
           email: "",
           subject: "",
           message: "",
+          website: "",
         });
         onOpenChange(false);
       }
@@ -109,6 +119,10 @@ const ContactModal = ({ open, onOpenChange }: ContactModalProps) => {
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 mt-4">
+          <div aria-hidden="true" className="absolute -left-[10000px] h-px w-px overflow-hidden">
+            <label htmlFor="contact-website">Leave this field empty</label>
+            <input id="contact-website" type="text" tabIndex={-1} autoComplete="off" {...register("website")} />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="name" className="text-greyscale-blue-200">
               Name <span className="text-error-red-400">*</span>

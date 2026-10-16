@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import { format } from 'date-fns';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { breadcrumbListNode, graphJsonLd, webPageNode } from '@/components/seo/jsonLd';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import {
   fetchPublishedBlogPosts,
   blogPostPreview,
@@ -11,7 +12,7 @@ import {
 } from '@/services/publicBlog';
 
 const PAGE_DESCRIPTION =
-  'Tips, strategy guides, and updates from Movie Drafter — the movie drafting game for friends.';
+  'Strategy guides, franchise breakdowns, cinema news, and product updates from Movie Drafter: the movie draft game for friends';
 
 // ── Skeleton ──────────────────────────────────────────────────────────────────
 
@@ -49,7 +50,9 @@ function BlogCard({ post }: { post: PublicBlogPostSummary }) {
         <div style={{ height: '168px', background: 'rgba(255,255,255,0.05)', overflow: 'hidden', flexShrink: 0 }}>
           <img
             src={post.cover_image_url}
-            alt={post.cover_image_alt || ''}
+            alt={post.cover_image_alt || post.title}
+            loading="lazy"
+            decoding="async"
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
         </div>
@@ -85,30 +88,32 @@ const Blog = () => {
 
   const items = posts ?? [];
 
+  const crumbs = [
+    { name: 'Home', path: '/' },
+    { name: 'Blog', path: '/blog' },
+  ];
+
   return (
     <>
       <Helmet>
-        <title>Blog – Movie Drafter</title>
+        <title>Movie Drafter Blog: Updates, Guides & Movie Draft Strategy</title>
         <meta name="description" content={PAGE_DESCRIPTION} />
         <link rel="canonical" href="https://moviedrafter.com/blog" />
-        <meta property="og:title" content="Blog – Movie Drafter" />
+        <meta property="og:title" content="Movie Drafter Blog: Updates, Guides & Movie Draft Strategy" />
         <meta property="og:description" content={PAGE_DESCRIPTION} />
         <meta property="og:url" content="https://moviedrafter.com/blog" />
         {socialShareImageMetaNodes()}
-        <meta name="twitter:title" content="Blog – Movie Drafter" />
+        <meta name="twitter:title" content="Movie Drafter Blog: Updates, Guides & Movie Draft Strategy" />
         <meta name="twitter:description" content={PAGE_DESCRIPTION} />
         <script type="application/ld+json">
           {JSON.stringify(
             graphJsonLd(
               webPageNode({
                 path: '/blog',
-                name: 'Blog – Movie Drafter',
+                name: 'Movie Drafter Blog: Updates, Guides & Movie Draft Strategy',
                 description: PAGE_DESCRIPTION,
               }),
-              breadcrumbListNode([
-                { name: 'Home', path: '/' },
-                { name: 'Blog', path: '/blog' },
-              ])
+              breadcrumbListNode(crumbs)
             )
           )}
         </script>
@@ -120,7 +125,8 @@ const Blog = () => {
           background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
         }}
       >
-        <div className="max-w-[1200px] mx-auto px-6 py-12 flex flex-col gap-10">
+        <Breadcrumbs items={crumbs} />
+        <div className="max-w-[1400px] mx-auto px-6 py-12 flex flex-col gap-10">
           {/* Header */}
           <div className="flex flex-col gap-3">
             <h1
@@ -130,7 +136,7 @@ const Blog = () => {
               Blog
             </h1>
             <p
-              className="font-brockmann text-base max-w-xl"
+              className="font-brockmann text-base w-full"
               style={{ color: '#BBC3BF' }}
             >
               {PAGE_DESCRIPTION}

@@ -144,6 +144,28 @@ export function faqPageNode(items: { question: string; answer: string }[]) {
   };
 }
 
+/** HowTo node — ordered steps for a process page (e.g. "how to draft movies"). */
+export function howToNode(opts: {
+  path: string;
+  name: string;
+  description: string;
+  steps: { name: string; text: string }[];
+}) {
+  const pageUrl = absolutePath(opts.path);
+  return {
+    '@type': 'HowTo',
+    '@id': `${pageUrl}#howto`,
+    name: opts.name,
+    description: opts.description,
+    step: opts.steps.map((step, i) => ({
+      '@type': 'HowToStep',
+      position: i + 1,
+      name: step.name,
+      text: step.text,
+    })),
+  };
+}
+
 export function articleNode(opts: {
   path: string;
   headline: string;
