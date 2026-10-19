@@ -31,6 +31,13 @@
       "expo-font",
       "expo-splash-screen",
       "expo-image"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "c9c26012-eed8-4432-ab8d-565970ae9379"
+      }
+    },
+    "owner": "hamill-design"
   }
 }
