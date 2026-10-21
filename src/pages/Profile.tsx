@@ -5,6 +5,7 @@ import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { syncMarketingAudience } from '@/lib/marketingAudienceSync';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -51,7 +52,7 @@ const Profile = () => {
   const { isAdmin } = useAdminAccess();
   const { leagues, loading: leaguesLoading } = useUserLeagues();
   const { invites: pendingInvites, loading: invitesLoading, refetch: refetchInvites } = usePendingLeagueInvites();
-  const { acceptInvite, declineInvite } = useLeagueActions();
+  const { acceptInvite, declineInvite, addDraftToLeague } = useLeagueActions();
   const [profile, setProfile] = useState<any>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -59,6 +60,9 @@ const Profile = () => {
   const [newName, setNewName] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [draftToDelete, setDraftToDelete] = useState<string | null>(null);
+  const [draftToAssign, setDraftToAssign] = useState<{ id: string; title: string } | null>(null);
+  const [assignLeagueId, setAssignLeagueId] = useState<string>('');
+  const [assigningToLeague, setAssigningToLeague] = useState(false);
   const [draftLeagueFilter, setDraftLeagueFilter] = useState<string>('all');
   const [specDraftData, setSpecDraftData] = useState<Map<string, { name: string; photo_url: string | null }>>(new Map());
   const [marketingPrefUpdating, setMarketingPrefUpdating] = useState(false);
@@ -270,6 +274,33 @@ const Profile = () => {
     setDraftToDelete(draftId);
     setShowDeleteDialog(true);
   }, []);
+
+  const openAssignDialog = useCallback((draft: { id: string; title: string }) => {
+    setDraftToAssign({ id: draft.id, title: draft.title });
+    setAssignLeagueId('');
+  }, []);
+
+  const handleAssignToLeague = async () => {
+    if (!draftToAssign || !assignLeagueId) return;
+    const league = leagues.find((l) => l.id === assignLeagueId);
+    setAssigningToLeague(true);
+    const ok = await addDraftToLeague(assignLeagueId, draftToAssign.id);
+    setAssigningToLeague(false);
+    if (ok) {
+      toast({
+        title: 'Draft added to league',
+        description: `"${draftToAssign.title}" now counts toward ${league?.name ?? 'the league'}.`,
+      });
+      setDraftToAssign(null);
+      refetch();
+    } else {
+      toast({
+        title: 'Could not add draft',
+        description: 'Something went wrong. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const handleSaveName = async () => {
     if (!user?.id) return;
@@ -601,18 +632,36 @@ const Profile = () => {
               </button>
             )}
             
-            {/* Delete Button — league drafts are removed from the league dashboard only */}
-            {draft.role !== 'guest' && !draft.league_id && (
-              <button 
-                onClick={() => openDeleteDialog(draft.id)}
-                className="px-3 py-2 rounded-[2px] justify-center items-center gap-2 inline-flex transition-colors"
-              >
-                <div className="w-4 h-4 p-0.5 flex-col justify-center items-center gap-2.5 inline-flex">
-                  <Trash2 size={16} className="text-greyscale-blue-300" />
-                </div>
-                <span className="text-center text-greyscale-blue-300 text-sm font-brockmann font-medium leading-5">Delete</span>
-              </button>
-            )}
+            {/* Add to league + Delete share one row. League drafts are removed from the league dashboard only. */}
+            <div className="flex items-center justify-end gap-1 self-end">
+              {/* Add to league — completed drafts the user owns that were created outside a league */}
+              {draft.is_complete && !draft.league_id && draft.role !== 'guest' && draft.user_id === user?.id && leagues.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => openAssignDialog(draft)}
+                  className="inline-flex w-fit max-w-full items-center gap-2 rounded-[2px] px-3 py-2 text-sm font-medium leading-5 text-[#907AFF] transition-colors hover:text-purple-200 font-brockmann"
+                >
+                  <span className="inline-flex size-6 shrink-0 items-center justify-center">
+                    <TrophyIcon className="size-[18px]" aria-hidden />
+                  </span>
+                  <span>Add to league</span>
+                </button>
+              )}
+
+              {draft.role !== 'guest' && !draft.league_id && (
+                <button
+                  type="button"
+                  onClick={() => openDeleteDialog(draft.id)}
+                  aria-label="Delete draft"
+                  title="Delete draft"
+                  className="inline-flex size-10 items-center justify-center rounded-[2px] text-greyscale-blue-300 transition-colors hover:text-error-red-400"
+                >
+                  <span className="inline-flex size-6 items-center justify-center">
+                    <Trash2 size={18} aria-hidden />
+                  </span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
         
@@ -620,7 +669,7 @@ const Profile = () => {
         {/* {index > 0 && (index + 1) % 3 === 0 && <InlineAd />} */}
       </div>
     ));
-  }, [filteredDrafts, handleViewDraft, openDeleteDialog, specDraftData, navigate]);
+  }, [filteredDrafts, handleViewDraft, openDeleteDialog, openAssignDialog, specDraftData, navigate, leagues, user?.id]);
 
   // Show loading only for auth, allow profile and drafts to load independently
   if (loading) {
@@ -971,9 +1020,9 @@ const Profile = () => {
                 <SelectTrigger className="h-auto w-full rounded-[2px] border-0 bg-[#1D1D1F] px-4 py-3 text-sm font-brockmann text-[#BDC3C2] outline outline-1 -outline-offset-1 outline-[#BDC3C2] focus:ring-0 focus:ring-offset-0 sm:w-[min(100%,280px)]">
                   <SelectValue placeholder="Filter by league" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="border-[#49474B] bg-[#1D1D1F] font-brockmann text-[#FCFFFF]">
                   {draftFilterOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value} className="font-brockmann">
+                    <SelectItem key={opt.value} value={opt.value} className="focus:bg-purple-800 focus:text-[#FCFFFF]">
                       {opt.label} ({opt.count})
                     </SelectItem>
                   ))}
@@ -1011,6 +1060,64 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Add to League Dialog */}
+      <AlertDialog
+        open={!!draftToAssign}
+        onOpenChange={(open) => { if (!open && !assigningToLeague) setDraftToAssign(null); }}
+      >
+        <AlertDialogContent
+          className="border-[#7142FF]/60"
+          style={{ boxShadow: '0 0 32px rgba(113, 66, 255, 0.45), 0 0 8px rgba(113, 66, 255, 0.6)' }}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>Add to league</AlertDialogTitle>
+            <AlertDialogDescription>
+              Choose a league for "{draftToAssign?.title}". Its results will count toward that league's standings
+              for the quarter the draft was played. Once added, only the league admin can remove it from the league.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <RadioGroup
+            value={assignLeagueId}
+            onValueChange={setAssignLeagueId}
+            aria-label="League"
+            className="max-h-60 gap-2 overflow-y-auto"
+          >
+            {leagues.map((league) => {
+              const selected = assignLeagueId === league.id;
+              return (
+                <label
+                  key={league.id}
+                  htmlFor={`assign-league-${league.id}`}
+                  className={`flex cursor-pointer items-center gap-3 rounded-[2px] border px-4 py-3 font-brockmann text-sm transition-colors ${
+                    selected
+                      ? 'border-[#907AFF] bg-purple-800/40 text-[#FCFFFF]'
+                      : 'border-[#49474B] bg-[#1D1D1F] text-[#BDC3C2] hover:border-[#907AFF]/60'
+                  }`}
+                >
+                  <RadioGroupItem
+                    id={`assign-league-${league.id}`}
+                    value={league.id}
+                    className="border-[#907AFF] text-[#907AFF]"
+                  />
+                  <span className="min-w-0 flex-1 truncate">{league.name}</span>
+                </label>
+              );
+            })}
+          </RadioGroup>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={assigningToLeague}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!assignLeagueId || assigningToLeague}
+              onClick={(e) => { e.preventDefault(); handleAssignToLeague(); }}
+              className="bg-brand-primary text-greyscale-blue-100 hover:bg-purple-300"
+              style={{ backgroundClip: 'unset', WebkitBackgroundClip: 'unset' }}
+            >
+              {assigningToLeague ? 'Adding…' : 'Add to league'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
