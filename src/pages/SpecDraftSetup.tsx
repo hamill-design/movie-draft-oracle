@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Users, User, Mail, Trash2, Bot, Trophy } from 'lucide-react';
+import { Users, User, Mail, Trash2, Bot } from 'lucide-react';
 import { CheckboxIcon, MultiPersonIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -14,7 +14,9 @@ import { getCategoryConfig } from '@/config/categoryConfigs';
 import { Participant } from '@/types/participant';
 import { getRandomAIName } from '@/data/aiNames';
 import { isUuidParam } from '@/utils/specDraftSlug';
-import { useLeague, useLeagueActions, useLeagueMembers } from '@/hooks/useLeagues';
+import { useLeagueActions } from '@/hooks/useLeagues';
+import { useLeagueSetup } from '@/hooks/useLeagueSetup';
+import { LeagueToggleCard, LeagueMemberPicker } from '@/components/league/LeagueSetupSection';
 // Simple checkbox component for category selection with live counter
 const CategoryCheckbox = ({
   category,
@@ -207,16 +209,13 @@ interface SpecDraftCategory {
 
 const SpecDraftSetup = () => {
   const { specDraftSlug } = useParams<{ specDraftSlug: string }>();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { participantId, loading: sessionLoading } = useCurrentUser();
   const { createMultiplayerDraft, loading: creatingDraft } = useMultiplayerDraft();
   const { getDisplayName, loading: profileLoading } = useProfile();
-  const leagueIdParam = searchParams.get('league') ?? undefined;
-  const { league: assignedLeague } = useLeague(leagueIdParam);
   const { addDraftToLeague } = useLeagueActions();
-  const { members: leagueMembers } = useLeagueMembers(leagueIdParam);
+  const leagueSetup = useLeagueSetup();
 
   const [specDraft, setSpecDraft] = useState<SpecDraft | null>(null);
   const [, setCustomCategories] = useState<SpecDraftCategory[]>([]);
@@ -240,6 +239,22 @@ const SpecDraftSetup = () => {
     if (profileLoading) return '';
     return getDisplayName();
   }, [getDisplayName, profileLoading]);
+
+  // League drafts are multiplayer-only: league points need a signed-in account per player.
+  useEffect(() => {
+    if (leagueSetup.enabled) setDraftMode('multiplayer');
+  }, [leagueSetup.enabled]);
+
+  const handleAddEmails = (emails: string[]) => {
+    setParticipants((prev) => {
+      const existing = new Set(prev.map((p) => p.name.toLowerCase()));
+      const fresh = emails
+        .map((e) => e.trim())
+        .filter((e) => e && !existing.has(e.toLowerCase()))
+        .map((e) => ({ name: e, isAI: false }));
+      return fresh.length ? [...prev, ...fresh] : prev;
+    });
+  };
 
   // Automatically add host when switching to multiplayer mode
   useEffect(() => {
@@ -567,6 +582,14 @@ const SpecDraftSetup = () => {
           });
           return;
         }
+        if (leagueSetup.enabled && !leagueSetup.league) {
+          toast({
+            title: 'Choose a league',
+            description: 'Pick which league this draft belongs to, or turn off "Part of a league".',
+            variant: 'destructive',
+          });
+          return;
+        }
         // Create multiplayer draft
         // The host is automatically added by the backend, so we only send additional participants
         // Filter out the host from the participants list since they'll be added automatically
@@ -589,8 +612,15 @@ const SpecDraftSetup = () => {
           aiParticipantNames: aiParticipants, // Send AI participant names
         });
 
-        if (leagueIdParam && draftId) {
-          await addDraftToLeague(leagueIdParam, draftId);
+        if (leagueSetup.league && draftId) {
+          const added = await addDraftToLeague(leagueSetup.league.id, draftId);
+          if (!added) {
+            toast({
+              title: 'Draft created, but not added to the league',
+              description: 'You can add it from your profile once the draft is finished.',
+              variant: 'destructive',
+            });
+          }
         }
         navigate(`/draft/${draftId}`);
       } else {
@@ -653,21 +683,6 @@ const SpecDraftSetup = () => {
       `}</style>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-6">
-          {assignedLeague && (
-            <div
-              className="flex flex-col gap-3 rounded-[8px] border border-purple-500/35 bg-greyscale-purp-900 px-4 py-3 text-sm text-greyscale-blue-100 font-brockmann"
-              style={{ boxShadow: '0px 0px 6px #3B0394' }}
-            >
-              <div className="flex items-start gap-3">
-                <Trophy className="w-5 h-5 shrink-0 text-brand-primary mt-0.5" aria-hidden />
-                <p className="m-0 leading-snug">
-                  This draft will be added to{' '}
-                  <strong className="font-semibold text-greyscale-blue-50">{assignedLeague.name}</strong>.
-                </p>
-              </div>
-            </div>
-          )}
-
           {/* Draft Title - No background container */}
           <div className="w-full flex flex-col gap-4 items-center justify-center py-6">
             <p className="uppercase m-0" style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '32px', lineHeight: '36px', letterSpacing: '1.28px', color: 'var(--Text-Primary, #FCFFFF)' }}>
@@ -677,6 +692,8 @@ const SpecDraftSetup = () => {
               {specDraft.name.toUpperCase()}
             </h1>
           </div>
+
+          <LeagueToggleCard setup={leagueSetup} />
 
           {/* Select Draft Mode */}
           <div style={{
@@ -726,6 +743,8 @@ const SpecDraftSetup = () => {
             }}>
               <button
                 onClick={() => setDraftMode('local')}
+                disabled={leagueSetup.enabled}
+                title={leagueSetup.enabled ? 'League drafts are online multiplayer' : undefined}
                 onMouseEnter={() => draftMode !== 'local' && setHoveredMode('local')}
                 onMouseLeave={() => setHoveredMode(null)}
                 style={{
@@ -749,7 +768,8 @@ const SpecDraftSetup = () => {
                   gap: '16px',
                   display: 'flex',
                   border: 'none',
-                  cursor: 'pointer',
+                  cursor: leagueSetup.enabled ? 'not-allowed' : 'pointer',
+                  opacity: leagueSetup.enabled ? 0.4 : 1,
                   transition: 'background 0.2s ease'
                 }}
               >
@@ -867,48 +887,13 @@ const SpecDraftSetup = () => {
               </button>
             </div>
 
-            {leagueIdParam && leagueMembers.length > 0 && (() => {
-              const addedValues = new Set(participants.map(p => p.name.toLowerCase()));
-              const available = leagueMembers.filter(m => {
-                if (m.user_id === participantId) return false; // skip self
-                const val = draftMode === 'multiplayer'
-                  ? m.profile?.email ?? ''
-                  : m.profile?.name ?? m.profile?.email ?? '';
-                return val && !addedValues.has(val.toLowerCase());
-              });
-              if (available.length === 0) return null;
-              return (
-                <div className="flex flex-col gap-2">
-                  <p className="text-greyscale-blue-400 text-xs font-brockmann font-medium m-0 uppercase tracking-widest">
-                    League members
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {available.map(m => {
-                      const val = draftMode === 'multiplayer'
-                        ? m.profile?.email ?? ''
-                        : m.profile?.name ?? m.profile?.email ?? '';
-                      const label = m.profile?.name ?? m.profile?.email ?? 'Member';
-                      return (
-                        <button
-                          key={m.user_id}
-                          type="button"
-                          onClick={() => {
-                            const trimmed = val.trim();
-                            if (trimmed && !participants.some(p => p.name === trimmed)) {
-                              setParticipants([...participants, { name: trimmed, isAI: false }]);
-                            }
-                          }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-greyscale-purp-800 border border-purple-500/40 text-sm text-greyscale-blue-200 font-brockmann hover:bg-purple-900/50 hover:border-purple-400 transition-colors"
-                        >
-                          <Users size={13} className="text-purple-400 shrink-0" />
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })()}
+            <LeagueMemberPicker
+              setup={leagueSetup}
+              participants={participants}
+              hostName={hostName}
+              selfId={participantId}
+              onAddEmails={handleAddEmails}
+            />
             {draftMode === 'multiplayer' && (
               <div className="p-4 bg-teal-900 rounded flex items-center gap-2" style={{outline: '1px solid #B2FFEA', outlineOffset: '-1px'}}>
                 <div className="flex w-6 shrink-0 justify-center items-center max-md:hidden">

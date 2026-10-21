@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
-import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Users, User, Mail, Bot, Trophy } from 'lucide-react';
+import { Users, User, Mail, Bot } from 'lucide-react';
 import { MultiPersonIcon, EmailIcon, TrashIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -17,7 +17,9 @@ import { useForm } from 'react-hook-form';
 import { DraftSetupForm } from '@/hooks/useDraftForm';
 import { Participant } from '@/types/participant';
 import { getRandomAIName } from '@/data/aiNames';
-import { useLeague, useLeagueActions, useLeagueMembers } from '@/hooks/useLeagues';
+import { useLeagueActions } from '@/hooks/useLeagues';
+import { useLeagueSetup } from '@/hooks/useLeagueSetup';
+import { LeagueToggleCard, LeagueMemberPicker } from '@/components/league/LeagueSetupSection';
 
 const isEmailValid = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -27,16 +29,13 @@ interface ThemeDraftSetupProps {
 
 const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
   const params = useParams<{ name?: string; year?: string }>();
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { participantId, loading: sessionLoading } = useCurrentUser();
   const { createMultiplayerDraft, loading: creatingDraft } = useMultiplayerDraft();
   const { getDisplayName, loading: profileLoading } = useProfile();
-  const leagueIdParam = searchParams.get('league') ?? undefined;
-  const { league: assignedLeague } = useLeague(leagueIdParam);
   const { addDraftToLeague } = useLeagueActions();
-  const { members: leagueMembers } = useLeagueMembers(leagueIdParam);
+  const leagueSetup = useLeagueSetup();
 
   const option = useMemo(() => {
     if (theme === 'people' && params.name) {
@@ -76,6 +75,11 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
     }
   }, [option, navigate]);
 
+  // League drafts are multiplayer-only: league points need a signed-in account per player.
+  useEffect(() => {
+    if (leagueSetup.enabled) setDraftMode('multiplayer');
+  }, [leagueSetup.enabled]);
+
   useEffect(() => {
     if (draftMode === 'multiplayer' && hostName && !participants.some(p => p.name === hostName)) {
       setParticipants((prev) => [{ name: hostName, isAI: false }, ...prev]);
@@ -97,6 +101,17 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
     if (!participants.some(p => p.name === aiName)) {
       setParticipants((prev) => [...prev, { name: aiName, isAI: true }]);
     }
+  };
+
+  const handleAddEmails = (emails: string[]) => {
+    setParticipants((prev) => {
+      const existing = new Set(prev.map((p) => p.name.toLowerCase()));
+      const fresh = emails
+        .map((e) => e.trim())
+        .filter((e) => e && !existing.has(e.toLowerCase()))
+        .map((e) => ({ name: e, isAI: false }));
+      return fresh.length ? [...prev, ...fresh] : prev;
+    });
   };
 
   const handleRemoveParticipant = (participant: Participant) => {
@@ -158,6 +173,14 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
         });
         return;
       }
+      if (leagueSetup.enabled && !leagueSetup.league) {
+        toast({
+          title: 'Choose a league',
+          description: 'Pick which league this draft belongs to, or turn off "Part of a league".',
+          variant: 'destructive',
+        });
+        return;
+      }
 
       const draftId = await createMultiplayerDraft({
         title: option,
@@ -168,8 +191,15 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
         participantEmails: humanParticipants,
         aiParticipantNames: aiParticipants,
       });
-      if (leagueIdParam && draftId) {
-        await addDraftToLeague(leagueIdParam, draftId);
+      if (leagueSetup.league && draftId) {
+        const added = await addDraftToLeague(leagueSetup.league.id, draftId);
+        if (!added) {
+          toast({
+            title: 'Draft created, but not added to the league',
+            description: 'You can add it from your profile once the draft is finished.',
+            variant: 'destructive',
+          });
+        }
       }
       navigate(`/draft/${draftId}`);
       return;
@@ -228,21 +258,6 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
               </Link>
             </div>
 
-            {assignedLeague && (
-              <div
-                className="flex flex-col gap-3 rounded-[8px] border border-purple-500/35 bg-greyscale-purp-900 px-4 py-3 text-sm text-greyscale-blue-100 font-brockmann"
-                style={{ boxShadow: '0px 0px 6px #3B0394' }}
-              >
-                <div className="flex items-start gap-3">
-                  <Trophy className="w-5 h-5 shrink-0 text-brand-primary mt-0.5" aria-hidden />
-                  <p className="m-0 leading-snug">
-                    This draft will be added to{' '}
-                    <strong className="font-semibold text-greyscale-blue-50">{assignedLeague.name}</strong>.
-                  </p>
-                </div>
-              </div>
-            )}
-
             <div className="w-full flex flex-col gap-4 items-center justify-center py-6">
               <p className="uppercase m-0" style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '32px', lineHeight: '36px', letterSpacing: '1.28px', color: 'var(--Text-Primary, #FCFFFF)' }}>
                 SETTING UP
@@ -251,6 +266,8 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                 {option.toUpperCase()}
               </h1>
             </div>
+
+            <LeagueToggleCard setup={leagueSetup} />
 
             {/* Select Draft Mode */}
             <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{ boxShadow: '0px 0px 6px #3B0394' }}>
@@ -263,7 +280,9 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                 <button
                   type="button"
                   onClick={() => setDraftMode('local')}
-                  className={`flex-1 h-20 min-h-[80px] w-full sm:min-w-[294px] px-4 sm:px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors ${
+                  disabled={leagueSetup.enabled}
+                  title={leagueSetup.enabled ? 'League drafts are online multiplayer' : undefined}
+                  className={`flex-1 h-20 min-h-[80px] w-full sm:min-w-[294px] px-4 sm:px-9 py-2 rounded-[6px] flex justify-center items-center gap-4 text-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
                     draftMode === 'local' ? 'bg-brand-primary text-greyscale-blue-100' : 'bg-greyscale-purp-850 text-greyscale-blue-100 hover:bg-greyscale-purp-800 active:bg-purple-800'
                   }`}
                   style={{
@@ -337,48 +356,13 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                   Add AI
                 </button>
               </div>
-              {leagueIdParam && leagueMembers.length > 0 && (() => {
-                const addedValues = new Set(participants.map(p => p.name.toLowerCase()));
-                const available = leagueMembers.filter(m => {
-                  if (m.user_id === participantId) return false; // skip self
-                  const val = draftMode === 'multiplayer'
-                    ? m.profile?.email ?? ''
-                    : m.profile?.name ?? m.profile?.email ?? '';
-                  return val && !addedValues.has(val.toLowerCase());
-                });
-                if (available.length === 0) return null;
-                return (
-                  <div className="flex flex-col gap-2">
-                    <p className="text-greyscale-blue-400 text-xs font-brockmann font-medium m-0 uppercase tracking-widest">
-                      League members
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {available.map(m => {
-                        const val = draftMode === 'multiplayer'
-                          ? m.profile?.email ?? ''
-                          : m.profile?.name ?? m.profile?.email ?? '';
-                        const label = m.profile?.name ?? m.profile?.email ?? 'Member';
-                        return (
-                          <button
-                            key={m.user_id}
-                            type="button"
-                            onClick={() => {
-                              const trimmed = val.trim();
-                              if (trimmed && !participants.some(p => p.name === trimmed)) {
-                                setParticipants(prev => [...prev, { name: trimmed, isAI: false }]);
-                              }
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-greyscale-purp-800 border border-purple-500/40 text-sm text-greyscale-blue-200 font-brockmann hover:bg-purple-900/50 hover:border-purple-400 transition-colors"
-                          >
-                            <Users size={13} className="text-purple-400 shrink-0" />
-                            {label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
+              <LeagueMemberPicker
+                setup={leagueSetup}
+                participants={participants}
+                hostName={hostName}
+                selfId={participantId}
+                onAddEmails={handleAddEmails}
+              />
               {draftMode === 'multiplayer' && (
                 <div className="p-4 bg-teal-900 rounded flex items-center gap-2" style={{ outline: '1px solid #B2FFEA', outlineOffset: '-1px' }}>
                   <EmailIcon className="w-6 h-6 shrink-0 text-teal-200 max-md:hidden" />
