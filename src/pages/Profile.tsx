@@ -635,7 +635,8 @@ const Profile = () => {
             {/* Add to league + Delete share one row. League drafts are removed from the league dashboard only. */}
             <div className="flex items-center justify-end gap-1 self-end">
               {/* Add to league — completed drafts the user owns that were created outside a league */}
-              {draft.is_complete && !draft.league_id && draft.role !== 'guest' && draft.user_id === user?.id && leagues.length > 0 && (
+              {/* Multiplayer only: league points come from signed-in participants, which local drafts don't have */}
+              {draft.is_complete && draft.is_multiplayer && !draft.league_id && draft.role !== 'guest' && draft.user_id === user?.id && leagues.length > 0 && (
                 <button
                   type="button"
                   onClick={() => openAssignDialog(draft)}
@@ -1074,7 +1075,8 @@ const Profile = () => {
             <AlertDialogTitle>Add to league</AlertDialogTitle>
             <AlertDialogDescription>
               Choose a league for "{draftToAssign?.title}". Its results will count toward that league's standings
-              for the quarter the draft was played. Once added, only the league admin can remove it from the league.
+              for the quarter the draft was played. Only players who are members of the league earn league points.
+              Once added, only the league admin can remove it from the league.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <RadioGroup
