@@ -267,11 +267,13 @@ export const LeagueDraftCard: React.FC<LeagueDraftCardProps> = ({
           <button
             type="button"
             onClick={onDelete}
-            aria-label="Delete from league history"
-            className="mt-1 inline-flex items-center gap-1.5 self-end text-xs text-greyscale-blue-500 transition-colors hover:text-red-400 font-brockmann"
+            aria-label="Remove from league"
+            title="Remove from league"
+            className="inline-flex size-10 items-center justify-center self-end rounded-[2px] text-greyscale-blue-300 transition-colors hover:text-error-red-400"
           >
-            <Trash2 size={13} />
-            Remove from league
+            <span className="inline-flex size-6 items-center justify-center">
+              <Trash2 size={18} aria-hidden />
+            </span>
           </button>
         )}
       </div>
