@@ -4,8 +4,8 @@ import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Users, User, Mail, Bot } from 'lucide-react';
-import { MultiPersonIcon, EmailIcon, TrashIcon } from '@/components/icons';
+import { Users, User, Bot } from 'lucide-react';
+import { MultiPersonIcon, TrashIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
@@ -19,7 +19,14 @@ import { Participant } from '@/types/participant';
 import { getRandomAIName } from '@/data/aiNames';
 import { useLeagueActions } from '@/hooks/useLeagues';
 import { useLeagueSetup } from '@/hooks/useLeagueSetup';
-import { LeagueToggleCard, LeagueMemberPicker } from '@/components/league/LeagueSetupSection';
+import {
+  LeagueToggleCard,
+  LeagueMemberPicker,
+  ParticipantIdentity,
+  HostIdentity,
+  findLeagueMember,
+  useResetParticipantsOnLeagueSwitch,
+} from '@/components/league/LeagueSetupSection';
 
 const isEmailValid = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -33,7 +40,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
   const { toast } = useToast();
   const { participantId, loading: sessionLoading } = useCurrentUser();
   const { createMultiplayerDraft, loading: creatingDraft } = useMultiplayerDraft();
-  const { getDisplayName, loading: profileLoading } = useProfile();
+  const { profile, getDisplayName, loading: profileLoading } = useProfile();
   const { addDraftToLeague } = useLeagueActions();
   const leagueSetup = useLeagueSetup();
 
@@ -62,6 +69,8 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
     if (profileLoading) return '';
     return getDisplayName();
   }, [getDisplayName, profileLoading]);
+
+  useResetParticipantsOnLeagueSwitch(leagueSetup, setParticipants, hostName);
 
   const categories = useDraftCategories(theme);
 
@@ -114,6 +123,11 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
     });
   };
 
+  const handleRemoveEmails = (emails: string[]) => {
+    const remove = new Set(emails.map((e) => e.trim().toLowerCase()));
+    setParticipants((prev) => prev.filter((p) => p.name === hostName || p.isAI || !remove.has(p.name.trim().toLowerCase())));
+  };
+
   const handleRemoveParticipant = (participant: Participant) => {
     if (draftMode === 'multiplayer' && participant.name === hostName) {
       toast({
@@ -125,6 +139,14 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
     }
     setParticipants((prev) => prev.filter((p) => p.name !== participant.name));
   };
+
+  // The Participants list shows the host, typed-in emails and AI players. League
+  // members are chosen in the league members section instead.
+  const listedParticipants = participants.filter(
+    (p) =>
+      (draftMode !== 'multiplayer' || p.name !== hostName) &&
+      !(draftMode === 'multiplayer' && !p.isAI && findLeagueMember(leagueSetup.members, p.name)),
+  );
 
   const handleSubmit = form.handleSubmit(async (data) => {
     if (!option || !data.categories.length) {
@@ -270,7 +292,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
             <LeagueToggleCard setup={leagueSetup} />
 
             {/* Select Draft Mode */}
-            <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{ boxShadow: '0px 0px 6px #3B0394' }}>
+            <div className="w-full p-6 bg-greyscale-purp-900 rounded-card flex flex-col gap-6" style={{ boxShadow: 'var(--shadow-card-glow)' }}>
               <div className="self-stretch flex flex-col justify-center items-center gap-2">
                 <h2 className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann m-0">
                   Select A Mode
@@ -311,14 +333,15 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
               {draftMode === 'multiplayer' && (
                 <div className="self-stretch p-4 bg-teal-900 rounded flex flex-col" style={{ outline: '1px solid #B2FFEA', outlineOffset: '-1px' }}>
                   <p className="text-teal-200 text-sm font-medium leading-5 font-brockmann m-0">
-                    <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They&apos;ll receive an email invitation to join your draft.
+                    <span className="font-bold">Multiplayer Mode:</span>{' '}
+                    Enter email addresses of friends you want to invite. They&apos;ll receive an email invitation to join your draft.
                   </p>
                 </div>
               )}
             </div>
 
             {/* Add Participants */}
-            <div className="p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{ boxShadow: '0px 0px 6px #3B0394' }}>
+            <div className="p-6 bg-greyscale-purp-900 rounded-card flex flex-col gap-6" style={{ boxShadow: 'var(--shadow-card-glow)' }}>
               <div className="flex items-center gap-2">
                 <MultiPersonIcon className="w-6 h-6 text-purple-300" />
                 <h2 className="text-greyscale-blue-100 text-xl font-brockmann font-medium leading-7 m-0">
@@ -356,54 +379,31 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                   Add AI
                 </button>
               </div>
-              <LeagueMemberPicker
-                setup={leagueSetup}
-                participants={participants}
-                hostName={hostName}
-                selfId={participantId}
-                onAddEmails={handleAddEmails}
-              />
-              {draftMode === 'multiplayer' && (
-                <div className="p-4 bg-teal-900 rounded flex items-center gap-2" style={{ outline: '1px solid #B2FFEA', outlineOffset: '-1px' }}>
-                  <EmailIcon className="w-6 h-6 shrink-0 text-teal-200 max-md:hidden" />
-                  <p className="text-teal-200 text-sm font-brockmann font-medium leading-5 m-0">
-                    <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They&apos;ll receive an email invitation to join.
-                  </p>
-                </div>
-              )}
-              {(participants.length > 0 || (draftMode === 'multiplayer' && hostName)) && (
+              {(listedParticipants.length > 0 || (draftMode === 'multiplayer' && hostName)) && (
                 <div className="flex flex-col gap-3">
                   <p className="text-greyscale-blue-300 text-base font-normal leading-6 font-brockmann m-0">
                     Participants (
                     {draftMode === 'multiplayer' && hostName
-                      ? participants.filter((p) => p.name !== hostName).length + 1
-                      : participants.length}
+                      ? listedParticipants.length + 1
+                      : listedParticipants.length}
                     ):
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {draftMode === 'multiplayer' && hostName && (
-                      <div className="py-2 pl-4 pr-4 bg-brand-primary rounded flex items-center gap-2" title="Host (cannot be removed)">
-                        <Mail size={16} className="shrink-0 text-greyscale-blue-100 max-md:hidden" />
-                        <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
-                          {hostName} (Host)
-                        </span>
+                      <div className="py-1.5 pl-2 pr-4 bg-brand-primary rounded-full flex items-center gap-2" title="Host (cannot be removed)">
+                        <HostIdentity name={hostName} email={profile?.email} avatarUrl={profile?.avatar_url} />
                       </div>
                     )}
-                    {participants.filter((p) => draftMode !== 'multiplayer' || p.name !== hostName).map((participant) => (
+                    {listedParticipants.map((participant) => {
+                      return (
                       <div
                         key={participant.name}
-                        className={`py-2 pl-4 pr-[10px] bg-brand-primary rounded flex items-center gap-2 ${
+                        className={`py-2 pl-4 pr-[10px] bg-brand-primary rounded-full flex items-center gap-2 ${
                           draftMode === 'multiplayer' && !participant.isAI && !isEmailValid(participant.name) && participant.name !== hostName ? 'bg-red-900 border border-red-500' : ''
                         }`}
                       >
-                        {draftMode === 'multiplayer' && !participant.isAI && (
-                          <Mail size={16} className="shrink-0 text-greyscale-blue-100 max-md:hidden" />
-                        )}
-                        {participant.isAI && <Bot size={16} className="text-greyscale-blue-100" />}
-                        <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
-                          {participant.name}
-                          {participant.isAI && <span className="ml-1 text-xs opacity-75">(AI)</span>}
-                        </span>
+                        <ParticipantIdentity participant={participant} multiplayer={draftMode === 'multiplayer'} />
+                        {participant.isAI && <span className="text-xs text-greyscale-blue-100 opacity-75">(AI)</span>}
                         {draftMode === 'multiplayer' && !participant.isAI && participant.name !== hostName && !isEmailValid(participant.name) && (
                           <span className="text-xs text-red-400 ml-1">Invalid</span>
                         )}
@@ -418,10 +418,19 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                           <TrashIcon className="w-4 h-4 text-greyscale-blue-100" />
                         </button>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
+              <LeagueMemberPicker
+                setup={leagueSetup}
+                participants={participants}
+                hostName={hostName}
+                selfId={participantId}
+                onAddEmails={handleAddEmails}
+                onRemoveEmails={handleRemoveEmails}
+              />
             </div>
 
             {/* Categories */}

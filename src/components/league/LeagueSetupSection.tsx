@@ -1,13 +1,105 @@
-import React, { useMemo } from 'react';
-import { Trophy } from 'lucide-react';
+import React, { useEffect, useMemo, useRef } from 'react';
+import { Bot, Check, Mail, Trophy } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/utils/avatarUpload';
 import type { LeagueSetup } from '@/hooks/useLeagueSetup';
+import type { LeagueMember } from '@/hooks/useLeagues';
 import type { Participant } from '@/types/participant';
 
 const normalizeEmail = (value: string) => value.trim().toLowerCase();
+
+/** The league member whose account email matches an invited email, if any. */
+export const findLeagueMember = (members: LeagueMember[], email: string): LeagueMember | null =>
+  members.find((m) => m.profile?.email && normalizeEmail(m.profile.email) === normalizeEmail(email)) ?? null;
+
+/**
+ * When the selected league changes, drop the players that were added from the
+ * previous league's member list. The host, typed-in invites and AI players stay.
+ * Turning the toggle off (or back on for the same league) keeps everyone.
+ */
+export const useResetParticipantsOnLeagueSwitch = (
+  setup: LeagueSetup,
+  setParticipants: React.Dispatch<React.SetStateAction<Participant[]>>,
+  hostName: string,
+) => {
+  const leagueId = setup.league?.id ?? null;
+  const lastLeagueId = useRef<string | null>(null);
+  const lastMemberEmails = useRef<Set<string>>(new Set());
+
+  // Runs before the member-email snapshot below: right after a switch, `members`
+  // is empty until the new league's members load, so the snapshot is still the
+  // previous league's.
+  useEffect(() => {
+    if (!leagueId) return;
+    if (lastLeagueId.current && lastLeagueId.current !== leagueId) {
+      const previous = lastMemberEmails.current;
+      setParticipants((prev) =>
+        prev.filter((p) => p.isAI || p.name === hostName || !previous.has(normalizeEmail(p.name))),
+      );
+      lastMemberEmails.current = new Set();
+    }
+    lastLeagueId.current = leagueId;
+  }, [leagueId, hostName, setParticipants]);
+
+  useEffect(() => {
+    if (!leagueId || setup.members.length === 0) return;
+    lastMemberEmails.current = new Set(
+      setup.members.map((m) => m.profile?.email).filter(Boolean).map((e) => normalizeEmail(e as string)),
+    );
+  }, [leagueId, setup.members]);
+};
+
+const IdentityAvatar: React.FC<{ name?: string | null; email?: string | null; avatarUrl?: string | null }> = ({
+  name,
+  email,
+  avatarUrl,
+}) => (
+  <Avatar className="size-6 shrink-0">
+    <AvatarImage src={avatarUrl ?? undefined} alt="" />
+    <AvatarFallback className="bg-white/20 text-[10px] text-greyscale-blue-100">
+      {getInitials(name, email)}
+    </AvatarFallback>
+  </Avatar>
+);
+
+/**
+ * Leading icon + label for a participant chip on the setup pages. Typed-in
+ * invites keep the mail icon and show the email; AI players keep the bot icon.
+ * (League members aren't listed here, they live in the league members section.)
+ */
+export const ParticipantIdentity: React.FC<{
+  participant: Participant;
+  multiplayer: boolean;
+}> = ({ participant, multiplayer }) => {
+  if (participant.isAI) {
+    return (
+      <>
+        <Bot size={16} className="shrink-0 text-greyscale-blue-100" />
+        <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">{participant.name}</span>
+      </>
+    );
+  }
+  return (
+    <>
+      {multiplayer && <Mail size={16} className="shrink-0 text-greyscale-blue-100 max-md:hidden" />}
+      <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">{participant.name}</span>
+    </>
+  );
+};
+
+/** The host's chip content: their photo (or initials) and name. No mail icon, the host isn't emailed. */
+export const HostIdentity: React.FC<{ name: string; email?: string | null; avatarUrl?: string | null }> = ({
+  name,
+  email,
+  avatarUrl,
+}) => (
+  <>
+    <IdentityAvatar name={name} email={email} avatarUrl={avatarUrl} />
+    <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">{name} (Host)</span>
+  </>
+);
 
 /** Toggle + league picker shown at the top of the draft setup pages. */
 export const LeagueToggleCard: React.FC<{ setup: LeagueSetup }> = ({ setup }) => {
@@ -17,8 +109,8 @@ export const LeagueToggleCard: React.FC<{ setup: LeagueSetup }> = ({ setup }) =>
 
   return (
     <div
-      className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-4 font-brockmann"
-      style={{ boxShadow: '0px 0px 6px #3B0394' }}
+      className="w-full p-6 bg-greyscale-purp-900 rounded-card flex flex-col gap-4 font-brockmann"
+      style={{ boxShadow: 'var(--shadow-card-glow)' }}
     >
       <div className="flex items-center gap-3">
         <Trophy className="w-6 h-6 shrink-0 text-purple-300" aria-hidden />
@@ -87,8 +179,10 @@ export const LeagueToggleCard: React.FC<{ setup: LeagueSetup }> = ({ setup }) =>
 };
 
 /**
- * League members as one-tap invites, plus a summary of who will earn league
- * points. Renders nothing until a league is selected.
+ * The selected league's members as toggle buttons, plus a summary of who will
+ * earn league points. Members stay in this section (selected = invited); the
+ * Participants list is only for the host and typed-in emails. Renders nothing
+ * until a league is selected.
  */
 export const LeagueMemberPicker: React.FC<{
   setup: LeagueSetup;
@@ -96,7 +190,8 @@ export const LeagueMemberPicker: React.FC<{
   hostName: string;
   selfId?: string | null;
   onAddEmails: (emails: string[]) => void;
-}> = ({ setup, participants, hostName, selfId, onAddEmails }) => {
+  onRemoveEmails: (emails: string[]) => void;
+}> = ({ setup, participants, hostName, selfId, onAddEmails, onRemoveEmails }) => {
   const { league, members } = setup;
 
   const addedEmails = useMemo(
@@ -104,13 +199,9 @@ export const LeagueMemberPicker: React.FC<{
     [participants],
   );
 
-  const available = useMemo(
-    () =>
-      members.filter((m) => {
-        const email = m.profile?.email;
-        return m.user_id !== selfId && !!email && !addedEmails.has(normalizeEmail(email));
-      }),
-    [members, selfId, addedEmails],
+  const candidates = useMemo(
+    () => members.filter((m) => m.user_id !== selfId && !!m.profile?.email),
+    [members, selfId],
   );
 
   const summary = useMemo(() => {
@@ -127,10 +218,12 @@ export const LeagueMemberPicker: React.FC<{
 
   const totalHumans = summary.humans.length + 1; // host always belongs to the league
   const memberHumans = totalHumans - summary.notMembers.length;
+  const candidateEmails = candidates.map((m) => m.profile!.email as string);
+  const allAdded = candidateEmails.length > 0 && candidateEmails.every((e) => addedEmails.has(normalizeEmail(e)));
 
   return (
     <div className="flex flex-col gap-3">
-      {available.length > 0 && (
+      {candidates.length > 0 && (
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between gap-2">
             <p className="text-greyscale-blue-400 text-xs font-brockmann font-medium m-0 uppercase tracking-widest">
@@ -138,29 +231,35 @@ export const LeagueMemberPicker: React.FC<{
             </p>
             <button
               type="button"
-              onClick={() => onAddEmails(available.map((m) => m.profile!.email as string))}
+              onClick={() => (allAdded ? onRemoveEmails(candidateEmails) : onAddEmails(candidateEmails))}
               className="text-sm font-brockmann font-medium text-[#907AFF] hover:text-purple-200 transition-colors"
             >
-              Add all
+              {allAdded ? 'Remove all' : 'Add all'}
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
-            {available.map((m) => (
-              <button
-                key={m.user_id}
-                type="button"
-                onClick={() => onAddEmails([m.profile!.email as string])}
-                className="inline-flex items-center gap-2 py-1 pl-1 pr-3 rounded-full bg-greyscale-purp-800 border border-purple-500/40 text-sm text-greyscale-blue-200 font-brockmann hover:bg-purple-900/50 hover:border-purple-400 transition-colors"
-              >
-                <Avatar className="size-6 shrink-0">
-                  <AvatarImage src={m.profile?.avatar_url ?? undefined} alt="" />
-                  <AvatarFallback className="bg-purple-800 text-[10px] text-greyscale-blue-100">
-                    {getInitials(m.profile?.name, m.profile?.email)}
-                  </AvatarFallback>
-                </Avatar>
-                {m.profile?.name ?? m.profile?.email ?? 'Member'}
-              </button>
-            ))}
+            {candidates.map((m) => {
+              const email = m.profile!.email as string;
+              const selected = addedEmails.has(normalizeEmail(email));
+              return (
+                <button
+                  key={m.user_id}
+                  type="button"
+                  aria-pressed={selected}
+                  title={email}
+                  onClick={() => (selected ? onRemoveEmails([email]) : onAddEmails([email]))}
+                  className={`inline-flex items-center gap-2 py-1 pl-1 pr-3 rounded-full border text-sm font-brockmann transition-colors ${
+                    selected
+                      ? 'bg-brand-primary border-transparent text-greyscale-blue-100 hover:bg-purple-300'
+                      : 'bg-greyscale-purp-800 border-purple-500/40 text-greyscale-blue-200 hover:bg-purple-900/50 hover:border-purple-400'
+                  }`}
+                >
+                  <IdentityAvatar name={m.profile?.name} email={m.profile?.email} avatarUrl={m.profile?.avatar_url} />
+                  {m.profile?.name ?? email}
+                  {selected && <Check size={14} className="shrink-0" aria-hidden />}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

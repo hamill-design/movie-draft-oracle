@@ -102,10 +102,10 @@ export const JoinDraftForm = ({ className }: JoinDraftFormProps) => {
   return (
     <div
       className={cn(
-        'flex h-full min-h-0 w-full flex-col items-start gap-6 p-6 bg-greyscale-purp-900 rounded-[8px]',
+        'flex h-full min-h-0 w-full flex-col items-start gap-6 p-6 bg-greyscale-purp-900 rounded-card',
         className
       )}
-      style={{ boxShadow: '0px 0px 6px #3B0394' }}
+      style={{ boxShadow: 'var(--shadow-card-glow)' }}
     >
       <div className="self-stretch flex flex-col items-start gap-1">
         <HeaderIcon3 

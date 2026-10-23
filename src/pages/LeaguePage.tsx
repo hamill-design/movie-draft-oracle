@@ -504,8 +504,8 @@ const LeaguePage = () => {
           style={{ background: MOVIE_DRAFTER_PURPLE_SHELL }}
         >
           <div
-            className="flex w-full max-w-[420px] flex-col items-center gap-4 rounded-[8px] bg-greyscale-purp-900 p-6 text-center"
-            style={{ boxShadow: '0px 0px 6px #3B0394', borderLeft: '3px solid #7142FF' }}
+            className="flex w-full max-w-[420px] flex-col items-center gap-4 rounded-card bg-greyscale-purp-900 p-6 text-center"
+            style={{ boxShadow: 'var(--shadow-card-glow)', borderLeft: '3px solid #7142FF' }}
           >
             <p className="m-0 font-brockmann text-xs font-semibold uppercase tracking-[0.2em] text-brand-primary">
               League invite
@@ -719,10 +719,10 @@ const LeaguePage = () => {
           {/* Tab bodies */}
           {mainTab === 'standings' && (
             <div
-              className="flex w-full flex-col gap-6 self-stretch rounded-lg p-6"
+              className="flex w-full flex-col gap-6 self-stretch rounded-card p-6"
               style={{
                 background: 'var(--Section-Container, #0E0E0F)',
-                boxShadow: '0px 0px 6px #3B0394',
+                boxShadow: 'var(--shadow-card-glow)',
               }}
             >
               <div className="flex w-full flex-col gap-4 self-stretch sm:flex-row sm:items-center sm:justify-between">
@@ -754,10 +754,10 @@ const LeaguePage = () => {
 
           {mainTab === 'drafts' && (
             <div
-              className="flex w-full flex-col gap-6 rounded-lg p-6"
+              className="flex w-full flex-col gap-6 rounded-card p-6"
               style={{
                 background: 'var(--Section-Container, #0E0E0F)',
-                boxShadow: '0px 0px 6px #3B0394',
+                boxShadow: 'var(--shadow-card-glow)',
               }}
             >
               <div className="flex w-full flex-col gap-4 self-stretch sm:flex-row sm:items-center sm:justify-between">

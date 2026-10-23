@@ -152,10 +152,10 @@ const LeagueCreate = () => {
 
             {/* League name card */}
             <div
-              className="flex w-full flex-col items-start gap-6 self-stretch rounded-lg p-6"
+              className="flex w-full flex-col items-start gap-6 self-stretch rounded-card p-6"
               style={{
                 background: 'var(--Section-Container, #0E0E0F)',
-                boxShadow: '0px 0px 6px #3B0394',
+                boxShadow: 'var(--shadow-card-glow)',
               }}
             >
               <div className="inline-flex w-full items-center gap-2 self-stretch">
@@ -184,10 +184,10 @@ const LeagueCreate = () => {
 
             {/* Invite members card */}
             <div
-              className="flex w-full flex-col items-start self-stretch rounded-lg"
+              className="flex w-full flex-col items-start self-stretch rounded-card"
               style={{
                 background: 'var(--Section-Container, #0E0E0F)',
-                boxShadow: '0px 0px 6px #3B0394',
+                boxShadow: 'var(--shadow-card-glow)',
               }}
             >
               <div className="flex w-full flex-col gap-6 self-stretch p-6">

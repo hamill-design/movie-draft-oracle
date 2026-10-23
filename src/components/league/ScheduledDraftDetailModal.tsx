@@ -56,8 +56,8 @@ export const ScheduledDraftDetailModal: React.FC<ScheduledDraftDetailModalProps>
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
       <DialogContent
-        className="max-w-[520px] rounded-lg border-0 p-0 font-brockmann"
-        style={{ background: '#0E0E0F', boxShadow: '0px 0px 24px rgba(59,3,148,0.6)' }}
+        className="max-w-[520px] rounded-card border-0 p-0 font-brockmann"
+        style={{ background: '#0E0E0F' }}
       >
         {/* Close button */}
         <button

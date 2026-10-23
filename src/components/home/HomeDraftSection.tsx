@@ -160,11 +160,11 @@ export function HomeDraftSection({
     <div
       {...(draftSetupAnchorId ? { id: draftSetupAnchorId } : {})}
       className={cn(
-        'w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6',
+        'w-full p-6 bg-greyscale-purp-900 rounded-card flex flex-col gap-6',
         draftSetupAnchorId && 'scroll-mt-24',
         extraClassName,
       )}
-      style={{ boxShadow: '0px 0px 6px #3B0394' }}
+      style={{ boxShadow: 'var(--shadow-card-glow)' }}
     >
       <div className="self-stretch flex flex-col justify-center items-center gap-2">
         <h2 className="m-0 text-xl font-medium leading-7 font-brockmann text-greyscale-blue-100">
@@ -249,7 +249,7 @@ export function HomeDraftSection({
       >
         <div className="overflow-hidden min-h-0">
         {isStepVisible('option') && (
-        <div className="p-6 bg-greyscale-purp-900 rounded-[8px] space-y-4 animate-in fade-in-0 slide-in-from-top-2 duration-500" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+        <div className="p-6 bg-greyscale-purp-900 rounded-card space-y-4 animate-in fade-in-0 slide-in-from-top-2 duration-500" style={{boxShadow: 'var(--shadow-card-glow)'}}>
             <HeaderIcon3
               title={theme === 'people' ? 'Search Actors, Directors, Writers...' : "Select the year of films you'll draft"} 
               icon={theme === 'people' ? 
@@ -393,7 +393,7 @@ export function HomeDraftSection({
 
       {/* Draft Mode Selection - only for non-theme flows (people/year use setup page) */}
       {theme !== 'people' && theme !== 'year' && isStepVisible('mode') && (
-        <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+        <div className="w-full p-6 bg-greyscale-purp-900 rounded-card flex flex-col gap-6" style={{boxShadow: 'var(--shadow-card-glow)'}}>
           <div className="self-stretch flex flex-col justify-center items-center gap-2">
             <h2 className="text-greyscale-blue-100 text-2xl font-bold leading-8 tracking-wide font-brockmann m-0">
               Select A Mode
@@ -449,7 +449,7 @@ export function HomeDraftSection({
 
       {/* Participants */}
       {theme !== 'people' && theme !== 'year' && isStepVisible('participants') && (
-        <div className="p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+        <div className="p-6 bg-greyscale-purp-900 rounded-card flex flex-col gap-6" style={{boxShadow: 'var(--shadow-card-glow)'}}>
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 flex justify-center items-center">
               <MultiPersonIcon className="w-6 h-6 text-purple-300" />

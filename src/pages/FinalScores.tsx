@@ -1057,7 +1057,7 @@ const FinalScores = () => {
 
         <div className="space-y-6">
           {/* Leaderboard */}
-          <div className="w-full p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+          <div className="w-full p-6 bg-greyscale-purp-900 rounded-card flex flex-col gap-6" style={{boxShadow: 'var(--shadow-card-glow)'}}>
             <div className="self-stretch flex flex-col justify-center items-center gap-2">
               <div className="text-center flex flex-col text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px]">
                 FINAL SCORES

@@ -165,8 +165,8 @@ const ResetPassword = () => {
         className="w-full max-w-md"
         style={{
           background: 'var(--Section-Container, #0E0E0F)',
-          boxShadow: '0px 0px 6px #3B0394',
-          borderRadius: '4px',
+          boxShadow: 'var(--shadow-card-glow)',
+          borderRadius: 'var(--radius-card)',
           overflow: 'hidden',
         }}
       >
