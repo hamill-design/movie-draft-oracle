@@ -341,7 +341,7 @@ const ShareResultsDialog: React.FC<ShareResultsDialogProps> = ({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent
         className="max-w-[560px] max-h-[92vh] overflow-y-auto border-none p-6"
-        style={{ background: '#0E0E0F', boxShadow: '0px 0px 12px #3B0394' }}
+        style={{ background: '#0E0E0F' }}
       >
         <DialogHeader>
           <DialogTitle className="font-brockmann text-xl text-[var(--Text-Primary,#FCFFFF)]">Share your draft</DialogTitle>

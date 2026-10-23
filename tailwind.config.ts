@@ -224,7 +224,11 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
+			boxShadow: {
+				'card-glow': 'var(--shadow-card-glow)'
+			},
 			borderRadius: {
+				card: 'var(--radius-card)',
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'

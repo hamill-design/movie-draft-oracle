@@ -171,12 +171,12 @@ const MovieSearch = ({
 
   return (
     <div 
-      className="w-full h-full rounded-lg flex flex-col"
+      className="w-full h-full rounded-card flex flex-col"
       style={{
         padding: '24px',
         background: '#0E0E0F',
-        boxShadow: '0px 0px 6px #3B0394',
-        borderRadius: '8px',
+        boxShadow: 'var(--shadow-card-glow)',
+        borderRadius: 'var(--radius-card)',
         gap: '24px'
       }}
     >

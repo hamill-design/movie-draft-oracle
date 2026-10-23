@@ -401,7 +401,7 @@ const ThemeLandingPage = () => {
 
           <section
             aria-labelledby="films-heading"
-            className="flex w-full flex-col gap-6 rounded-lg bg-[#0E0E0F] p-4 shadow-[0_0_6px_#3B0394] sm:p-6"
+            className="flex w-full flex-col gap-6 rounded-card bg-[#0E0E0F] p-4 shadow-card-glow sm:p-6"
           >
             <div className="flex flex-wrap items-center justify-between gap-3 px-3">
               <h2 id="films-heading" className="m-0 font-brockmann text-xl font-semibold leading-7 text-[#FAFEFF]">

@@ -319,8 +319,8 @@ const Auth = () => {
       `}</style>
       <div className="w-full max-w-md" style={{
         background: 'var(--Section-Container, #0E0E0F)',
-        boxShadow: '0px 0px 6px #3B0394',
-        borderRadius: '4px',
+        boxShadow: 'var(--shadow-card-glow)',
+        borderRadius: 'var(--radius-card)',
         overflow: 'hidden'
       }}>
         <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>

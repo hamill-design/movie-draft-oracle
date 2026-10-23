@@ -248,6 +248,10 @@ All colors MUST be HSL.
 
     --radius: 0.25rem;
 
+    /* Section card surface: purple outer glow + rounded corners (one source of truth) */
+    --shadow-card-glow: 0px 0px 6px #3B0394;
+    --radius-card: 8px;
+
     /* Sidebar tokens */
     --sidebar-background: 210 26% 6%;
     --sidebar-foreground: 180 6% 85%;

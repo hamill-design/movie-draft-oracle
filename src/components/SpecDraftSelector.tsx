@@ -239,10 +239,10 @@ export const SpecDraftSelector = ({ className }: SpecDraftSelectorProps) => {
     return (
       <div
         className={cn(
-          'flex h-full min-h-0 w-full flex-col gap-6 p-6 bg-greyscale-purp-900 rounded-[8px]',
+          'flex h-full min-h-0 w-full flex-col gap-6 p-6 bg-greyscale-purp-900 rounded-card',
           className
         )}
-        style={{ boxShadow: '0px 0px 6px #3B0394' }}
+        style={{ boxShadow: 'var(--shadow-card-glow)' }}
       >
         <div className="text-center font-brockmann text-sm text-greyscale-blue-100">
           Loading special drafts...
@@ -260,10 +260,10 @@ export const SpecDraftSelector = ({ className }: SpecDraftSelectorProps) => {
   return (
     <div
       className={cn(
-        'flex h-full min-h-0 w-full flex-col gap-6 p-6 bg-greyscale-purp-900 rounded-[8px]',
+        'flex h-full min-h-0 w-full flex-col gap-6 p-6 bg-greyscale-purp-900 rounded-card',
         className
       )}
-      style={{ boxShadow: '0px 0px 6px #3B0394' }}
+      style={{ boxShadow: 'var(--shadow-card-glow)' }}
     >
       <div className="flex flex-col items-center justify-center text-center">
         <h2 className="m-0 text-xl font-medium leading-7 font-brockmann text-greyscale-blue-100">

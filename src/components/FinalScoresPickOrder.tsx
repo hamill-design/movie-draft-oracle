@@ -62,11 +62,11 @@ export function FinalScoresPickOrder({ picks, enrichingScores }: FinalScoresPick
 
   return (
     <div
-      className="box-border flex w-full max-w-full flex-col items-center justify-start gap-4 rounded-lg p-4 sm:gap-6 sm:p-6"
+      className="box-border flex w-full max-w-full flex-col items-center justify-start gap-4 rounded-card p-4 sm:gap-6 sm:p-6"
       style={{
         background: 'var(--Section-Container, #0E0E0F)',
-        boxShadow: '0px 0px 6px #3B0394',
-        borderRadius: '8px',
+        boxShadow: 'var(--shadow-card-glow)',
+        borderRadius: 'var(--radius-card)',
       }}
     >
       <div className="flex w-full flex-col content-stretch items-center justify-center gap-2 self-stretch">

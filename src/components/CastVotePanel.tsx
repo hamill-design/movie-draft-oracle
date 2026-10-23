@@ -2,8 +2,8 @@ import type { CSSProperties, ReactNode } from 'react';
 
 const SECTION_SURFACE: CSSProperties = {
   background: 'var(--Section-Container, #0E0E0F)',
-  boxShadow: '0px 0px 6px #3B0394',
-  borderRadius: 8
+  boxShadow: 'var(--shadow-card-glow)',
+  borderRadius: 'var(--radius-card)'
 };
 
 export type CastVoteOption = { key: string; label: string };

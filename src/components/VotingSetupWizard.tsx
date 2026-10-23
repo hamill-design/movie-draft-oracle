@@ -81,8 +81,8 @@ export function VotingSetupWizard({
       className="w-full max-w-[617px] mx-auto flex flex-col"
       style={{
         background: 'var(--Section-Container, #0E0E0F)',
-        boxShadow: '0px 0px 6px #3B0394',
-        borderRadius: 8
+        boxShadow: 'var(--shadow-card-glow)',
+        borderRadius: 'var(--radius-card)'
       }}
     >
       <div className="flex flex-col justify-start items-stretch gap-6 p-6 w-full min-w-0">

@@ -16,7 +16,14 @@ import { getRandomAIName } from '@/data/aiNames';
 import { isUuidParam } from '@/utils/specDraftSlug';
 import { useLeagueActions } from '@/hooks/useLeagues';
 import { useLeagueSetup } from '@/hooks/useLeagueSetup';
-import { LeagueToggleCard, LeagueMemberPicker } from '@/components/league/LeagueSetupSection';
+import {
+  LeagueToggleCard,
+  LeagueMemberPicker,
+  ParticipantIdentity,
+  HostIdentity,
+  findLeagueMember,
+  useResetParticipantsOnLeagueSwitch,
+} from '@/components/league/LeagueSetupSection';
 // Simple checkbox component for category selection with live counter
 const CategoryCheckbox = ({
   category,
@@ -213,7 +220,7 @@ const SpecDraftSetup = () => {
   const { toast } = useToast();
   const { participantId, loading: sessionLoading } = useCurrentUser();
   const { createMultiplayerDraft, loading: creatingDraft } = useMultiplayerDraft();
-  const { getDisplayName, loading: profileLoading } = useProfile();
+  const { profile, getDisplayName, loading: profileLoading } = useProfile();
   const { addDraftToLeague } = useLeagueActions();
   const leagueSetup = useLeagueSetup();
 
@@ -240,6 +247,8 @@ const SpecDraftSetup = () => {
     return getDisplayName();
   }, [getDisplayName, profileLoading]);
 
+  useResetParticipantsOnLeagueSwitch(leagueSetup, setParticipants, hostName);
+
   // League drafts are multiplayer-only: league points need a signed-in account per player.
   useEffect(() => {
     if (leagueSetup.enabled) setDraftMode('multiplayer');
@@ -254,6 +263,11 @@ const SpecDraftSetup = () => {
         .map((e) => ({ name: e, isAI: false }));
       return fresh.length ? [...prev, ...fresh] : prev;
     });
+  };
+
+  const handleRemoveEmails = (emails: string[]) => {
+    const remove = new Set(emails.map((e) => e.trim().toLowerCase()));
+    setParticipants((prev) => prev.filter((p) => p.name === hostName || p.isAI || !remove.has(p.name.trim().toLowerCase())));
   };
 
   // Automatically add host when switching to multiplayer mode
@@ -646,6 +660,14 @@ const SpecDraftSetup = () => {
     }
   };
 
+  // The Participants list shows the host, typed-in emails and AI players. League
+  // members are chosen in the league members section instead.
+  const listedParticipants = participants.filter(
+    (p) =>
+      (draftMode !== 'multiplayer' || p.name !== hostName) &&
+      !(draftMode === 'multiplayer' && !p.isAI && findLeagueMember(leagueSetup.members, p.name)),
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
@@ -700,8 +722,8 @@ const SpecDraftSetup = () => {
             width: '100%',
             padding: '24px',
             background: 'var(--Section-Container, #0E0E0F)',
-            boxShadow: '0px 0px 6px #3B0394',
-            borderRadius: '8px',
+            boxShadow: 'var(--shadow-card-glow)',
+            borderRadius: 'var(--radius-card)',
             flexDirection: 'column',
             justifyContent: 'flex-start',
             alignItems: 'flex-start',
@@ -838,7 +860,7 @@ const SpecDraftSetup = () => {
           </div>
 
           {/* Add Players */}
-          <div className="p-6 bg-greyscale-purp-900 rounded-[8px] flex flex-col gap-6" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+          <div className="p-6 bg-greyscale-purp-900 rounded-card flex flex-col gap-6" style={{boxShadow: 'var(--shadow-card-glow)'}}>
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 flex justify-center items-center">
                 <MultiPersonIcon className="w-6 h-6 text-purple-300" />
@@ -887,62 +909,39 @@ const SpecDraftSetup = () => {
               </button>
             </div>
 
-            <LeagueMemberPicker
-              setup={leagueSetup}
-              participants={participants}
-              hostName={hostName}
-              selfId={participantId}
-              onAddEmails={handleAddEmails}
-            />
             {draftMode === 'multiplayer' && (
               <div className="p-4 bg-teal-900 rounded flex items-center gap-2" style={{outline: '1px solid #B2FFEA', outlineOffset: '-1px'}}>
                 <div className="flex w-6 shrink-0 justify-center items-center max-md:hidden">
                   <Mail className="h-6 w-6 text-teal-200" />
                 </div>
                 <p className="flex-1 text-teal-200 text-sm font-brockmann font-medium leading-5 m-0">
-                  <span className="font-bold">Multiplayer Mode:</span> Enter email addresses of friends you want to invite. They&apos;ll receive an email invitation to join.
+                  <span className="font-bold">Multiplayer Mode:</span>{' '}
+                  Enter email addresses of friends you want to invite. They&apos;ll receive an email invitation to join.
                 </p>
               </div>
             )}
 
-            {(participants.length > 0 || (draftMode === 'multiplayer' && hostName)) && (
+            {(listedParticipants.length > 0 || (draftMode === 'multiplayer' && hostName)) && (
               <div className="flex flex-col gap-3">
                 <p className="text-greyscale-blue-300 text-base font-normal leading-6 font-brockmann m-0">
-                  Participants ({(() => {
-                    if (draftMode === 'multiplayer') {
-                      const displayedParticipants = participants.filter(p => p.name !== hostName);
-                      return hostName ? displayedParticipants.length + 1 : displayedParticipants.length;
-                    }
-                    return participants.length;
-                  })()}):
+                  Participants ({draftMode === 'multiplayer' && hostName ? listedParticipants.length + 1 : listedParticipants.length}):
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {draftMode === 'multiplayer' && hostName && (
                     <div
-                      className="py-2 pl-4 pr-4 bg-brand-primary rounded flex items-center gap-2"
+                      className="py-1.5 pl-2 pr-4 bg-brand-primary rounded-full flex items-center gap-2"
                       title="Host (cannot be removed)"
                     >
-                      {draftMode === 'multiplayer' && (
-                        <Mail size={16} className="shrink-0 text-greyscale-blue-100 max-md:hidden" />
-                      )}
-                      <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
-                        {hostName} (Host)
-                      </span>
+                      <HostIdentity name={hostName} email={profile?.email} avatarUrl={profile?.avatar_url} />
                     </div>
                   )}
-                  {participants.filter(p => draftMode !== 'multiplayer' || p.name !== hostName).map((participant) => (
+                  {listedParticipants.map((participant) => {
+                    return (
                     <div
                       key={participant.name}
-                      className="py-2 pl-4 pr-[10px] bg-brand-primary rounded flex items-center gap-2"
+                      className="py-2 pl-4 pr-[10px] bg-brand-primary rounded-full flex items-center gap-2"
                     >
-                      {participant.isAI ? (
-                        <Bot size={16} className="text-greyscale-blue-100" />
-                      ) : draftMode === 'multiplayer' && (
-                        <Mail size={16} className="shrink-0 text-greyscale-blue-100 max-md:hidden" />
-                      )}
-                      <span className="text-greyscale-blue-100 text-sm font-brockmann font-medium leading-5">
-                        {participant.name}
-                      </span>
+                      <ParticipantIdentity participant={participant} multiplayer={draftMode === 'multiplayer'} />
                       {participant.isAI && (
                         <span className="text-xs text-greyscale-blue-300 ml-1">AI</span>
                       )}
@@ -960,10 +959,20 @@ const SpecDraftSetup = () => {
                         </div>
                       </button>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
+
+            <LeagueMemberPicker
+              setup={leagueSetup}
+              participants={participants}
+              hostName={hostName}
+              selfId={participantId}
+              onAddEmails={handleAddEmails}
+              onRemoveEmails={handleRemoveEmails}
+            />
           </div>
 
           {/* Select Categories */}
@@ -971,8 +980,8 @@ const SpecDraftSetup = () => {
             width: '100%',
             padding: '24px',
             background: 'var(--Section-Container, #0E0E0F)',
-            boxShadow: '0px 0px 6px #3B0394',
-            borderRadius: '8px',
+            boxShadow: 'var(--shadow-card-glow)',
+            borderRadius: 'var(--radius-card)',
             flexDirection: 'column',
             justifyContent: 'flex-start',
             alignItems: 'flex-start',

@@ -70,8 +70,8 @@ type ScheduleSlice = 'filmography' | 'year' | 'alternate';
 
 function sectionShellProps() {
   return {
-    className: 'rounded-lg p-4 text-greyscale-blue-100 md:p-6',
-    style: { background: '#0E0E0F', boxShadow: '0px 0px 6px #3B0394' } as React.CSSProperties,
+    className: 'rounded-card p-4 text-greyscale-blue-100 md:p-6',
+    style: { background: '#0E0E0F', boxShadow: 'var(--shadow-card-glow)' } as React.CSSProperties,
   };
 }
 
@@ -725,8 +725,8 @@ const LeagueSettings = () => {
                 {/* ── Existing scheduled drafts ─────────────────────────── */}
                 {scheduledEntries.length > 0 && (
                   <section
-                    className="flex w-full flex-col gap-4 rounded-lg px-3 pb-6 pt-5 text-greyscale-blue-100 md:px-6"
-                    style={{ background: '#0E0E0F', boxShadow: '0px 0px 6px #3B0394' }}
+                    className="flex w-full flex-col gap-4 rounded-card px-3 pb-6 pt-5 text-greyscale-blue-100 md:px-6"
+                    style={{ background: '#0E0E0F', boxShadow: 'var(--shadow-card-glow)' }}
                   >
                     <HeaderIcon3
                       title="Scheduled Drafts"
@@ -813,8 +813,8 @@ const LeagueSettings = () => {
                 )}
 
                 <section
-                  className="flex w-full flex-col gap-6 rounded-lg px-3 pb-8 pt-6 text-greyscale-blue-100 md:px-6"
-                  style={{ background: '#0E0E0F', boxShadow: '0px 0px 6px #3B0394' }}
+                  className="flex w-full flex-col gap-6 rounded-card px-3 pb-8 pt-6 text-greyscale-blue-100 md:px-6"
+                  style={{ background: '#0E0E0F', boxShadow: 'var(--shadow-card-glow)' }}
                 >
                   <div className="flex flex-col gap-8 w-full">
                     <div className="flex flex-col gap-[18px]">
@@ -1271,8 +1271,8 @@ const LeagueSettings = () => {
               {activeTab === 'invite' && (
                 <>
                   <section
-                    className="flex w-full flex-col gap-6 rounded-lg px-3 pb-8 pt-6 text-greyscale-blue-100 md:px-6"
-                    style={{ background: '#0E0E0F', boxShadow: '0px 0px 6px #3B0394' }}
+                    className="flex w-full flex-col gap-6 rounded-card px-3 pb-8 pt-6 text-greyscale-blue-100 md:px-6"
+                    style={{ background: '#0E0E0F', boxShadow: 'var(--shadow-card-glow)' }}
                   >
                     <div className="flex flex-col gap-6">
                       <HeaderIcon3
@@ -1359,8 +1359,8 @@ const LeagueSettings = () => {
 
                   {SHOW_INVITE_BY_DISPLAY_NAME && (
                   <section
-                    className="flex w-full flex-col gap-6 rounded-lg px-3 pb-8 pt-6 text-greyscale-blue-100 md:px-6"
-                    style={{ background: '#0E0E0F', boxShadow: '0px 0px 6px #3B0394' }}
+                    className="flex w-full flex-col gap-6 rounded-card px-3 pb-8 pt-6 text-greyscale-blue-100 md:px-6"
+                    style={{ background: '#0E0E0F', boxShadow: 'var(--shadow-card-glow)' }}
                   >
                     <div className="flex flex-col gap-4">
                       <HeaderIcon3
@@ -1434,8 +1434,8 @@ const LeagueSettings = () => {
                   )}
 
                   <section
-                    className="flex w-full flex-col gap-6 rounded-lg px-3 pb-8 pt-6 text-greyscale-blue-100 md:px-6"
-                    style={{ background: '#0E0E0F', boxShadow: '0px 0px 6px #3B0394' }}
+                    className="flex w-full flex-col gap-6 rounded-card px-3 pb-8 pt-6 text-greyscale-blue-100 md:px-6"
+                    style={{ background: '#0E0E0F', boxShadow: 'var(--shadow-card-glow)' }}
                   >
                     <HeaderIcon3
                       title="Current Members"

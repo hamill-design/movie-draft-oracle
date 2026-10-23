@@ -799,8 +799,8 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
 
   return (
     <div 
-      className="w-full bg-greyscale-purp-900 rounded-[8px] flex flex-col"
-      style={{boxShadow: '0px 0px 6px #3B0394', padding: '24px', gap: '24px'}}
+      className="w-full bg-greyscale-purp-900 rounded-card flex flex-col"
+      style={{boxShadow: 'var(--shadow-card-glow)', padding: '24px', gap: '24px'}}
     >
       {/* Header */}
       <div className="flex items-center gap-2">

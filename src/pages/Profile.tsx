@@ -722,7 +722,7 @@ const Profile = () => {
         {/* Banner Ad - Hidden for now */}
         {/* <BannerAd className="mb-8" /> */}
 
-        <div className="w-full h-full p-6 bg-greyscale-purp-900 rounded-[8px] flex-col justify-start items-start gap-3 inline-flex mb-8" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+        <div className="w-full h-full p-6 bg-greyscale-purp-900 rounded-card flex-col justify-start items-start gap-3 inline-flex mb-8" style={{boxShadow: 'var(--shadow-card-glow)'}}>
           <div className="w-full flex justify-between items-center">
             <div className="flex-col justify-start items-start flex">
               <h2 className="justify-center flex flex-col text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px] m-0">
@@ -894,9 +894,9 @@ const Profile = () => {
         {/* Pending league invites */}
         {!invitesLoading && pendingInvites.length > 0 && (
           <div
-            className="mb-8 inline-flex w-full flex-col items-start justify-start gap-4 rounded-lg p-6"
+            className="mb-8 inline-flex w-full flex-col items-start justify-start gap-4 rounded-card p-6"
             style={{
-              boxShadow: '0px 0px 6px #3B0394',
+              boxShadow: 'var(--shadow-card-glow)',
               background: 'var(--Section-Container, #0E0E0F)',
             }}
           >
@@ -945,9 +945,9 @@ const Profile = () => {
 
         {/* My Leagues */}
         <div
-          className="w-full inline-flex flex-col items-start justify-start gap-6 p-6 rounded-lg mb-8"
+          className="w-full inline-flex flex-col items-start justify-start gap-6 p-6 rounded-card mb-8"
           style={{
-            boxShadow: '0px 0px 6px #3B0394',
+            boxShadow: 'var(--shadow-card-glow)',
             background: 'var(--Section-Container, #0E0E0F)',
           }}
         >
@@ -1010,7 +1010,7 @@ const Profile = () => {
         </div>
 
         {/* Saved Drafts */}
-        <div className="w-full h-full p-6 bg-greyscale-purp-900 rounded-[8px] flex-col justify-start items-start gap-6 inline-flex" style={{boxShadow: '0px 0px 6px #3B0394'}}>
+        <div className="w-full h-full p-6 bg-greyscale-purp-900 rounded-card flex-col justify-start items-start gap-6 inline-flex" style={{boxShadow: 'var(--shadow-card-glow)'}}>
           <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="justify-center flex flex-col text-greyscale-blue-100 text-2xl font-brockmann font-bold leading-8 tracking-[0.96px] m-0">
               Saved Drafts
@@ -1067,10 +1067,7 @@ const Profile = () => {
         open={!!draftToAssign}
         onOpenChange={(open) => { if (!open && !assigningToLeague) setDraftToAssign(null); }}
       >
-        <AlertDialogContent
-          className="border-[#7142FF]/60"
-          style={{ boxShadow: '0 0 32px rgba(113, 66, 255, 0.45), 0 0 8px rgba(113, 66, 255, 0.6)' }}
-        >
+        <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Add to league</AlertDialogTitle>
             <AlertDialogDescription>
