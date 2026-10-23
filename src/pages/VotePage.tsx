@@ -32,6 +32,7 @@ const VotePage = () => {
   const [draft, setDraft] = useState<any>(null);
   const [picks, setPicks] = useState<DraftPick[]>([]);
   const [participants, setParticipants] = useState<DraftBoardParticipant[]>([]);
+  const [specDraftName, setSpecDraftName] = useState<string | null>(null);
   const [votes, setVotes] = useState<{ voted_participant_id: string | null; voted_player_name: string | null; voter_user_id: string | null; voter_guest_session_id: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [submittingVote, setSubmittingVote] = useState(false);
@@ -147,6 +148,16 @@ const VotePage = () => {
         }
 
         setDraft(draftData);
+
+        // Spec drafts store the spec draft's id in `option`; look up its readable name for the heading
+        if (draftData.theme === 'spec-draft' && draftData.option) {
+          const { data: specData } = await (supabase as any)
+            .from('spec_drafts')
+            .select('name')
+            .eq('id', draftData.option)
+            .single();
+          if (specData?.name) setSpecDraftName(specData.name);
+        }
 
         const { data: picksData, error: picksError } = await supabase
           .from('draft_picks')
@@ -274,9 +285,9 @@ const VotePage = () => {
     ? (myVote && participants.find((p) => p.id === myVote.voted_participant_id)?.participant_name) ?? myVote?.voted_player_name
     : myVote?.voted_player_name;
 
-  const pageTitle = `Movie Drafter - Vote on ${draft.title ?? 'movie drafting game'}`;
-  const pageDescription = `Cast your vote on the “${draft.title ?? 'movie drafting game'}” fantasy movie draft—pick the best roster on Movie Drafter.`;
-  const voteTitle = draft.title?.trim() || 'Movie drafting game';
+  const voteTitle = draft.title?.trim() || specDraftName || 'Movie drafting game';
+  const pageTitle = `Movie Drafter - Vote on ${voteTitle}`;
+  const pageDescription = `Cast your vote on the “${voteTitle}” fantasy movie draft—pick the best roster on Movie Drafter.`;
   const shareOgUrl = dynamicOgImageUrl({
     title: `Vote: ${voteTitle}`,
     subtitle: 'Public vote on Movie Drafter',
@@ -303,6 +314,7 @@ const VotePage = () => {
             <DraftHeadingTitle
               option={draft.option ?? ''}
               theme={draft.theme}
+              specDraftName={specDraftName}
             />
           </DraftPageHeaderSection>
 
