@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveDraftTitle } from '@/utils/resolveDraftTitle';
 import { useCurrentUser } from './useCurrentUser';
 import { useGuestSession } from './useGuestSession';
 import { useToast } from '@/hooks/use-toast';
@@ -355,10 +356,13 @@ export const useMultiplayerDraft = (
     try {
       setLoading(true);
 
+      // For spec drafts the title passed in is the spec draft's id; store its name instead
+      const resolvedTitle = await resolveDraftTitle(draftData.theme, draftData.option, draftData.title);
+
       // Use the new unified function for both authenticated and guest users
       const result = await supabase.rpc('create_multiplayer_draft_unified', {
         p_participant_id: participantId,
-        p_title: draftData.title,
+        p_title: resolvedTitle,
         p_theme: draftData.theme,
         p_option: draftData.option,
         p_categories: draftData.categories,
@@ -417,7 +421,7 @@ export const useMultiplayerDraft = (
         try {
           const invitePayload = {
             draftId: newDraft.id,
-            draftTitle: draftData.title,
+            draftTitle: resolvedTitle,
             hostName: draftData.hostDisplayName?.trim() || 'Host',
             participantEmails: draftData.participantEmails,
             theme: draftData.theme,

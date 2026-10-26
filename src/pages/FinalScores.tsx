@@ -1,4 +1,5 @@
 import { resolveDraftTitle } from '@/utils/resolveDraftTitle';
+import { useDraftDisplayTitle } from '@/hooks/useDraftDisplayTitle';
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
@@ -86,6 +87,8 @@ const FinalScores = () => {
   const { toast } = useToast();
   
   const [draft, setDraft] = useState<any>(null);
+  // Spec drafts can carry their id as the title; this resolves it to the spec draft's real name
+  const displayTitle = useDraftDisplayTitle(draft);
   const [picks, setPicks] = useState<DraftPick[]>([]);
   const [teamScores, setTeamScores] = useState<TeamScore[]>([]);
   const [loadingData, setLoadingData] = useState(true);
@@ -260,7 +263,7 @@ const FinalScores = () => {
               console.log('Using local draft data from localStorage');
               setDraft({
                 id: localDraft.id,
-                title: await resolveDraftTitle(localDraft.theme, localDraft.option, localDraft.option || localDraft.title),
+                title: await resolveDraftTitle(localDraft.theme, localDraft.option, localDraft.title || localDraft.option),
                 theme: localDraft.theme,
                 option: localDraft.option,
                 participants: localDraft.participants,
@@ -934,7 +937,7 @@ const FinalScores = () => {
     if (!draft) return null;
     
     return {
-      title: draft.title,
+      title: displayTitle || draft.title,
       theme: draft.theme,
       option: draft.option,
       participants: draft.participants,
@@ -983,12 +986,12 @@ const FinalScores = () => {
     return null;
   }
 
-  const pageTitle = draft?.title ? `Movie Drafter - ${draft.title} Final Scores` : 'Movie Drafter - Final Scores';
-  const pageDescription = draft?.title 
-    ? `Final scores for the “${draft.title}” movie drafting game on Movie Drafter—see who won your fantasy movie draft.`
+  const pageTitle = displayTitle ? `Movie Drafter - ${displayTitle} Final Scores` : 'Movie Drafter - Final Scores';
+  const pageDescription = displayTitle 
+    ? `Final scores for the “${displayTitle}” movie drafting game on Movie Drafter—see who won your fantasy movie draft.`
     : 'Final scores for your movie drafting game on Movie Drafter—see who won your fantasy movie draft.';
   const canonicalScores = `${SITE_ORIGIN}/final-scores/${draftId}`;
-  const scoresHeadline = draft?.title?.trim() || 'Movie draft';
+  const scoresHeadline = displayTitle || 'Movie draft';
   const shareOgUrl = dynamicOgImageUrl({
     title: `Final scores: ${scoresHeadline}`,
     subtitle: 'See who won on Movie Drafter',
@@ -1013,7 +1016,7 @@ const FinalScores = () => {
         {/* Header */}
         <DraftPageHeaderSection label="FINAL SCORES">
           <FinalScoresHeadingTitle
-            title={draft.title}
+            title={displayTitle}
             option={draft.option}
             theme={draft.theme}
           />
@@ -1043,7 +1046,7 @@ const FinalScores = () => {
           {/* Share Results Button */}
           {teamScores.length > 0 && (
             <ShareResultsButton
-              draftTitle={draft.title}
+              draftTitle={displayTitle}
               teamScores={teamScores}
               picks={picks}
               draftId={draftId!}

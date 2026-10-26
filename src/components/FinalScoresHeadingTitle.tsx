@@ -1,5 +1,6 @@
 import { cn, getCleanActorName } from '@/lib/utils';
 import { DRAFT_TITLE_FONT_STYLE } from '@/lib/draftTitleTypography';
+import { isUuid } from '@/utils/resolveDraftTitle';
 
 interface FinalScoresHeadingTitleProps {
   title: string;
@@ -13,7 +14,8 @@ function getNameLabel(title: string, option?: string | null, theme?: string | nu
     return getCleanActorName(option).toUpperCase();
   }
 
-  return (title || option || '').toUpperCase();
+  // A bare id (spec draft whose name hasn't resolved yet) is never a readable heading
+  return (title || (isUuid(option) ? '' : option) || '').toUpperCase();
 }
 
 export function FinalScoresHeadingTitle({
