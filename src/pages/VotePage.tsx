@@ -16,6 +16,7 @@ import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta
 import { SITE_ORIGIN, dynamicOgImageUrl, OG_IMAGE_ALT } from '@/config/socialShareMeta';
 import { buildDraftBoardModel, type DraftBoardParticipant } from '@/utils/finalScoresBoardModel';
 import { CastVotePanel, VotingSessionCard } from '@/components/CastVotePanel';
+import { useDraftDisplayTitle } from '@/hooks/useDraftDisplayTitle';
 
 interface RosterRow {
   playerName: string;
@@ -30,9 +31,9 @@ const VotePage = () => {
   const { toast } = useToast();
 
   const [draft, setDraft] = useState<any>(null);
+  const displayTitle = useDraftDisplayTitle(draft);
   const [picks, setPicks] = useState<DraftPick[]>([]);
   const [participants, setParticipants] = useState<DraftBoardParticipant[]>([]);
-  const [specDraftName, setSpecDraftName] = useState<string | null>(null);
   const [votes, setVotes] = useState<{ voted_participant_id: string | null; voted_player_name: string | null; voter_user_id: string | null; voter_guest_session_id: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [submittingVote, setSubmittingVote] = useState(false);
@@ -148,20 +149,6 @@ const VotePage = () => {
         }
 
         setDraft(draftData);
-
-        // Spec drafts store the spec draft's id in `option`; look up its readable name for the heading
-        if (draftData.theme === 'spec-draft' && draftData.option) {
-          const { data: specData, error: specError } = await (supabase as any)
-            .from('spec_drafts')
-            .select('name')
-            .eq('id', draftData.option)
-            .maybeSingle();
-          if (specError) console.warn('VotePage: spec draft name lookup failed', specError);
-          // Fall back to the title saved on the draft (when it isn't just the id again)
-          const savedTitle = typeof draftData.title === 'string' ? draftData.title.trim() : '';
-          const name = specData?.name || (savedTitle && savedTitle !== draftData.option ? savedTitle : null);
-          if (name) setSpecDraftName(name);
-        }
 
         const { data: picksData, error: picksError } = await supabase
           .from('draft_picks')
@@ -289,10 +276,7 @@ const VotePage = () => {
     ? (myVote && participants.find((p) => p.id === myVote.voted_participant_id)?.participant_name) ?? myVote?.voted_player_name
     : myVote?.voted_player_name;
 
-  const savedTitle = draft.title?.trim() || '';
-  // For spec drafts `option` is the spec draft's id, so never show it as a name
-  const headingName = specDraftName || (savedTitle && savedTitle !== draft.option ? savedTitle : null);
-  const voteTitle = savedTitle || specDraftName || 'Movie drafting game';
+  const voteTitle = displayTitle || 'Movie drafting game';
   const pageTitle = `Movie Drafter - Vote on ${voteTitle}`;
   const pageDescription = `Cast your vote on the “${voteTitle}” fantasy movie draft—pick the best roster on Movie Drafter.`;
   const shareOgUrl = dynamicOgImageUrl({
@@ -321,7 +305,7 @@ const VotePage = () => {
             <DraftHeadingTitle
               option={draft.option ?? ''}
               theme={draft.theme}
-              specDraftName={headingName}
+              specDraftName={displayTitle || null}
             />
           </DraftPageHeaderSection>
 

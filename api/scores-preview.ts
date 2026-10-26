@@ -26,17 +26,41 @@ const attr = (value: string): string =>
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Spec drafts can store their id as the title; swap in the spec draft's real name. */
+async function fetchSpecDraftName(specId: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/spec_drafts?id=eq.${encodeURIComponent(specId)}&select=name`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+    );
+    if (!res.ok) return null;
+    const rows = await res.json();
+    const name = Array.isArray(rows) && rows[0]?.name ? String(rows[0].name).trim() : '';
+    return name || null;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchDraft(id: string): Promise<{ title: string; is_public: boolean } | null> {
   try {
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/drafts?id=eq.${encodeURIComponent(id)}&select=title,is_public`,
+      `${SUPABASE_URL}/rest/v1/drafts?id=eq.${encodeURIComponent(id)}&select=title,is_public,theme,option`,
       {
         headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
       }
     );
     if (!res.ok) return null;
     const rows = await res.json();
-    return Array.isArray(rows) && rows[0] ? rows[0] : null;
+    const row = Array.isArray(rows) && rows[0] ? rows[0] : null;
+    if (!row) return null;
+    const title = String(row.title ?? '').trim();
+    if (row.theme === 'spec-draft' && row.option && (!title || title === row.option || UUID_RE.test(title))) {
+      row.title = (await fetchSpecDraftName(row.option)) ?? '';
+    }
+    return row;
   } catch {
     return null;
   }

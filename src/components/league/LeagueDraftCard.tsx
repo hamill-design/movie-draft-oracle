@@ -1,3 +1,4 @@
+import { isUuid } from '@/utils/resolveDraftTitle';
 import React from 'react';
 import { Calendar, Trophy, Users, User, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ type SpecInfo = { name: string; photo_url: string | null } | undefined;
 function themeTitle(entry: LeagueDraftEntry, spec: SpecInfo): string {
   const opt = entry.draft?.option ?? '';
   const theme = entry.draft?.theme ?? '';
-  if (theme === 'spec-draft') return spec?.name || opt || entry.draft?.title || 'Draft';
+  if (theme === 'spec-draft') return spec?.name || (isUuid(entry.draft?.title) ? '' : entry.draft?.title) || 'Special Draft';
   if (theme === 'people') return getCleanActorName(opt) || entry.draft?.title || 'Draft';
   if (theme === 'year') return opt || entry.draft?.title || 'Draft';
   return entry.draft?.title || opt || 'Draft';

@@ -1,3 +1,4 @@
+import { useDraftDisplayTitle } from '@/hooks/useDraftDisplayTitle';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
@@ -76,6 +77,7 @@ export const MultiplayerDraftInterface = ({
   const effectiveParticipantId = participantIdFromParent ?? participantId;
   const [copySuccess, setCopySuccess] = useState(false);
   const [specDraftName, setSpecDraftName] = useState<string | null>(null);
+  const displayTitle = useDraftDisplayTitle(draft);
   const [votingMeta, setVotingMeta] = useState<{ voting_ends_at: string | null; allow_public_voting?: boolean } | null>(null);
   const [votingJustEnabled, setVotingJustEnabled] = useState(false);
   const [addVoting, setAddVoting] = useState<boolean | null>(null);
@@ -956,13 +958,13 @@ export const MultiplayerDraftInterface = ({
 
   const isComplete = draft.is_complete;
 
-  const pageTitle = `Movie Drafter - ${draft.title}`;
-  const pageDescription = `“${draft.title}” — multiplayer movie drafting game on Movie Drafter. Fantasy movie draft picks across categories with friends.`;
+  const pageTitle = `Movie Drafter - ${displayTitle || 'Multiplayer draft'}`;
+  const pageDescription = `“${displayTitle || 'Multiplayer draft'}” — multiplayer movie drafting game on Movie Drafter. Fantasy movie draft picks across categories with friends.`;
   const shareOgUrl = dynamicOgImageUrl({
-    title: draft.title,
+    title: displayTitle || 'Multiplayer draft',
     subtitle: 'Multiplayer movie draft — join on Movie Drafter',
   });
-  const shareOgAlt = `Movie Drafter draft: ${draft.title}`.slice(0, 200);
+  const shareOgAlt = `Movie Drafter draft: ${displayTitle || 'Multiplayer draft'}`.slice(0, 200);
 
   return (
     <>
