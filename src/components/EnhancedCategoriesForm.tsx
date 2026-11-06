@@ -155,6 +155,8 @@ interface EnhancedCategoriesFormProps {
   selectedOption?: string;
   draftMode?: 'single' | 'multiplayer';
   participants?: Participant[];
+  /** Just the choices, without the card and its heading (for use inside another window, like a lobby's settings). */
+  embedded?: boolean;
 }
 
 const CategoryStatusIcon = ({ status }: { status: 'sufficient' | 'limited' | 'insufficient' }) => {
@@ -403,7 +405,7 @@ const CustomCheckbox = ({
   );
 };
 
-const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selectedOption, draftMode, participants = [] }: EnhancedCategoriesFormProps) => {
+const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selectedOption, draftMode, participants = [], embedded = false }: EnhancedCategoriesFormProps) => {
   const [analysisResult, setAnalysisResult] = useState<CategoryAnalysisResponse | null>(null);
   const [progressiveResults, setProgressiveResults] = useState<Map<string, CategoryAvailabilityResult>>(new Map());
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -797,12 +799,14 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
     return categories;
   }, [allCategories]);
 
+  const wrapperProps = embedded
+    ? { className: 'w-full flex flex-col' }
+    : { className: 'w-full bg-greyscale-purp-900 rounded-card flex flex-col', style: { boxShadow: 'var(--shadow-card-glow)', padding: '24px', gap: '24px' } };
+
   return (
-    <div 
-      className="w-full bg-greyscale-purp-900 rounded-card flex flex-col"
-      style={{boxShadow: 'var(--shadow-card-glow)', padding: '24px', gap: '24px'}}
-    >
+    <div {...wrapperProps}>
       {/* Header */}
+      {!embedded && (
       <div className="flex items-center gap-2">
         <div className="flex justify-center items-center" style={{ width: '24px', height: '24px', padding: '2px' }}>
           <CheckboxIcon className="text-purple-300" />
@@ -811,6 +815,7 @@ const EnhancedCategoriesForm = ({ form, categories, theme, playerCount, selected
           Choose Categories
         </h2>
       </div>
+      )}
 
       {/* Categories Grid */}
       <div 

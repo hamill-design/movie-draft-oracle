@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Trophy, Loader2 } from 'lucide-react';
 import { InteractiveDraftBoard } from '@/components/draft-board/InteractiveDraftBoard';
-import { DraftLobbyStatusParticipants } from '@/components/draft-board/DraftLobbyStatusParticipants';
+import { DraftLobbyStatusParticipants, type LobbyDetails } from '@/components/draft-board/DraftLobbyStatusParticipants';
 import type { BoardRailParticipant } from '@/components/draft-board/DraftBoardPlayerRail';
 
 import { getCleanActorName } from '@/lib/utils';
@@ -33,6 +33,19 @@ import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta
 import { SITE_ORIGIN, dynamicOgImageUrl, OG_IMAGE_ALT } from '@/config/socialShareMeta';
 import { buildInteractiveBoardModelFromMultiplayer } from '@/utils/interactiveBoardModel';
 import { Movie } from '@/data/movies';
+import { useDraftClock } from '@/hooks/useDraftClock';
+import { useAdminAccess } from '@/hooks/useAdminAccess';
+import { PickClockBanner } from '@/components/draft-board/PickClockBanner';
+import { LobbySettingsDialog } from '@/components/draft-board/LobbySettingsDialog';
+import { REFEREE_CLOCK_VISIBLE_TO_ALL } from '@/config/referee';
+import { PublicTableLobby } from '@/components/play/PublicTableLobby';
+import { useIsPublicTable } from '@/hooks/useIsPublicTable';
+import { useDraftCategories } from '@/hooks/useDraftCategories';
+import { useDraftLeague } from '@/hooks/useDraftLeague';
+import { inviteApi } from '@/lib/inviteApi';
+import { InviteSeatDialog } from '@/components/draft-board/InviteSeatDialog';
+import { RevokeInviteButton } from '@/components/draft-board/RevokeInviteButton';
+import { MAX_PRIVATE_SEATS, describeClock } from '@/config/publicPlay';
 
 interface MultiplayerDraftInterfaceProps {
   draftId?: string;
@@ -377,6 +390,28 @@ export const MultiplayerDraftInterface = ({
     });
   }, [participants, effectiveParticipantId]);
 
+  // Pick clock / referee (see docs/public-matchmaking-plan.md section 5). When the server's
+  // referee runs this draft it makes the bot and auto-picks, so this browser must not.
+  const { isAdmin } = useAdminAccess();
+  const clock = useDraftClock({
+    draftId: draft?.id,
+    participantId: effectiveParticipantId,
+    pickNumber: draft?.current_pick_number,
+    turnParticipantId: draft?.current_turn_participant_id ?? draft?.current_turn_user_id,
+    isComplete: draft?.is_complete,
+  });
+  // A public table has its own waiting room and start flow, and never shows players' emails.
+  const isPublicTable = useIsPublicTable(draft?.id);
+
+  // The invite window an open seat opens. In a league draft it also offers the league's members.
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [revoking, setRevoking] = useState(false);
+  // The host's "Edit settings" window (pick clock and categories), and the categories it offers.
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const standardCategories = useDraftCategories(draft && draft.theme !== 'spec-draft' ? draft.theme : null);
+  const lobbyOpen = !!draft && !draft.is_complete && !(draft.turn_order && draft.turn_order.length > 0);
+  const { league: draftLeague, people: leaguePeople } = useDraftLeague(draft?.id, isHost && lobbyOpen && !isPublicTable);
+
   // Detect AI turn and handle auto-pick
   useEffect(() => {
     if (!draft || draft.is_complete || !currentTurnIsAI || aiPicking || !currentTurnPlayer) {
@@ -386,6 +421,12 @@ export const MultiplayerDraftInterface = ({
     
     setIsAITurn(true);
     
+    // The referee plays the bots on drafts that have it switched on, and we're still finding
+    // out whether this is one: wait rather than risk two bot picks at once.
+    if (clock.enabled || clock.status === 'loading') {
+      return;
+    }
+
     // Only host can make picks for AI (they own the draft)
     if (!isHost) {
       // Not the host, just show that AI is thinking
@@ -534,7 +575,7 @@ export const MultiplayerDraftInterface = ({
     };
 
     makeAIPick();
-  }, [draft, currentTurnIsAI, currentTurnPlayer, isHost, aiPicking, participants.length, picks, aiPickMovie, makePick, loadDraft, toast]);
+  }, [draft, currentTurnIsAI, currentTurnPlayer, isHost, aiPicking, participants.length, picks, aiPickMovie, makePick, loadDraft, toast, clock.enabled, clock.status]);
 
   // Helper: Get participants sorted by created_at (matching backend ORDER BY created_at ASC NULLS LAST, id ASC)
   // MUST be before early returns to maintain consistent hook order
@@ -958,7 +999,30 @@ export const MultiplayerDraftInterface = ({
 
   const isComplete = draft.is_complete;
 
-  const pageTitle = `Movie Drafter - ${displayTitle || 'Multiplayer draft'}`;
+  // What the pre-draft screen's Draft Status card says: the same rows a public table shows.
+  // The host changes the pick clock and the categories from "Edit settings" until the draft starts; everyone else just reads them.
+  const canEditClock =
+    isHost && !draftHasStarted && !isComplete && !!effectiveParticipantId && (REFEREE_CLOCK_VISIBLE_TO_ALL || isAdmin);
+  const canEditSettings = isHost && !draftHasStarted && !isComplete && !!effectiveParticipantId && !isPublicTable;
+  const clockRow =
+    clock.status === 'unavailable'
+      ? []
+      : [
+          {
+            label: 'Pick clock',
+            value: clock.enabled && clock.pickClockSeconds ? describeClock(clock.pickClockSeconds) : 'No clock',
+          },
+        ];
+  const lobbyDetails: LobbyDetails = {
+    rows: [
+      ...clockRow,
+      { label: 'Game', value: 'Private' },
+    ],
+    onEdit: canEditSettings ? () => setSettingsOpen(true) : undefined,
+    categories: draft.categories,
+  };
+
+  const pageTitle =`Movie Drafter - ${displayTitle || 'Multiplayer draft'}`;
   const pageDescription = `“${displayTitle || 'Multiplayer draft'}” — multiplayer movie drafting game on Movie Drafter. Fantasy movie draft picks across categories with friends.`;
   const shareOgUrl = dynamicOgImageUrl({
     title: displayTitle || 'Multiplayer draft',
@@ -1024,6 +1088,24 @@ export const MultiplayerDraftInterface = ({
 
       <div className="w-full px-4 py-6 space-y-6">
         <div className="w-full max-w-[1400px] mx-auto">
+          {draftHasStarted && !isComplete && clock.enabled && !currentTurnIsAI && (
+            <PickClockBanner
+              secondsLeft={clock.secondsLeft}
+              pickClockSeconds={clock.pickClockSeconds}
+              isMyTurn={isMyTurn}
+              currentTurnName={currentTurnPlayer?.participant_name}
+              currentTurnIsAway={Boolean(
+                clock.awayByParticipantId[String(draft.current_turn_participant_id ?? draft.current_turn_user_id ?? '')]
+              )}
+            />
+          )}
+          {isPublicTable && !draftHasStarted && !isComplete ? (
+            <PublicTableLobby
+              draftId={draft.id}
+              inviteCode={draft.invite_code ? String(draft.invite_code) : null}
+              onStarted={() => void loadDraft(draft.id, { background: true })}
+            />
+          ) : (
           <DraftLobbyStatusParticipants
             draft={draft}
             isComplete={isComplete}
@@ -1039,7 +1121,98 @@ export const MultiplayerDraftInterface = ({
             loading={loading}
             onCopyInviteCode={copyInviteCode}
             onStartDraft={() => startDraft(draft.id)}
+            myParticipantId={effectiveParticipantId}
+            details={lobbyDetails}
+            // A private draft has no fixed size: the host always has one open seat to add someone (six at most).
+            openSeats={isHost && !draftHasStarted && !isComplete && participants.length < MAX_PRIVATE_SEATS ? 1 : 0}
+            onOpenSeat={isHost ? () => setInviteOpen(true) : undefined}
+            renderTileActions={(p) =>
+              p.status === 'invited' && isHost && !draftHasStarted ? (
+                <RevokeInviteButton
+                  disabled={revoking}
+                  onRevoke={async () => {
+                    setRevoking(true);
+                    try {
+                      await inviteApi.revoke(draft.id, p.id);
+                      await loadDraft(draft.id, { background: true });
+                    } catch (err) {
+                      toast({ title: "Couldn't take that back", description: err instanceof Error ? err.message : 'Please try again.', variant: 'destructive' });
+                    } finally {
+                      setRevoking(false);
+                    }
+                  }}
+                />
+              ) : null
+            }
           />
+          )}
+          {isHost && !isPublicTable && !draftHasStarted && !isComplete && (
+            <InviteSeatDialog
+              open={inviteOpen}
+              onOpenChange={setInviteOpen}
+              draftId={draft.id}
+              draftTitle={displayTitle || draft.title || 'a draft'}
+              hostName={
+                participants.find((p) => [p.user_id, p.guest_participant_id, p.participant_id].some((id) => id && String(id) === String(effectiveParticipantId)))
+                  ?.participant_name ?? 'A friend'
+              }
+              theme={draft.theme}
+              option={draft.option}
+              canInvite
+              seatsLeft={Math.max(MAX_PRIVATE_SEATS - participants.length, 0)}
+              share={draft.invite_code ? { label: 'Join code', value: String(draft.invite_code) } : null}
+              league={draftLeague ? { name: draftLeague.name, people: leaguePeople.filter((p) => p.userId !== user?.id) } : null}
+              taken={{
+                emails: [...(draft.participants ?? []), ...participants.map((p) => p.email ?? '')].filter(Boolean),
+                userIds: participants.map((p) => p.user_id ?? '').filter(Boolean),
+              }}
+              onChanged={() => void loadDraft(draft.id, { background: true })}
+            />
+          )}
+          {canEditSettings && (
+            <LobbySettingsDialog
+              open={settingsOpen}
+              onOpenChange={setSettingsOpen}
+              settings={{
+                seats: null,
+                clock: clock.enabled ? clock.pickClockSeconds : null,
+                rated: null,   // private drafts are never rated
+                categories: draft.categories,
+              }}
+              seatRange={null}
+              allowClock={canEditClock && clock.status !== 'unavailable'}
+              allowNoClock
+              theme={draft.theme}
+              option={draft.option}
+              playerCount={Math.max(participants.length, 2)}
+              categoryOptions={
+                standardCategories.length === 0
+                  ? null
+                  : [...standardCategories, ...draft.categories.filter((c: string) => !standardCategories.includes(c))]
+              }
+              onSave={async (change) => {
+                if (change.clock !== undefined) {
+                  const { error } = await (supabase as any).rpc('set_draft_referee', {
+                    p_draft_id: draft.id,
+                    p_participant_id: effectiveParticipantId,
+                    p_enabled: true,
+                    p_pick_clock_seconds: change.clock,
+                  });
+                  if (error) throw new Error(error.message);
+                  void clock.refresh();
+                }
+                if (change.categories) {
+                  const { error } = await (supabase as any).rpc('set_draft_categories', {
+                    p_draft_id: draft.id,
+                    p_participant_id: effectiveParticipantId,
+                    p_categories: change.categories,
+                  });
+                  if (error) throw new Error(error.message);
+                  await loadDraft(draft.id, { background: true });
+                }
+              }}
+            />
+          )}
         </div>
 
         {/* Draft Content */}

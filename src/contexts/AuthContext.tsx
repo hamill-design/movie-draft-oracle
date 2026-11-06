@@ -7,6 +7,7 @@ import { useGuestSession, GuestSession } from '@/hooks/useGuestSession';
 import { useDraftOperations } from '@/hooks/useDraftOperations';
 import { getPendingDraft, clearPendingDraft } from '@/utils/draftStorage';
 import { uploadPendingAvatar } from '@/utils/avatarUpload';
+import { IS_AUTH_TAB } from '@/lib/authRedirect';
 import { toast } from '@/hooks/use-toast';
 import {
   MARKETING_AUDIENCE_SYNC_LS_PREFIX,
@@ -74,8 +75,9 @@ export const PendingDraftProcessor: React.FC = () => {
   const [hasProcessed, setHasProcessed] = useState(false);
 
   useEffect(() => {
-    // Only process if user is authenticated and we haven't processed yet
-    if (!user || hasProcessed) return;
+    // Only process if user is authenticated and we haven't processed yet.
+    // Not in the tab Google sign-in opened: it closes itself, and the original tab saves the draft (once, not twice).
+    if (!user || hasProcessed || IS_AUTH_TAB) return;
 
     const processPendingDraft = async () => {
       const pendingDraft = getPendingDraft();

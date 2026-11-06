@@ -14,7 +14,8 @@ import TeamRoster from '@/components/TeamRoster';
 import ShareResultsButton from '@/components/ShareResultsButton';
 import { calculateDetailedScore, BOX_OFFICE_FLOP_PENALTY } from '@/utils/scoreCalculator';
 import RankBadge from '@/components/RankBadge';
-import { storePendingDraft } from '@/utils/draftStorage';
+import { storePendingDraft, getPendingDraft } from '@/utils/draftStorage';
+import { AuthModal } from '@/components/AuthModal';
 import { fetchOscarCacheMap, mergePicksOscarWithCache } from '@/utils/oscarPickSync';
 import { mergeOscarStatusFromSources } from '@/utils/movieCategoryUtils';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
@@ -25,6 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn, getCleanActorName } from '@/lib/utils';
 import { DraftPageHeaderSection } from '@/components/DraftPageHeaderSection';
 import { FinalScoresHeadingTitle } from '@/components/FinalScoresHeadingTitle';
+import { RatedResultsPanel } from '@/components/play/RatedResultsPanel';
 import {
   buildDraftBoardModel,
   type DraftBoardParticipant,
@@ -99,6 +101,9 @@ const FinalScores = () => {
   const [votes, setVotes] = useState<{ voted_participant_id: string | null; voted_player_name: string | null; voter_user_id: string | null; voter_guest_session_id: string | null }[]>([]);
   const [draftParticipants, setDraftParticipants] = useState<DraftBoardParticipant[]>([]);
   const [localVotesFromState, setLocalVotesFromState] = useState<Record<string, string> | null>(null);
+  // The sign-in popup for "Login to Save"; `saveDraftOnSignIn` says whether a stashed draft should be saved to the account.
+  const [authOpen, setAuthOpen] = useState(false);
+  const [saveDraftOnSignIn, setSaveDraftOnSignIn] = useState(false);
 
   const votingMeta = useMemo(() => {
     if (!draft) return null;
@@ -866,20 +871,23 @@ const FinalScores = () => {
   };
 
   const handleAuthRedirect = async () => {
-    toast({
-      title: "Create Account",
-      description: "Sign up to save drafts permanently and access them from any device."
-    });
-
     const draftData = getDraftDataForSave();
     if (!draftData) {
       console.error('No draft data available to save');
-      navigate('/auth');
+      setSaveDraftOnSignIn(false);
+      setAuthOpen(true);
       return;
     }
 
     const returnPath = `/final-scores/${draftId}`;
     let savedDraftId = draftId || null;
+
+    // Stash the draft in the browser and open the sign-in popup right away. Signing in with Google leaves
+    // the site and comes back, and this stash is how the draft survives that trip. (It is stashed again below
+    // once the database copy exists, so it carries that draft's id.)
+    storePendingDraft(draftData, savedDraftId, returnPath);
+    setSaveDraftOnSignIn(true);
+    setAuthOpen(true);
 
     // Try to save draft to database if not already saved
     // Check if draft exists in database by trying to fetch it
@@ -925,12 +933,10 @@ const FinalScores = () => {
       }
     }
 
-    // Store draft in localStorage as backup
-    storePendingDraft(draftData, savedDraftId, returnPath);
-
-    // Navigate to auth page with return path and save flag
-    const authUrl = `/auth?returnTo=${encodeURIComponent(returnPath)}&saveDraft=true`;
-    navigate(authUrl);
+    // Update the localStorage backup with the saved draft's id, unless they already signed in and used it up.
+    if (getPendingDraft()) {
+      storePendingDraft(draftData, savedDraftId, returnPath);
+    }
   };
 
   const getDraftDataForSave = () => {
@@ -1021,6 +1027,9 @@ const FinalScores = () => {
             theme={draft.theme}
           />
         </DraftPageHeaderSection>
+
+        {/* Leaderboard points (rated public games only; renders nothing otherwise) */}
+        <RatedResultsPanel draftId={draftId} />
 
         {/* Action Buttons */}
         <div className="flex flex-col md:flex-row items-center md:items-stretch justify-center gap-3 mb-8">
@@ -1182,6 +1191,14 @@ const FinalScores = () => {
         </div>
       </div>
     </div>
+
+    <AuthModal
+      open={authOpen}
+      onOpenChange={setAuthOpen}
+      returnTo={`/final-scores/${draftId}`}
+      saveDraft={saveDraftOnSignIn}
+      intro="Sign up to save drafts permanently and access them from any device."
+    />
     </>
   );
 };

@@ -12,6 +12,7 @@ import {
   mergeParticipantPresenceRows,
 } from '@/utils/draftPresence';
 import { clearDraftPresenceKeepalive } from '@/utils/draftPresenceRpc';
+import { publicPlayApi } from '@/lib/publicPlayApi';
 
 // Helper function to extract detailed error information (Supabase RPC, PostgrestError, etc.)
 const getErrorMessage = (error: any): string => {
@@ -301,11 +302,19 @@ export const useMultiplayerDraft = (
       return participants;
     }
 
-    // Fetch emails from profiles
-    const { data: profiles, error } = await supabase
+    // Public tables never load emails: strangers must not see each other's addresses.
+    // (Participant rows carry their draft id; the check is false if public play isn't installed.)
+    const draftIdForRows = (participants[0] as unknown as { draft_id?: string } | undefined)?.draft_id;
+    const isPublicTable = draftIdForRows ? await publicPlayApi.isPublicTable(draftIdForRows) : false;
+
+    // Fetch emails from profiles (just avatars for a public table)
+    const { data: profiles, error } = (await (supabase as any)
       .from('profiles')
-      .select('id, email, avatar_url')
-      .in('id', userIds);
+      .select(isPublicTable ? 'id, avatar_url' : 'id, email, avatar_url')
+      .in('id', userIds)) as {
+      data: { id: string; email?: string | null; avatar_url?: string | null }[] | null;
+      error: unknown;
+    };
 
     if (error) {
       console.error('Error fetching participant emails:', error);
@@ -367,7 +376,8 @@ export const useMultiplayerDraft = (
         p_option: draftData.option,
         p_categories: draftData.categories,
         p_participants: draftData.participantEmails,
-        p_participant_name: 'Host',
+        // The name chosen in the player's profile is the one everyone sees (not the word "Host").
+        p_participant_name: draftData.hostDisplayName?.trim() || 'Host',
         p_ai_participant_names: draftData.aiParticipantNames || []
       });
 
@@ -415,6 +425,20 @@ export const useMultiplayerDraft = (
 
       // Update the draft state with complete data
       setDraft(newDraft);
+
+      // Every draft gets the referee, with "No clock" until the host picks one. It is what plays the bots
+      // on the server (so they never freeze when the host closes the tab) and what picks for a player who
+      // isn't there once a clock is set. If it isn't installed, or this fails, the draft works as before.
+      try {
+        await (supabase as any).rpc('set_draft_referee', {
+          p_draft_id: functionResult.draft_id,
+          p_participant_id: participantId,
+          p_enabled: true,
+          p_pick_clock_seconds: null,
+        });
+      } catch {
+        // not installed yet: nothing to do
+      }
 
       // Only send email invitations if there are participants to invite
       if (draftData.participantEmails && draftData.participantEmails.length > 0) {

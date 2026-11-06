@@ -1,0 +1,12 @@
+{
+  "name": "movie-drafter-db-tests",
+  "private": true,
+  "type": "module",
+  "description": "Runs the referee SQL against an in-memory Postgres (PGlite). Separate from the app's dependencies.",
+  "scripts": {
+    "test": "node --test --test-reporter=spec ./*.test.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.2.17"
+  }
+}

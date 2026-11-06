@@ -247,7 +247,9 @@ export function HomeDraftSection({
           isStepVisible('option') ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
         )}
       >
-        <div className="overflow-hidden min-h-0">
+        {/* p-2 / -m-2 cancel out (no layout shift) but give the card's glow room so overflow-hidden doesn't clip it.
+            Only applied while open so the collapsed 0fr row stays fully flat. */}
+        <div className={cn('overflow-hidden min-h-0', isStepVisible('option') && 'p-2 -m-2')}>
         {isStepVisible('option') && (
         <div className="p-6 bg-greyscale-purp-900 rounded-card space-y-4 animate-in fade-in-0 slide-in-from-top-2 duration-500" style={{boxShadow: 'var(--shadow-card-glow)'}}>
             <HeaderIcon3
