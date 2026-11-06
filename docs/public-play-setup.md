@@ -101,7 +101,7 @@ select cron.schedule(
 To stop it: `select cron.unschedule('referee-sweep');`
 
 ### 5. Deploy the Staging site (optional, only to share it)
-Push the `Staging` branch as usual. (Nothing is committed yet. All of this is sitting in your working folder.)
+Push the `Staging` branch as usual. (Pushed 2026-11-06 as commit `42334f2`. The mobile app folder, the admin content-timers widget and the spec-draft title backfill migration were left out of that commit on purpose.)
 
 ## The test (on localhost or the Staging site, against the main Supabase)
 
