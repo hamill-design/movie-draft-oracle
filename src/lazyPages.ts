@@ -61,6 +61,9 @@ const loaders = {
   News: () => import('./pages/News'),
   Blog: () => import('./pages/Blog'),
   BlogPost: () => import('./pages/BlogPost'),
+  Play: () => import('./pages/Play'),
+  AdminReports: () => import('./pages/AdminReports'),
+  AdminQuickMatch: () => import('./pages/AdminQuickMatch'),
 } satisfies Record<string, Loader>;
 
 type PageName = keyof typeof loaders;
@@ -108,6 +111,9 @@ const routePages: Array<[string, PageName]> = [
   ['/news', 'News'],
   ['/blog', 'Blog'],
   ['/blog/:slug', 'BlogPost'],
+  ['/play', 'Play'],
+  ['/admin/reports', 'AdminReports'],
+  ['/admin/quick-match', 'AdminQuickMatch'],
 ];
 
 /**

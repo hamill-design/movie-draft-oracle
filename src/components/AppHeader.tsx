@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { getInitials } from '@/utils/avatarUpload';
 import { NotificationBell } from '@/components/NotificationBell';
 import { cn } from '@/lib/utils';
+import { usePublicPlayAvailable } from '@/hooks/usePublicPlayAvailable';
 
 const HEADER_NAV_ITEMS = [
   { label: 'How To Play', mobileLabel: 'How to Draft', to: '/how-to-draft' },
@@ -147,15 +148,24 @@ const HeaderNavLinks = ({
 }: {
   className?: string;
   onNavigate?: () => void;
-}) => (
-  <nav className={cn('flex items-center gap-1', className)}>
-    {HEADER_NAV_ITEMS.map(({ label, to }) => (
-      <Link key={to} to={to} onClick={onNavigate} className={navLinkClassName}>
-        {label}
-      </Link>
-    ))}
-  </nav>
-);
+}) => {
+  // "Play" (public tables) only appears for people who can use it, so it stays hidden until public play is switched on.
+  const showPlay = usePublicPlayAvailable();
+  return (
+    <nav className={cn('flex items-center gap-1', className)}>
+      {HEADER_NAV_ITEMS.map(({ label, to }) => (
+        <Link key={to} to={to} onClick={onNavigate} className={navLinkClassName}>
+          {label}
+        </Link>
+      ))}
+      {showPlay && (
+        <Link to="/play" onClick={onNavigate} className={navLinkClassName}>
+          Play
+        </Link>
+      )}
+    </nav>
+  );
+};
 
 const MobileMenuButton = ({
   open,
@@ -227,6 +237,7 @@ const AppHeader = () => {
   const { user } = useAuth();
   const profile = useHeaderProfile(user?.id);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const showPlayLink = usePublicPlayAvailable();
 
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -359,6 +370,15 @@ const AppHeader = () => {
               {mobileLabel}
             </Link>
           ))}
+          {showPlayLink && (
+            <Link
+              to="/play"
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-[18px] py-3 bg-greyscale-purp-850 text-sm font-brockmann font-medium leading-5 text-greyscale-blue-100"
+            >
+              Play with others
+            </Link>
+          )}
         </div>
       </nav>
     </header>

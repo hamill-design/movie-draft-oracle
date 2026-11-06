@@ -19,6 +19,8 @@ import { Participant } from '@/types/participant';
 import { getRandomAIName } from '@/data/aiNames';
 import { useLeagueActions } from '@/hooks/useLeagues';
 import { useLeagueSetup } from '@/hooks/useLeagueSetup';
+import { useOpenGameSetup, createOpenGame } from '@/hooks/useOpenGameSetup';
+import { OpenGameChoice } from '@/components/play/OpenGameChoice';
 import {
   LeagueToggleCard,
   LeagueMemberPicker,
@@ -43,6 +45,8 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
   const { profile, getDisplayName, loading: profileLoading } = useProfile();
   const { addDraftToLeague } = useLeagueActions();
   const leagueSetup = useLeagueSetup();
+  // "Who can join?": friends I invite (default) or open to the public. Only offered while public play is open.
+  const openSetup = useOpenGameSetup(leagueSetup.enabled);
 
   const option = useMemo(() => {
     if (theme === 'people' && params.name) {
@@ -167,6 +171,33 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
         });
         return;
       }
+    }
+
+    // Open to the public: no email list. The game is opened on the server and listed for anyone to join.
+    if (draftMode === 'multiplayer' && openSetup.isOpen) {
+      if (openSetup.problem) {
+        toast({ title: 'Almost there', description: openSetup.problem, variant: 'destructive' });
+        return;
+      }
+      openSetup.setSubmitting(true);
+      try {
+        const id = await createOpenGame(openSetup.settings, {
+          title: theme === 'year' ? `Draft by ${option}` : `${option} filmography`,
+          theme,
+          option,
+          categories: data.categories,
+        });
+        navigate(`/draft/${id}`);
+      } catch (err) {
+        toast({
+          title: "Couldn't open the game",
+          description: err instanceof Error ? err.message : 'Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        openSetup.setSubmitting(false);
+      }
+      return;
     }
 
     if (draftMode === 'multiplayer') {
@@ -330,7 +361,8 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                   <span className="font-brockmann">Online Multiplayer</span>
                 </button>
               </div>
-              {draftMode === 'multiplayer' && (
+              {draftMode === 'multiplayer' && <OpenGameChoice setup={openSetup} leagueEnabled={leagueSetup.enabled} />}
+              {draftMode === 'multiplayer' && !openSetup.isOpen && (
                 <div className="self-stretch p-4 bg-teal-900 rounded flex flex-col" style={{ outline: '1px solid #B2FFEA', outlineOffset: '-1px' }}>
                   <p className="text-teal-200 text-sm font-medium leading-5 font-brockmann m-0">
                     <span className="font-bold">Multiplayer Mode:</span>{' '}
@@ -340,7 +372,8 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
               )}
             </div>
 
-            {/* Add Participants */}
+            {/* Add Participants (not needed for an open game: the public joins instead) */}
+            {!openSetup.isOpen && (
             <div className="p-6 bg-greyscale-purp-900 rounded-card flex flex-col gap-6" style={{ boxShadow: 'var(--shadow-card-glow)' }}>
               <div className="flex items-center gap-2">
                 <MultiPersonIcon className="w-6 h-6 text-purple-300" />
@@ -432,6 +465,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                 onRemoveEmails={handleRemoveEmails}
               />
             </div>
+            )}
 
             {/* Categories */}
             <Form {...form}>
@@ -440,7 +474,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                   form={form}
                   categories={categories}
                   theme={theme}
-                  playerCount={Math.max(participants.length, draftMode === 'multiplayer' ? 2 : 1)}
+                  playerCount={openSetup.isOpen ? openSetup.settings.seats : Math.max(participants.length, draftMode === 'multiplayer' ? 2 : 1)}
                   selectedOption={option}
                   draftMode={draftMode === 'local' ? 'single' : 'multiplayer'}
                   participants={participants}
@@ -448,11 +482,11 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
                 <div className="text-center">
                   <Button
                     type="submit"
-                    disabled={creatingDraft || isPreparingSession}
+                    disabled={creatingDraft || isPreparingSession || openSetup.submitting}
                     className="bg-yellow-500 hover:bg-yellow-300 text-greyscale-blue-800 font-brockmann font-semibold px-6 py-3 text-base rounded-[2px] tracking-wide"
                     size="lg"
                   >
-                    {isPreparingSession ? 'Preparing session...' : creatingDraft ? 'Creating...' : draftMode === 'multiplayer' ? 'Create Multiplayer Draft' : 'Start Draft'}
+                    {isPreparingSession ? 'Preparing session...' : openSetup.submitting ? 'Opening the game...' : creatingDraft ? 'Creating...' : openSetup.isOpen ? 'Open the game' : draftMode === 'multiplayer' ? 'Create Multiplayer Draft' : 'Start Draft'}
                   </Button>
                 </div>
               </form>

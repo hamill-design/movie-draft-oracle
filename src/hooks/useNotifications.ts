@@ -5,7 +5,10 @@ import { useAuth } from '@/contexts/AuthContext';
 export interface AppNotification {
   id: string;
   user_id: string;
-  type: 'draft_invite' | 'league_invite' | 'upcoming_draft';
+  type:
+    | 'draft_invite' | 'league_invite' | 'upcoming_draft' | 'your_turn'
+    | 'table_starts_soon' | 'time_to_start' | 'schedule_changed' | 'you_are_host'
+    | 'table_cancelled' | 'removed_from_table' | 'match_found';
   title: string;
   body: string | null;
   link: string | null;

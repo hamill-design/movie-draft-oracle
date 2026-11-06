@@ -7,6 +7,8 @@ import { graphJsonLd, webPageNode, siteWebAppId } from '@/components/seo/jsonLd'
 import { HomeDraftSection } from '@/components/home/HomeDraftSection';
 import { LeagueFeatureSection } from '@/components/home/LeagueFeatureSection';
 import { HowItWorksSection } from '@/components/home/HowItWorksSection';
+import { PublicPlaySection } from '@/components/home/PublicPlaySection';
+import { PublicPlayStrip } from '@/components/home/PublicPlayStrip';
 import { RotatingFilmographyPortrait } from '@/components/home/RotatingFilmographyPortrait';
 import { RotatingYearDraftPortrait } from '@/components/home/RotatingYearDraftPortrait';
 
@@ -62,25 +64,30 @@ const Home = () => {
 
       {/* ── 1. Hero ── */}
       <div className="relative w-full min-h-screen overflow-hidden">
-        <section className="w-full px-6 py-16 md:py-20 relative z-10 overflow-visible">
-          <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 flex flex-col items-center gap-6" style={{ pointerEvents: 'none' }}>
-            <div className="w-full flex flex-col items-center">
-              <h1
-                className="w-full text-center text-[40px] sm:text-6xl md:text-7xl lg:text-[90px] leading-[46px] sm:leading-[70px] md:leading-normal lg:leading-[90px] font-chaney font-normal text-greyscale-blue-100"
-                style={{ wordWrap: 'break-word' }}
-              >
-                Your fantasy movie draft starts here.
-              </h1>
-            </div>
-            <div className="w-full max-w-[768px] pt-2 flex flex-col items-center">
-              <p
-                className="w-full max-w-[724px] text-center text-sm md:text-lg font-brockmann font-medium leading-[20px] md:leading-[26px] text-greyscale-blue-100"
-                style={{ wordWrap: 'break-word' }}
-              >
-                Turn your film obsession into friendly competition. Draft movies, rack up points, and settle once and for all who has the best taste in cinema.
-              </p>
+        <section className="w-full px-6 py-20 relative z-10 overflow-visible">
+          <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 flex flex-col items-center gap-12" style={{ pointerEvents: 'none' }}>
+            <div className="w-full flex flex-col items-center gap-6">
+              <div className="w-full flex flex-col items-center">
+                <h1
+                  className="w-full text-center text-[40px] sm:text-6xl md:text-7xl lg:text-[90px] leading-[46px] sm:leading-[70px] md:leading-normal lg:leading-[90px] font-chaney font-normal text-greyscale-blue-100 blur-[0.5px]"
+                  style={{ wordWrap: 'break-word', textShadow: '0px 1px 24px rgba(255, 255, 255, 0.25)' }}
+                >
+                  Your fantasy{' '}<br />movie draft{' '}<br />starts here
+                </h1>
+              </div>
+              <div className="w-full max-w-[768px] pt-2 flex flex-col items-center">
+                <p
+                  className="w-full max-w-[724px] text-center text-sm md:text-lg font-brockmann font-medium leading-[20px] md:leading-[26px] text-greyscale-blue-100"
+                  style={{ wordWrap: 'break-word' }}
+                >
+                  Turn your film obsession into friendly competition. Draft movies, rack up points, and settle once and for all who has the best taste in cinema.
+                </p>
+              </div>
             </div>
 
+            {/* Quick Play button: part of the hero when public play is open to this visitor (nothing otherwise).
+                This column ignores the mouse so the headline can't block clicks, so the button turns it back on. */}
+            <PublicPlayStrip />
           </div>
         </section>
 
@@ -101,6 +108,9 @@ const Home = () => {
           </svg>
         </div>
       </div>
+
+      {/* ── 2b. Play with others (renders nothing unless public play is open to this visitor) ── */}
+      <PublicPlaySection />
 
       {/* ── 3. How it works ── */}
       <HowItWorksSection />

@@ -16,6 +16,8 @@ import { getRandomAIName } from '@/data/aiNames';
 import { isUuidParam } from '@/utils/specDraftSlug';
 import { useLeagueActions } from '@/hooks/useLeagues';
 import { useLeagueSetup } from '@/hooks/useLeagueSetup';
+import { useOpenGameSetup, createOpenGame } from '@/hooks/useOpenGameSetup';
+import { OpenGameChoice } from '@/components/play/OpenGameChoice';
 import {
   LeagueToggleCard,
   LeagueMemberPicker,
@@ -223,6 +225,8 @@ const SpecDraftSetup = () => {
   const { profile, getDisplayName, loading: profileLoading } = useProfile();
   const { addDraftToLeague } = useLeagueActions();
   const leagueSetup = useLeagueSetup();
+  // "Who can join?": friends I invite (default) or open to the public. Only offered while public play is open.
+  const openSetup = useOpenGameSetup(leagueSetup.enabled);
 
   const [specDraft, setSpecDraft] = useState<SpecDraft | null>(null);
   const [, setCustomCategories] = useState<SpecDraftCategory[]>([]);
@@ -543,7 +547,7 @@ const SpecDraftSetup = () => {
     // Prevent selecting ineligible categories
     if (checked) {
       const movieCount = categoryCounts[category] || 0;
-      const playerCount = Math.max(participants.length, draftMode === 'multiplayer' ? 2 : 2);
+      const playerCount = openSetup.isOpen ? openSetup.settings.seats : Math.max(participants.length, draftMode === 'multiplayer' ? 2 : 2);
       
       // If category is ineligible (movieCount < playerCount), don't allow selection
       if (movieCount < playerCount) {
@@ -587,6 +591,27 @@ const SpecDraftSetup = () => {
     }
 
     try {
+      // Open to the public: no email list. The game is opened on the server and listed for anyone to join.
+      if (draftMode === 'multiplayer' && openSetup.isOpen) {
+        if (openSetup.problem) {
+          toast({ title: 'Almost there', description: openSetup.problem, variant: 'destructive' });
+          return;
+        }
+        openSetup.setSubmitting(true);
+        try {
+          const id = await createOpenGame(openSetup.settings, {
+            title: specDraft.name,
+            theme: 'spec-draft',
+            option: specDraft.id,
+            categories: selectedCats,
+          });
+          navigate(`/draft/${id}`);
+        } finally {
+          openSetup.setSubmitting(false);
+        }
+        return;
+      }
+
       if (draftMode === 'multiplayer') {
         if (!participantId) {
           toast({
@@ -857,9 +882,11 @@ const SpecDraftSetup = () => {
                 </div>
               </button>
             </div>
+            {draftMode === 'multiplayer' && <OpenGameChoice setup={openSetup} leagueEnabled={leagueSetup.enabled} />}
           </div>
 
-          {/* Add Players */}
+          {/* Add Players (not needed for an open game: the public joins instead) */}
+          {!openSetup.isOpen && (
           <div className="p-6 bg-greyscale-purp-900 rounded-card flex flex-col gap-6" style={{boxShadow: 'var(--shadow-card-glow)'}}>
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 flex justify-center items-center">
@@ -974,6 +1001,7 @@ const SpecDraftSetup = () => {
               onRemoveEmails={handleRemoveEmails}
             />
           </div>
+          )}
 
           {/* Select Categories */}
           <div style={{
@@ -1034,7 +1062,7 @@ const SpecDraftSetup = () => {
               {allCategories.map((category) => {
                 const isChecked = selectedCategories[category] || false;
                 const movieCount = categoryCounts[category] || 0;
-                const playerCount = Math.max(participants.length, draftMode === 'multiplayer' ? 2 : 2);
+                const playerCount = openSetup.isOpen ? openSetup.settings.seats : Math.max(participants.length, draftMode === 'multiplayer' ? 2 : 2);
                 const config = getCategoryConfig(category);
                 return (
                   <CategoryCheckbox
@@ -1055,11 +1083,11 @@ const SpecDraftSetup = () => {
           <div className="flex justify-center">
             <Button
               onClick={handleCreateDraft}
-              disabled={creatingDraft || selectedCategoriesList.length === 0 || isPreparingSession}
+              disabled={creatingDraft || selectedCategoriesList.length === 0 || isPreparingSession || openSetup.submitting}
               className="bg-yellow-500 hover:bg-yellow-300 text-greyscale-blue-800 px-6 py-3 rounded-[2px] h-12"
               style={{ fontFamily: 'Brockmann', fontWeight: 600, fontSize: '16px', lineHeight: '24px' }}
             >
-              {isPreparingSession ? 'Preparing session...' : creatingDraft ? 'Creating...' : 'Create Draft'}
+              {isPreparingSession ? 'Preparing session...' : openSetup.submitting ? 'Opening the game...' : creatingDraft ? 'Creating...' : openSetup.isOpen ? 'Open the game' : 'Create Draft'}
             </Button>
           </div>
         </div>

@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useParams, useLocation } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider, PendingDraftProcessor } from "./contexts/AuthContext";
+import { AuthTabLanding } from "./components/auth/AuthTabLanding";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AppHeader from "./components/AppHeader";
 import Footer from "./components/Footer";
@@ -15,7 +16,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 
-const { Index, Auth, ResetPassword, Profile, Admin, FinalScores, VotePage, PrivacyPolicy, TermsOfService, Contact, About, LearnMore, SpecDraftSetup, ThemeDraftSetup, ThemeHubPage, ThemeLandingPage, HowToDraftPage, FAQ, DraftByFilmography, DraftByYear, LeagueHub, LeagueCreate, LeaguePage, LeagueSettings, LeagueJoin, LeagueDraftLobbyPage, News, Blog, BlogPost, DraftSetup, JoinDraft } = pages;
+const { Index, Auth, ResetPassword, Profile, Admin, FinalScores, VotePage, PrivacyPolicy, TermsOfService, Contact, About, LearnMore, SpecDraftSetup, ThemeDraftSetup, ThemeHubPage, ThemeLandingPage, HowToDraftPage, FAQ, DraftByFilmography, DraftByYear, LeagueHub, LeagueCreate, LeaguePage, LeagueSettings, LeagueJoin, LeagueDraftLobbyPage, News, Blog, BlogPost, DraftSetup, JoinDraft, Play, AdminReports, AdminQuickMatch } = pages;
 
 /** DEV-only share-image design sandbox; lazy + gated so it's excluded from production builds. */
 const SharePreviewSandbox = import.meta.env.DEV ? lazy(() => import("./pages/SharePreviewSandbox")) : null;
@@ -61,6 +62,7 @@ const App = () => (
             <BrowserRouter>
             <ScrollToTop />
             <PendingDraftProcessor />
+            <AuthTabLanding />
             <div className="flex flex-col min-h-screen">
             <AppHeader />
               <main className="flex-1">
@@ -75,6 +77,9 @@ const App = () => (
               <Route path="/draft/:draftId" element={<Index />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/reports" element={<AdminReports />} />
+              <Route path="/admin/quick-match" element={<AdminQuickMatch />} />
+              <Route path="/play" element={<Play />} />
               <Route path="/final-scores/:draftId" element={<FinalScores />} />
               <Route path="/vote/:draftId" element={<VotePage />} />
               <Route path="/join-draft/:draftId" element={<JoinDraft />} />

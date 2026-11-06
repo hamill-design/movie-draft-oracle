@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { publicPlayApi } from '@/lib/publicPlayApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -63,6 +64,27 @@ export const JoinDraft = () => {
   // Email invite links identify the invitee by account, never as a guest.
   const isEmailInvite = !!draftId && !!invitedEmail;
 
+  // An invitation to a public table is taken from the Play page (joining swaps the seat held for this email
+  // for a real one). Everything else is a private draft's invitation, claimed below.
+  const [inviteRoute, setInviteRoute] = useState<'checking' | 'private'>(isEmailInvite ? 'checking' : 'private');
+  useEffect(() => {
+    if (!draftId || !isEmailInvite) return;
+    let cancelled = false;
+    publicPlayApi
+      .isPublicTable(draftId)
+      .then((isPublic) => {
+        if (cancelled) return;
+        if (isPublic) navigate(`/play?join=${draftId}`, { replace: true });
+        else setInviteRoute('private');
+      })
+      .catch(() => {
+        if (!cancelled) setInviteRoute('private');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [draftId, isEmailInvite, navigate]);
+
   // ── Safety net: if user is already a participant (e.g. pre-joined via league
   // draft), skip the invite-code flow and go straight to the draft. ──────────
   useEffect(() => {
@@ -108,7 +130,7 @@ export const JoinDraft = () => {
   // Email invitations: attach the signed-in account to the spot it was invited
   // to (never creates a second row) and go straight to the draft.
   useEffect(() => {
-    if (authLoading || checkingParticipation) return;
+    if (authLoading || checkingParticipation || inviteRoute !== 'private') return;
     if (!isEmailInvite || !draftId || !user || hasAttemptedAutoJoin.current) return;
 
     hasAttemptedAutoJoin.current = true;
@@ -121,7 +143,7 @@ export const JoinDraft = () => {
         setClaimError(error?.message || 'We could not match this invitation to your account.');
       }
     })();
-  }, [authLoading, checkingParticipation, isEmailInvite, draftId, user, claimDraftInvite, navigate]);
+  }, [authLoading, checkingParticipation, inviteRoute, isEmailInvite, draftId, user, claimDraftInvite, navigate]);
 
   const handleJoinByCode = async (e: React.FormEvent) => {
     e.preventDefault();
