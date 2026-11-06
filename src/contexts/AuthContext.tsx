@@ -223,6 +223,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           clearMarketingSyncFlags();
         }
 
+        // A password-reset link signs the person in, then Supabase sends this event. If the email
+        // link landed anywhere but /reset-password (e.g. Supabase fell back to its Site URL because
+        // the redirect wasn't on its allow-list), they'd just look signed in with no way to choose a
+        // new password. Send them to the reset page; the session is already saved, so it picks it up.
+        if (event === 'PASSWORD_RECOVERY' && window.location.pathname !== '/reset-password') {
+          window.location.replace('/reset-password');
+          return;
+        }
+
         // Attach this account to any draft it was invited to by email (covers
         // invitees who signed up or in without coming back through the link).
         if (event === 'SIGNED_IN' && session?.user) {
