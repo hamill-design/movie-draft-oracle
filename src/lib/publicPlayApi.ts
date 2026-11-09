@@ -351,6 +351,9 @@ export const publicPlayApi = {
       return false; // not installed yet: behave like a normal draft
     }
   },
+  /** Same question, but a failed lookup throws, so an answer can be remembered only when it was a real one. */
+  isPublicTableStrict: async (draftId: string): Promise<boolean> =>
+    (await rpc<boolean>('draft_is_public', { p_draft_id: draftId })) === true,
 
   adminReports: (status: string | null) => rpc<AdminReport[]>('admin_list_reports', { p_status: status, p_limit: 100 }),
   adminResolve: (id: string, action: 'dismissed' | 'warned' | 'banned', banDays: number | null) =>

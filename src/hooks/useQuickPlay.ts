@@ -14,24 +14,27 @@ export function useQuickPlay() {
   const [busy, setBusy] = useState(false);
   const inFlight = useRef(false);
 
-  const quickPlay = useCallback(async () => {
-    if (inFlight.current) return;
+  /** Resolves true once it has sent the player to a lobby, false if it couldn't (a message is shown). */
+  const quickPlay = useCallback(async (): Promise<boolean> => {
+    if (inFlight.current) return true;
     inFlight.current = true;
     setBusy(true);
     try {
       const joined = await publicPlayApi.quickJoin();
       if (joined.found && joined.draft_id) {
         navigate(`/draft/${joined.draft_id}`);
-        return;
+        return true;
       }
       const started = await publicPlayApi.quickStart();
       navigate(`/draft/${started.draft_id}`);
+      return true;
     } catch (err) {
       toast({
         title: "Couldn't start Quick Play",
         description: err instanceof Error ? err.message : 'Please try again.',
         variant: 'destructive',
       });
+      return false;
     } finally {
       inFlight.current = false;
       setBusy(false);

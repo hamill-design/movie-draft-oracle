@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePublicPlay } from '@/hooks/usePublicPlay';
+import { useQuickPlay } from '@/hooks/useQuickPlay';
 import { publicPlayApi, type MyTableRow } from '@/lib/publicPlayApi';
 import { PublicNameForm } from '@/components/play/PublicNameForm';
 import { OpenTablesBrowser } from '@/components/play/OpenTablesBrowser';
@@ -64,9 +65,10 @@ const Play = () => {
   const inviteTable = rawInvite && /^[0-9a-f-]{36}$/i.test(rawInvite) ? rawInvite : null;
   // The homepage's Quick Play button sends people here as /play?quick=play when they still have to sign in or
   // choose a name; once they're ready Quick Play runs by itself. (The older ?quick=join and ?quick=start links
-  // do the same thing.)
+  // do the same thing.) Whoever arrives this way is on their way to a lobby, so they see "Finding a game" until
+  // they are there, never the Play hub for a moment first. If it can't go ahead (a name is needed, or it fails)
+  // the hub is shown as usual.
   const rawQuick = searchParams.get('quick');
-  const autoRun = rawQuick === 'play' || rawQuick === 'join' || rawQuick === 'start';
   const clearQuickParam = useCallback(() => {
     setSearchParams((p) => {
       const next = new URLSearchParams(p);
@@ -74,6 +76,20 @@ const Play = () => {
       return next;
     }, { replace: true });
   }, [setSearchParams]);
+  const { quickPlay } = useQuickPlay();
+  // Decided once, on arrival: clearing the address a moment later must not bring the hub back.
+  const [arriving, setArriving] = useState(rawQuick === 'play' || rawQuick === 'join' || rawQuick === 'start');
+  const quickStarted = useRef(false);
+  const canQuickPlay = !loading && installed && !!status && status.signed_in && status.available && !status.banned && status.has_public_name;
+  useEffect(() => {
+    if (!arriving || !canQuickPlay || quickStarted.current) return;
+    quickStarted.current = true;
+    clearQuickParam();
+    void quickPlay().then((went) => {
+      if (!went) setArriving(false);
+    });
+  }, [arriving, canQuickPlay, clearQuickParam, quickPlay]);
+  const findingGame = arriving && (loading || canQuickPlay);
   const [creating, setCreating] = useState(false);
   const [changingName, setChangingName] = useState(false);
   const [listKey, setListKey] = useState(0);
@@ -149,7 +165,7 @@ const Play = () => {
 
         {inviteTable && <InviteLinkCard draftId={inviteTable} />}
 
-        <QuickPlayCard autoRun={autoRun} onAutoRunStarted={clearQuickParam} />
+        <QuickPlayCard />
 
         <Tabs defaultValue="open" className="w-full">
           <TabsList className="bg-[#1D1D1F]">
@@ -175,6 +191,26 @@ const Play = () => {
             if (!o) setListKey((k) => k + 1);
           }}
         />
+      </>
+    );
+  }
+
+  if (findingGame) {
+    return (
+      <>
+        <Helmet>
+          <title>Play with others | Movie Drafter</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
+        <div
+          className="flex min-h-screen w-full items-center justify-center"
+          style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}
+        >
+          <div role="status" className="flex flex-col items-center gap-3">
+            <Loader2 size={28} className="animate-spin text-[#907AFF]" aria-hidden />
+            <p className="m-0 font-brockmann text-base text-greyscale-blue-100">Finding a game…</p>
+          </div>
+        </div>
       </>
     );
   }

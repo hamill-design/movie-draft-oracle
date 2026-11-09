@@ -39,7 +39,7 @@ import { PickClockBanner } from '@/components/draft-board/PickClockBanner';
 import { LobbySettingsDialog } from '@/components/draft-board/LobbySettingsDialog';
 import { REFEREE_CLOCK_VISIBLE_TO_ALL } from '@/config/referee';
 import { PublicTableLobby } from '@/components/play/PublicTableLobby';
-import { useIsPublicTable } from '@/hooks/useIsPublicTable';
+import { useTableKind } from '@/hooks/useIsPublicTable';
 import { useDraftCategories } from '@/hooks/useDraftCategories';
 import { useDraftLeague } from '@/hooks/useDraftLeague';
 import { inviteApi } from '@/lib/inviteApi';
@@ -400,8 +400,11 @@ export const MultiplayerDraftInterface = ({
     turnParticipantId: draft?.current_turn_participant_id ?? draft?.current_turn_user_id,
     isComplete: draft?.is_complete,
   });
-  // A public table has its own waiting room and start flow, and never shows players' emails.
-  const isPublicTable = useIsPublicTable(draft?.id);
+  // A public table has its own waiting room and start flow, and never shows players' emails. The question is asked
+  // from the address as soon as the page opens (not once the draft has loaded), and the waiting room waits for the
+  // answer so a public table never flashes the private-draft screen first.
+  const tableKind = useTableKind(draftId ?? draft?.id);
+  const isPublicTable = tableKind === 'public';
 
   // The invite window an open seat opens. In a league draft it also offers the league's members.
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -410,7 +413,7 @@ export const MultiplayerDraftInterface = ({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const standardCategories = useDraftCategories(draft && draft.theme !== 'spec-draft' ? draft.theme : null);
   const lobbyOpen = !!draft && !draft.is_complete && !(draft.turn_order && draft.turn_order.length > 0);
-  const { league: draftLeague, people: leaguePeople } = useDraftLeague(draft?.id, isHost && lobbyOpen && !isPublicTable);
+  const { league: draftLeague, people: leaguePeople } = useDraftLeague(draft?.id, isHost && lobbyOpen && tableKind === 'private');
 
   // Detect AI turn and handle auto-pick
   useEffect(() => {
@@ -1003,7 +1006,7 @@ export const MultiplayerDraftInterface = ({
   // The host changes the pick clock and the categories from "Edit settings" until the draft starts; everyone else just reads them.
   const canEditClock =
     isHost && !draftHasStarted && !isComplete && !!effectiveParticipantId && (REFEREE_CLOCK_VISIBLE_TO_ALL || isAdmin);
-  const canEditSettings = isHost && !draftHasStarted && !isComplete && !!effectiveParticipantId && !isPublicTable;
+  const canEditSettings = isHost && !draftHasStarted && !isComplete && !!effectiveParticipantId && tableKind === 'private';
   const clockRow =
     clock.status === 'unavailable'
       ? []
@@ -1099,7 +1102,9 @@ export const MultiplayerDraftInterface = ({
               )}
             />
           )}
-          {isPublicTable && !draftHasStarted && !isComplete ? (
+          {!draftHasStarted && !isComplete && tableKind === 'unknown' ? (
+            <div className="h-48 animate-pulse rounded-lg border border-[#49474B] bg-[#0E0E0F]" aria-busy="true" />
+          ) : isPublicTable && !draftHasStarted && !isComplete ? (
             <PublicTableLobby
               draftId={draft.id}
               inviteCode={draft.invite_code ? String(draft.invite_code) : null}
@@ -1146,7 +1151,7 @@ export const MultiplayerDraftInterface = ({
             }
           />
           )}
-          {isHost && !isPublicTable && !draftHasStarted && !isComplete && (
+          {isHost && tableKind === 'private' && !draftHasStarted && !isComplete && (
             <InviteSeatDialog
               open={inviteOpen}
               onOpenChange={setInviteOpen}
