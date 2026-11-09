@@ -12,7 +12,8 @@ import {
   mergeParticipantPresenceRows,
 } from '@/utils/draftPresence';
 import { clearDraftPresenceKeepalive } from '@/utils/draftPresenceRpc';
-import { publicPlayApi } from '@/lib/publicPlayApi';
+import { createParticipantEnricher, keepIfCovers, keepIfSame } from '@/utils/draftReload';
+import { lookupIsPublicTable } from '@/hooks/useIsPublicTable';
 
 // Helper function to extract detailed error information (Supabase RPC, PostgrestError, etc.)
 const getErrorMessage = (error: any): string => {
@@ -291,57 +292,35 @@ export const useMultiplayerDraft = (
   }, []);
 
   // Enrich participants with emails from profiles
-  const enrichParticipantsWithEmails = useCallback(async (participants: DraftParticipant[]): Promise<DraftParticipant[]> => {
-    // Extract unique user_ids that are not null
-    const userIds = participants
-      .map(p => p.user_id)
-      .filter((id): id is string => id !== null);
-    
-    if (userIds.length === 0) {
-      // No authenticated users, return participants as-is
-      return participants;
-    }
-
-    // Public tables never load emails: strangers must not see each other's addresses.
-    // (Participant rows carry their draft id; the check is false if public play isn't installed.)
-    const draftIdForRows = (participants[0] as unknown as { draft_id?: string } | undefined)?.draft_id;
-    const isPublicTable = draftIdForRows ? await publicPlayApi.isPublicTable(draftIdForRows) : false;
-
-    // Fetch emails from profiles (just avatars for a public table)
-    const { data: profiles, error } = (await (supabase as any)
-      .from('profiles')
-      .select(isPublicTable ? 'id, avatar_url' : 'id, email, avatar_url')
-      .in('id', userIds)) as {
-      data: { id: string; email?: string | null; avatar_url?: string | null }[] | null;
-      error: unknown;
-    };
-
-    if (error) {
-      console.error('Error fetching participant emails:', error);
-      // Return participants without enrichment on error
-      return participants;
-    }
-
-    // Create a map of user_id -> email
-    const profileMap = new Map<string, { email?: string; avatar_url?: string | null }>();
-    if (profiles) {
-      profiles.forEach(profile => {
-        profileMap.set(profile.id, {
-          email: profile.email ?? undefined,
-          avatar_url: profile.avatar_url,
-        });
-      });
-    }
-
-    return participants.map(participant => {
-      const profile = participant.user_id ? profileMap.get(participant.user_id) : undefined;
-      return {
-        ...participant,
-        email: profile?.email ?? null,
-        avatar_url: profile?.avatar_url ?? null,
-      };
+  // Adds each person's email and avatar. The draft is reloaded after every pick and the people in it rarely change,
+  // so each person is looked up once and later reloads make no network calls: the reload then lands in a single
+  // update instead of the turn moving first and the players and picks arriving a beat later.
+  // Public tables never load emails: strangers must not see each other's addresses (avatars only).
+  const participantEnricherRef = useRef<ReturnType<typeof createParticipantEnricher> | null>(null);
+  if (!participantEnricherRef.current) {
+    participantEnricherRef.current = createParticipantEnricher({
+      isPublicTable: lookupIsPublicTable,
+      fetchProfiles: async (userIds, withEmail) => {
+        const { data, error } = (await (supabase as any)
+          .from('profiles')
+          .select(withEmail ? 'id, email, avatar_url' : 'id, avatar_url')
+          .in('id', userIds)) as {
+          data: { id: string; email?: string | null; avatar_url?: string | null }[] | null;
+          error: unknown;
+        };
+        if (error) {
+          console.error('Error fetching participant emails:', error);
+          return null;
+        }
+        return data ?? [];
+      },
     });
-  }, []);
+  }
+  const enrichParticipantsWithEmails = useCallback(
+    async (participants: DraftParticipant[]): Promise<DraftParticipant[]> =>
+      (await participantEnricherRef.current!(participants)) as DraftParticipant[],
+    []
+  );
 
   // Create a multiplayer draft with email invitations
   const createMultiplayerDraft = useCallback(async (draftData: {
@@ -631,22 +610,23 @@ export const useMultiplayerDraft = (
         allow_public_voting: (draftData as { draft_allow_public_voting?: boolean }).draft_allow_public_voting ?? false,
       };
 
-      setDraft(mappedDraft);
-
-      // Set participants with unified ID
-      const participantsArray = Array.isArray(draftData.participants_data) 
+      // Participants with unified ID, then their emails/avatars (remembered after the first load, so this
+      // is instant on a reload).
+      const participantsArray = Array.isArray(draftData.participants_data)
         ? (draftData.participants_data as unknown as DraftParticipant[])
         : [];
-      
-      // Enrich participants with emails from profiles
       const enrichedParticipants = await enrichParticipantsWithEmails(participantsArray);
-      setParticipants(enrichedParticipants);
-
-      // Set picks: merge with previous and sort stably to avoid row flicker between subscription and reload
-      const picksArray = Array.isArray(draftData.picks_data) 
-        ? draftData.picks_data 
+      const picksArray = Array.isArray(draftData.picks_data)
+        ? draftData.picks_data
         : [];
-      setPicks(prev => mergePicksById(prev, picksArray));
+
+      // Apply the draft, the players and the picks together, so the screen changes once (the turn, the board and
+      // the names never arrive a beat apart), and keep whatever is unchanged as it was so nothing re-renders
+      // for a reload that found nothing new (most of them: the live updates have usually said it already).
+      setDraft(prev => (prev ? keepIfCovers(prev, mappedDraft) : mappedDraft));
+      setParticipants(prev => keepIfSame(prev, enrichedParticipants));
+      // Merge with previous and sort stably to avoid row flicker between subscription and reload
+      setPicks(prev => keepIfSame(prev, mergePicksById(prev, picksArray)));
 
       // Check if it's the current user's turn using unified ID
       const currentTurnId = mappedDraft.current_turn_participant_id || mappedDraft.current_turn_user_id;
