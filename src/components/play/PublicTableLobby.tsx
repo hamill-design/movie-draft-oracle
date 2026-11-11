@@ -260,9 +260,9 @@ export function PublicTableLobby({ draftId, onStarted, inviteCode }: PublicTable
         </LobbyButton>
       )}
       {showStart && (
-        <button type="button" onClick={() => setCancelOpen(true)} className="bg-transparent font-brockmann text-sm text-[#BDC3C2] underline hover:text-white">
-          Cancel table
-        </button>
+        <LobbyButton variant="ghost" onClick={() => setCancelOpen(true)}>
+          Cancel
+        </LobbyButton>
       )}
     </LobbyHero>
   );
@@ -347,8 +347,15 @@ export function PublicTableLobby({ draftId, onStarted, inviteCode }: PublicTable
         }
         seats={info.table_size}
         onOpenSeat={canOpenSeats ? () => setInviteOpen(true) : undefined}
-        renderName={(p) =>
-          p.is_ai || p.status === 'invited' ? p.participant_name : <PlayerHoverCard userId={p.user_id} name={p.participant_name} />
+        // Hovering the portrait or the name shows the same player card (never for a bot or a held seat).
+        wrapIdentity={(p, identity) =>
+          p.is_ai || p.status === 'invited' || !p.user_id ? (
+            identity
+          ) : (
+            <PlayerHoverCard block userId={p.user_id} name={p.participant_name}>
+              {identity}
+            </PlayerHoverCard>
+          )
         }
         renderTileActions={(p) => {
           if (p.status === 'invited') {

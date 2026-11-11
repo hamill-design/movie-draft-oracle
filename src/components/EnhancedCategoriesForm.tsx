@@ -228,6 +228,8 @@ const CustomCheckbox = ({
     let baseStyle = {
       width: '16px',
       height: '16px',
+      // Never let a long, wrapping label squeeze the box narrower than it is tall.
+      flexShrink: 0,
       borderRadius: '4px',
       outline: '1px var(--Purple-300, #907AFF) solid',
       outlineOffset: '-1px',
@@ -296,6 +298,7 @@ const CustomCheckbox = ({
       paddingRight: '4px',
       paddingTop: '2px',
       paddingBottom: '2px',
+      flexShrink: 0,
       background: backgroundColor,
       borderRadius: '4px',
       outline: `1px ${borderColor} solid`,

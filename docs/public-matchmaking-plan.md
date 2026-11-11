@@ -17,7 +17,7 @@ to *find* a game with strangers — online matchmaking — and to keep it runnin
 | Who sets the pick clock | **The creator/host sets it** when they create a table. | 2026-11-04 |
 | How a host's table starts | **The host can set an optional scheduled start time, but must press Start themselves.** The system never auto-starts a host's table. (Quick Match has no host, so the system starts that one.) | 2026-11-04 |
 | Accounts | **Account required** for public play. Guests can still join private drafts by invite code. | 2026-11-04 |
-| Public name | Players show their **display name**. Hovering a profile shows the **full display name + play stats** (drafts played, wins, reliability). Never a real name or email. | 2026-11-04 |
+| Public name | Players show their **display name**. Hovering a profile shows the **full display name + play stats** (rated games, wins, points; the reliability record is kept for cooldowns but is not shown). Never a real name or email. | 2026-11-04 |
 | Table size | **4 seats by default; host can choose 2–6.** | 2026-11-04 |
 | Quick Match | **A random mix, same for everyone in the lobby**, drawn from three pools: the **past 50 years** (Draft by Year), the **top 50 actors** (Draft by Filmography), and the **Special Drafts** (curated themes). Players don't choose, so it stays one queue. Fixed **90-second** pick clock. | 2026-11-04 |
 | Ready check | **15-second ready check** when the host presses Start on a live-clock table. | 2026-11-04 |
@@ -179,7 +179,7 @@ Public play does not ship until these are done:
 - [x] **No emails exposed at public tables.** Public tables use a player's chosen public name; the draft screen no longer loads emails for them; the table functions return names and avatars only. *(A separate, existing problem remains: see the next item.)*
 - [ ] **Lock down `profiles.email` for everyone.** Found 2026-11-05: any signed-in user can read every profile row, **including email addresses**, through the API (`Authenticated users can view any profile`, added for league pages). It predates public play but matters far more with strangers. Fixing it means moving the app's profile reads to a safe view or function, then restricting the table. It touches the league screens, profile page and mobile app, so it needs its own careful change.
 - [x] **Display-name rules** (length, characters, word filter, unique, never email-derived). The word list is a starter; extend it before opening wide.
-- [ ] **Profile hover card** shows the full display name and play stats (drafts played, wins, reliability), and never a real name or email. *(Phase 4: needs the stats.)*
+- [ ] **Profile hover card** shows the full display name and play stats (rated games, wins, points; the reliability record is kept for cooldowns but is not shown), and never a real name or email. *(Phase 4: needs the stats.)*
 - [x] **Report and block** a player, with a review queue at `/admin/reports`.
 - [x] **Ban / cooldown flags** on profiles, enforced by the database. (Automatic cooldowns arrive with Phase 4's reliability record.)
 - [x] **Limits on abuse**: max 2 open tables per host, daily table/report caps, join/leave throttling.
@@ -198,7 +198,7 @@ Transactional turn emails need their own opt-out, separate from marketing opt-in
 ## 10. Competitive layer (after the core works)
 
 - **Start simple:** points per finish like leagues (10/7/5/3/2/1) → a public **leaderboard** with seasons. We already compute quarterly seasons.
-- Public **player card**: wins, drafts played, reliability, favorite genres.
+- Public **player card**: wins, drafts played, favorite genres (reliability is tracked for cooldowns but not shown).
 - **Skill rating (Elo-style) later, only if needed.** Skill-based matching splits an already-small queue, so don't add it until there's enough traffic.
 - **Decided:** a game counts as rated with **2 or more real players**; bots never count. This makes win-farming possible (two friends repeatedly playing each other plus bots), so see the guard proposed in section 14.
 - **Decided:** a player earns rated points only if they made at least **half of their own picks** themselves. This needs every pick to record who made it (the player, an auto-pick, or a bot).
