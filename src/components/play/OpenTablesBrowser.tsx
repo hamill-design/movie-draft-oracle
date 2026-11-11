@@ -5,9 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { publicPlayApi, type PublicTableRow, type TableSpeed } from '@/lib/publicPlayApi';
 import { TableCard } from '@/components/play/TableCard';
-
-const selectClass =
-  'h-10 rounded border border-[#49474B] bg-[#1D1D1F] px-3 font-brockmann text-sm text-white';
+import { DropdownSelect } from '@/components/ui/dropdown-select';
 
 interface OpenTablesBrowserProps {
   /** Bumped by the parent after creating a table so the list refreshes. */
@@ -60,18 +58,30 @@ export function OpenTablesBrowser({ refreshKey = 0, onHostClick }: OpenTablesBro
         <h2 id="open-tables-heading" className="m-0 font-brockmann text-xl font-medium text-white">Open tables</h2>
         <div className="flex flex-wrap items-center gap-2">
           <label className="sr-only" htmlFor="filter-speed">Speed</label>
-          <select id="filter-speed" value={speed} onChange={(e) => setSpeed(e.target.value as typeof speed)} className={selectClass}>
-            <option value="all">Any speed</option>
-            <option value="live">Live (2 min or less per pick)</option>
-            <option value="slow">Slow (hours per pick)</option>
-          </select>
+          <DropdownSelect
+            id="filter-speed"
+            className="w-auto min-w-[200px]"
+            value={speed}
+            onChange={(v) => setSpeed(v as typeof speed)}
+            options={[
+              { value: 'all', label: 'Any speed' },
+              { value: 'live', label: 'Live (2 min or less per pick)' },
+              { value: 'slow', label: 'Slow (hours per pick)' },
+            ]}
+          />
           <label className="sr-only" htmlFor="filter-format">Format</label>
-          <select id="filter-format" value={format} onChange={(e) => setFormat(e.target.value as typeof format)} className={selectClass}>
-            <option value="all">Any format</option>
-            <option value="year">Draft by Year</option>
-            <option value="people">Draft by Filmography</option>
-            <option value="spec-draft">Special Draft</option>
-          </select>
+          <DropdownSelect
+            id="filter-format"
+            className="w-auto min-w-[190px]"
+            value={format}
+            onChange={(v) => setFormat(v as typeof format)}
+            options={[
+              { value: 'all', label: 'Any format' },
+              { value: 'year', label: 'Draft by Year' },
+              { value: 'people', label: 'Draft by Filmography' },
+              { value: 'spec-draft', label: 'Special Draft' },
+            ]}
+          />
           <Button variant="outline" size="icon" onClick={() => void load()} aria-label="Refresh tables" className="border-[#49474B] bg-transparent text-white">
             <RefreshCw size={16} />
           </Button>

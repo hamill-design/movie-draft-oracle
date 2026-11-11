@@ -18,7 +18,7 @@ export function LobbyHero({ heading, sub, children }: { heading: string; sub?: R
 }
 
 type LobbyButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'outline';
+  variant?: 'primary' | 'ghost';
 };
 
 const BUTTON_BASE =
@@ -26,10 +26,11 @@ const BUTTON_BASE =
 
 const BUTTON_VARIANTS: Record<NonNullable<LobbyButtonProps['variant']>, string> = {
   primary: 'bg-[#680AFF] text-[#FCFFFF] hover:bg-[#794DFF]',
-  outline: 'border border-[#49474B] bg-transparent text-[#FCFFFF] hover:bg-[#1D1D1F]',
+  // No border and no fill; it only darkens under the pointer. Quieter type than the main button.
+  ghost: 'bg-transparent text-base font-normal text-[#FCFFFF] hover:bg-black/40',
 };
 
-/** The purple 2px button from the normal pre-draft screen (and its quieter sibling). */
+/** The purple 2px button from the normal pre-draft screen (and its quieter sibling, with no border). */
 export function LobbyButton({ variant = 'primary', className, type = 'button', ...props }: LobbyButtonProps) {
   return <button type={type} className={cn(BUTTON_BASE, BUTTON_VARIANTS[variant], className)} {...props} />;
 }

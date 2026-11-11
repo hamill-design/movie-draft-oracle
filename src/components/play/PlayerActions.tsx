@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { DropdownSelect } from '@/components/ui/dropdown-select';
 import { MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -70,14 +71,7 @@ export function PlayerActions({ userId, name, draftId }: PlayerActionsProps) {
           </DialogHeader>
           <form onSubmit={report} className="flex flex-col gap-3">
             <label htmlFor="report-reason" className="font-brockmann text-sm font-medium">Reason</label>
-            <select
-              id="report-reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value as ReportReason)}
-              className="h-10 rounded border border-[#49474B] bg-[#1D1D1F] px-3 font-brockmann text-sm text-white"
-            >
-              {REPORT_REASONS.map((r) => <option key={r.value} value={r.value}>{r.label}</option>)}
-            </select>
+            <DropdownSelect id="report-reason" value={reason} onChange={(v) => setReason(v as ReportReason)} options={REPORT_REASONS.map((r) => ({ value: r.value, label: r.label }))} />
             <label htmlFor="report-details" className="font-brockmann text-sm font-medium">Details <span className="text-xs text-[#BDC3C2]">(optional)</span></label>
             <Textarea
               id="report-details"

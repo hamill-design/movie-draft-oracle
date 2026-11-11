@@ -67,17 +67,24 @@ function getParticipantInitials(name: string): string {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
+/** The online circle at the bottom right of a portrait. One size for everyone (the host's holds a crown). */
+const ONLINE_CIRCLE_SIZE = 18;
+
 function ParticipantGridAvatar({
   avatarUrl,
   name,
-  email,
+  isMe,
+  isHost,
   isOnline,
   isAi,
   isReady,
 }: {
   avatarUrl?: string | null;
   name: string;
-  email?: string | null;
+  /** Not shown (there is no "You" label), but read out by screen readers. */
+  isMe?: boolean;
+  /** The host's online circle (bottom right of the portrait) holds a black crown. */
+  isHost?: boolean;
   isOnline: boolean;
   isAi?: boolean;
   isReady?: boolean;
@@ -123,14 +130,6 @@ function ParticipantGridAvatar({
             {face}
           </div>
         )}
-        <div
-          style={{
-            width: '12px',
-            height: '12px',
-            background: 'var(--Utility-Colors-Positive-Green-400, #41DA86)',
-            borderRadius: '9999px',
-          }}
-        />
       </div>
     );
   } else if (avatarUrl) {
@@ -172,30 +171,59 @@ function ParticipantGridAvatar({
   }
 
   return (
-    <Tooltip delayDuration={150}>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          aria-label={`${name}${email ? `, ${email}` : ''}`}
+    <div
+      role="img"
+      aria-label={`${name}${isMe ? ' (you)' : ''}${isHost ? ', host' : ''}`}
+      style={{
+        position: 'relative',
+        padding: 0,
+        cursor: 'default',
+        display: 'inline-flex',
+        borderRadius: '9999px',
+        // A green ring around the avatar says "ready" without needing a second badge.
+        boxShadow: isReady ? '0 0 0 2px #0E0E0F, 0 0 0 4px var(--Utility-Colors-Positive-Green-400, #41DA86)' : undefined,
+      }}
+    >
+      {avatarNode}
+      {(isOnline || isHost) && (
+        // The online circle: green while they are here, the same size for every player. The host's holds a black
+        // crown, and stays (grey) while the host is away; other players' circle only shows while they are here.
+        <div
+          aria-hidden
           style={{
-            border: 'none',
-            background: 'transparent',
-            padding: 0,
-            cursor: 'default',
-            display: 'inline-flex',
+            position: 'absolute',
+            right: 0,
+            bottom: 0,
+            width: ONLINE_CIRCLE_SIZE,
+            height: ONLINE_CIRCLE_SIZE,
             borderRadius: '9999px',
-            // A green ring around the avatar says "ready" without needing a second badge.
-            boxShadow: isReady ? '0 0 0 2px #0E0E0F, 0 0 0 4px var(--Utility-Colors-Positive-Green-400, #41DA86)' : undefined,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: isOnline ? 'var(--Utility-Colors-Positive-Green-400, #41DA86)' : '#9AA0A1',
           }}
         >
-          {avatarNode}
-        </button>
+          {isHost && <Crown size={11} strokeWidth={2.25} color="#000000" aria-hidden />}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Hovering a player's portrait or name shows their email (private drafts only: public tables never load one).
+ * With no email there is nothing to show, so the tile is left as it is.
+ */
+function EmailTooltip({ name, email, children }: { name: string; email?: string | null; children: ReactNode }) {
+  if (!email) return <>{children}</>;
+  return (
+    <Tooltip delayDuration={150}>
+      <TooltipTrigger asChild>
+        <div tabIndex={0} className="flex w-full cursor-default flex-col items-center gap-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#907AFF]">
+          {children}
+        </div>
       </TooltipTrigger>
-      <TooltipContent
-        side="top"
-        sideOffset={8}
-        className="border-0 bg-transparent p-0 shadow-none"
-      >
+      <TooltipContent side="top" sideOffset={8} className="border-0 bg-transparent p-0 shadow-none">
         <div
           style={{
             padding: '8px 12px',
@@ -209,48 +237,30 @@ function ParticipantGridAvatar({
             maxWidth: '280px',
           }}
         >
-          <div
-            style={{
-              color: 'var(--Text-Primary, #FCFFFF)',
-              fontSize: '13px',
-              fontFamily: 'Brockmann',
-              fontWeight: '600',
-              lineHeight: '18px',
-              wordWrap: 'break-word',
-              whiteSpace: 'normal',
-            }}
-          >
+          <div style={{ color: 'var(--Text-Primary, #FCFFFF)', fontSize: '13px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '18px', wordWrap: 'break-word', whiteSpace: 'normal' }}>
             {name}
           </div>
-          {email && (
-            <div
-              style={{
-                color: 'var(--Text-Light-grey, #BDC3C2)',
-                fontSize: '12px',
-                fontFamily: 'Brockmann',
-                fontWeight: '400',
-                lineHeight: '16px',
-                wordWrap: 'break-word',
-                whiteSpace: 'normal',
-              }}
-            >
-              {email}
-            </div>
-          )}
+          <div style={{ color: 'var(--Text-Light-grey, #BDC3C2)', fontSize: '12px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '16px', wordWrap: 'break-word', whiteSpace: 'normal' }}>
+            {email}
+          </div>
         </div>
       </TooltipContent>
     </Tooltip>
   );
 }
 
-/** One player: the round avatar, their name, and small labels (You, Host, Bot, Invited, Ready). */
+/**
+ * One player: the round avatar (its host circle holds a crown), their name, and small labels (Bot, Invited, Ready).
+ * The portrait and the name are one hover target, so both show the same thing: `wrapIdentity` supplies it (the
+ * player card on public tables); without it a private draft shows the email, when there is one.
+ */
 function LobbyTile({
   p,
   isMe,
   online,
   showReady,
   inCheck,
-  renderName,
+  wrapIdentity,
   actions,
 }: {
   p: LobbyParticipant;
@@ -258,17 +268,11 @@ function LobbyTile({
   online: boolean;
   showReady: boolean;
   inCheck?: boolean;
-  renderName?: (p: LobbyParticipant) => ReactNode;
+  wrapIdentity?: (p: LobbyParticipant, identity: ReactNode) => ReactNode;
   actions?: ReactNode;
 }) {
-  const labels = [
-    isMe ? <span key="me">You</span> : null,
-    p.is_host ? (
-      <span key="host" className="inline-flex items-center gap-1 text-[#FFD60A]">
-        <Crown size={12} aria-hidden />
-        Host
-      </span>
-    ) : null,
+  // Words are separated by a dot. There is no "You" (your own name is on the screen) and no "Host": the host's circle on the portrait holds a crown.
+  const words = [
     p.is_ai ? <span key="bot">Bot</span> : null,
     !p.is_ai && p.status === 'invited' ? <span key="invited">Invited</span> : null,
     showReady ? (
@@ -279,27 +283,40 @@ function LobbyTile({
   ]
     .filter(Boolean)
     .flatMap((node, i) => (i === 0 ? [node] : [<span key={`dot-${i}`} aria-hidden>·</span>, node]));
+  const labels = words;
 
-  return (
-    <li className="relative flex w-[104px] flex-col items-center gap-2 text-center">
+  const identity = (
+    <>
       <ParticipantGridAvatar
         avatarUrl={p.avatar_url}
         name={p.participant_name}
-        email={p.email}
+        isMe={isMe}
+        isHost={p.is_host}
         isOnline={online}
         isAi={p.is_ai}
         isReady={showReady && !!p.ready}
       />
-      <div className="w-full min-w-0">
-        <div className="[overflow-wrap:anywhere] font-brockmann text-sm font-medium leading-4 text-white" title={p.participant_name}>
-          {renderName ? renderName(p) : p.participant_name}
-        </div>
-        {labels.length > 0 && (
-          <div className="mt-1 flex flex-wrap items-center justify-center gap-x-1.5 font-brockmann text-xs text-[#BDC3C2]">
-            {labels}
-          </div>
-        )}
+      <div className="w-full min-w-0 [overflow-wrap:anywhere] font-brockmann text-sm font-medium leading-4 text-white">
+        {p.participant_name}
       </div>
+    </>
+  );
+  const identityBlock = <div className="flex w-full flex-col items-center gap-2">{identity}</div>;
+
+  return (
+    <li className="relative flex w-[104px] flex-col items-center gap-2 text-center">
+      {wrapIdentity ? (
+        wrapIdentity(p, identityBlock)
+      ) : (
+        <EmailTooltip name={p.participant_name} email={p.email}>
+          {identity}
+        </EmailTooltip>
+      )}
+      {labels.length > 0 && (
+        <div className="-mt-1 flex w-full flex-wrap items-center justify-center gap-x-1.5 font-brockmann text-xs text-[#BDC3C2]">
+          {labels}
+        </div>
+      )}
       {actions ? <div className="absolute -right-1 -top-2">{actions}</div> : null}
     </li>
   );
@@ -541,8 +558,8 @@ interface DraftLobbyStatusParticipantsProps {
   openSeats?: number;
   /** Makes each open seat a button, normally opening the invite window. Leave out for plain empty seats. */
   onOpenSeat?: () => void;
-  /** A custom name (a profile hover card on public tables). */
-  renderName?: (p: LobbyParticipant) => ReactNode;
+  /** Wraps a player's portrait and name in one hover target (the player card on public tables). */
+  wrapIdentity?: (p: LobbyParticipant, identity: ReactNode) => ReactNode;
   /** Small controls on a tile (report / block on public tables). */
   renderTileActions?: (p: LobbyParticipant) => ReactNode;
 }
@@ -575,7 +592,7 @@ export function DraftLobbyStatusParticipants({
   seats,
   openSeats,
   onOpenSeat,
-  renderName,
+  wrapIdentity,
   renderTileActions,
 }: DraftLobbyStatusParticipantsProps) {
   const getParticipantsSortedByCreatedAt = sortedParticipants;
@@ -972,7 +989,7 @@ export function DraftLobbyStatusParticipants({
                     online={participant.online ?? isParticipantOnline(participant, presenceNowMs)}
                     showReady={showReadyFor(participant)}
                     inCheck={ready?.inCheck}
-                    renderName={renderName}
+                    wrapIdentity={wrapIdentity}
                     actions={renderTileActions?.(participant)}
                   />
                 ))}

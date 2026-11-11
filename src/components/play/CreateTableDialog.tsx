@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { DropdownSelect } from '@/components/ui/dropdown-select';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -156,9 +157,7 @@ export function CreateTableDialog({ open, onOpenChange }: CreateTableDialogProps
           {format === 'year' && (
             <div className="flex flex-col gap-1.5">
               <label htmlFor="table-year" className={labelClass}>Year</label>
-              <select id="table-year" value={year} onChange={(e) => setYear(e.target.value)} className={fieldClass}>
-                {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
-              </select>
+              <DropdownSelect id="table-year" value={year} onChange={setYear} options={YEARS.map((y) => ({ value: y, label: y }))} />
             </div>
           )}
 
@@ -195,10 +194,7 @@ export function CreateTableDialog({ open, onOpenChange }: CreateTableDialogProps
           {format === 'spec-draft' && (
             <div className="flex flex-col gap-1.5">
               <label htmlFor="table-spec" className={labelClass}>Special draft</label>
-              <select id="table-spec" value={specId} onChange={(e) => setSpecId(e.target.value)} className={fieldClass}>
-                <option value="">Choose one…</option>
-                {specDrafts.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              <DropdownSelect id="table-spec" value={specId} onChange={setSpecId} placeholder="Choose one…" options={specDrafts.map((s) => ({ value: s.id, label: s.name }))} />
             </div>
           )}
 
@@ -228,21 +224,20 @@ export function CreateTableDialog({ open, onOpenChange }: CreateTableDialogProps
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="table-seats" className={labelClass}>Seats</label>
-              <select id="table-seats" value={seats} onChange={(e) => setSeats(Number(e.target.value))} className={fieldClass}>
-                {[2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n} players</option>)}
-              </select>
+              <DropdownSelect id="table-seats" value={String(seats)} onChange={(v) => setSeats(Number(v))} options={[2, 3, 4, 5, 6].map((n) => ({ value: String(n), label: `${n} players` }))} />
               <span className={hintClass}>Empty seats can be filled with bots when you start.</span>
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="table-clock" className={labelClass}>Time per pick</label>
-              <select id="table-clock" value={clock} onChange={(e) => setClock(Number(e.target.value))} className={fieldClass}>
-                <optgroup label="Live (everyone online together)">
-                  {TABLE_CLOCK_OPTIONS.filter((o) => o.group === 'live').map((o) => <option key={o.label} value={o.seconds as number}>{o.label}</option>)}
-                </optgroup>
-                <optgroup label="Slow (pick whenever, get a notification)">
-                  {TABLE_CLOCK_OPTIONS.filter((o) => o.group === 'slow').map((o) => <option key={o.label} value={o.seconds as number}>{o.label}</option>)}
-                </optgroup>
-              </select>
+              <DropdownSelect
+                id="table-clock"
+                value={String(clock)}
+                onChange={(v) => setClock(Number(v))}
+                groups={[
+                  { label: 'Live (everyone online together)', options: TABLE_CLOCK_OPTIONS.filter((o) => o.group === 'live').map((o) => ({ value: String(o.seconds), label: o.label })) },
+                  { label: 'Slow (pick whenever, get a notification)', options: TABLE_CLOCK_OPTIONS.filter((o) => o.group === 'slow').map((o) => ({ value: String(o.seconds), label: o.label })) },
+                ]}
+              />
               <span className={hintClass}>If someone runs out of time, a pick is made for them.</span>
             </div>
           </div>

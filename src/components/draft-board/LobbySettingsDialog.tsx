@@ -4,6 +4,7 @@ import { Minus, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { PICK_CLOCK_OPTIONS } from '@/config/referee';
 import EnhancedCategoriesForm from '@/components/EnhancedCategoriesForm';
+import { DropdownSelect } from '@/components/ui/dropdown-select';
 import type { Participant } from '@/types/participant';
 import { describeClock } from '@/config/publicPlay';
 import { cn } from '@/lib/utils';
@@ -167,25 +168,19 @@ export function LobbySettingsDialog({
         {allowClock && (
         <section className="flex flex-col gap-2" aria-label="Pick clock">
           <label htmlFor="settings-clock" className={label}>Pick clock</label>
-          <select
+          <DropdownSelect
             id="settings-clock"
             value={clockValue}
-            onChange={(e) => setClock(e.target.value === NO_CLOCK ? null : Number(e.target.value))}
-            className="h-10 w-full rounded-[2px] border border-[#49474B] bg-[#1D1D1F] px-3 font-brockmann text-sm text-[#FCFFFF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#907AFF]"
-          >
-            {allowNoClock && <option value={NO_CLOCK}>No clock</option>}
-            {!clockKnown && clock != null && <option value={String(clock)}>{describeClock(clock)}</option>}
-            <optgroup label="Live">
-              {clockOptions.filter((o) => o.group === 'live').map((o) => (
-                <option key={o.label} value={String(o.seconds)}>{o.label}</option>
-              ))}
-            </optgroup>
-            <optgroup label="Slow">
-              {clockOptions.filter((o) => o.group === 'slow').map((o) => (
-                <option key={o.label} value={String(o.seconds)}>{o.label}</option>
-              ))}
-            </optgroup>
-          </select>
+            onChange={(v) => setClock(v === NO_CLOCK ? null : Number(v))}
+            options={[
+              ...(allowNoClock ? [{ value: NO_CLOCK, label: 'No clock' }] : []),
+              ...(!clockKnown && clock != null ? [{ value: String(clock), label: describeClock(clock) }] : []),
+            ]}
+            groups={(['live', 'slow'] as const).map((group) => ({
+              label: group === 'live' ? 'Live' : 'Slow - Asynchronous',
+              options: clockOptions.filter((o) => o.group === group).map((o) => ({ value: String(o.seconds), label: o.label })),
+            }))}
+          />
         </section>
         )}
 

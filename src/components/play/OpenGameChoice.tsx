@@ -7,6 +7,7 @@ import { useSignInPrompt } from '@/components/play/SignInPrompt';
 import { refreshPublicPlayAccess } from '@/hooks/usePublicPlayAvailable';
 import type { OpenGameSetup } from '@/hooks/useOpenGameSetup';
 import { TABLE_CLOCK_OPTIONS } from '@/config/publicPlay';
+import { DropdownSelect } from '@/components/ui/dropdown-select';
 import { cn } from '@/lib/utils';
 
 const fieldClass = 'h-10 w-full rounded border border-[#49474B] bg-[#1D1D1F] px-3 font-brockmann text-sm text-white';
@@ -117,22 +118,21 @@ export function OpenGameChoice({ setup, leagueEnabled }: OpenGameChoiceProps) {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="open-seats" className={labelClass}>Seats</label>
-              <select id="open-seats" value={settings.seats} onChange={(e) => set('seats', Number(e.target.value))} className={fieldClass}>
-                {[2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n} players</option>)}
-              </select>
+              <DropdownSelect id="open-seats" value={String(settings.seats)} onChange={(v) => set('seats', Number(v))} options={[2, 3, 4, 5, 6].map((n) => ({ value: String(n), label: `${n} players` }))} />
               <span className={hintClass}>Empty seats can be filled with bots when you start.</span>
             </div>
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor="open-clock" className={labelClass}>Time per pick</label>
-              <select id="open-clock" value={settings.clock} onChange={(e) => set('clock', Number(e.target.value))} className={fieldClass}>
-                <optgroup label="Live (everyone online together)">
-                  {TABLE_CLOCK_OPTIONS.filter((o) => o.group === 'live').map((o) => <option key={o.label} value={o.seconds as number}>{o.label}</option>)}
-                </optgroup>
-                <optgroup label="Slow (pick whenever, get a notification)">
-                  {TABLE_CLOCK_OPTIONS.filter((o) => o.group === 'slow').map((o) => <option key={o.label} value={o.seconds as number}>{o.label}</option>)}
-                </optgroup>
-              </select>
+              <DropdownSelect
+                id="open-clock"
+                value={String(settings.clock)}
+                onChange={(v) => set('clock', Number(v))}
+                groups={[
+                  { label: 'Live (everyone online together)', options: TABLE_CLOCK_OPTIONS.filter((o) => o.group === 'live').map((o) => ({ value: String(o.seconds), label: o.label })) },
+                  { label: 'Slow (pick whenever, get a notification)', options: TABLE_CLOCK_OPTIONS.filter((o) => o.group === 'slow').map((o) => ({ value: String(o.seconds), label: o.label })) },
+                ]}
+              />
               <span className={hintClass}>If someone runs out of time the game picks for them.</span>
             </div>
           </div>
