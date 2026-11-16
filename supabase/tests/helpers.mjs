@@ -365,6 +365,14 @@ async function loadPublicPlay(db) {
   if (existsSync(new URL('20261117100000_join_public_by_code.sql', MIGRATIONS))) {
     await db.exec(readMigration('20261117100000_join_public_by_code.sql'));
   }
+  // The homepage list: every public game that is waiting for players (Quick Play lobbies included).
+  if (existsSync(new URL('20261118100000_list_all_public_games.sql', MIGRATIONS))) {
+    await db.exec(readMigration('20261118100000_list_all_public_games.sql'));
+  }
+  // The homepage cards also say how many categories a draft has.
+  if (existsSync(new URL('20261119100000_open_games_category_count.sql', MIGRATIONS))) {
+    await db.exec(readMigration('20261119100000_open_games_category_count.sql'));
+  }
 }
 
 /** `$$`-quoted function (the live helpers use $$ rather than $function$). */

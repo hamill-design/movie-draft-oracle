@@ -10,8 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { DraftPick } from '@/hooks/useDrafts';
 import DraftBoard from '@/components/DraftBoard';
 import { getCleanActorName } from '@/lib/utils';
-import { DraftPageHeaderSection } from '@/components/DraftPageHeaderSection';
-import { DraftHeadingTitle } from '@/components/DraftHeadingTitle';
+import { DraftPageHeader } from '@/components/DraftPageHeader';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
 import { SITE_ORIGIN, dynamicOgImageUrl, OG_IMAGE_ALT } from '@/config/socialShareMeta';
 import { buildDraftBoardModel, type DraftBoardParticipant } from '@/utils/finalScoresBoardModel';
@@ -301,13 +300,14 @@ const VotePage = () => {
       <div className="min-h-screen text-foreground" style={{ background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)' }}>
         <div className="max-w-[1400px] mx-auto px-4 py-8 flex flex-col gap-8">
           {/* Header – same style as draft interface */}
-          <DraftPageHeaderSection label="VOTE ON">
-            <DraftHeadingTitle
-              option={draft.option ?? ''}
-              theme={draft.theme}
-              specDraftName={displayTitle || null}
-            />
-          </DraftPageHeaderSection>
+          <DraftPageHeader
+            label="VOTE ON"
+            as="h2"
+            option={draft.option ?? ''}
+            theme={draft.theme}
+            specDraftName={displayTitle || null}
+            className="mb-0"
+          />
 
           <p className="text-greyscale-blue-300 text-sm font-brockmann text-center -mt-2">
             Completed rosters – vote for who you think won. Scores are hidden until after voting.

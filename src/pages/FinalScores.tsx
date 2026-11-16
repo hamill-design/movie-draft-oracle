@@ -24,8 +24,7 @@ import DraftBoard from '@/components/DraftBoard';
 import { FinalScoresPickOrder } from '@/components/FinalScoresPickOrder';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn, getCleanActorName } from '@/lib/utils';
-import { DraftPageHeaderSection } from '@/components/DraftPageHeaderSection';
-import { FinalScoresHeadingTitle } from '@/components/FinalScoresHeadingTitle';
+import { DraftPageHeader } from '@/components/DraftPageHeader';
 import { RatedResultsPanel } from '@/components/play/RatedResultsPanel';
 import {
   buildDraftBoardModel,
@@ -1020,13 +1019,12 @@ const FinalScores = () => {
       <div className="min-h-screen" style={{background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)'}}>
         <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <DraftPageHeaderSection label="FINAL SCORES">
-          <FinalScoresHeadingTitle
-            title={displayTitle}
-            option={draft.option}
-            theme={draft.theme}
-          />
-        </DraftPageHeaderSection>
+        <DraftPageHeader
+          label="FINAL SCORES"
+          option={draft.option}
+          theme={draft.theme}
+          specDraftName={displayTitle || null}
+        />
 
         {/* Leaderboard points (rated public games only; renders nothing otherwise) */}
         <RatedResultsPanel draftId={draftId} />

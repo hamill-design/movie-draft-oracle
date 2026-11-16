@@ -1,12 +1,11 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePublicPlayAccess } from '@/hooks/usePublicPlayAvailable';
 import { OpenGamesList, useOpenGames } from '@/components/home/OpenGamesList';
 import { useHomeQuickPlay } from '@/components/home/useHomeQuickPlay';
 
 /**
- * Homepage invitation to public play: Quick Play, and the open games people can join.
+ * Homepage invitation to public play: the drafts waiting for players, each with a Join button.
  * Renders nothing unless public play is open to this visitor, so it stays invisible until the switch
  * (set on the Play page by the admin) is moved off "Off", and "Just me" shows it to the admin only.
  */
@@ -18,65 +17,54 @@ export function PublicPlaySection() {
 
 function PublicPlayBand() {
   const navigate = useNavigate();
-  const { games } = useOpenGames(6);
+  // Three cards across the 1400px column; "See all Drafts" opens the Play page for the rest.
+  const { games } = useOpenGames(3);
   const { access, ask, prompt, busy, guest, direct, onQuickPlay } = useHomeQuickPlay();
 
   return (
     <section
       aria-label="Play Movie Drafter with other people"
-      className="w-full px-6 py-12 md:py-16"
-      style={{ background: 'linear-gradient(160deg, #0d0020 0%, #160038 50%, #0d0020 100%)' }}
+      className="w-full border-y border-[#7142FF] bg-[#0E0E0F] px-6 pb-20 pt-16"
     >
-      <div className="mx-auto flex max-w-[1400px] flex-col gap-10">
-        <div className="flex max-w-[640px] flex-col gap-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-purple-500/40 bg-purple-900/30 px-3 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-purple-400" />
-              <span className="font-brockmann text-xs font-semibold uppercase tracking-widest text-purple-300">New</span>
-            </div>
-            {access.adminPreview && (
-              <span className="rounded-full border border-[#FFD60A]/50 bg-[#2A2400] px-3 py-1 font-brockmann text-xs font-semibold text-[#FFD60A]">
-                Only you can see this
-              </span>
-            )}
-          </div>
-
-          <h2 className="m-0 font-chaney text-4xl font-normal leading-tight text-greyscale-blue-100 md:text-5xl lg:text-[56px]">
-            No friends handy?<br />Play with others
+      <div className="mx-auto flex w-full max-w-[1400px] flex-col items-center gap-12">
+        <div className="flex w-full flex-col items-start gap-4">
+          {access.adminPreview && (
+            <span className="rounded-full border border-[#FFD60A]/50 bg-[#2A2400] px-3 py-1 font-brockmann text-xs font-semibold text-[#FFD60A]">
+              Only you can see this
+            </span>
+          )}
+          <h2 className="m-0 font-chaney text-4xl font-normal uppercase leading-none text-[#FAFEFF] md:text-5xl lg:text-[56px]">
+            Join a movie draft now
           </h2>
-
-          <p className="m-0 max-w-md font-brockmann text-base leading-relaxed text-greyscale-blue-300 md:text-lg">
-            Jump into a live game, or pick one below.
+          <p className="m-0 max-w-[840px] font-brockmann text-base leading-relaxed text-greyscale-blue-300 [text-wrap:balance] md:text-lg">
+            Quick Play drops you into a live game with other players: it joins one that's waiting, or opens a new one for
+            the next person to join. Or pick a draft below.
           </p>
-
-          <div className="flex flex-wrap gap-3">
-            <Button
-              onClick={onQuickPlay}
-              disabled={busy}
-              className="rounded-[2px] bg-[#7142FF] px-6 py-3 font-brockmann text-sm font-semibold text-white hover:bg-[#5e32e0]"
-            >
-              {busy ? 'Finding a game…' : 'Quick Play'}
-            </Button>
-          </div>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <h3 className="m-0 font-brockmann text-xl font-semibold text-greyscale-blue-100">Open games</h3>
-            <button
-              type="button"
-              onClick={() => navigate('/play')}
-              className="inline-flex items-center gap-1.5 bg-transparent font-brockmann text-sm font-medium text-[#BCB2FF] hover:text-white"
-            >
-              See all open games <ArrowRight size={15} aria-hidden />
-            </button>
-          </div>
+        <div className="w-full">
           <OpenGamesList
             games={games}
             canJoinHere={direct}
             onGuestJoin={guest ? (g) => ask({ reason: 'join', returnTo: `/play?join=${g.draft_id}` }) : undefined}
+            emptyAction={
+              <Button
+                onClick={onQuickPlay}
+                disabled={busy}
+                className="h-12 shrink-0 rounded-[2px] bg-[#7142FF] px-8 font-brockmann text-base font-semibold tracking-[0.32px] text-[#FCFFFF] hover:bg-[#5e32e0]"
+              >
+                {busy ? 'Finding a game…' : 'Quick Play'}
+              </Button>
+            }
           />
         </div>
+
+        <Button
+          onClick={() => navigate('/play')}
+          className="h-auto rounded-[2px] bg-[#7142FF] px-8 py-[18px] font-brockmann text-lg font-semibold leading-6 text-[#FCFFFF] hover:bg-[#5e32e0]"
+        >
+          See all Drafts
+        </Button>
       </div>
       {prompt}
     </section>

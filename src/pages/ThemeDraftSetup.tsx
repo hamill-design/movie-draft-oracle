@@ -12,6 +12,7 @@ import { useMultiplayerDraft } from '@/hooks/useMultiplayerDraft';
 import { useProfile } from '@/hooks/useProfile';
 import { useDraftCategories } from '@/hooks/useDraftCategories';
 import EnhancedCategoriesForm from '@/components/EnhancedCategoriesForm';
+import { DraftPageHeader } from '@/components/DraftPageHeader';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { DraftSetupForm } from '@/hooks/useDraftForm';
@@ -311,14 +312,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
               </Link>
             </div>
 
-            <div className="w-full flex flex-col gap-4 items-center justify-center py-6">
-              <p className="uppercase m-0" style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '32px', lineHeight: '36px', letterSpacing: '1.28px', color: 'var(--Text-Primary, #FCFFFF)' }}>
-                SETTING UP
-              </p>
-              <h1 className="text-brand-primary uppercase text-center w-full m-0" style={{ fontFamily: 'CHANEY', fontWeight: 400, fontSize: '64px', lineHeight: '64px' }}>
-                {option.toUpperCase()}
-              </h1>
-            </div>
+            <DraftPageHeader label="SETTING UP" option={option} theme={theme} className="mb-0" />
 
             <LeagueToggleCard setup={leagueSetup} />
 

@@ -403,8 +403,8 @@ describe('Open games list (homepage)', () => {
     assert.equal(rows.length, 1);
     assert.deepEqual(
       Object.keys(rows[0]).sort(),
-      ['created_at', 'draft_id', 'host_name', 'i_joined', 'joined_count', 'option', 'pick_clock_seconds', 'rated',
-        'scheduled_start_at', 'seats_open', 'speed', 'table_size', 'theme', 'title'],
+      ['category_count', 'created_at', 'draft_id', 'host_name', 'i_joined', 'joined_count', 'match_source', 'option', 'pick_clock_seconds',
+        'rated', 'scheduled_start_at', 'seats_open', 'speed', 'table_size', 'theme', 'title'],
     );
     const text = JSON.stringify(rows);
     assert.ok(!text.includes('secret.person'), 'no email');
@@ -412,10 +412,78 @@ describe('Open games list (homepage)', () => {
     assert.ok(!text.includes(h.id), 'no user id');
   });
 
-  test('does not list Quick Match lobbies, only games a player hosts', async () => {
+  test('lists a Quick Play lobby too, marked as Quick Play, with its first player as host', async () => {
     const { mk, quickStart, list } = await fresh();
-    await quickStart(await mk('Q'));
-    assert.deepEqual(await list(null), []);
+    const starter = await mk('Q');
+    const { draft_id } = await quickStart(starter);
+
+    const rows = await list(await mk('Viewer'));
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].draft_id, draft_id);
+    assert.equal(rows[0].match_source, 'quick');
+    assert.equal(rows[0].joined_count, 1);
+    assert.equal(rows[0].seats_open, 3);
+    assert.equal(rows[0].speed, 'live');
+    assert.match(rows[0].host_name, /^Q \d+$/);
+    assert.equal(rows[0].i_joined, false);
+
+    const mine = await list(starter);
+    assert.equal(mine[0].i_joined, true, 'the person sitting in the lobby sees it as theirs');
+    assert.equal((await list(null)).length, 1, 'a signed-out visitor sees it too');
+  });
+
+  test('each game says how many categories it has, for the "5 Categories" line on the card', async () => {
+    const { mk, host, list } = await fresh();
+    const three = await host(await mk('Three'), { categories: ['Comedy', 'Drama/Romance', 'Sequel'] });
+    const five = await host(await mk('Five'), { categories: ['Comedy', 'Drama/Romance', 'Sequel', 'Horror', 'Action'] });
+    const counts = Object.fromEntries((await list(null)).map((r) => [r.draft_id, r.category_count]));
+    assert.equal(counts[three], 3);
+    assert.equal(counts[five], 5);
+  });
+
+  test('Quick Play lobbies and hosted open games appear together, marked by how they were made', async () => {
+    const { mk, host, quickStart, list } = await fresh();
+    const hosted = await host(await mk('Hosty'), { title: 'Hosted one' });
+    const { draft_id: lobby } = await quickStart(await mk('Quicky'));
+    const rows = await list(null);
+    assert.deepEqual(rows.map((r) => [r.draft_id, r.match_source]).sort(), [[hosted, 'open'], [lobby, 'quick']].sort());
+  });
+
+  test('a Quick Play lobby that is full, started or cancelled is hidden like any other game', async () => {
+    const { db, mk, quickStart, quickJoin, call, list } = await fresh();
+    const full = (await quickStart(await mk('Full'))).draft_id;
+    for (const n of ['A', 'B', 'C']) await quickJoin(await mk(n));
+    const started = (await quickStart(await mk('Started'))).draft_id;
+    await db.query(`UPDATE public.drafts SET turn_order = '["a","b"]'::jsonb WHERE id = $1`, [started]);
+    const cancelHost = await mk('Cancelled');
+    const cancelled = (await quickStart(cancelHost)).draft_id;
+    await call(cancelHost, 'cancel_public_table', cancelled);
+    const open = (await quickStart(await mk('Open'))).draft_id;
+
+    // `full` took three more players through quick_join (it fills the fullest lobby first): four of four seats.
+    const ids = (await list(null)).map((r) => r.draft_id);
+    assert.deepEqual(ids, [open], 'only the lobby with a free seat is listed');
+    for (const hidden of [full, started, cancelled]) assert.ok(!ids.includes(hidden));
+  });
+
+  test('a public game with no host at this moment is still listed (without a host name)', async () => {
+    const { db, mk, host, list } = await fresh();
+    const id = await host(await mk('Leaving host'));
+    await db.query(`UPDATE public.draft_participants SET is_host = false WHERE draft_id = $1`, [id]);
+    const rows = await list(null);
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].draft_id, id);
+    assert.equal(rows[0].host_name, null);
+  });
+
+  test('anything else marked public is listed, however it was made; invite-only drafts never are', async () => {
+    const { db, mk, host, list } = await fresh();
+    const id = await host(await mk('Someone'));
+    await db.query(`UPDATE public.drafts SET match_source = 'featured' WHERE id = $1`, [id]);
+    assert.deepEqual((await list(null)).map((r) => [r.draft_id, r.match_source]), [[id, 'featured']]);
+
+    await db.query(`UPDATE public.drafts SET lobby_visibility = 'private' WHERE id = $1`, [id]);
+    assert.deepEqual(await list(null), [], 'set back to invite-only it disappears');
   });
 
   test('hides full, counting-down, started, cancelled and private games', async () => {

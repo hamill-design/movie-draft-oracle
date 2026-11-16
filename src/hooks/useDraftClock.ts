@@ -66,6 +66,9 @@ export function useDraftClock({
   const serverOffsetMsRef = useRef(0);
   const lastNudgeAtRef = useRef(0);
   const hasSnapshotRef = useRef(false);
+  const returningRef = useRef(false);
+  const returnUnavailableRef = useRef(false);
+  const iAmAwayRef = useRef(false);
 
   const refresh = useCallback(async () => {
     if (!draftId || !participantId) return;
@@ -90,8 +93,11 @@ export function useDraftClock({
     }
   }, [draftId, participantId]);
 
+  const openedRef = useRef(false);
   useEffect(() => {
     hasSnapshotRef.current = false;
+    openedRef.current = false;
+    returnUnavailableRef.current = false;
     setStatus('loading');
     setSnapshot(null);
   }, [draftId]);
@@ -136,6 +142,59 @@ export function useDraftClock({
   for (const p of snapshot?.participants ?? []) {
     if (p.is_away) awayByParticipantId[String(p.participant_id)] = true;
   }
+
+  // ── Coming back ──────────────────────────────────────────────
+  // The referee marks a player Away after two missed turns and then makes their picks on a 5-second clock. Only
+  // a pick of their own used to clear that, which a player who had just reconnected rarely had time for. So when
+  // an Away player is back, tell the server (return_to_draft): it clears Away and gives them a full turn.
+  // "Back" means: they opened the draft, brought its tab to the front, or clicked / pressed a key on it. A tab in
+  // the background, or a screen nobody touches, does not count, so someone who really left stays Away.
+  const iAmAway = Boolean(participantId && awayByParticipantId[String(participantId)]);
+  iAmAwayRef.current = iAmAway;
+
+  const returnToDraft = useCallback(async () => {
+    if (!draftId || !participantId) return;
+    if (!iAmAwayRef.current || returningRef.current || returnUnavailableRef.current) return;
+    returningRef.current = true;
+    try {
+      const { error } = await (supabase as any).rpc('return_to_draft', {
+        p_draft_id: draftId,
+        p_participant_id: participantId,
+      });
+      // Not installed yet (migration not applied): stop asking. A pick of their own still clears Away, as before.
+      if (error) returnUnavailableRef.current = true;
+    } catch {
+      returnUnavailableRef.current = true;
+    } finally {
+      returningRef.current = false;
+    }
+    await refresh();
+  }, [draftId, participantId, refresh]);
+
+  // Opening (or reloading) the draft is itself coming back.
+  useEffect(() => {
+    if (!snapshot || openedRef.current) return;
+    openedRef.current = true;
+    if (iAmAway) void returnToDraft();
+  }, [snapshot, iAmAway, returnToDraft]);
+
+  // From then on, only while they are Away: the tab coming to the front, a click, a key press.
+  useEffect(() => {
+    if (!iAmAway || isComplete) return;
+    const back = () => {
+      if (document.visibilityState === 'visible') void returnToDraft();
+    };
+    window.addEventListener('focus', back);
+    document.addEventListener('visibilitychange', back);
+    window.addEventListener('pointerdown', back);
+    window.addEventListener('keydown', back);
+    return () => {
+      window.removeEventListener('focus', back);
+      document.removeEventListener('visibilitychange', back);
+      window.removeEventListener('pointerdown', back);
+      window.removeEventListener('keydown', back);
+    };
+  }, [iAmAway, isComplete, returnToDraft]);
 
   return {
     status,

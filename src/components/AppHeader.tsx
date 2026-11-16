@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { usePublicPlayAvailable } from '@/hooks/usePublicPlayAvailable';
 
 const HEADER_NAV_ITEMS = [
-  { label: 'How To Play', mobileLabel: 'How to Draft', to: '/how-to-draft' },
+  { label: 'How To Draft', mobileLabel: 'How To Draft', to: '/how-to-draft' },
   { label: 'League', mobileLabel: 'League', to: '/league' },
   { label: 'Blog', mobileLabel: 'Blog', to: '/blog' },
   { label: 'Movie News', mobileLabel: 'Movies News', to: '/news' },
@@ -160,7 +160,7 @@ const HeaderNavLinks = ({
       ))}
       {showPlay && (
         <Link to="/play" onClick={onNavigate} className={navLinkClassName}>
-          Play
+          Play Now
         </Link>
       )}
     </nav>

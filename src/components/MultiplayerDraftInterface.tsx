@@ -19,8 +19,7 @@ import { DraftLobbyStatusParticipants, type LobbyDetails } from '@/components/dr
 import type { BoardRailParticipant } from '@/components/draft-board/DraftBoardPlayerRail';
 
 import { getCleanActorName } from '@/lib/utils';
-import { DraftPageHeaderSection } from '@/components/DraftPageHeaderSection';
-import { DraftHeadingTitle } from '@/components/DraftHeadingTitle';
+import { DraftPageHeader } from '@/components/DraftPageHeader';
 import { supabase } from '@/integrations/supabase/client';
 import { Participant, normalizeParticipants } from '@/types/participant';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,7 +34,6 @@ import { buildInteractiveBoardModelFromMultiplayer } from '@/utils/interactiveBo
 import { Movie } from '@/data/movies';
 import { useDraftClock } from '@/hooks/useDraftClock';
 import { useAdminAccess } from '@/hooks/useAdminAccess';
-import { PickClockBanner } from '@/components/draft-board/PickClockBanner';
 import { LobbySettingsDialog } from '@/components/draft-board/LobbySettingsDialog';
 import { REFEREE_CLOCK_VISIBLE_TO_ALL } from '@/config/referee';
 import { PublicTableLobby } from '@/components/play/PublicTableLobby';
@@ -1052,14 +1050,18 @@ export const MultiplayerDraftInterface = ({
         background: 'linear-gradient(140deg, #100029 16%, #160038 50%, #100029 83%)',
       }}
     >
-      <div className="w-full px-4 pt-4 pb-4">
-        <DraftPageHeaderSection className="mb-0" contentClassName="px-6 py-4">
-          <DraftHeadingTitle
+      <div className="w-full px-4 lg:px-12 pt-4 pb-4">
+        {/* Same 1400px column and 48px side gutter as the Draft Status section below, so the image lines up with its left edge */}
+        <div className="w-full max-w-[1400px] mx-auto">
+          <DraftPageHeader
+            label={isComplete ? 'COMPLETED' : draftHasStarted ? 'DRAFTING' : 'SETTING UP'}
+            as="h2"
             option={draft.option}
             theme={draft.theme}
             specDraftName={specDraftName}
+            className="mb-0"
           />
-        </DraftPageHeaderSection>
+        </div>
       </div>
 
       {draftHasStarted && (
@@ -1072,9 +1074,6 @@ export const MultiplayerDraftInterface = ({
           currentPlayer={currentTurnBoardPlayer}
           railParticipants={railParticipants}
           isMyTurn={isMyTurn && !isComplete}
-          isAiThinking={isAITurn || currentTurnIsAI}
-          aiThinkingName={currentTurnPlayer?.participant_name}
-          aiPicking={aiPicking}
           pickerState={pickerState}
           movies={movies}
           moviesLoading={moviesLoading}
@@ -1089,19 +1088,8 @@ export const MultiplayerDraftInterface = ({
         />
       )}
 
-      <div className="w-full px-4 py-6 space-y-6">
+      <div className="w-full px-4 lg:px-12 py-6 space-y-6">
         <div className="w-full max-w-[1400px] mx-auto">
-          {draftHasStarted && !isComplete && clock.enabled && !currentTurnIsAI && (
-            <PickClockBanner
-              secondsLeft={clock.secondsLeft}
-              pickClockSeconds={clock.pickClockSeconds}
-              isMyTurn={isMyTurn}
-              currentTurnName={currentTurnPlayer?.participant_name}
-              currentTurnIsAway={Boolean(
-                clock.awayByParticipantId[String(draft.current_turn_participant_id ?? draft.current_turn_user_id ?? '')]
-              )}
-            />
-          )}
           {!draftHasStarted && !isComplete && tableKind === 'unknown' ? (
             <div className="h-48 animate-pulse rounded-lg border border-[#49474B] bg-[#0E0E0F]" aria-busy="true" />
           ) : isPublicTable && !draftHasStarted && !isComplete ? (
@@ -1131,6 +1119,24 @@ export const MultiplayerDraftInterface = ({
             // A private draft has no fixed size: the host always has one open seat to add someone (six at most).
             openSeats={isHost && !draftHasStarted && !isComplete && participants.length < MAX_PRIVATE_SEATS ? 1 : 0}
             onOpenSeat={isHost ? () => setInviteOpen(true) : undefined}
+            // When a bot is picking, the Draft Status card says so ("X is thinking…"); the board no longer does.
+            aiThinking={
+              draftHasStarted && !isComplete && (isAITurn || currentTurnIsAI)
+                ? { name: currentTurnPlayer?.participant_name ?? 'The AI', analyzing: aiPicking }
+                : null
+            }
+            // The pick countdown lives in the Draft Status card, inside the turn panel (not on a bot's turn).
+            timer={
+              draftHasStarted && !isComplete && clock.enabled && !currentTurnIsAI
+                ? {
+                    secondsLeft: clock.secondsLeft,
+                    pickClockSeconds: clock.pickClockSeconds,
+                    currentTurnIsAway: Boolean(
+                      clock.awayByParticipantId[String(draft.current_turn_participant_id ?? draft.current_turn_user_id ?? '')]
+                    ),
+                  }
+                : null
+            }
             renderTileActions={(p) =>
               p.status === 'invited' && isHost && !draftHasStarted ? (
                 <RevokeInviteButton

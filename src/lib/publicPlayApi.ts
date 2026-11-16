@@ -129,6 +129,10 @@ export interface OpenGameRow {
   rated: boolean;
   created_at: string;
   i_joined: boolean;
+  /** How the game was made: 'quick' (a Quick Play lobby), 'open' (a player set it to Open to the public), … Absent until migration 18. */
+  match_source?: string | null;
+  /** How many categories each player fills ("5 Categories" on the card). Absent until migration 19. */
+  category_count?: number | null;
 }
 
 /** What Quick Join answers: a game it put you in, or {found:false} when nothing is open right now. */

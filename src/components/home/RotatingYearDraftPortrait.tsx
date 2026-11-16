@@ -1,17 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { YEAR_DRAFT_TILES, type YearDraftTile as YearTile } from '@/lib/yearDraftImages';
 
 const SIZE = 124;
 const HALF = SIZE / 2;
 const ROTATE_MS = 4000;
 const CUBE_MS = 650;
-
-const yearSvgModules = import.meta.glob<string>(
-  '@/assets/home/year-drafts/*.svg',
-  { eager: true, import: 'default' },
-);
-
-type YearTile = { label: string; src: string };
 
 function shuffle<T>(items: T[]): T[] {
   const arr = [...items];
@@ -20,14 +14,6 @@ function shuffle<T>(items: T[]): T[] {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
-}
-
-function buildYearTiles(): YearTile[] {
-  return Object.entries(yearSvgModules).map(([path, src]) => {
-    const file = path.split('/').pop() ?? 'year';
-    const label = file.replace(/\.svg$/i, '').replace(/-1$/, '');
-    return { label, src };
-  });
 }
 
 function CubeFace({
@@ -68,7 +54,7 @@ type RotatingYearDraftPortraitProps = {
 };
 
 export function RotatingYearDraftPortrait({ className }: RotatingYearDraftPortraitProps) {
-  const [order] = useState(() => shuffle(buildYearTiles()));
+  const [order] = useState(() => shuffle(YEAR_DRAFT_TILES));
   const [displayIndex, setDisplayIndex] = useState(0);
   const [queuedIndex, setQueuedIndex] = useState(1);
   const [cubeRotation, setCubeRotation] = useState(0);

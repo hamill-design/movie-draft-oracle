@@ -53,6 +53,12 @@ export function describeClock(seconds: number): string {
   return `${seconds} seconds`;
 }
 
+/** The short form used on the cards: "90 sec", "2 min", "4 hr". */
+export function describeClockShort(seconds: number): string {
+  if (seconds < 3600) return seconds % 60 === 0 ? `${seconds / 60} min` : `${seconds} sec`;
+  return `${Math.round(seconds / 3600)} hr`;
+}
+
 /** "Fri, 8:00 PM" in the viewer's own time zone. */
 export function formatWhen(iso: string): string {
   return new Date(iso).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });

@@ -8,6 +8,10 @@ import { cn } from '@/lib/utils';
 
 type Scope = 'quarter' | 'all';
 
+// The app's usual button hovers: brand purple darkens, an outlined button fills with the card grey.
+const SCOPE_ON = 'bg-[#7142FF] text-white hover:bg-[#5e32e0]';
+const SCOPE_OFF = 'border-[#49474B] bg-transparent text-white hover:bg-[#1D1D1F] hover:text-white';
+
 const quarterLabel = () => {
   const d = new Date();
   return `Q${Math.floor(d.getMonth() / 3) + 1} ${d.getFullYear()}`;
@@ -47,10 +51,10 @@ export function LeaderboardPanel() {
           </p>
         </div>
         <div className="flex gap-2" role="group" aria-label="Time range">
-          <Button size="sm" variant={scope === 'quarter' ? 'default' : 'outline'} onClick={() => setScope('quarter')} className={scope === 'quarter' ? 'bg-[#680AFF] text-white' : 'border-[#49474B] bg-transparent text-white'}>
+          <Button size="sm" variant={scope === 'quarter' ? 'default' : 'outline'} onClick={() => setScope('quarter')} className={scope === 'quarter' ? SCOPE_ON : SCOPE_OFF}>
             {quarterLabel()}
           </Button>
-          <Button size="sm" variant={scope === 'all' ? 'default' : 'outline'} onClick={() => setScope('all')} className={scope === 'all' ? 'bg-[#680AFF] text-white' : 'border-[#49474B] bg-transparent text-white'}>
+          <Button size="sm" variant={scope === 'all' ? 'default' : 'outline'} onClick={() => setScope('all')} className={scope === 'all' ? SCOPE_ON : SCOPE_OFF}>
             All time
           </Button>
         </div>
@@ -67,7 +71,7 @@ export function LeaderboardPanel() {
       {error && <p role="alert" className="m-0 font-brockmann text-sm text-[#FF8A8A]">{error}</p>}
       {rows === null && !error && <div className="h-40 animate-pulse rounded-lg border border-[#49474B] bg-[#0E0E0F]" aria-busy="true" />}
       {rows && rows.length === 0 && (
-        <div className="rounded-lg border border-dashed border-[#49474B] p-8 text-center font-brockmann text-sm text-[#BDC3C2]">
+        <div className="rounded-lg border border-solid border-[#49474B] bg-[#1D1D1F] p-8 text-center font-brockmann text-sm text-[#BDC3C2]">
           No rated games have finished {scope === 'quarter' ? 'this quarter' : 'yet'}. Be the first on the board.
         </div>
       )}
