@@ -1,10 +1,19 @@
 import type { ReactNode } from 'react';
-import { Bot, Check, Clock, Copy, Crown, Edit2, Film, Info, Plus } from 'lucide-react';
+import { Bot, Check, Clock, Copy, Crown, Edit2, Film, Info, Loader2, Plus } from 'lucide-react';
 import { isParticipantOnline } from '@/utils/draftPresence';
 import { getCategoryConfig } from '@/config/categoryConfigs';
 import { MultiPersonIcon } from '@/components/icons/MultiPersonIcon';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { LobbyButton, LobbyHero } from '@/components/draft-board/LobbyHero';
+import { PickClockStatus } from '@/components/draft-board/PickClockStatus';
+
+/** The pick clock for the current turn, shown inside the Draft Status card once the draft is under way. */
+export interface LobbyTimer {
+  secondsLeft: number | null;
+  pickClockSeconds: number | null;
+  /** The player whose turn it is has stepped away, so their picks are made for them. */
+  currentTurnIsAway: boolean;
+}
 
 export interface LobbyParticipant {
   id: string;
@@ -324,13 +333,13 @@ function LobbyTile({
 
 /**
  * An empty seat. With `onOpen` it is a button (a plus in the circle) that opens the invite window;
- * without it, a plain dashed circle.
+ * without it, a plain circle with a light solid outline.
  */
 function OpenSeat({ onOpen }: { onOpen?: () => void }) {
   if (!onOpen) {
     return (
       <li className="flex w-[104px] flex-col items-center gap-2 text-center">
-        <div className="h-16 w-16 rounded-full border border-dashed border-[#49474B]" aria-hidden />
+        <div className="h-16 w-16 rounded-full border border-solid border-[#BDC3C2]/50" aria-hidden />
         <span className="font-brockmann text-xs text-[#BDC3C2]">Open seat</span>
       </li>
     );
@@ -343,7 +352,7 @@ function OpenSeat({ onOpen }: { onOpen?: () => void }) {
         aria-label="Invite someone to this seat"
         className="group flex w-full cursor-pointer flex-col items-center gap-2 rounded-lg border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#907AFF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0E0E0F]"
       >
-        <span className="flex h-16 w-16 items-center justify-center rounded-full border border-dashed border-[#49474B] text-[#BDC3C2] transition-colors group-hover:border-[#BDC3C2] group-hover:text-[#FCFFFF]">
+        <span className="flex h-16 w-16 items-center justify-center rounded-full border border-solid border-[#BDC3C2]/50 text-[#BDC3C2] transition-colors group-hover:border-[#BDC3C2] group-hover:text-[#FCFFFF]">
           <Plus size={24} aria-hidden />
         </span>
         <span className="font-brockmann text-xs text-[#BDC3C2] transition-colors group-hover:text-[#FCFFFF]">Open seat</span>
@@ -562,6 +571,10 @@ interface DraftLobbyStatusParticipantsProps {
   wrapIdentity?: (p: LobbyParticipant, identity: ReactNode) => ReactNode;
   /** Small controls on a tile (report / block on public tables). */
   renderTileActions?: (p: LobbyParticipant) => ReactNode;
+  /** The pick countdown, shown inside the Draft Status card's turn panel. Leave out or `null` for no clock. */
+  timer?: LobbyTimer | null;
+  /** A bot is making the pick: the card's turn panel says "<name> is thinking…" (and "Analyzing movies…" while it works). */
+  aiThinking?: { name: string; analyzing: boolean } | null;
 }
 
 /**
@@ -594,6 +607,8 @@ export function DraftLobbyStatusParticipants({
   onOpenSeat,
   wrapIdentity,
   renderTileActions,
+  timer,
+  aiThinking,
 }: DraftLobbyStatusParticipantsProps) {
   const getParticipantsSortedByCreatedAt = sortedParticipants;
 
@@ -833,7 +848,7 @@ export function DraftLobbyStatusParticipants({
                         gap: '10px', 
                         display: 'flex'
                       }}>
-                        <Clock size={20} color="#BDC3C2" />
+                        {aiThinking ? <Loader2 size={20} color="#BDC3C2" className="animate-spin" /> : <Clock size={20} color="#BDC3C2" />}
                       </div>
                       <div style={{
                         alignSelf: 'stretch', 
@@ -865,7 +880,7 @@ export function DraftLobbyStatusParticipants({
                             paddingRight: '8px',
                           }}
                         >
-                          Waiting for {currentTurnPlayer?.participant_name}
+                          {aiThinking ? `${aiThinking.name} is thinking…` : `Waiting for ${currentTurnPlayer?.participant_name}`}
                         </div>
                         <div style={{
                           alignSelf: 'stretch', 
@@ -880,9 +895,19 @@ export function DraftLobbyStatusParticipants({
                           lineHeight: '20px', 
                           wordWrap: 'break-word'
                         }}>
-                          It's their turn to make a pick
+                          {aiThinking?.analyzing ? 'Analyzing movies…' : "It's their turn to make a pick"}
                         </div>
                       </div>
+                      {timer && (
+                        <PickClockStatus
+                          secondsLeft={timer.secondsLeft}
+                          pickClockSeconds={timer.pickClockSeconds}
+                          isMyTurn={false}
+                          currentTurnName={currentTurnPlayer?.participant_name}
+                          currentTurnIsAway={timer.currentTurnIsAway}
+                          tone="dark"
+                        />
+                      )}
                     </div>
                   </div>
                 )}
@@ -896,6 +921,16 @@ export function DraftLobbyStatusParticipants({
                         <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '16px', fontFamily: 'Brockmann', fontWeight: '600', lineHeight: '24px', letterSpacing: '0.32px', wordWrap: 'break-word'}}>It's Your Turn!</div>
                         <div style={{alignSelf: 'stretch', textAlign: 'center', justifyContent: 'center', display: 'flex', flexDirection: 'column', color: 'var(--Text-Primary, #FCFFFF)', fontSize: '14px', fontFamily: 'Brockmann', fontWeight: '400', lineHeight: '20px', wordWrap: 'break-word'}}>Make your next pick to your movie roster</div>
                       </div>
+                      {timer && (
+                        <PickClockStatus
+                          secondsLeft={timer.secondsLeft}
+                          pickClockSeconds={timer.pickClockSeconds}
+                          isMyTurn
+                          currentTurnName={currentTurnPlayer?.participant_name}
+                          currentTurnIsAway={timer.currentTurnIsAway}
+                          tone="purple"
+                        />
+                      )}
                     </div>
                   </div>
                 )}

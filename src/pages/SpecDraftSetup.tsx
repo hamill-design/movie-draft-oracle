@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { socialShareImageMetaNodes } from '@/components/seo/SocialShareImageMeta';
+import { DraftPageHeader } from '@/components/DraftPageHeader';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -730,15 +731,14 @@ const SpecDraftSetup = () => {
       `}</style>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* Draft Title - No background container */}
-          <div className="w-full flex flex-col gap-4 items-center justify-center py-6">
-            <p className="uppercase m-0" style={{ fontFamily: 'Brockmann', fontWeight: 500, fontSize: '32px', lineHeight: '36px', letterSpacing: '1.28px', color: 'var(--Text-Primary, #FCFFFF)' }}>
-              SETTING UP
-            </p>
-            <h1 className="text-brand-primary uppercase text-center w-full m-0" style={{ fontFamily: 'CHANEY', fontWeight: 400, fontSize: '64px', lineHeight: '64px' }}>
-              {specDraft.name.toUpperCase()}
-            </h1>
-          </div>
+          <DraftPageHeader
+            label="SETTING UP"
+            option={specDraft.id}
+            theme="spec-draft"
+            specDraftName={specDraft.name}
+            imageUrl={specDraft.photo_url}
+            className="mb-0"
+          />
 
           <LeagueToggleCard setup={leagueSetup} />
 

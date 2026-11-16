@@ -19,6 +19,7 @@ import { SpecDraftCategoriesManager } from '@/components/admin/SpecDraftCategori
 import { useBlogPostsAdmin, BlogPost } from '@/hooks/useBlogPostsAdmin';
 import { BlogPostForm, BlogPostFormValues } from '@/components/admin/blog/BlogPostForm';
 import { BlogPostList } from '@/components/admin/blog/BlogPostList';
+import { PublicPlayAdminSection } from '@/components/admin/PublicPlayAdminSection';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -36,7 +37,7 @@ const Admin = () => {
   const { toast } = useToast();
 
   const [editingCategory, setEditingCategory] = useState<ActorSpecCategory | null>(null);
-  const [activeSection, setActiveSection] = useState<'actor-categories' | 'spec-drafts' | 'blog'>('actor-categories');
+  const [activeSection, setActiveSection] = useState<'actor-categories' | 'spec-drafts' | 'blog' | 'public-play'>('actor-categories');
   const [actorCategorySection, setActorCategorySection] = useState<'list' | 'form'>('list');
   const [specDraftSection, setSpecDraftSection] = useState<'list' | 'form' | 'movies'>('list');
   const [editingSpecDraft, setEditingSpecDraft] = useState<SpecDraft | null>(null);
@@ -452,6 +453,29 @@ const Admin = () => {
                       Blog Posts
                     </span>
                   </button>
+
+                  {/* Public Play */}
+                  <button
+                    onClick={() => setActiveSection('public-play')}
+                    className={`self-stretch px-3 py-1.5 flex justify-start items-center border-l-2 ${
+                      activeSection === 'public-play'
+                        ? 'border-purple-300'
+                        : 'border-transparent'
+                    }`}
+                    style={{
+                      fontFamily: 'Brockmann',
+                      fontWeight: 600
+                    }}
+                  >
+                    <span className={`text-left whitespace-nowrap ${
+                      activeSection === 'public-play'
+                        ? 'text-purple-300'
+                        : 'text-greyscale-blue-100'
+                    } text-base leading-6 tracking-[0.32px]`}
+                    >
+                      Public Play
+                    </span>
+                  </button>
       </div>
               </div>
 
@@ -625,6 +649,9 @@ const Admin = () => {
                     )}
                   </div>
                 )}
+
+                {/* Public Play Section */}
+                {activeSection === 'public-play' && <PublicPlayAdminSection />}
               </div>
             </div>
           </div>

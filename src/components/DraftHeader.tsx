@@ -5,8 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ArrowLeft, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DraftActorPortrait } from './DraftActorPortrait';
-import { DraftPageHeaderSection } from '@/components/DraftPageHeaderSection';
-import { DraftHeadingTitle } from '@/components/DraftHeadingTitle';
+import { DraftPageHeader } from '@/components/DraftPageHeader';
 import { supabase } from '@/integrations/supabase/client';
 
 interface DraftHeaderProps {
@@ -57,21 +56,22 @@ const DraftHeader = ({
       
 
       {/* Draft Info */}
-      <DraftPageHeaderSection>
-        <DraftHeadingTitle
-          option={draftOption}
-          theme={theme}
-          specDraftName={specDraftName}
-        />
+      <DraftPageHeader
+        label={isComplete ? 'COMPLETED' : 'DRAFTING'}
+        as="h2"
+        option={draftOption}
+        theme={theme}
+        specDraftName={specDraftName}
+      >
         {!isComplete && currentPlayer && (
-          <div className="flex items-center justify-center gap-2 mt-4">
+          <div className="flex items-center gap-2 mt-2">
             <Crown className="text-yellow-400" size={20} />
-            <p className="text-text-primary font-brockmann font-semibold">
+            <p className="m-0 text-greyscale-blue-100 font-brockmann font-semibold">
               Current Pick: {currentPlayer.name} (#{currentPlayer.pick})
             </p>
           </div>
         )}
-      </DraftPageHeaderSection>
+      </DraftPageHeader>
     </>;
 };
 

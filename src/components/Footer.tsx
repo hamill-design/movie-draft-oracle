@@ -23,7 +23,7 @@ const footerColumns: FooterColumn[] = [
     links: [
       { label: "Start a Draft", to: "/draft" },
       { label: "About", to: "/about" },
-      { label: "How To Play", to: "/how-to-draft" },
+      { label: "How To Draft", to: "/how-to-draft" },
       { label: "Leagues", to: "/league" },
     ],
   },
