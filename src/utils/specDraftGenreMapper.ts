@@ -83,6 +83,9 @@ export function mapGenresToCategories(
   if (genreString.includes('horror') || genreString.includes('thriller')) {
     categories.push('Horror/Thriller');
   }
+  if (genreString.includes('documentary')) {
+    categories.push('Documentary');
+  }
 
   // Decade categories (based on movie year)
   if (movieYear) {
@@ -163,6 +166,7 @@ const CATEGORY_TO_GENRE_STRING: Record<string, string> = {
   'Drama/Romance': 'Drama Romance',
   'Sci-Fi/Fantasy': 'Science Fiction Fantasy',
   'Horror/Thriller': 'Horror Thriller',
+  'Documentary': 'Documentary',
 };
 
 /**
