@@ -263,6 +263,7 @@ export const SpecDraftMovieManager: React.FC<SpecDraftMovieManagerProps> = ({
     'Drama/Romance',
     'Sci-Fi/Fantasy',
     'Horror/Thriller',
+    'Documentary',
     "30's",
     "40's",
     "50's",
