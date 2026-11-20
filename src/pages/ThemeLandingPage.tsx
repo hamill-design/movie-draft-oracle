@@ -290,7 +290,10 @@ const ThemeLandingPage = () => {
   const intro =
     draft.description?.trim() ||
     `Explore standout picks from the “${draft.name}” pool on Movie Drafter—a movie drafting game where you build rosters from curated cinema lists.`;
-  const pageDesc = truncateMeta(`${intro} Full eligible film list, alphabetically.`, 158);
+  // Taglines are often saved without end punctuation ("...Universe film"), so add a period
+  // before the next sentence instead of running the two together.
+  const introSentence = /[.!?…]$/.test(intro) ? intro : `${intro}.`;
+  const pageDesc = truncateMeta(`${introSentence} See every eligible film, listed alphabetically.`, 158);
   const pageTitle = `Movie Drafter - ${draft.name} | Eligible films`;
 
   // Dedicated hero image wins; otherwise fall back to the draft's square photo
