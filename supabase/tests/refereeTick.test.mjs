@@ -27,7 +27,7 @@ const ENV = {
 };
 let handler;
 globalThis.Deno = { env: { get: (k) => ENV[k] }, serve: (fn) => { handler = fn; } };
-await import('../functions/referee-tick/index.ts');
+const refereeModule = await import('../functions/referee-tick/index.ts');
 assert.equal(typeof handler, 'function', 'the function registered a request handler');
 
 // ── Fake supabase-js backed by PGlite ──────────────────────
@@ -147,6 +147,7 @@ const TWO = [{ name: 'Ann' }, { name: 'Ben' }];
 describe('referee-tick edge function', () => {
   before(async () => { db = await newDb({ publicPlay: true }); });
   beforeEach(() => {
+    refereeModule.resetPoolCache();   // each case starts with no remembered movie lists
     validUsers = new Map();
     fetchMoviesCalls = [];
     fetchMoviesImpl = async () => ({ results: pool() });
@@ -367,6 +368,56 @@ describe('referee-tick edge function', () => {
       assert.equal(fetchMoviesCalls[0].category, 'year');
       assert.equal(fetchMoviesCalls[0].searchQuery, '1999');
       assert.equal((await getPicks(db, d.draftId))[0].movie_id, 101);
+    });
+
+    test('the movie list asked for is big enough to finish a draft: several pages of a year, a whole actor filmography', async () => {
+      const year = await makeDraft(db, { players: TWO, categories: ['Comedy'] });
+      await db.query(`UPDATE public.drafts SET theme = 'year', option = '1999' WHERE id = $1`, [year.draftId]);
+      await startDraft(db, year);
+      await expireClock(db, year.draftId);
+      await call({ draftId: year.draftId }, asUser(year.players[0].userId));
+      assert.equal(fetchMoviesCalls[0].fetchAll, true, 'not just the first page of 20');
+      assert.equal(fetchMoviesCalls[0].maxPages, 8, 'but a handful of pages (about 60 real films), so it stays quick');
+
+      fetchMoviesCalls.length = 0;
+      refereeModule.resetPoolCache();
+      const actor = await makeDraft(db, { players: TWO, categories: ['Comedy'] });
+      await db.query(`UPDATE public.drafts SET theme = 'people', option = 'Some Actor' WHERE id = $1`, [actor.draftId]);
+      await startDraft(db, actor);
+      await expireClock(db, actor.draftId);
+      await call({ draftId: actor.draftId }, asUser(actor.players[0].userId));
+      assert.equal(fetchMoviesCalls[0].category, 'person');
+      assert.equal(fetchMoviesCalls[0].fetchAll, true, 'the actor\'s whole filmography');
+    });
+
+    test('the movie list is remembered for the next pick, so bots stay quick', async () => {
+      const d = await makeDraft(db, { players: TWO, categories: ['Comedy'] });
+      await db.query(`UPDATE public.drafts SET theme = 'year', option = '1999' WHERE id = $1`, [d.draftId]);
+      fetchMoviesImpl = async () => ({ results: pool(1999) });
+      await startDraft(db, d);
+      await expireClock(db, d.draftId);
+      await call({ draftId: d.draftId }, asUser(d.players[0].userId));
+      await expireClock(db, d.draftId);
+      await call({ draftId: d.draftId }, asUser(d.players[0].userId));
+      assert.equal((await getPicks(db, d.draftId)).length, 2, 'both picks were made');
+      assert.equal(fetchMoviesCalls.length, 1, 'the second pick reused the list');
+    });
+
+    test('an empty movie list is never remembered (a short outage must not stick)', async () => {
+      const d = await makeDraft(db, { players: TWO, categories: ['Comedy'] });
+      await db.query(`UPDATE public.drafts SET theme = 'year', option = '1999' WHERE id = $1`, [d.draftId]);
+      fetchMoviesImpl = async () => ({ results: [] });
+      await startDraft(db, d);
+      await expireClock(db, d.draftId);
+      await call({ draftId: d.draftId }, asUser(d.players[0].userId));
+      assert.equal((await getPicks(db, d.draftId)).length, 0, 'nothing to pick yet');
+
+      fetchMoviesImpl = async () => ({ results: pool(1999) });
+      await db.query(`UPDATE public.drafts SET referee_claim_until = NULL WHERE id = $1`, [d.draftId]);
+      await expireClock(db, d.draftId);
+      await call({ draftId: d.draftId }, asUser(d.players[0].userId));
+      assert.equal((await getPicks(db, d.draftId)).length, 1, 'the next try asked again and found movies');
+      assert.equal(fetchMoviesCalls.length, 2);
     });
 
     test('completing the last pick marks the draft complete', async () => {

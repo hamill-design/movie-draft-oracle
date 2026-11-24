@@ -263,6 +263,9 @@ function specMovieToPoolMovie(row: SpecDraftMovieRow): PoolMovie {
   };
 }
 
+/** How many pages of a year's movies the referee asks for (20 per page; only the true-year films are kept). */
+export const YEAR_POOL_PAGES = 8;
+
 /** The pool that doesn't depend on which category is being filled. */
 export async function loadBasePool(source: PoolSource, theme: string, option: string): Promise<Pool> {
   if (theme === 'spec-draft' && option) {
@@ -283,10 +286,16 @@ export async function loadBasePool(source: PoolSource, theme: string, option: st
   // Same as the browser: only the legacy 'person' theme strips a corrupted "Name|id" option.
   const cleanedOption = theme === 'person' ? getCleanActorName(option || '') : option || '';
 
+  // The pool has to be big enough to finish a whole draft. Without fetchAll, fetch-movies returns ONE page of 20
+  // movies and ignores pageLimit: for a year that is often only 4 to 8 films actually from that year (the rest
+  // are re-releases, which the exact-year check below throws out), and for an actor only their 20 best-known
+  // films. A 4-player, 5-category draft needs 20 picks, so a bot ran out of movies after a few picks and the
+  // whole draft stood still ("no_movie"). So: a year asks for its first YEAR_POOL_PAGES pages (about 60 real
+  // films), and an actor asks for their whole filmography.
   const body = theme === 'year'
-    ? { category: 'year', searchQuery: cleanedOption, movieSearchQuery: '', fetchAll: false, page: 1, pageLimit: 50 }
+    ? { category: 'year', searchQuery: cleanedOption, movieSearchQuery: '', fetchAll: true, maxPages: YEAR_POOL_PAGES }
     : isPeople
-    ? { category: 'person', searchQuery: cleanedOption, movieSearchQuery: '', fetchAll: false, page: 1, pageLimit: 50 }
+    ? { category: 'person', searchQuery: cleanedOption, movieSearchQuery: '', fetchAll: true }
     : { category: 'all', searchQuery: cleanedOption, fetchAll: true };
 
   const data = await source.fetchMovies(body);
