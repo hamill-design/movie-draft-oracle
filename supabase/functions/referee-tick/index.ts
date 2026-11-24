@@ -204,6 +204,59 @@ async function scoreFinishedDrafts(admin: AdminClient): Promise<ScoringSummary> 
   return out;
 }
 
+/**
+ * Run something after the answer has been sent, when the platform allows it, so it never slows a draft down.
+ * Anywhere else (the tests) the caller simply waits for it.
+ */
+function background(work: Promise<unknown>): Promise<unknown> | void {
+  const runtime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } }).EdgeRuntime;
+  const safe = work.catch((err) => console.warn('referee-tick: background work failed', err));
+  if (runtime?.waitUntil) {
+    runtime.waitUntil(safe);
+    return;
+  }
+  return safe;
+}
+
+/** Score one film now (the existing enrich-movie-data writes the score onto every pick of that film). */
+async function scoreMovie(admin: AdminClient, movie: { id: number; title: string; year?: number | null }): Promise<void> {
+  const { error } = await admin.functions.invoke('enrich-movie-data', {
+    body: { movieId: movie.id, movieTitle: movie.title, movieYear: movie.year ?? null },
+  });
+  if (error) console.warn('referee-tick: scoring a pick failed', movie.id, error);
+}
+
+const MAX_LIVE_SCORING_PER_SWEEP = 12;
+
+/**
+ * Picks made in the last few hours that still have no score (human picks, and anything a bot pick's own scoring
+ * missed): score a few each minute so the Final Scores page has little left to do when the draft ends.
+ */
+async function scoreLivePicks(admin: AdminClient): Promise<{ movies: number; errors: number }> {
+  const out = { movies: 0, errors: 0 };
+  const list = await admin.rpc('referee_list_unscored_picks', { p_limit: MAX_LIVE_SCORING_PER_SWEEP });
+  if (list.error) {
+    // The migration that adds this list may not have been applied yet: nothing breaks, the page scores what is left.
+    console.warn('referee-tick: live scoring list unavailable', list.error.message ?? list.error);
+    return out;
+  }
+  const movies = (list.data ?? []) as { movie_id: number; movie_title: string; movie_year: number | null }[];
+  for (let i = 0; i < movies.length; i += ENRICH_CONCURRENCY) {
+    const settled = await Promise.allSettled(
+      movies.slice(i, i + ENRICH_CONCURRENCY).map((m) =>
+        admin.functions.invoke('enrich-movie-data', {
+          body: { movieId: m.movie_id, movieTitle: m.movie_title, movieYear: m.movie_year },
+        })
+      ),
+    );
+    for (const s of settled) {
+      if (s.status === 'fulfilled' && !s.value.error) out.movies += 1;
+      else out.errors += 1;
+    }
+  }
+  return out;
+}
+
 interface DraftResult {
   draftId: string;
   status: 'applied' | 'skipped' | 'no_movie' | 'error';
@@ -266,6 +319,8 @@ async function resolveDraft(admin: AdminClient, draftId: string): Promise<DraftR
     const applied = applyRes.data;
     if (applied?.applied) {
       console.log(`referee-tick: ${applied.source} pick #${applied.pick_number} in ${draftId}: ${movie.title} (${category})`);
+      // Start scoring this film now, so the Final Scores page has less to do when the draft ends.
+      await background(scoreMovie(admin, { id: movie.id, title: movie.title, year: movie.year }));
       return { draftId, status: 'applied', source: applied.source, isComplete: applied.is_complete === true };
     }
     if (applied?.reason === 'duplicate_movie') {
@@ -371,5 +426,14 @@ Deno.serve(async (req: Request) => {
     s.status === 'fulfilled' ? s.value : { draftId: draftIds[i], status: 'error' as const, reason: String(s.reason) }
   );
 
-  return json({ results, tables, quick, scoring });
+  // After the turns are resolved: score the picks made recently that have no score yet. In the background where the
+  // platform allows it, so a slow movie-data lookup never delays the next bot move.
+  let live: unknown = null;
+  if (wantsSweep) {
+    await background(
+      scoreLivePicks(admin).then((r) => { live = r; }),
+    );
+  }
+
+  return json({ results, tables, quick, scoring, live });
 });

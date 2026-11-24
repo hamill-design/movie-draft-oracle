@@ -104,7 +104,7 @@ function fakeClient({ key, options }) {
         const values = names.map((n) => args[n]);
         const data = await asServiceRole(async () => {
           // functions that return a list of rows, not one value
-          if (['referee_list_overdue_drafts', 'referee_list_unscored_drafts', 'referee_pending_scores'].includes(fn)) {
+          if (['referee_list_overdue_drafts', 'referee_list_unscored_drafts', 'referee_pending_scores', 'referee_list_unscored_picks'].includes(fn)) {
             return rows(await db.query(`SELECT * FROM public.${fn}(${named})`, values));
           }
           return (await db.query(`SELECT public.${fn}(${named}) AS r`, values)).rows[0].r;
@@ -241,6 +241,59 @@ describe('referee-tick edge function', () => {
       const all = (await Promise.all(responses.map((r) => r.json()))).map((j) => j.results[0].status);
       assert.equal(all.filter((s) => s === 'applied').length, 1, JSON.stringify(all));
       assert.equal((await getPicks(db, d.draftId)).length, 1);
+    });
+
+    test('an auto-pick is scored right away, so Final Scores has less to do when the draft ends', async () => {
+      const d = await makeDraft(db, { players: TWO, categories: ['Comedy', 'Drama/Romance'] });
+      await startDraft(db, d);
+      await expireClock(db, d.draftId);
+      await call({ draftId: d.draftId }, asUser(d.players[0].userId));
+      assert.equal(enrichCalls.length, 1, 'one scoring lookup for the film that was just picked');
+      assert.equal(enrichCalls[0].movieId, 101);
+      assert.equal((await getPicks(db, d.draftId))[0].calculated_score, '12.5', 'and the score is already on the pick');
+    });
+
+    test('the sweep scores recent picks that have no score yet (human picks), and leaves old ones alone', async () => {
+      const recent = await makeDraft(db, { players: TWO, categories: ['Comedy', 'Drama/Romance'] });
+      await startDraft(db, recent);
+      await humanPick(db, recent, recent.turnOrder[0].participant_name, 'Comedy');
+      const old = await makeDraft(db, { players: TWO, categories: ['Comedy', 'Drama/Romance'] });
+      await startDraft(db, old);
+      await humanPick(db, old, old.turnOrder[0].participant_name, 'Comedy');
+      await db.query(`UPDATE public.draft_picks SET created_at = now() - interval '10 hours' WHERE draft_id = $1`, [old.draftId]);
+
+      const recentPick = (await getPicks(db, recent.draftId))[0];
+      const oldPick = (await getPicks(db, old.draftId))[0];
+      assert.equal(recentPick.calculated_score, null);
+      enrichCalls.length = 0;
+
+      const body = await (await call({ sweep: true }, asScheduler)).json();
+      assert.ok(enrichCalls.some((c) => c.movieId === recentPick.movie_id), 'the recent pick was scored');
+      assert.ok(body.live.movies >= 1, JSON.stringify(body.live));
+      assert.equal((await getPicks(db, recent.draftId))[0].calculated_score, '12.5');
+      if (oldPick.movie_id !== recentPick.movie_id) {
+        assert.ok(!enrichCalls.some((c) => c.movieId === oldPick.movie_id), 'a pick from 10 hours ago is not retried every minute');
+      }
+
+      enrichCalls.length = 0;
+      await call({ sweep: true }, asScheduler);
+      assert.ok(!enrichCalls.some((c) => c.movieId === recentPick.movie_id), 'once scored it is not looked up again');
+    });
+
+    test('a sweep still works when the unscored-picks list has not been added to the database yet', async () => {
+      await db.exec(`ALTER FUNCTION public.referee_list_unscored_picks(integer) RENAME TO referee_list_unscored_picks_off`);
+      try {
+        const d = await makeDraft(db, { players: TWO });
+        await startDraft(db, d);
+        await expireClock(db, d.draftId);
+        const res = await call({ sweep: true }, asScheduler);
+        assert.equal(res.status, 200);
+        const body = await res.json();
+        assert.equal(body.results.filter((r) => r.status === 'applied').length >= 1, true, 'turns are still resolved');
+        assert.equal(body.live.movies, 0);
+      } finally {
+        await db.exec(`ALTER FUNCTION public.referee_list_unscored_picks_off(integer) RENAME TO referee_list_unscored_picks`);
+      }
     });
 
     test('the scheduler sweep resolves every overdue draft and leaves the rest alone', async () => {

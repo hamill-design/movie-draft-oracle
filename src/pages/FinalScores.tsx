@@ -515,8 +515,11 @@ const FinalScores = () => {
       if (!pickWithScoring.calculated_score || pickWithScoring.calculated_score === 0) {
         return true;
       }
-      // Also enrich if missing key scoring data or poster
-      return !pickWithScoring.rt_critics_score || !pickWithScoring.imdb_rating || !pickWithScoring.metacritic_score || !pickWithScoring.poster_path;
+      // Also enrich if the poster is missing, or if there is no rating data at all. A single missing rating is NOT a
+      // reason (Rotten Tomatoes stopped coming back from the data source, and some films have no Metacritic score), or
+      // the page would re-score every pick each time it is opened.
+      const hasAnyRating = !!(pickWithScoring.rt_critics_score || pickWithScoring.imdb_rating || pickWithScoring.metacritic_score);
+      return !hasAnyRating || !pickWithScoring.poster_path;
     });
     
     console.log('Auto-enriching movies:', moviesToEnrich.length, 'Total picks:', picksData.length);
