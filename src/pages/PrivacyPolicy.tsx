@@ -74,7 +74,7 @@ const PrivacyPolicy = () => {
                     lineHeight: '28px'
                   }}
                 >
-                  Effective Date: January 2026
+                  Effective Date: January 2026 (updated November 2026)
                 </p>
               </div>
 
@@ -128,7 +128,7 @@ const PrivacyPolicy = () => {
                     marginBottom: '0.5em'
                   }}
                 >
-                  We collect information in two ways:
+                  We collect information in three ways:
                 </p>
                 <p 
                   style={{
@@ -153,6 +153,92 @@ const PrivacyPolicy = () => {
                   }}
                 >
                   <span style={{ fontWeight: 700 }}>Automated Information:</span> Like most websites, we automatically collect certain data via cookies and log files, including IP addresses, browser type, and time stamps.
+                </p>
+                <p
+                  style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: 400,
+                    lineHeight: '20px',
+                    marginBottom: '1em'
+                  }}
+                >
+                  <span style={{ fontWeight: 700 }}>Account and Play Information:</span> If you create an account or play drafts, we collect the information described under &quot;Accounts, drafts and public play&quot; below.
+                </p>
+
+                <h2
+                  style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: 700,
+                    lineHeight: '20px',
+                    marginBottom: '0.5em',
+                    marginTop: '1em'
+                  }}
+                >
+                  Accounts, drafts and public play
+                </h2>
+                <p
+                  style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: 400,
+                    lineHeight: '20px',
+                    marginBottom: '0.5em'
+                  }}
+                >
+                  <span style={{ fontWeight: 700 }}>Your account:</span> If you create an account, we collect your email address and the name you choose, and, if you add one, a profile picture. We store the drafts you create and join, your picks and scores, your league memberships, and the notifications we send you.
+                </p>
+                <p
+                  style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: 400,
+                    lineHeight: '20px',
+                    marginBottom: '0.5em'
+                  }}
+                >
+                  <span style={{ fontWeight: 700 }}>What other players see:</span> When you play in a draft that is open to the public, other players can see your display name, your profile picture, whether you are online in the game, your picks and scores in the games you play together, and your public statistics, such as games played, wins and leaderboard points. A short summary of open drafts, including the host&apos;s display name, can be seen by visitors who are not signed in. Public games and the leaderboard never show your email address.
+                </p>
+                <p
+                  style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: 400,
+                    lineHeight: '20px',
+                    marginBottom: '0.5em'
+                  }}
+                >
+                  <span style={{ fontWeight: 700 }}>Reports and blocks:</span> If you report a player, we keep the report (who reported, who was reported, the reason, and any details you wrote) so we can review it. Reports are seen only by us, and the player you report is not told who reported them. If you block a player, we store that so you are not placed in games together.
+                </p>
+                <p
+                  style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: 400,
+                    lineHeight: '20px',
+                    marginBottom: '0.5em'
+                  }}
+                >
+                  <span style={{ fontWeight: 700 }}>Activity records:</span> To run public play fairly we keep records such as when you join and leave games, when you were last active in a game, your pick history, and how often you use certain features. We use them to run the game, to detect cheating and abuse, and to enforce our rules, including keeping a record of suspensions and bans.
+                </p>
+                <p
+                  style={{
+                    color: 'var(--Text-Primary, #FCFFFF)',
+                    fontSize: '14px',
+                    fontFamily: 'Brockmann',
+                    fontWeight: 400,
+                    lineHeight: '20px',
+                    marginBottom: '1em'
+                  }}
+                >
+                  <span style={{ fontWeight: 700 }}>Your choices:</span> You can change your display name in your settings. To see or delete your data, use the rights described below. We may keep records we need to keep games and the leaderboard fair and to enforce our rules, as the law allows.
                 </p>
 
                 <h2 

@@ -2,6 +2,26 @@ import { Helmet } from "react-helmet-async";
 import { socialShareImageMetaNodes } from "@/components/seo/SocialShareImageMeta";
 import { breadcrumbListNode, graphJsonLd, webPageNode } from "@/components/seo/jsonLd";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import type { CSSProperties } from "react";
+
+// Text styles for the Public Play sections (same look as the rest of this page).
+const sectionHeading: CSSProperties = {
+  color: 'var(--Text-Primary, #FCFFFF)',
+  fontSize: '14px',
+  fontFamily: 'Brockmann',
+  fontWeight: 700,
+  lineHeight: '20px',
+  marginBottom: '0.5em',
+};
+const bodyText: CSSProperties = {
+  color: 'var(--Text-Primary, #FCFFFF)',
+  fontSize: '14px',
+  fontFamily: 'Brockmann',
+  fontWeight: 400,
+  lineHeight: '20px',
+  marginBottom: '1em',
+};
+const bulletText: CSSProperties = { ...bodyText, marginBottom: '0.5em', paddingLeft: '1em' };
 
 const TermsOfService = () => {
   const crumbs = [
@@ -74,7 +94,7 @@ const TermsOfService = () => {
                     lineHeight: '28px'
                   }}
                 >
-                  Last updated: {new Date().toLocaleDateString()}
+                  Last updated: November 23, 2026
                 </p>
               </div>
 
@@ -255,6 +275,53 @@ const TermsOfService = () => {
                   }}
                 >
                   • To impersonate or attempt to impersonate the company, a company employee, another user, or any other person or entity
+                </p>
+
+                <h2 style={sectionHeading}>Age Requirement</h2>
+                <p style={bodyText}>
+                  You must be at least 13 years old to create an account or use the service.
+                </p>
+
+                <h2 style={sectionHeading}>Playing With Other People (Public Play)</h2>
+                <p style={bodyText}>
+                  Movie Drafter lets you draft with other people, including people you do not know. This section applies whenever you play in a draft that is open to the public, including Quick Play, open drafts and rated games. Everything else in these terms applies too.
+                </p>
+
+                <h2 style={sectionHeading}>Your Display Name</h2>
+                <p style={bodyText}>
+                  To play in public you use a display name. Other players can see it, along with your profile picture, whether you are online in the game, your picks and scores in the games you play together, and your leaderboard statistics. Your display name must not be offensive, must not look like an email address or a link, and must not suggest that you are Movie Drafter or work for it. We may change or remove a display name that breaks these rules.
+                </p>
+
+                <h2 style={sectionHeading}>Community Rules</h2>
+                <p style={{ ...bodyText, marginBottom: '0.5em' }}>
+                  When you play with others, you agree not to:
+                </p>
+                <p style={bulletText}>
+                  • Harass, threaten or abuse other players, or use hateful, sexual or otherwise offensive language or names
+                </p>
+                <p style={bulletText}>
+                  • Cheat, including using more than one account in the same game, arranging results with other players, or using scripts or automated tools to play for you
+                </p>
+                <p style={bulletText}>
+                  • Share another person&apos;s private information
+                </p>
+                <p style={{ ...bulletText, marginBottom: '1em' }}>
+                  • Spam other players or advertise to them
+                </p>
+
+                <h2 style={sectionHeading}>Rated Games and the Leaderboard</h2>
+                <p style={bodyText}>
+                  Rated games earn leaderboard points. We decide how points are worked out and may change the rules. We may remove a game, change points or change standings if we find cheating or a mistake. Leaderboard points have no cash value.
+                </p>
+
+                <h2 style={sectionHeading}>Reports, Blocking and Enforcement</h2>
+                <p style={bodyText}>
+                  You can report or block any player. We review reports and may warn a player, suspend or permanently ban an account, cancel a game, change or remove a display name, or remove points. We may do this without notice.
+                </p>
+
+                <h2 style={sectionHeading}>Other Players</h2>
+                <p style={bodyText}>
+                  Other players are not employees or representatives of Movie Drafter, and we are not responsible for what they say or do. Please do not share personal information in a public game. Empty seats in a public draft may be filled by computer-controlled players.
                 </p>
 
                 <h2 
