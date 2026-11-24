@@ -376,7 +376,7 @@ const AppHeader = () => {
               onClick={() => setMobileMenuOpen(false)}
               className="px-[18px] py-3 bg-greyscale-purp-850 text-sm font-brockmann font-medium leading-5 text-greyscale-blue-100"
             >
-              Play with others
+              Play Now
             </Link>
           )}
         </div>
