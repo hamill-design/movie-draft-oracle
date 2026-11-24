@@ -221,17 +221,14 @@ export const useLeagueMembers = (leagueId: string | undefined) => {
 
     if (error || !memberRows) { setLoading(false); return; }
 
-    // Separately fetch profiles for all member user_ids.
-    const userIds = memberRows.map((m: any) => m.user_id as string);
+    // Separately fetch the members' profiles. The profiles table is private (you can only read your own row), so
+    // this goes through get_league_profiles(), which only answers for a league you belong to.
     let profileMap: Record<string, { name: string | null; avatar_url: string | null; email: string | null }> = {};
-    if (userIds.length > 0) {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id, name, avatar_url, email')
-        .in('id', userIds);
+    if (memberRows.length > 0) {
+      const { data: profileData } = await (supabase as any).rpc('get_league_profiles', { p_league_id: leagueId });
       if (profileData) {
         profileMap = Object.fromEntries(
-          (profileData as any[]).map((p) => [p.id, { name: p.name, avatar_url: p.avatar_url, email: p.email }])
+          (profileData as any[]).map((p) => [p.user_id, { name: p.name, avatar_url: p.avatar_url, email: p.email }])
         );
       }
     }
@@ -450,14 +447,14 @@ export const useLeagueMessages = (leagueId: string | undefined) => {
 
     if (error || !rawMessages) { setLoading(false); return; }
 
-    // Step 2: fetch profiles for all unique authors
-    const userIds = [...new Set(rawMessages.map((m: any) => m.user_id as string))];
-    const { data: profiles } = userIds.length
-      ? await supabase.from('profiles').select('id, name, avatar_url').in('id', userIds)
+    // Step 2: fetch the authors' names and avatars. get_league_profiles() answers for current members and for
+    // people who posted here and have since left, and only if you are in this league.
+    const { data: profiles } = rawMessages.length
+      ? await (supabase as any).rpc('get_league_profiles', { p_league_id: leagueId })
       : { data: [] };
 
     const profileMap = Object.fromEntries(
-      (profiles ?? []).map((p: any) => [p.id, { name: p.name, avatar_url: p.avatar_url }])
+      (profiles ?? []).map((p: any) => [p.user_id, { name: p.name, avatar_url: p.avatar_url }])
     );
 
     const enriched: LeagueMessage[] = rawMessages.map((m: any) => ({
@@ -549,18 +546,13 @@ export const usePendingLeagueInvites = () => {
 
     if (error || !data) { setLoading(false); return; }
 
-    const inviterIds = [...new Set(
-      data.map((inv: any) => inv.invited_by as string | null).filter((id): id is string => !!id)
-    )];
+    // The inviters' names come from get_my_league_inviters() (names only, and only for people who invited you).
     let inviterMap: Record<string, { name: string | null }> = {};
-    if (inviterIds.length > 0) {
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('id, name')
-        .in('id', inviterIds);
+    if (data.length > 0) {
+      const { data: profileData } = await (supabase as any).rpc('get_my_league_inviters');
       if (profileData) {
         inviterMap = Object.fromEntries(
-          (profileData as any[]).map((p) => [p.id, { name: p.name }])
+          (profileData as any[]).map((p) => [p.user_id, { name: p.name }])
         );
       }
     }

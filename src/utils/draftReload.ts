@@ -52,8 +52,12 @@ export interface ProfileRow {
 export interface EnricherDeps {
   /** Is this draft a public table? (Public tables never load emails.) */
   isPublicTable: (draftId: string) => Promise<boolean>;
-  /** Fetch these people's profiles. Resolve null if it failed. */
-  fetchProfiles: (userIds: string[], withEmail: boolean) => Promise<ProfileRow[] | null>;
+  /**
+   * Fetch these people's profiles. Resolve null if it failed. The draft id is passed along because the profiles
+   * table is private: the server only answers (through get_draft_people) for people in a draft you are in, and
+   * it leaves emails out of public tables on its own, whatever `withEmail` says.
+   */
+  fetchProfiles: (userIds: string[], withEmail: boolean, draftId: string) => Promise<ProfileRow[] | null>;
 }
 
 interface WithUser {
@@ -87,7 +91,7 @@ export function createParticipantEnricher(deps: EnricherDeps) {
     const missing = userIds.filter((id) => !known!.has(id));
     if (missing.length > 0) {
       const isPublic = draftId ? await deps.isPublicTable(draftId) : false;
-      const rows = await deps.fetchProfiles(missing, !isPublic);
+      const rows = await deps.fetchProfiles(missing, !isPublic, draftId);
       if (rows === null) {
         // A failed lookup shows what we have, and is tried again on the next reload.
         if (known.size === 0) return participants;

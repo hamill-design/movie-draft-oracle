@@ -107,11 +107,10 @@ export function useDraftRoom(draftId: string | undefined) {
       let rows: DraftParticipant[] = Array.isArray(d.participants_data) ? d.participants_data : [];
       const userIds = rows.map((p) => p.user_id).filter((id): id is string => !!id);
       if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, email, avatar_url")
-          .in("id", userIds);
-        const byId = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+        // The profiles table is private (you can only read your own row). get_draft_people() answers only for a
+        // draft you are in, and never returns emails for a public table.
+        const { data: profiles } = await supabase.rpc("get_draft_people", { p_draft_id: draftId });
+        const byId = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
         rows = rows.map((p) => {
           const prof: any = p.user_id ? byId.get(p.user_id) : null;
           return prof ? { ...p, email: prof.email ?? p.email, avatar_url: prof.avatar_url ?? p.avatar_url } : p;
