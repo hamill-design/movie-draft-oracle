@@ -230,9 +230,13 @@ const renderTitleHtml = (rawTitle: string): string => {
     titleParts[0].toUpperCase() !== 'THE' ||
     titleParts[titleParts.length - 1].toUpperCase() !== 'DRAFT'
   ) {
-    const nameWords = titleParts.filter(
-      (word) => word.toUpperCase() !== 'THE' && word.toUpperCase() !== 'DRAFT'
-    );
+    // Drop "the"/"draft", and the "by" in older year drafts saved as "Draft by 2018" (it would read "THE BY 2018 DRAFT").
+    const nameWords = titleParts.filter((word, i) => {
+      const upper = word.toUpperCase();
+      if (upper === 'THE' || upper === 'DRAFT') return false;
+      if (upper === 'BY' && /^\d{4}$/.test(titleParts[i + 1] ?? '')) return false;
+      return true;
+    });
     processedTitle = `THE ${nameWords.join(' ')} DRAFT`;
     highlightStartIndex = 1;
     highlightEndIndex = nameWords.length;
