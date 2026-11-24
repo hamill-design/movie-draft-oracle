@@ -66,7 +66,7 @@ const Home = () => {
           <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 flex flex-col items-center gap-6" style={{ pointerEvents: 'none' }}>
             <div className="w-full flex flex-col items-center">
               <h1
-                className="w-full text-center text-6xl md:text-7xl lg:text-[90px] leading-[70px] md:leading-normal lg:leading-[90px] font-chaney font-normal text-greyscale-blue-100"
+                className="w-full text-center text-[40px] sm:text-6xl md:text-7xl lg:text-[90px] leading-[46px] sm:leading-[70px] md:leading-normal lg:leading-[90px] font-chaney font-normal text-greyscale-blue-100"
                 style={{ wordWrap: 'break-word' }}
               >
                 Your fantasy movie draft starts here.
