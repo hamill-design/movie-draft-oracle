@@ -373,6 +373,13 @@ async function loadPublicPlay(db) {
   if (existsSync(new URL('20261119100000_open_games_category_count.sql', MIGRATIONS))) {
     await db.exec(readMigration('20261119100000_open_games_category_count.sql'));
   }
+  // The longer name list and the admin's report alert (the list is only data; the alert widens the notice types).
+  if (existsSync(new URL('20261123100000_extend_blocked_names.sql', MIGRATIONS))) {
+    await db.exec(readMigration('20261123100000_extend_blocked_names.sql'));
+  }
+  if (existsSync(new URL('20261123110000_report_alerts.sql', MIGRATIONS))) {
+    await db.exec(readMigration('20261123110000_report_alerts.sql'));
+  }
 }
 
 /** `$$`-quoted function (the live helpers use $$ rather than $function$). */
