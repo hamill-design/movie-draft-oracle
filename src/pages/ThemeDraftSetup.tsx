@@ -183,7 +183,7 @@ const ThemeDraftSetup = ({ theme }: ThemeDraftSetupProps) => {
       openSetup.setSubmitting(true);
       try {
         const id = await createOpenGame(openSetup.settings, {
-          title: theme === 'year' ? `Draft by ${option}` : `${option} filmography`,
+          title: theme === 'year' ? option : `${option} filmography`,
           theme,
           option,
           categories: data.categories,
