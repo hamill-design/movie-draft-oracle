@@ -35,7 +35,7 @@ What the migrations do to tables you already use: they add columns with safe def
 
 ## Setup, in order
 
-### 1. Apply twenty migrations
+### 1. Apply twenty-two migrations
 Supabase dashboard (project `zduruulowyopdstihfwk`) → **SQL Editor** → paste the **entire contents** of each file, run it, then the next. In this order:
 
 1. `20261104120000_referee_foundation.sql`
@@ -60,6 +60,8 @@ Supabase dashboard (project `zduruulowyopdstihfwk`) → **SQL Editor** → paste
 18. `20261118100000_list_all_public_games.sql` (the homepage's **Open games** list now shows **every public game that is waiting for players**: Quick Play lobbies as well as games a player set to Open to the public (and anything else marked public). Before, it only listed games created as "Open to the public", so a person sitting alone in a Quick Play lobby still saw "Nobody's waiting yet". Full, counting-down, started, cancelled and invite-only games stay out, and it still follows the public-play switch and is callable signed out. Each row now carries `match_source` so the card can show a **Quick Play** tag, and a game that has no host at that moment (mid hand-over) is still listed. Joining is unchanged (`join_public_table()` already accepts any public game). `list_open_games_preview()` is dropped and created again because its columns changed; the function is the only thing that reads it. Run after 17. **Applied 2026-11-16** with `supabase db query --linked -f`; do not use `supabase db push` for these files, it would try to re-run all the ones you pasted by hand.)
 19. `20261119100000_open_games_category_count.sql` (the redesigned homepage draft cards say how many categories a draft has, e.g. "5 Categories". Each row of `list_open_games_preview()` now carries `category_count`. Same rules for which games are listed as 18, same permissions (callable signed out). The function is dropped and created again because its columns changed. Run after 18. **Optional for the page to work**: until it runs, the cards simply leave the categories line out. To undo, run file 18 again. The Play page's **Open Drafts** list now reads this same function, so it shows Quick Play lobbies too.)
 20. `20261120100000_return_to_draft.sql` (a player who **comes back** is no longer "Away". The referee marks a human Away after two missed turns, then gives them a 5-second clock and picks for them; only a pick of their own cleared that, which someone who had just reconnected could rarely manage in time, so they kept being auto-picked. This adds `return_to_draft()`: the draft screen calls it when an Away player opens the draft, brings the tab to the front, or clicks or presses a key. It clears their Away flag and strikes and, if it is their turn, gives them a full pick clock (it never shortens a deadline, and it leaves the turn alone while the referee is already making that pick). A player who has really left never calls it, so they stay Away as before. Same access rule as `get_draft_clock()`; safe to run twice. Run after 04 (the referee foundation). **Applied 2026-11-16** (pasted by hand). Without it nothing breaks: the screen just can't clear Away on return, as before.)
+21. `20261123100000_extend_blocked_names.sql` (the name filter's list grows from 17 terms to about 90: insults, sexual words, slurs, hate-group codes and words that make a player look like staff ("staff", "support", "mod"). Long distinctive words are refused anywhere in a name; short ones only as a whole word, so Cassidy, Cumberbatch, Modern Times, Grape Ape and Raccoon Fan are fine. Data only: one insert, a term already in the list is skipped, nothing is edited or removed. Names players already have are not re-checked; the comment at the top of the file has a read-only query that lists any existing name the new list would refuse. A known limit: a short whole-word term with every letter dotted out ("r.a.p.e") gets through; the Report button covers that. Needs 3 first.)
+22. `20261123110000_report_alerts.sql` (the admin hears about new player reports: each report puts one unread notice in the admin account's bell, "New player report" or "3 player reports to review", that opens `/admin/reports`. It adds one notification type (`player_report`) and one trigger on `player_reports`; a problem writing the notice can never stop a report being saved. Needs 7 first.)
 
 All are safe to run twice. If one fails, stop and send me the error message; the later ones depend on it.
 
@@ -128,27 +130,61 @@ Sign in as the admin account (`contact@roberthamill.design`).
 
 
 
+## Reviewing reports
+
+- **Who:** the admin account (contact@roberthamill.design). It is the only account that can open `/admin/reports`, and the database enforces that.
+- **How you hear about one** (after migration 22): a red count on **Admin → Public Play** and on the **Player reports** card there, plus a notice in your notification bell ("New player report", or "3 player reports to review") that opens the page. There is only ever one unread notice; a new report updates it.
+- **How fast:** a suggested default is to look once a day while public play is small, and sooner when the bell shows several at once. Cheating and harassment before everything else.
+- **What the buttons do:** **Dismiss** closes the report and does nothing to the player. **Warn** closes it and marks it as warned; the player is **not** told (it only goes on the record, so repeat offenders show as "N reports against this player"). **Ban 7 days** and **Ban permanently** stop that player entering public play and record the reason. **Unban player** appears on any report about a banned player.
+- **Gaps:** there is no "change their name" button, so for an abusive name the choices are Dismiss or a ban. Warn does not message the player.
+
 ## Rolling out to everyone
 
 The database part is already live (switch on **Everyone**). The rest is merging the `Staging` branch into `main` when the screens are ready. Before that:
 
-- [ ] You've cleaned up test data from the run above (cancel any open test tables; test rated games count toward the leaderboard).
-
-- [ ] You've decided who reviews `/admin/reports` and how quickly.
-- [ ] **Extend the bad-word list.** The name filter is a small starter list in the `blocked_name_terms` table. Add terms in the SQL Editor: `insert into blocked_name_terms (term, whole_word) values ('...', false);`
-- [ ] **Review the Quick Match actors list.** It's my starting suggestion of 50, and all are off until you approve them.
-- [ ] Terms of Service and Privacy Policy reviewed for strangers playing each other (I can't judge that for you).
-- [ ] **Decide on the profile-email problem** (next section).
+- [x] **Test data cleaned up** (checked 2026-11-23): no public game is open or in progress; the leaderboard has no points (two rows of 0 points from one voided rated game); no reports, blocks or bans exist. Everything left comes from two test accounts. Run the check at the end of this file again just before launch.
+- [x] **Who reviews reports and how quickly:** see "Reviewing reports" above (the admin account; the notice arrives with migration 22).
+- [ ] **Extend the bad-word list:** done in migration 21 (about 90 terms); apply it, then add anything else with one line (the comment at the end of that file has it).
+- [ ] **Review the Quick Match actors list.** Years and actors are all on by default; special drafts stay off until you switch them on at `/admin/quick-match`.
+- [ ] **Terms of Service and Privacy Policy:** public play sections drafted 2026-11-23 on the Terms of Service and Privacy Policy pages (age 13+, display names, community rules, rated games, reports and bans, what other players see, what we keep). They are plain-language drafts, not legal advice: have them reviewed before they go on `main`, and do not put the Privacy Policy on `main` until the profile-email fix has shipped (it says public games never show your email).
+- [ ] **Profile-email problem** (next section): written and on `Staging`; the migrations still have to be pasted in the order given there, and the last one only after the code is live on `main`.
+- [ ] **Players editing their own ban and name fields** (next section): parked on purpose (2026-11-24); written on its own branch, apply later.
+- [ ] **Protect the profile email from direct edits:** `20261124100000_protect_profile_email.sql`, safe any time.
 
 ## A security problem that already exists (not caused by this work)
 
-Any signed-in user can read **every other user's email address** through the API, because the profile table is readable by all signed-in users (a rule added so league pages could show names and avatars). Public play makes this much more important because players are strangers. Public tables never show or load emails, but the underlying exposure remains. Fixing it means moving every profile read (leagues, profile page, mobile app) onto a safe function, then restricting the table. It touches many screens, so it's set up as its own separate task. **Do it before opening public play to everyone.**
+Any signed-in user can read **every other user's email address** through the API, because the profile table is readable by all signed-in users (a rule added so league pages could show names and avatars). Public play makes this much more important because players are strangers. Public tables never show or load emails, but the underlying exposure remains.
+
+**Fixed in three migrations, written 2026-11-23 and on `Staging` (commit `7e4fe06`); see [profile-email-lockdown.md](profile-email-lockdown.md).** Run them in this order, and run the last one only after the new code is live on production (`main` shares this database and still reads other people's profiles directly):
+
+1. `20261123130000_profile_read_functions.sql` adds three read functions. Safe any time.
+2. `20261123140000_league_members_creator_only_insert.sql` stops anyone adding themselves to any league. Recommended, any time after 1. Afterwards create one new league to check that still works.
+3. Put the new code on `main` (the league screens, plus its own patch for the older draft-room code), then check a league page, league chat, a pending invite and a draft room on the live site.
+4. Only then `20261123150000_profiles_read_own_row_only.sql`, which closes the table. It refuses to run if step 1 is missing.
+
+League mates and people in the same private draft can still see each other's emails (the invite screens add people by email); strangers cannot, and public tables never show any. **Do all of this before opening public play to everyone.**
+
+**Also protect the email on a player's own profile:** `20261124100000_protect_profile_email.sql` (written 2026-11-24, 10 tests) stops a player rewriting the email on their own profile with a direct request (the league invite rules compare invites to that column, so someone could otherwise read another person's pending league invites). Nothing the site does writes that column from the browser, so it changes nothing for customers. Safe any time, independent of the three above.
+
+**Parked on purpose (decided 2026-11-24): a player can still edit their own ban, break and display-name fields.** Any signed-in player can write `is_banned`, `banned_until`, `ban_reason`, `public_play_cooldown_until`, `public_name` and `public_name_changed_at` directly through the API, so a banned player could un-ban themselves and a display name could skip the name filter. The fix is written and tested (one trigger, 23 tests) on branch `claude/wizardly-shannon-e5d68d`, migration `20261123160000_protect_profile_moderation_columns.sql`, not merged and not applied. The owner decided to wait because public play has little messaging, so there is little a player could do to others. The one thing that would matter first is the name: it is the only text strangers see. Pick it up before bans are used for real or before the player count grows.
+
+## Check for leftover test data (read only)
+
+Run in the SQL editor (or `supabase db query --linked`). The first shows public games by state: anything not cancelled and not complete is still open or running. The second shows what the leaderboard counts.
+
+```sql
+select lobby_visibility, is_complete, (cancelled_at is not null) as cancelled, rated, results_status, count(*) as games
+from public.drafts where lobby_visibility = 'public' group by 1, 2, 3, 4, 5 order by games desc;
+
+select count(*) as result_rows, coalesce(sum(points), 0) as total_points, count(distinct user_id) as people
+from public.draft_results;
+```
 
 ## Turning things off
 
 | To stop… | Do this |
 |---|---|
-| Everyone using public play, immediately | **Admin** → **Public Play** → **Off**. Or SQL: `update public.public_play_settings set mode = 'off';` |
+| Everyone using public play, immediately | SQL only (the app has no switch): `update public.public_play_settings set mode = 'off';` Put it back with `set mode = 'on';` |
 | Quick Match only | `/admin/quick-match` → switch everything off (the button disappears). |
 | Open tables already running | `update public.drafts set cancelled_at = now(), cancel_reason = 'host_cancelled' where lobby_visibility = 'public' and turn_order is null and cancelled_at is null;` |
 | The scheduled job | `select cron.unschedule('referee-sweep');` |
@@ -156,7 +192,7 @@ Any signed-in user can read **every other user's email address** through the API
 
 ## How well is it tested?
 
-**441 automated tests** in `supabase/tests/` (`cd supabase/tests && npm install && npm test`). They run against an in-memory database loaded with **your real start, pick and access functions** from the migration history. They cover the switch, names, blocks, reports and bans; creating, joining and leaving tables; the ready check; bots; starting; host handoff; reminders; Quick Match matching, fill timers and practice games; the write guards; scoring, points, ties, the idle-account and win-farming guards, cooldowns; the leaderboard and player cards; permissions; the online flag; the host and handing the host role on; nothing starting by itself; the host's Start (bots always fill, people in the lobby count as ready, the 15-second check only for people who are away); the host's settings (seats, clock, rated, categories, who may change them and when, a private draft's categories); inviting people (held seats, who sees what, capacity, taking a seat, releasing seats on start, private drafts, who may call it); joining with a code (a public table's code follows every table rule, a held seat is taken by its invited friend, guests are turned away, private drafts and guests unchanged); the helpers that reload a draft after each pick as one update (people looked up once, unchanged data left alone); and the scheduled function itself. I also **broke the code on purpose** in about 80 different ways to confirm the tests notice each one.
+**511 automated tests** in `supabase/tests/` (`cd supabase/tests && npm install && npm test`). They run against an in-memory database loaded with **your real start, pick and access functions** from the migration history. They cover the switch, names, blocks, reports and bans; creating, joining and leaving tables; the ready check; bots; starting; host handoff; reminders; Quick Match matching, fill timers and practice games; the write guards; scoring, points, ties, the idle-account and win-farming guards, cooldowns; the leaderboard and player cards; permissions; the online flag; the host and handing the host role on; nothing starting by itself; the host's Start (bots always fill, people in the lobby count as ready, the 15-second check only for people who are away); the host's settings (seats, clock, rated, categories, who may change them and when, a private draft's categories); inviting people (held seats, who sees what, capacity, taking a seat, releasing seats on start, private drafts, who may call it); joining with a code (a public table's code follows every table rule, a held seat is taken by its invited friend, guests are turned away, private drafts and guests unchanged); the helpers that reload a draft after each pick as one update (people looked up once, unchanged data left alone); and the scheduled function itself. I also **broke the code on purpose** in about 80 different ways to confirm the tests notice each one.
 
 **What they can't prove, and the test above is for**
 - That the migrations apply cleanly to your real database. My test database copies the columns your code relies on, but your live tables may differ in small ways.
