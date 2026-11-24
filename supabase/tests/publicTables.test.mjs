@@ -781,6 +781,29 @@ describe('public tables (Open Tables)', () => {
       assert.equal(await status(id, host), 'cancelled');
     });
 
+    test('a table with NO start time is never cancelled for an absent host: it waits for the next player (no closing timer)', async () => {
+      const host = await mk('Walked Away');
+      const id = await createTable(host, { clock: 60 });   // live clock, no start time
+      await backdate(id, `created_at = now() - interval '3 days', host_since = now() - interval '3 days'`);
+      await db.query(`UPDATE public.draft_participants SET last_seen_at = now() - interval '3 days' WHERE draft_id = $1`, [id]);
+
+      for (let i = 0; i < 3; i++) {
+        const out = await sweep();
+        assert.equal(out.cancelled, 0);
+      }
+      assert.equal((await draftRow(id)).cancelled_at, null, 'still open after three days');
+      assert.equal((await notes(host.id, 'table_cancelled')).length, 0);
+
+      // a player who turns up takes the host role on the next sweep, and the table lives on
+      const next = await mk('Turns Up');
+      await join(next, id);
+      await db.query(`UPDATE public.draft_participants SET last_seen_at = now() WHERE draft_id = $1 AND user_id = $2`, [id, next.id]);
+      const out = await sweep();
+      assert.equal(out.handoffs, 1);
+      assert.equal((await draftRow(id)).user_id, next.id);
+      assert.equal((await draftRow(id)).cancelled_at, null);
+    });
+
     test('LIVE table: the grace period is only 15 minutes', async () => {
       const host = await mk('Late Live Host');
       const id = await createTable(host, { clock: 60, at: inHours(2) });

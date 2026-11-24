@@ -401,16 +401,38 @@ describe('Quick Match: the host starts, bots and the ready check', () => {
     assert.equal(ps.filter((p) => !p.is_ai).length, 1);
   });
 
-  test('a lobby everyone has abandoned (not seen for 3+ minutes) is closed, and they are told', async () => {
+  test('a lobby everyone has left the page of is NOT closed: it waits for the next player (no closing timer)', async () => {
     const { db, notes, draft, sweep, backdate, lobbyOf } = await fresh();
     const gone = await lobbyOf(1);
-    await backdate(gone.id, `created_at = now() - interval '10 minutes'`);
-    await db.query(`UPDATE public.draft_participants SET joined_at = now() - interval '10 minutes', last_seen_at = now() - interval '4 minutes' WHERE draft_id = $1`, [gone.id]);
+    await backdate(gone.id, `created_at = now() - interval '2 days'`);
+    await db.query(`UPDATE public.draft_participants SET joined_at = now() - interval '2 days', last_seen_at = now() - interval '2 days' WHERE draft_id = $1`, [gone.id]);
 
-    const out = await sweep();
-    assert.ok(out.cancelled >= 1);
-    assert.equal((await draft(gone.id)).cancel_reason, 'everyone_left');
-    assert.equal((await notes(gone.players[0].id, 'table_cancelled')).length, 1);
+    for (let i = 0; i < 3; i++) {
+      const out = await sweep();
+      assert.equal(out.cancelled, 0, 'the sweep closes nothing');
+    }
+    assert.equal((await draft(gone.id)).cancelled_at, null, 'still open after two days with nobody there');
+    assert.equal((await notes(gone.players[0].id, 'table_cancelled')).length, 0, 'nobody is told their match was closed');
+  });
+
+  test('a player who lands in a lobby whose host is long gone takes over as host', async () => {
+    const { db, draft, sweep, backdate, lobbyOf, join, mk } = await fresh();
+    const lobby = await lobbyOf(1);
+    await backdate(lobby.id, `created_at = now() - interval '1 day'`);
+    await db.query(`UPDATE public.draft_participants SET joined_at = now() - interval '1 day', last_seen_at = now() - interval '1 day' WHERE draft_id = $1`, [lobby.id]);
+    await sweep(); // nothing closes it
+
+    const newcomer = await mk('Next Player');
+    const out = await join(newcomer);
+    assert.equal(out.created, false, 'Quick Play reuses the waiting lobby instead of opening another');
+    assert.equal(out.draft_id, lobby.id);
+
+    // the host is long gone and the newcomer is here, so the next sweep hands them the host role
+    await db.query(`UPDATE public.draft_participants SET last_seen_at = now() WHERE draft_id = $1 AND user_id = $2`, [lobby.id, newcomer.id]);
+    await sweep();
+    const host = (await db.query(`SELECT user_id FROM public.draft_participants WHERE draft_id = $1 AND is_host`, [lobby.id])).rows[0];
+    assert.equal(host.user_id, newcomer.id);
+    assert.equal((await draft(lobby.id)).cancelled_at, null);
   });
 
   test('a young lobby is never closed, and neither is one with a recent heartbeat', async () => {
