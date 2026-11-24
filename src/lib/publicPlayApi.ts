@@ -318,6 +318,8 @@ export const publicPlayApi = {
 
   reportPlayer: (userId: string, draftId: string | null, reason: ReportReason, details: string) =>
     rpc<void>('report_player', { p_reported: userId, p_draft: draftId, p_reason: reason, p_details: details || null }),
+  /** The host removes a player before the draft starts. They can't sit down at that table again. */
+  kickPlayer: (draftId: string, userId: string) => rpc<{ kicked: boolean }>('kick_player', { p_draft_id: draftId, p_user: userId }),
   blockPlayer: (userId: string) => rpc<void>('block_player', { p_user: userId }),
   unblockPlayer: (userId: string) => rpc<void>('unblock_player', { p_user: userId }),
 

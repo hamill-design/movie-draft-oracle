@@ -367,7 +367,16 @@ export function PublicTableLobby({ draftId, onStarted, inviteCode }: PublicTable
               />
             ) : null;
           }
-          return !p.is_me && !p.is_ai && p.user_id ? <PlayerActions userId={p.user_id} name={p.participant_name} draftId={draftId} /> : null;
+          return !p.is_me && !p.is_ai && p.user_id ? (
+            <PlayerActions
+              userId={p.user_id}
+              name={p.participant_name}
+              draftId={draftId}
+              // Only the host, and only while the table is still forming (not during the 15-second check).
+              canKick={info.i_am_host && info.status === 'forming' && !inCheck}
+              onKicked={() => void load()}
+            />
+          ) : null;
         }}
       />
       {/* Open seats are buttons: this is where they lead */}

@@ -35,7 +35,7 @@ What the migrations do to tables you already use: they add columns with safe def
 
 ## Setup, in order
 
-### 1. Apply twenty-three migrations (plus the four profile-email ones described under "A security problem that already exists")
+### 1. Apply twenty-five migrations (plus the four profile-email ones described under "A security problem that already exists")
 Supabase dashboard (project `zduruulowyopdstihfwk`) → **SQL Editor** → paste the **entire contents** of each file, run it, then the next. In this order:
 
 1. `20261104120000_referee_foundation.sql`
@@ -64,6 +64,9 @@ Supabase dashboard (project `zduruulowyopdstihfwk`) → **SQL Editor** → paste
 22. `20261123110000_report_alerts.sql` (the admin hears about new player reports: each report puts one unread notice in the admin account's bell, "New player report" or "3 player reports to review", that opens `/admin/reports`. It adds one notification type (`player_report`) and one trigger on `player_reports`; a problem writing the notice can never stop a report being saved. Needs 7 first.)
 
 23. `20261124120000_open_lobbies_stay_open.sql` (**no closing timer on open lobbies**, 2026-11-24: until now a Quick Play lobby was closed after 3 minutes with nobody on the page, and an open game without a start time was cancelled once its host had been away 15 minutes (live) or 24 hours (slow) with nobody to take over. Both rules are gone: a lobby now stays open until its host cancels it, the last person leaves it with Leave, or it starts. The host role still moves to whoever is there, and a player who lands in a lobby whose host has gone takes over, so an empty lobby is where the next player lands. A game that has a start time still cancels when its host never shows. Replaces two functions, `referee_sweep_quick_match()` and `referee_sweep_tables()`; no tables or data change. Needs 16 first. The cost: an empty lobby stays listed under Open Drafts until someone joins or it is cancelled; the comment at the top of the file has the one line that cancels lobbies nobody has opened for a day.)
+
+24. `20261124130000_score_picks_as_they_are_made.sql` (**Final Scores opens in seconds**: one list function, `referee_list_unscored_picks()`, that the minute job uses to score picks made in the last 6 hours while a draft is still going; the server also scores each bot or auto pick right after it is made. Service role only, read only, nothing existing changes. Without it the job just logs that the list is missing and the Final Scores page scores what is left, as before.)
+25. `20261124140000_kick_player.sql` (**the host can kick a player**: "Kick <name>" at the top of the "..." menu on a player, host only, only before the draft starts and not during the 15-second check. The player loses their seat, gets a notification, and cannot sit down at that table again by any door (Play page, Quick Play, join code); other tables are unaffected. New table `draft_kicks` (closed to players), new function `kick_player()`, and `_seat_human()` and `quick_join()` replaced with the same code plus the kicked check. Hosts are limited to 20 kicks an hour; a bot cannot be kicked (take the seat away in Edit settings). A seat the host holds for someone's email still works for that person. Needs 16 first.)
 
 All are safe to run twice. If one fails, stop and send me the error message; the later ones depend on it.
 

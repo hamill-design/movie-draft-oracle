@@ -388,6 +388,10 @@ async function loadPublicPlay(db) {
   if (existsSync(new URL('20261124130000_score_picks_as_they_are_made.sql', MIGRATIONS))) {
     await db.exec(readMigration('20261124130000_score_picks_as_they_are_made.sql'));
   }
+  // The host can kick a player from a lobby.
+  if (existsSync(new URL('20261124140000_kick_player.sql', MIGRATIONS))) {
+    await db.exec(readMigration('20261124140000_kick_player.sql'));
+  }
 }
 
 /** `$$`-quoted function (the live helpers use $$ rather than $function$). */
