@@ -384,6 +384,10 @@ async function loadPublicPlay(db) {
   if (existsSync(new URL('20261124120000_open_lobbies_stay_open.sql', MIGRATIONS))) {
     await db.exec(readMigration('20261124120000_open_lobbies_stay_open.sql'));
   }
+  // Score picks as they are made: the list the minute job reads.
+  if (existsSync(new URL('20261124130000_score_picks_as_they_are_made.sql', MIGRATIONS))) {
+    await db.exec(readMigration('20261124130000_score_picks_as_they_are_made.sql'));
+  }
 }
 
 /** `$$`-quoted function (the live helpers use $$ rather than $function$). */

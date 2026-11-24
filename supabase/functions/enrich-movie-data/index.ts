@@ -276,6 +276,40 @@ Deno.serve(async (req) => {
     enrichmentData.oscarStatus = mergeOscarStatusesForEnrich(fromCache, fromAcademy)
     console.log(`Oscar from allow-list (cache+JSON): ${enrichmentData.oscarStatus}`)
 
+    // Keep what we already know about this film. If a data source stops returning a value (Rotten Tomatoes stopped
+    // coming back from OMDb in November 2026) or fails for a moment, use the last value saved on this film's picks
+    // instead of scoring without it. Otherwise the update below, which covers this film in EVERY draft that picked
+    // it, would quietly re-score all of those drafts without the missing value.
+    try {
+      const { data: known } = await supabaseClient
+        .from('draft_picks')
+        .select('rt_critics_score, metacritic_score, imdb_rating, movie_budget, movie_revenue')
+        .eq('movie_id', movieId)
+        .order('created_at', { ascending: false })
+        .limit(50)
+      const lastKnown = (column: string): number | null => {
+        for (const row of known ?? []) {
+          const raw = (row as Record<string, unknown>)[column]
+          const value = Number(raw)
+          if (raw !== null && raw !== undefined && Number.isFinite(value) && value > 0) return value
+        }
+        return null
+      }
+      const keep = (current: number | null, column: string, label: string): number | null => {
+        if (current !== null) return current
+        const old = lastKnown(column)
+        if (old !== null) console.log(`Kept the saved ${label} (${old}); the sources gave none this time`)
+        return old
+      }
+      enrichmentData.rtCriticsScore = keep(enrichmentData.rtCriticsScore, 'rt_critics_score', 'Rotten Tomatoes score')
+      enrichmentData.metacriticScore = keep(enrichmentData.metacriticScore, 'metacritic_score', 'Metacritic score')
+      enrichmentData.imdbRating = keep(enrichmentData.imdbRating, 'imdb_rating', 'IMDb rating')
+      enrichmentData.budget = keep(enrichmentData.budget, 'movie_budget', 'budget')
+      enrichmentData.revenue = keep(enrichmentData.revenue, 'movie_revenue', 'revenue')
+    } catch (error) {
+      console.log(`Could not look up saved values (${error.message}); scoring with what the sources returned`)
+    }
+
     // Calculate score
     const finalScore = calculateScore(enrichmentData)
     console.log(`Final score: ${finalScore}`)
