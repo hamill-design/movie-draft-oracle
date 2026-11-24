@@ -380,6 +380,10 @@ async function loadPublicPlay(db) {
   if (existsSync(new URL('20261123110000_report_alerts.sql', MIGRATIONS))) {
     await db.exec(readMigration('20261123110000_report_alerts.sql'));
   }
+  // Open lobbies no longer close on a timer (the two minute sweeps lose their closing rules).
+  if (existsSync(new URL('20261124120000_open_lobbies_stay_open.sql', MIGRATIONS))) {
+    await db.exec(readMigration('20261124120000_open_lobbies_stay_open.sql'));
+  }
 }
 
 /** `$$`-quoted function (the live helpers use $$ rather than $function$). */
