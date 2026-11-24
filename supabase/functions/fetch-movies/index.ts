@@ -603,7 +603,10 @@ serve(async (req) => {
       requestData = await clonedReq.json();
     }
     
-    const { searchQuery, category, page = 1, fetchAll = false, preferFreshOscarStatus = false, movieSearchQuery } = requestData;
+    const { searchQuery, category, page = 1, fetchAll = false, preferFreshOscarStatus = false, movieSearchQuery, maxPages } = requestData;
+    // Optional: with fetchAll, stop after this many pages (the referee asks for a few pages, not all of them).
+    // Left out, nothing changes: every page is fetched, as before.
+    const pageCap = Number.isFinite(Number(maxPages)) && Number(maxPages) > 0 ? Math.min(Math.floor(Number(maxPages)), 100) : 100;
     const tmdbApiKey = Deno.env.get('TMDB');
 
     if (!tmdbApiKey) {
@@ -1007,9 +1010,9 @@ serve(async (req) => {
           
           // Fetch all pages (with reasonable limit to prevent timeout)
           // For year queries, increase limit to get more comprehensive results
-          const maxPagesToFetch = category === 'year' 
-            ? Math.min(totalPages, 100) // Allow up to 100 pages for year queries (2,000 movies)
-            : Math.min(totalPages, 100); // Keep 100 pages for other categories
+          const maxPagesToFetch = category === 'year'
+            ? Math.min(totalPages, pageCap) // Up to 100 pages for year queries (2,000 movies), or fewer if the caller asked for fewer
+            : Math.min(totalPages, pageCap); // Same for other categories
           
           while (currentPage <= maxPagesToFetch) {
             const pageUrl = `${baseUrl}&page=${currentPage}`;

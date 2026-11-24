@@ -159,6 +159,53 @@ describe('selectAutoPick (the whole decision, with a fake data source)', () => {
     assert.equal(r.category, 'Comedy');
   });
 
+  test('REGRESSION (a live Quick Play draft froze): a year\'s first page has only a few real films, so the bots must ask for more pages and can then finish all 20 picks', async () => {
+    // What fetch-movies really returns for year 2018 without fetchAll: one page of 20, only 4 from 2018 (the other
+    // 16 are re-releases of older films). With only that, the bots ran out of movies at pick 5 and the draft stood still.
+    const firstPage = [
+      ...[1, 2, 3, 4].map((id) => movie({ id, year: 2018, genre: 'Action Adventure', voteAverage: 7 })),
+      ...Array.from({ length: 16 }, (_, i) => movie({ id: 100 + i, year: 1990 + i, genre: 'Drama', voteAverage: 8 })),
+    ];
+    const morePages = Array.from({ length: 44 }, (_, i) => movie({ id: 500 + i, year: 2018, genre: ['Comedy', 'Drama', 'Horror Thriller', 'Action'][i % 4], voteAverage: 6 }));
+    const asked = [];
+    const source = fakeSource({
+      fetchMovies: async (b) => {
+        asked.push(b);
+        return { results: b.fetchAll ? [...firstPage, ...morePages] : firstPage };
+      },
+    });
+
+    const cats = ['Drama/Romance', 'Action/Adventure', 'Comedy', 'Horror/Thriller', 'Wild Card'];
+    const picked = [];
+    for (let turn = 1; turn <= 20; turn++) {
+      const r = await selectAutoPick(source, { theme: 'year', option: '2018', categories: cats, openCategories: cats, pickedMovieIds: picked }, first);
+      assert.ok(r, `pick ${turn} found a movie`);
+      assert.equal(r.movie.year, 2018, 'always a real 2018 film');
+      assert.ok(!picked.includes(r.movie.id), 'never a movie someone already has');
+      picked.push(r.movie.id);
+    }
+    assert.equal(picked.length, 20);
+    assert.ok(asked.every((b) => b.fetchAll === true && b.maxPages === 8), 'every lookup asks for several pages, not just the first');
+
+    // and with only the first page (the old request), pick 5 finds nothing: that is the freeze
+    const smallSource = fakeSource({ fetchMovies: async () => ({ results: firstPage }) });
+    const stuck = [];
+    for (let turn = 1; turn <= 4; turn++) {
+      const r = await selectAutoPick(smallSource, { theme: 'year', option: '2018', categories: cats, openCategories: cats, pickedMovieIds: stuck }, first);
+      stuck.push(r.movie.id);
+    }
+    assert.equal(await selectAutoPick(smallSource, { theme: 'year', option: '2018', categories: cats, openCategories: cats, pickedMovieIds: stuck }, first), null);
+  });
+
+  test('actor draft: asks for the whole filmography, not just the best-known 20', async () => {
+    let body;
+    const source = fakeSource({ fetchMovies: async (b) => { body = b; return { results: [movie({ id: 1, genre: 'Comedy' })] }; } });
+    await selectAutoPick(source, { theme: 'people', option: 'Tom Hanks', categories: ['Comedy'], openCategories: ['Comedy'], pickedMovieIds: [] }, first);
+    assert.equal(body.category, 'person');
+    assert.equal(body.searchQuery, 'Tom Hanks');
+    assert.equal(body.fetchAll, true);
+  });
+
   test('chooses one of the categories the player has not filled', async () => {
     const source = fakeSource({ fetchMovies: async () => ({ results: [movie({ id: 1, genre: 'Comedy Drama' })] }) });
     const r = await selectAutoPick(source, {

@@ -98,11 +98,33 @@ function makePoolSource(admin: AdminClient): PoolSource {
     },
 
     async fetchMovies(body: Record<string, unknown>) {
+      // A year's or an actor's movie list doesn't change from one pick to the next, but fetching it now takes a few
+      // seconds (several pages). A warm function instance keeps it for a while, so the next bot pick is quick.
+      const key = JSON.stringify(body);
+      const hit = poolCache.get(key);
+      if (hit && Date.now() - hit.at < POOL_CACHE_MS) return hit.value;
+
       const { data, error } = await admin.functions.invoke('fetch-movies', { body });
       if (error) throw error;
-      return data as { results?: PoolMovie[]; movies?: PoolMovie[] } | null;
+      const value = data as { results?: PoolMovie[]; movies?: PoolMovie[] } | null;
+
+      // Only remember a real answer: an empty list during an outage must not stick around.
+      if ((value?.results?.length ?? 0) > 0 || (value?.movies?.length ?? 0) > 0) {
+        if (poolCache.size >= POOL_CACHE_MAX) poolCache.delete(poolCache.keys().next().value as string);
+        poolCache.set(key, { at: Date.now(), value });
+      }
+      return value;
     },
   };
+}
+
+const POOL_CACHE_MS = 15 * 60 * 1000;
+const POOL_CACHE_MAX = 24;
+const poolCache = new Map<string, { at: number; value: { results?: PoolMovie[]; movies?: PoolMovie[] } | null }>();
+
+/** Forget every remembered movie list (the tests call this between cases). */
+export function resetPoolCache(): void {
+  poolCache.clear();
 }
 
 /** Remembers answers for the duration of one turn, so a retry never repeats a movie-API lookup. */
