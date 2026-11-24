@@ -86,7 +86,10 @@ const draftFieldOutline = { outline: '1px solid #666469', outlineOffset: '-1px' 
 // Temporarily hidden: letting league admins search all Movie Drafter
 // profiles by display name to invite them feels like a privacy/security
 // risk for now. The feature stays in the code (just not rendered) so it's
-// easy to bring back later.
+// easy to bring back later. NOTE: handleUserSearch reads the profiles table
+// directly, and the table is now private (you can only read your own row), so
+// it would find nobody. To bring this back, add a purpose-built search function
+// first (names and avatars only, league admins only); do not reopen the table.
 const SHOW_INVITE_BY_DISPLAY_NAME = false;
 
 const draftInputClass =
@@ -249,25 +252,14 @@ const LeagueSettings = () => {
     if (league) setNewName(league.name);
   }, [league]);
 
+  // The admin is a member, so their name and email come from the member list (which is loaded through
+  // get_league_profiles) rather than from a separate read of their profile.
   useEffect(() => {
-    let cancelled = false;
-    async function fetchAdmin() {
-      if (!league?.admin_id) return;
-      const { data } = await supabase
-        .from('profiles')
-        .select('name, email')
-        .eq('id', league.admin_id)
-        .maybeSingle();
-      if (!cancelled && data) {
-        setAdminProfile({
-          name: (data as { name: string | null }).name,
-          email: (data as { email: string | null }).email,
-        });
-      }
+    const adminRow = members.find((m) => m.user_id === league?.admin_id);
+    if (adminRow?.profile) {
+      setAdminProfile({ name: adminRow.profile.name, email: adminRow.profile.email });
     }
-    fetchAdmin();
-    return () => { cancelled = true; };
-  }, [league?.admin_id]);
+  }, [members, league?.admin_id]);
 
   useEffect(() => {
     if (!leagueLoading && league && league.admin_id !== user?.id) {

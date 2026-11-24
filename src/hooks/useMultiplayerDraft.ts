@@ -300,19 +300,21 @@ export const useMultiplayerDraft = (
   if (!participantEnricherRef.current) {
     participantEnricherRef.current = createParticipantEnricher({
       isPublicTable: lookupIsPublicTable,
-      fetchProfiles: async (userIds, withEmail) => {
-        const { data, error } = (await (supabase as any)
-          .from('profiles')
-          .select(withEmail ? 'id, email, avatar_url' : 'id, avatar_url')
-          .in('id', userIds)) as {
-          data: { id: string; email?: string | null; avatar_url?: string | null }[] | null;
+      // The profiles table is private (you can only read your own row), so the people in a draft come from
+      // get_draft_people(): it answers only for a draft you are in, and never returns emails for a public table.
+      fetchProfiles: async (userIds, withEmail, draftId) => {
+        const { data, error } = (await (supabase as any).rpc('get_draft_people', { p_draft_id: draftId })) as {
+          data: { user_id: string; email?: string | null; avatar_url?: string | null }[] | null;
           error: unknown;
         };
         if (error) {
           console.error('Error fetching participant emails:', error);
           return null;
         }
-        return data ?? [];
+        const wanted = new Set(userIds);
+        return (data ?? [])
+          .filter((r) => wanted.has(r.user_id))
+          .map((r) => ({ id: r.user_id, email: withEmail ? r.email : undefined, avatar_url: r.avatar_url }));
       },
     });
   }
