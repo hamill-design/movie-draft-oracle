@@ -355,7 +355,7 @@ function OpenSeat({ onOpen }: { onOpen?: () => void }) {
         <span className="flex h-16 w-16 items-center justify-center rounded-full border border-solid border-[#BDC3C2]/50 text-[#BDC3C2] transition-colors group-hover:border-[#BDC3C2] group-hover:text-[#FCFFFF]">
           <Plus size={24} aria-hidden />
         </span>
-        <span className="font-brockmann text-xs text-[#BDC3C2] transition-colors group-hover:text-[#FCFFFF]">Open seat</span>
+        <span className="font-brockmann text-xs text-[#BDC3C2] transition-colors group-hover:text-[#FCFFFF]">Invite Player</span>
       </button>
     </li>
   );

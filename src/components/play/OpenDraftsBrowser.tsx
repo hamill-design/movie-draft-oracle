@@ -35,43 +35,45 @@ export function OpenDraftsBrowser({ games, reload, canJoinHere, onGuestJoin, onS
 
   return (
     <section aria-labelledby="open-drafts-heading" className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <h2 id="open-drafts-heading" className="m-0 font-brockmann text-xl font-medium leading-7 text-white">Open Drafts</h2>
-        <div className="flex flex-wrap items-center gap-2">
-          <label className="sr-only" htmlFor="filter-speed">Speed</label>
-          <DropdownSelect
-            id="filter-speed"
-            className="w-auto min-w-[200px]"
-            value={speed}
-            onChange={(v) => setSpeed(v as typeof speed)}
-            options={[
-              { value: 'all', label: 'Any speed' },
-              { value: 'live', label: 'Live (2 min or less per pick)' },
-              { value: 'slow', label: 'Slow (hours per pick)' },
-            ]}
-          />
-          <label className="sr-only" htmlFor="filter-format">Format</label>
-          <DropdownSelect
-            id="filter-format"
-            className="w-auto min-w-[190px]"
-            value={format}
-            onChange={(v) => setFormat(v as typeof format)}
-            options={[
-              { value: 'all', label: 'Any format' },
-              { value: 'year', label: 'Draft by Year' },
-              { value: 'people', label: 'Draft by Filmography' },
-              { value: 'spec-draft', label: 'Special Draft' },
-            ]}
-          />
-          <Button
-            variant="outline"
-            onClick={() => void reload()}
-            aria-label="Refresh drafts"
-            className="h-10 w-10 rounded-[2px] border-[#49474B] bg-transparent p-0 text-white hover:bg-[#1D1D1F] hover:text-white"
-          >
-            <RefreshCw size={16} aria-hidden />
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          onClick={() => void reload()}
+          aria-label="Refresh drafts"
+          className="h-10 w-10 shrink-0 rounded-[2px] border-[#49474B] bg-transparent p-0 text-white hover:bg-[#1D1D1F] hover:text-white"
+        >
+          <RefreshCw size={16} aria-hidden />
+        </Button>
+      </div>
+
+      {/* The filters sit under the heading. On a phone they share the row (if it is too narrow they stack); from tablet up they keep a fixed width and sit at the right edge. */}
+      <div className="flex flex-wrap items-center gap-2 md:justify-end">
+        <label className="sr-only" htmlFor="filter-speed">Speed</label>
+        <DropdownSelect
+          id="filter-speed"
+          className="w-auto min-w-[150px] flex-1 md:min-w-[200px] md:flex-none"
+          value={speed}
+          onChange={(v) => setSpeed(v as typeof speed)}
+          options={[
+            { value: 'all', label: 'Any speed' },
+            { value: 'live', label: 'Live (2 min or less per pick)' },
+            { value: 'slow', label: 'Slow (hours per pick)' },
+          ]}
+        />
+        <label className="sr-only" htmlFor="filter-format">Format</label>
+        <DropdownSelect
+          id="filter-format"
+          className="w-auto min-w-[150px] flex-1 md:min-w-[190px] md:flex-none"
+          value={format}
+          onChange={(v) => setFormat(v as typeof format)}
+          options={[
+            { value: 'all', label: 'Any format' },
+            { value: 'year', label: 'Draft by Year' },
+            { value: 'people', label: 'Draft by Filmography' },
+            { value: 'spec-draft', label: 'Special Draft' },
+          ]}
+        />
       </div>
 
       <OpenGamesList
