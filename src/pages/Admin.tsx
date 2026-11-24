@@ -20,6 +20,7 @@ import { useBlogPostsAdmin, BlogPost } from '@/hooks/useBlogPostsAdmin';
 import { BlogPostForm, BlogPostFormValues } from '@/components/admin/blog/BlogPostForm';
 import { BlogPostList } from '@/components/admin/blog/BlogPostList';
 import { PublicPlayAdminSection } from '@/components/admin/PublicPlayAdminSection';
+import { OpenReportsBadge } from '@/components/admin/OpenReportsBadge';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -475,6 +476,7 @@ const Admin = () => {
                     >
                       Public Play
                     </span>
+                    <OpenReportsBadge className="ml-2" />
                   </button>
       </div>
               </div>

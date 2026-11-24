@@ -8,7 +8,7 @@ export interface AppNotification {
   type:
     | 'draft_invite' | 'league_invite' | 'upcoming_draft' | 'your_turn'
     | 'table_starts_soon' | 'time_to_start' | 'schedule_changed' | 'you_are_host'
-    | 'table_cancelled' | 'removed_from_table' | 'match_found';
+    | 'table_cancelled' | 'removed_from_table' | 'match_found' | 'player_report';
   title: string;
   body: string | null;
   link: string | null;

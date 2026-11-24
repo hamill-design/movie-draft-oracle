@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { OpenReportsBadge } from '@/components/admin/OpenReportsBadge';
 
 const LINKS = [
   { to: '/admin/quick-match', label: 'Quick Match pool', hint: 'Approve the years, actors and special drafts Quick Play can pick.' },
@@ -21,7 +22,10 @@ export function PublicPlayAdminSection() {
           className="flex flex-col gap-1 rounded-[8px] border border-greyscale-blue-200 bg-ui-primary p-5 transition-colors hover:border-purple-300"
           style={font}
         >
-          <span className="text-base font-semibold text-[#2b2f31]">{l.label}</span>
+          <span className="flex items-center gap-2 text-base font-semibold text-[#2b2f31]">
+            {l.label}
+            {l.to === '/admin/reports' && <OpenReportsBadge />}
+          </span>
           <span className="text-sm text-greyscale-blue-600">{l.hint}</span>
         </Link>
       ))}
